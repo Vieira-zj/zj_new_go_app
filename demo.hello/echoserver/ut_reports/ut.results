@@ -1,0 +1,17 @@
+=== RUN   TestGetCondition01
+--- PASS: TestGetCondition01 (0.00s)
+=== RUN   TestGetHello
+--- PASS: TestGetHello (0.00s)
+=== RUN   TestIndexHandler
+--- PASS: TestIndexHandler (0.00s)
+=== RUN   TestGetUsers
+--- PASS: TestGetUsers (0.00s)
+=== RUN   TestUsers
+--- PASS: TestUsers (0.00s)
+=== RUN   TestGetUsersNew
+--- PASS: TestGetUsersNew (0.00s)
+=== RUN   TestUsersNew
+--- PASS: TestUsersNew (0.00s)
+PASS
+coverage: 21.5% of statements
+ok  	demo.hello/echoserver/handlers	0.358s	coverage: 21.5% of statements

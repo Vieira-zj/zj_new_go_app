@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echoserver-test
+  namespace: k8s-test
+  labels:
+    app: echoserver-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echoserver-test
+  template:
+    metadata:
+      labels:
+        app: echoserver-test
+    spec:
+      containers:
+      - name: echo-server
+        image: k8s.gcr.io/echoserver:1.10
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: 10m
+            memory: 20Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi

@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sidecar-test
+  namespace: k8s-test
+  labels:
+    app: sidecar-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sidecar-test
+  template:
+    metadata:
+      labels:
+        app: sidecar-test
+        env: test
+    spec:
+      restartPolicy: Always
+      initContainers:
+      - name: init-busybox
+        image: busybox:1.30
+        imagePullPolicy: IfNotPresent
+        command: ["sh", "-c", "sleep 3; echo \"init process done.\""]
+      containers:
+      - name: busybox
+        image: busybox:1.30
+        imagePullPolicy: IfNotPresent
+        command: ["sh", "-c", "while true; do echo $(date +'%Y-%m-%d_%H:%M:%S') 'busybox is running ...'; sleep 5; done;"]
+        resources:
+          limits:
+            cpu: 10m
+            memory: 20Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
+      - name: alpine
+        image: alpine:3.9
+        imagePullPolicy: IfNotPresent
+        # lifecycle:
+        #   type: Sidecar
+        command: ["sh"]
+        args: ["-c", "while true; do echo $(date +'%Y-%m-%d_%H:%M:%S') 'alpine is running ...'; sleep 5; done;"]
+        resources:
+          limits:
+            cpu: 10m
+            memory: 20Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi

@@ -1,0 +1,17 @@
+# Build go server + goc center env.
+#
+version: "3"
+
+services:
+  goserver:
+    image: goserver-test:v1.0
+    container_name: goserver
+    depends_on:
+      - goccenter
+    ports:
+      - 17891:17891
+    # command: [/bin/sh, -c, "while true; do echo 'hello'; sleep 10; done;"]
+  
+  goccenter:
+    image: goccenter-test:v1.0
+    container_name: goccenter

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: admission-webhook-app-svc
+  namespace: k8s-test
+  labels:
+    app: admission-webhook-app
+spec:
+  ports:
+  - port: 443
+    targetPort: 443
+  selector:
+    app: admission-webhook-app

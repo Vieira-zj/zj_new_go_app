@@ -1,0 +1,25 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: labels-validation-webhook-app-cfg
+  labels:
+    app: admission-webhook-app
+webhooks:
+  - name: required-labels.test.com
+    sideEffects: "None"
+    admissionReviewVersions: ["v1", "v1beta1"]
+    clientConfig:
+      service:
+        name: admission-webhook-app-svc
+        namespace: k8s-test
+        path: "/validate"
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCakNDQWU2Z0F3SUJBZ0lCQVRBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwdGFXNXAKYTNWaVpVTkJNQjRYRFRJd01Ea3lNekF6TVRneU0xb1hEVE13TURreU1qQXpNVGd5TTFvd0ZURVRNQkVHQTFVRQpBeE1LYldsdWFXdDFZbVZEUVRDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBT1hICmlGdW9VY2kvMFZUUS9vdUNpYW9nUjhBdHdiZUV3d2pQbWJhSHRiSWhGN1Frb3Rmc1VtNUhjbzhsUHJrb0NPTEQKR3JVZWZsU1VMMEI0Wm9aUkhDanB4U0NzSzBueVdqQU1aSTNBdkxYM2VQV2puVE1jYTZBbjAraDBKVnBiZXNnTQp5RHFKcFlIOVpHVjJIaUlaRkh6blRpRkNLemMrQ0VRSTBGTTlieFdacW81ZjBpTW1mUVg2eDNXY3BGOVhZSnI0CmpaZnQxKysyRXJhamhkd3BINU94ZFpRNXM0TjZsZ1BZVVd2RGV5eFl0aG1QZUJNZHE1bERHa2twZ2liNTlSck0KZnpaQis0c1dmdkdoSS8ydFZxd0dLdUJ6ZFV4a2VlcHJtUDFTN3VxSmYxazRJeEdRUGtyNGd2dk5Nai9NUU5FYQpvL2VvR1Z4VVJSUEE1MjlZVnpFQ0F3RUFBYU5oTUY4d0RnWURWUjBQQVFIL0JBUURBZ0trTUIwR0ExVWRKUVFXCk1CUUdDQ3NHQVFVRkJ3TUNCZ2dyQmdFRkJRY0RBVEFQQmdOVkhSTUJBZjhFQlRBREFRSC9NQjBHQTFVZERnUVcKQkJTcHZBclFIWmFzRHJKWDFReFI2S29pbVNwVDZ6QU5CZ2txaGtpRzl3MEJBUXNGQUFPQ0FRRUFPOXFWTGJ2TgpKcldyWG8xTFdRbE9xVkxsNUdpUUQwNWtxMWk5Njl6UEkxN25GOFBLNEM0MXpaamRjWEhwVVRONVN0T2FPTmRFCjdycmtXZC9OZ0pkN01rWGdzQndwYVdFWmM1MEtNL0JGV0w2bk80Zkd3NWxQeTkvU1A0ZmxSSG92ZWs4KytYMWYKSE96S2ZTNUJGaWhiVXRpOU50VUpuSWJtU252MHRlc1h5QnYzRlN5MGwwdDhtVUtVSno1VTdmV3hlU3kvQXJKcQpwQ1dGSzhlV29HTUhseXUwNVZ2MXV1NHNjY2VuRVpnemxBY2U2aE5HNk9WbVVLUGN2NzRVU2sveFVBWVhzUyt6CmZUWGdWKzVPMUpKVnVKeHdFZ1lZT2c5Zy9tU3Z1eEQ5NEUzYTVUVUREOWVzZG56aUQ5a3daMnhuSzluMUcwZ2kKVHZGK0JMR0Z6Vm9iR2c9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    rules:
+      - operations: [ "CREATE" ]
+        apiGroups: ["apps", ""]
+        apiVersions: ["v1", "v1beta1"]
+        resources: ["deployments", "services"]
+    namespaceSelector:
+      matchLabels:
+        # test namespace should be labeled
+        admission-webhook-app: enabled

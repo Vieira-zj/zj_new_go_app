@@ -1,0 +1,25 @@
+# mysql default id / pwd: root / example
+#
+version: '3.1'
+
+services:
+  db:
+    image: mysql
+    container_name: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+    volumes:
+      - ${HOME}/Downloads/tmps/docker_vols/mysql:/var/lib/mysql
+    ports:
+      - 13306:3306
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    ports:
+      - 8089:8080
+    depends_on:
+      - db

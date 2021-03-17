@@ -1,0 +1,35 @@
+#
+# entry point:
+# 1. monitor process check restart.flag to restart http_proxy_linux service
+# sh monitor.sh &
+#
+# 2. etcd_linux service watch for specified etcd key delete event, and set restart.flag
+# ./etcd_linux -e [etcd_ip:port] -key test-services:xxxxx:[pod_ip:port] &
+#
+# 3. http proxy for grpc api
+# ./http_proxy_linux -e [pod_ip:port] &
+#
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: debug-pod
+  name: debug-pod
+  namespace: apa-base-th-test
+spec:
+  restartPolicy: Always
+  nodeSelector:
+    kubernetes.io/hostname: node10
+  containers:
+  - image: busybox:1.30
+    imagePullPolicy: IfNotPresent
+    name: debug-pod
+    ports:
+    - containerPort: 17891
+      hostPort: 17891
+    command: [/bin/sh, -c, "while true; do echo 'hello busybox' >> /tmp/app.log; sleep 10; done;"]
+    resources: {}
+  dnsPolicy: ClusterFirst
+status: {}

@@ -1,0 +1,12 @@
+-------------
+Diff Coverage
+Diff: remotes/origin/master...HEAD, staged and unstaged changes
+-------------
+demo.hello/echoserver/handlers/cover.go (100%)
+demo.hello/echoserver/handlers/ping.go (100%)
+demo.hello/echoserver/handlers/users.go (100%)
+-------------
+Total:   8 lines
+Missing: 0 lines
+Coverage: 100%
+-------------

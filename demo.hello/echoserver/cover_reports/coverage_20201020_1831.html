@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>handlers: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">demo.hello/echoserver/handlers/hooks.go (86.4%)</option>
+				
+				<option value="file1">demo.hello/echoserver/handlers/ping.go (100.0%)</option>
+				
+				<option value="file2">demo.hello/echoserver/handlers/samples.go (0.0%)</option>
+				
+				<option value="file3">demo.hello/echoserver/handlers/users.go (14.3%)</option>
+				
+				<option value="file4">demo.hello/echoserver/main.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package handlers
+
+import (
+        "fmt"
+        "io/ioutil"
+        "strings"
+
+        "github.com/labstack/echo"
+)
+
+// Deco decorate echo function.
+func Deco(fn func(echo.Context) error) func(echo.Context) error <span class="cov0" title="0">{
+        return func(c echo.Context) error </span><span class="cov4" title="4">{
+                preHook(c)
+                err := fn(c)
+                afterHook(c)
+                return err
+        }</span>
+}
+
+func preHook(c echo.Context) <span class="cov4" title="4">{
+        printRequestInfo(c)
+}</span>
+
+func afterHook(c echo.Context) {<span class="cov4" title="4">
+        // TODO:
+}</span>
+
+func printRequestInfo(c echo.Context) <span class="cov4" title="4">{
+        printDivLine(c)
+        request := c.Request()
+        c.Logger().Info("| Host: ", request.Host)
+        c.Logger().Info("| Url: ", request.URL)
+        c.Logger().Info("| Method: ", request.Method)
+        printHeaders(c, request.Header)
+
+        content, err := ioutil.ReadAll(request.Body)
+        if err != nil </span><span class="cov0" title="0">{
+                c.Logger().Error(err)
+        }</span>
+        <span class="cov4" title="4">if len(content) &gt; 0 </span><span class="cov0" title="0">{
+                c.Logger().Info("| Body: ", string(content))
+        }</span>
+        <span class="cov4" title="4">printDivLine(c)</span>
+}
+
+func printDivLine(c echo.Context) <span class="cov6" title="8">{
+        c.Logger().Info("| " + strings.Repeat("*", 60))
+}</span>
+
+func printHeaders(c echo.Context, headers map[string][]string) <span class="cov4" title="4">{
+        c.Logger().Info("| Headers:")
+        for k, v := range headers </span><span class="cov10" title="36">{
+                c.Logger().Info(fmt.Sprintf("|   %s: %s\n", k, v[0]))
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package handlers
+
+import (
+        "fmt"
+        "net/http"
+
+        "github.com/labstack/echo"
+)
+
+var count int
+
+// IndexHandler default index handler.
+func IndexHandler(c echo.Context) error <span class="cov10" title="2">{
+        return c.String(http.StatusOK, "Hello, World!")
+}</span>
+
+// PingHandler ping handle.
+func PingHandler(c echo.Context) error <span class="cov1" title="1">{
+        count++
+        return c.String(http.StatusOK, fmt.Sprintf("Access Count: %d", count))
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package handlers
+
+import (
+        "fmt"
+        "math/rand"
+        "net/http"
+        "strconv"
+        "time"
+
+        "github.com/labstack/echo"
+)
+
+// SampleHandler01 test handler.
+func SampleHandler01(c echo.Context) error <span class="cov0" title="0">{
+        base := c.QueryParam("base")
+        if len(base) == 0 </span><span class="cov0" title="0">{
+                base = "10"
+        }</span>
+
+        <span class="cov0" title="0">num, err := strconv.Atoi(base)
+        if err != nil </span><span class="cov0" title="0">{
+                c.String(http.StatusBadRequest, err.Error())
+        }</span>
+
+        <span class="cov0" title="0">outc, errc := asyncService(c, num)
+        select </span>{
+        case res := &lt;-outc:<span class="cov0" title="0">
+                return c.String(http.StatusOK, strconv.Itoa(res))</span>
+        case err := &lt;-errc:<span class="cov0" title="0">
+                // when close(errc), err is nil
+                if err != nil </span><span class="cov0" title="0">{
+                        return c.String(http.StatusOK, err.Error())
+                }</span>
+        }
+        <span class="cov0" title="0">return nil</span>
+}
+
+func asyncService(c echo.Context, base int) (&lt;-chan int, &lt;-chan error) <span class="cov0" title="0">{
+        outc := make(chan int)
+        errc := make(chan error, 1)
+
+        go func() </span><span class="cov0" title="0">{
+                defer close(outc)
+                defer close(errc)
+
+                if base &lt;= 0 </span><span class="cov0" title="0">{
+                        errc &lt;- fmt.Errorf("invalid input base")
+                        return
+                }</span>
+                <span class="cov0" title="0">if base &gt; 10 </span><span class="cov0" title="0">{
+                        base = 10
+                }</span>
+
+                <span class="cov0" title="0">for i := 0; i &lt; base; i++ </span><span class="cov0" title="0">{
+                        time.Sleep(time.Duration(rand.Intn(500)) * time.Millisecond)
+                        select </span>{
+                        case &lt;-c.Request().Context().Done():<span class="cov0" title="0">
+                                c.Logger().Info("request context cancel")
+                                return</span>
+                        default:<span class="cov0" title="0"></span>
+                        }
+                }
+                <span class="cov0" title="0">outc &lt;- base</span>
+        }()
+
+        <span class="cov0" title="0">return outc, errc</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package handlers
+
+import (
+        "fmt"
+        "net/http"
+
+        "github.com/labstack/echo"
+)
+
+// echo 复杂路由
+
+// Users return all users.
+func Users(c echo.Context) error <span class="cov8" title="1">{
+        return c.String(http.StatusOK, "Users")
+}</span>
+
+// UsersNew new a user.
+func UsersNew(c echo.Context) error <span class="cov0" title="0">{
+        return c.String(http.StatusOK, "UsersNew")
+}</span>
+
+// UsersName return user name.
+func UsersName(c echo.Context) error <span class="cov0" title="0">{
+        name := c.Param("name")
+        return c.String(http.StatusOK, fmt.Sprintf("%s, %s", "Hi", name))
+}</span>
+
+// UsersFiles return user files.
+func UsersFiles(c echo.Context) error <span class="cov0" title="0">{
+        prefix := "/users/1/files/"
+        subPath := c.Request().URL.Path[len(prefix):]
+        return c.String(http.StatusOK, "Query file: "+subPath)
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package main
+
+import (
+        "github.com/labstack/echo"
+        "github.com/labstack/gommon/log"
+
+        "demo.hello/echoserver/handlers"
+)
+
+func runApp() <span class="cov0" title="0">{
+        deco := handlers.Deco
+        e := echo.New()
+        e.GET("/", deco(handlers.IndexHandler))
+        e.GET("/ping", deco(handlers.PingHandler))
+
+        // router reg test
+        e.GET("/users/", deco(handlers.Users))
+        e.GET("/users/new", deco(handlers.UsersNew))
+        e.GET("/users/:name", deco(handlers.UsersName))
+        e.GET("/users/1/files/*", deco(handlers.UsersFiles))
+
+        // test
+        e.GET("/sample01", deco(handlers.SampleHandler01))
+
+        e.Logger.SetLevel(log.INFO)
+        e.Logger.Fatal(e.Start(":8081"))
+}</span>
+
+func main() <span class="cov0" title="0">{
+        runApp()
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

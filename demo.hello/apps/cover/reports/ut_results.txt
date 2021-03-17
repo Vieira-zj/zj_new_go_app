@@ -1,0 +1,9 @@
+=== RUN   TestAdd
+--- PASS: TestAdd (0.00s)
+=== RUN   TestDivide
+--- PASS: TestDivide (0.00s)
+=== RUN   TestGetConditions
+--- PASS: TestGetConditions (0.00s)
+PASS
+coverage: 84.6% of statements
+ok  	demo.hello/apps/cover/test	0.986s	coverage: 84.6% of statements

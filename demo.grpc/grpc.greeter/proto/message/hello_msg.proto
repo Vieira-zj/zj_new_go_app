@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+// demo.grpc/grpc/proto/message relate to out path by: "protoc --go_out=plugins=grpc:PATH"
+option go_package = "demo.grpc/grpc/proto/message;message";
+
+package message;
+
+// The request message containing the user's name.
+message HelloRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
+}

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package demo.hello;
+
+import "google/api/annotations.proto";
+
+option go_package = "demo.grpc/gateway/proto/demo/hello;hello";
+
+service Service1 {
+  rpc Echo(StringMessage) returns (StringMessage) {
+    option (google.api.http) = {
+      post: "/v1/example/echo"
+      body: "*"
+    };
+  }
+}
+
+message StringMessage {
+  string value = 1;
+}

@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
+<coverage line-rate="0.4796748" branch-rate="0" version="" timestamp="1603188321752" lines-covered="59" lines-valid="123" branches-covered="0" branches-valid="0" complexity="0">
+	<sources>
+		<source>/usr/local/go/src</source>
+		<source>/Users/jinzheng/Workspaces/.go/src</source>
+	</sources>
+	<packages>
+		<package name="demo.hello/echoserver/handlers" line-rate="0.37254903" branch-rate="0" complexity="0">
+			<classes>
+				<class name="-" filename="demo.hello/echoserver/handlers/hooks.go" line-rate="0.8378378" branch-rate="0" complexity="0">
+					<methods>
+						<method name="Deco" signature="" line-rate="1" branch-rate="0" complexity="0">
+							<lines>
+								<line number="12" hits="14"></line>
+								<line number="13" hits="12"></line>
+								<line number="14" hits="12"></line>
+								<line number="15" hits="12"></line>
+								<line number="16" hits="12"></line>
+								<line number="17" hits="12"></line>
+								<line number="18" hits="12"></line>
+							</lines>
+						</method>
+						<method name="preHook" signature="" line-rate="1" branch-rate="0" complexity="0">
+							<lines>
+								<line number="21" hits="12"></line>
+								<line number="22" hits="12"></line>
+								<line number="23" hits="12"></line>
+							</lines>
+						</method>
+						<method name="afterHook" signature="" line-rate="1" branch-rate="0" complexity="0">
+							<lines>
+								<line number="25" hits="12"></line>
+								<line number="26" hits="12"></line>
+								<line number="27" hits="12"></line>
+							</lines>
+						</method>
+						<method name="printRequestInfo" signature="" line-rate="0.625" branch-rate="0" complexity="0">
+							<lines>
+								<line number="29" hits="12"></line>
+								<line number="30" hits="12"></line>
+								<line number="31" hits="12"></line>
+								<line number="32" hits="12"></line>
+								<line number="33" hits="12"></line>
+								<line number="34" hits="12"></line>
+								<line number="35" hits="12"></line>
+								<line number="36" hits="12"></line>
+								<line number="37" hits="12"></line>
+								<line number="38" hits="0"></line>
+								<line number="39" hits="0"></line>
+								<line number="40" hits="0"></line>
+								<line number="41" hits="0"></line>
+								<line number="42" hits="0"></line>
+								<line number="43" hits="0"></line>
+								<line number="44" hits="12"></line>
+							</lines>
+						</method>
+						<method name="printDivLine" signature="" line-rate="1" branch-rate="0" complexity="0">
+							<lines>
+								<line number="47" hits="24"></line>
+								<line number="48" hits="24"></line>
+								<line number="49" hits="24"></line>
+							</lines>
+						</method>
+						<method name="printHeaders" signature="" line-rate="1" branch-rate="0" complexity="0">
+							<lines>
+								<line number="51" hits="12"></line>
+								<line number="52" hits="12"></line>
+								<line number="53" hits="12"></line>
+								<line number="54" hits="68"></line>
+								<line number="55" hits="68"></line>
+							</lines>
+						</method>
+					</methods>
+					<lines>
+						<line number="12" hits="14"></line>
+						<line number="13" hits="12"></line>
+						<line number="14" hits="12"></line>
+						<line number="15" hits="12"></line>
+						<line number="16" hits="12"></line>
+						<line number="17" hits="12"></line>
+						<line number="18" hits="12"></line>
+						<line number="21" hits="12"></line>
+						<line number="22" hits="12"></line>
+						<line number="23" hits="12"></line>
+						<line number="25" hits="12"></line>
+						<line number="26" hits="12"></line>
+						<line number="27" hits="12"></line>
+						<line number="29" hits="12"></line>
+						<line number="30" hits="12"></line>
+						<line number="31" hits="12"></line>
+						<line number="32" hits="12"></line>
+						<line number="33" hits="12"></line>
+						<line number="34" hits="12"></line>
+						<line number="35" hits="12"></line>
+						<line number="36" hits="12"></line>
+						<line number="37" hits="12"></line>
+						<line number="38" hits="0"></line>
+						<line number="39" hits="0"></line>
+						<line number="40" hits="0"></line>
+						<line number="41" hits="0"></line>
+						<line number="42" hits="0"></line>
+						<line number="43" hits="0"></line>
+						<line number="44" hits="12"></line>
+						<line number="47" hits="24"></line>
+						<line number="48" hits="24"></line>
+						<line number="49" hits="24"></line>
+						<line number="51" hits="12"></line>
+						<line number="52" hits="12"></line>
+						<line number="53" hits="12"></line>
+						<line number="54" hits="68"></line>
+						<line number="55" hits="68"></line>
+					</lines>
+				</class>
+				<class name="-" filename="demo.hello/echoserver/handlers/ping.go" line-rate="1" branch-rate="0" complexity="0">
+					<methods>
+						<method name="IndexHandler" signature="" line-rate="1" branch-rate="0" complexity="0">
+							<lines>
+								<line number="13" hits="10"></line>
+								<line number="14" hits="10"></line>
+								<line number="15" hits="10"></line>
+							</lines>
+						</method>
+						<method name="PingHandler" signature="" line-rate="1" branch-rate="0" complexity="0">
+							<lines>
+								<line number="18" hits="2"></line>
+								<line number="19" hits="2"></line>
+								<line number="20" hits="2"></line>
+								<line number="21" hits="2"></line>
+							</lines>
+						</method>
+					</methods>
+					<lines>
+						<line number="13" hits="10"></line>
+						<line number="14" hits="10"></line>
+						<line number="15" hits="10"></line>
+						<line number="18" hits="2"></line>
+						<line number="19" hits="2"></line>
+						<line number="20" hits="2"></line>
+						<line number="21" hits="2"></line>
+					</lines>
+				</class>
+				<class name="-" filename="demo.hello/echoserver/handlers/samples.go" line-rate="0" branch-rate="0" complexity="0">
+					<methods>
+						<method name="SampleHandler01" signature="" line-rate="0" branch-rate="0" complexity="0">
+							<lines>
+								<line number="14" hits="0"></line>
+								<line number="15" hits="0"></line>
+								<line number="16" hits="0"></line>
+								<line number="17" hits="0"></line>
+								<line number="18" hits="0"></line>
+								<line number="20" hits="0"></line>
+								<line number="21" hits="0"></line>
+								<line number="22" hits="0"></line>
+								<line number="23" hits="0"></line>
+								<line number="25" hits="0"></line>
+								<line number="26" hits="0"></line>
+								<line number="27" hits="0"></line>
+								<line number="28" hits="0"></line>
+								<line number="29" hits="0"></line>
+								<line number="30" hits="0"></line>
+								<line number="31" hits="0"></line>
+								<line number="32" hits="0"></line>
+								<line number="33" hits="0"></line>
+								<line number="35" hits="0"></line>
+							</lines>
+						</method>
+						<method name="asyncService" signature="" line-rate="0" branch-rate="0" complexity="0">
+							<lines>
+								<line number="38" hits="0"></line>
+								<line number="39" hits="0"></line>
+								<line number="40" hits="0"></line>
+								<line number="41" hits="0"></line>
+								<line number="42" hits="0"></line>
+								<line number="43" hits="0"></line>
+								<line number="44" hits="0"></line>
+								<line number="45" hits="0"></line>
+								<line number="46" hits="0"></line>
+								<line number="47" hits="0"></line>
+								<line number="48" hits="0"></line>
+								<line number="49" hits="0"></line>
+								<line number="50" hits="0"></line>
+								<line number="51" hits="0"></line>
+								<line number="52" hits="0"></line>
+								<line number="54" hits="0"></line>
+								<line number="55" hits="0"></line>
+								<line number="56" hits="0"></line>
+								<line number="57" hits="0"></line>
+								<line number="58" hits="0"></line>
+								<line number="59" hits="0"></line>
+								<line number="60" hits="0"></line>
+								<line number="63" hits="0"></line>
+								<line number="66" hits="0"></line>
+							</lines>
+						</method>
+					</methods>
+					<lines>
+						<line number="14" hits="0"></line>
+						<line number="15" hits="0"></line>
+						<line number="16" hits="0"></line>
+						<line number="17" hits="0"></line>
+						<line number="18" hits="0"></line>
+						<line number="20" hits="0"></line>
+						<line number="21" hits="0"></line>
+						<line number="22" hits="0"></line>
+						<line number="23" hits="0"></line>
+						<line number="25" hits="0"></line>
+						<line number="26" hits="0"></line>
+						<line number="27" hits="0"></line>
+						<line number="28" hits="0"></line>
+						<line number="29" hits="0"></line>
+						<line number="30" hits="0"></line>
+						<line number="31" hits="0"></line>
+						<line number="32" hits="0"></line>
+						<line number="33" hits="0"></line>
+						<line number="35" hits="0"></line>
+						<line number="38" hits="0"></line>
+						<line number="39" hits="0"></line>
+						<line number="40" hits="0"></line>
+						<line number="41" hits="0"></line>
+						<line number="42" hits="0"></line>
+						<line number="43" hits="0"></line>
+						<line number="44" hits="0"></line>
+						<line number="45" hits="0"></line>
+						<line number="46" hits="0"></line>
+						<line number="47" hits="0"></line>
+						<line number="48" hits="0"></line>
+						<line number="49" hits="0"></line>
+						<line number="50" hits="0"></line>
+						<line number="51" hits="0"></line>
+						<line number="52" hits="0"></line>
+						<line number="54" hits="0"></line>
+						<line number="55" hits="0"></line>
+						<line number="56" hits="0"></line>
+						<line number="57" hits="0"></line>
+						<line number="58" hits="0"></line>
+						<line number="59" hits="0"></line>
+						<line number="60" hits="0"></line>
+						<line number="63" hits="0"></line>
+						<line number="66" hits="0"></line>
+					</lines>
+				</class>
+				<class name="-" filename="demo.hello/echoserver/handlers/users.go" line-rate="0" branch-rate="0" complexity="0">
+					<methods>
+						<method name="Users" signature="" line-rate="0" branch-rate="0" complexity="0">
+							<lines>
+								<line number="13" hits="0"></line>
+								<line number="14" hits="0"></line>
+								<line number="15" hits="0"></line>
+							</lines>
+						</method>
+						<method name="UsersNew" signature="" line-rate="0" branch-rate="0" complexity="0">
+							<lines>
+								<line number="18" hits="0"></line>
+								<line number="19" hits="0"></line>
+								<line number="20" hits="0"></line>
+							</lines>
+						</method>
+						<method name="UsersName" signature="" line-rate="0" branch-rate="0" complexity="0">
+							<lines>
+								<line number="23" hits="0"></line>
+								<line number="24" hits="0"></line>
+								<line number="25" hits="0"></line>
+								<line number="26" hits="0"></line>
+							</lines>
+						</method>
+						<method name="UsersFiles" signature="" line-rate="0" branch-rate="0" complexity="0">
+							<lines>
+								<line number="29" hits="0"></line>
+								<line number="30" hits="0"></line>
+								<line number="31" hits="0"></line>
+								<line number="32" hits="0"></line>
+								<line number="33" hits="0"></line>
+							</lines>
+						</method>
+					</methods>
+					<lines>
+						<line number="13" hits="0"></line>
+						<line number="14" hits="0"></line>
+						<line number="15" hits="0"></line>
+						<line number="18" hits="0"></line>
+						<line number="19" hits="0"></line>
+						<line number="20" hits="0"></line>
+						<line number="23" hits="0"></line>
+						<line number="24" hits="0"></line>
+						<line number="25" hits="0"></line>
+						<line number="26" hits="0"></line>
+						<line number="29" hits="0"></line>
+						<line number="30" hits="0"></line>
+						<line number="31" hits="0"></line>
+						<line number="32" hits="0"></line>
+						<line number="33" hits="0"></line>
+					</lines>
+				</class>
+			</classes>
+		</package>
+		<package name="demo.hello/echoserver" line-rate="1" branch-rate="0" complexity="0">
+			<classes>
+				<class name="-" filename="demo.hello/echoserver/main.go" line-rate="1" branch-rate="0" complexity="0">
+					<methods>
+						<method name="runApp" signature="" line-rate="1" branch-rate="0" complexity="0">
+							<lines>
+								<line number="10" hits="2"></line>
+								<line number="11" hits="2"></line>
+								<line number="12" hits="2"></line>
+								<line number="13" hits="2"></line>
+								<line number="14" hits="2"></line>
+								<line number="15" hits="2"></line>
+								<line number="16" hits="2"></line>
+								<line number="17" hits="2"></line>
+								<line number="18" hits="2"></line>
+								<line number="19" hits="2"></line>
+								<line number="20" hits="2"></line>
+								<line number="21" hits="2"></line>
+								<line number="22" hits="2"></line>
+								<line number="23" hits="2"></line>
+								<line number="24" hits="2"></line>
+								<line number="25" hits="2"></line>
+								<line number="26" hits="2"></line>
+								<line number="27" hits="2"></line>
+							</lines>
+						</method>
+						<method name="main" signature="" line-rate="1" branch-rate="0" complexity="0">
+							<lines>
+								<line number="29" hits="2"></line>
+								<line number="30" hits="2"></line>
+								<line number="31" hits="2"></line>
+							</lines>
+						</method>
+					</methods>
+					<lines>
+						<line number="10" hits="2"></line>
+						<line number="11" hits="2"></line>
+						<line number="12" hits="2"></line>
+						<line number="13" hits="2"></line>
+						<line number="14" hits="2"></line>
+						<line number="15" hits="2"></line>
+						<line number="16" hits="2"></line>
+						<line number="17" hits="2"></line>
+						<line number="18" hits="2"></line>
+						<line number="19" hits="2"></line>
+						<line number="20" hits="2"></line>
+						<line number="21" hits="2"></line>
+						<line number="22" hits="2"></line>
+						<line number="23" hits="2"></line>
+						<line number="24" hits="2"></line>
+						<line number="25" hits="2"></line>
+						<line number="26" hits="2"></line>
+						<line number="27" hits="2"></line>
+						<line number="29" hits="2"></line>
+						<line number="30" hits="2"></line>
+						<line number="31" hits="2"></line>
+					</lines>
+				</class>
+			</classes>
+		</package>
+	</packages>
+</coverage>

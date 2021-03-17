@@ -1,0 +1,97 @@
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: echoserver
+  namespace: default
+spec:
+  rules:
+  - host: echoserver.default.k8s
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: echoserver
+          servicePort: http
+  - host: goccenter.default.k8s
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: echoserver
+          servicePort: goc
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: echoserver
+  namespace: default
+  labels:
+    app: echoserver
+spec:
+  type: ClusterIP
+  selector:
+    app: echoserver
+  ports:
+  - name: http
+    port: 8081
+    targetPort: 8081
+    protocol: TCP
+  - name: goc
+    port: 7777
+    targetPort: 7777
+    protocol: TCP
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echoserver
+  namespace: default
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  minReadySeconds: 3
+  selector:
+    matchLabels:
+      app: echoserver
+      phase: test
+  template:
+    metadata:
+      labels:
+        app: echoserver
+        phase: test
+    spec:
+      containers:
+      - image: echoserver-test:v1.0
+        name: echoserver
+        ports:
+        - containerPort: 8081
+          name: http
+          protocol: TCP
+        command: ["sh"]
+        args: ["-c", "sleep 3 && echoserver"]
+        readinessProbe:
+          tcpSocket:
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c", "sleep 3"]
+      - image: goccenter-test:v1.0
+        name: goccenter
+        ports:
+        - containerPort: 7777
+          name: http
+          protocol: TCP

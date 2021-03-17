@@ -1,0 +1,9 @@
+env: "test"
+type: "grpc"
+runner:
+  parallel: 2
+  runTime: 35 # seconds
+  limit: 100
+  syncInterval: 5
+  outInterval: 10
+  failedThreshold: 10

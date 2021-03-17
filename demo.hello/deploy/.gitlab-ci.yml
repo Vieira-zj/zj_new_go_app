@@ -1,0 +1,16 @@
+stages:
+  - lint
+  - unittest
+
+lint:
+  stage: lint
+  image: repo/golangci-lint:1.27.0
+  script:
+    - run_lint.sh --timeout 5m
+
+unittest:
+  stage: unittest
+  image: repo/golangci-lint:1.27.0
+  script:
+    - go test $(go list ./... | grep -v /vendor/) -v -cover -coverprofile .testCoverage.txt
+    - go tool cover -func=.testCoverage.txt

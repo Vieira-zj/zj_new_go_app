@@ -1,0 +1,33 @@
+2021/02/25 09:57:28 loading.. 1 imported (0 created) took: 550.990802ms
+2021/02/25 09:57:28 building.. 34 packages (1 main) took: 130.590333ms
+2021/02/25 09:57:29 analysis took: 79.484632ms
+2021/02/25 09:57:29 render options: {"Nointer":false,"Nostd":true,"Focus":"","Ignore":[],"Include":[]}
+2021/02/25 09:57:29 no std packages: true
+2021/02/25 09:57:29 0 include prefixes: []
+2021/02/25 09:57:29 0 ignore prefixes: []
+
+2021/02/25 09:57:30 call node: n934:demo.hello/apps/reversecall/pkg/test/example.test3b -> n1052:demo.hello/apps/reversecall/pkg/test/example/inner.Itest1
+2021/02/25 09:57:31 call node: n7:demo.hello/apps/reversecall/pkg/test/example.Test3 -> n934:demo.hello/apps/reversecall/pkg/test/example.test3b
+2021/02/25 09:57:33 call node: n8:demo.hello/apps/reversecall/pkg/test/example.Test3a -> n644:(demo.hello/apps/reversecall/pkg/test/example.XYZ).print
+2021/02/25 09:57:34 call node: n9:demo.hello/apps/reversecall/pkg/test/example.Test3c -> n935:demo.hello/apps/reversecall/pkg/test/example.Test3c$1
+2021/02/25 09:57:34 recursion call:example.Test3c
+2021/02/25 09:57:34 call node: n9:demo.hello/apps/reversecall/pkg/test/example.Test3c -> n936:demo.hello/apps/reversecall/pkg/test/example.Test4a
+2021/02/25 09:57:34 call node: n10:demo.hello/apps/reversecall/pkg/test/example.ReceiveFromKafka -> n936:demo.hello/apps/reversecall/pkg/test/example.Test4a
+2021/02/25 09:57:35 call node: n10:demo.hello/apps/reversecall/pkg/test/example.ReceiveFromKafka -> n937:demo.hello/apps/reversecall/pkg/test/example.test4b
+2021/02/25 09:57:35 call node: n5:demo.hello/apps/reversecall/pkg/test.main -> n7:demo.hello/apps/reversecall/pkg/test/example.Test3
+2021/02/25 09:57:35 call node: n5:demo.hello/apps/reversecall/pkg/test.main -> n8:demo.hello/apps/reversecall/pkg/test/example.Test3a
+2021/02/25 09:57:35 call node: n5:demo.hello/apps/reversecall/pkg/test.main -> n9:demo.hello/apps/reversecall/pkg/test/example.Test3c
+2021/02/25 09:57:35 call node: n5:demo.hello/apps/reversecall/pkg/test.main -> n10:demo.hello/apps/reversecall/pkg/test/example.ReceiveFromKafka
+2021/02/25 09:57:36 6/2572 edges
+
+2021/02/25 09:57:36 current node &{Key:example.test3b Value:{File:/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test/example/test3.go Package:example Name:test3b} N:0 LeafNodes:[]}
+2021/02/25 09:57:36 found caller:example.Test3 -> callee:{/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test/example/test3.go example test3b}
+2021/02/25 09:57:36 nodeList len:1
+2021/02/25 09:57:36 current node &{Key:example.Test3 Value:{File:/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test/example/test3.go Package:example Name:Test3} N:0 LeafNodes:[]}
+2021/02/25 09:57:36 found caller:test.main -> callee:{/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test/example/test3.go example Test3}
+2021/02/25 09:57:36 nodeList len:1
+2021/02/25 09:57:36 current node &{Key:main.main Value:{File:/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test/main.go Package:main Name:main} N:0 LeafNodes:[]}
+2021/02/25 09:57:36 nodeList len:0
+2021/02/25 09:57:36 found reverse callees:[{File:/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test/example/test3.go Package:example Name:test3b} {File:/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test/example/test3.go Package:example Name:Test3} {File:/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test/main.go Package:main Name:main}]
+
+2021/02/25 09:57:36 反向调用链:example.test3b<-example.Test3<-main.main

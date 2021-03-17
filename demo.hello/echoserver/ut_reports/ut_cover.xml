@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
+<coverage line-rate="0.21518987" branch-rate="0" lines-covered="17" lines-valid="79" branches-covered="0" branches-valid="0" complexity="0" version="" timestamp="1605757362192">
+	<packages>
+		<package name="demo.hello/echoserver/handlers" line-rate="0.21518987" branch-rate="0" complexity="0" line-count="79" line-hits="17">
+			<classes>
+				<class name="-" filename="echoserver/handlers/hooks.go" line-rate="0" branch-rate="0" complexity="0" line-count="22" line-hits="0">
+					<methods>
+						<method name="Deco" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="13" hits="0"></line>
+							</lines>
+						</method>
+						<method name="@13:9" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="14" hits="0"></line>
+								<line number="15" hits="0"></line>
+								<line number="16" hits="0"></line>
+								<line number="17" hits="0"></line>
+							</lines>
+						</method>
+						<method name="preHook" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="22" hits="0"></line>
+							</lines>
+						</method>
+						<method name="afterHook" signature="" line-rate="NaN" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines></lines>
+						</method>
+						<method name="printRequestInfo" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="30" hits="0"></line>
+								<line number="31" hits="0"></line>
+								<line number="32" hits="0"></line>
+								<line number="33" hits="0"></line>
+								<line number="34" hits="0"></line>
+								<line number="35" hits="0"></line>
+								<line number="37" hits="0"></line>
+								<line number="38" hits="0"></line>
+								<line number="39" hits="0"></line>
+								<line number="41" hits="0"></line>
+								<line number="42" hits="0"></line>
+								<line number="44" hits="0"></line>
+							</lines>
+						</method>
+						<method name="printDivLine" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="48" hits="0"></line>
+							</lines>
+						</method>
+						<method name="printHeaders" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="52" hits="0"></line>
+								<line number="53" hits="0"></line>
+								<line number="54" hits="0"></line>
+							</lines>
+						</method>
+					</methods>
+					<lines>
+						<line number="13" hits="0"></line>
+						<line number="14" hits="0"></line>
+						<line number="15" hits="0"></line>
+						<line number="16" hits="0"></line>
+						<line number="17" hits="0"></line>
+						<line number="22" hits="0"></line>
+						<line number="30" hits="0"></line>
+						<line number="31" hits="0"></line>
+						<line number="32" hits="0"></line>
+						<line number="33" hits="0"></line>
+						<line number="34" hits="0"></line>
+						<line number="35" hits="0"></line>
+						<line number="37" hits="0"></line>
+						<line number="38" hits="0"></line>
+						<line number="39" hits="0"></line>
+						<line number="41" hits="0"></line>
+						<line number="42" hits="0"></line>
+						<line number="44" hits="0"></line>
+						<line number="48" hits="0"></line>
+						<line number="52" hits="0"></line>
+						<line number="53" hits="0"></line>
+						<line number="54" hits="0"></line>
+					</lines>
+				</class>
+				<class name="-" filename="echoserver/handlers/ping.go" line-rate="0.5" branch-rate="0" complexity="0" line-count="4" line-hits="2">
+					<methods>
+						<method name="IndexHandler" signature="" line-rate="1" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="14" hits="1"></line>
+							</lines>
+						</method>
+						<method name="getHello" signature="" line-rate="1" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="18" hits="1"></line>
+							</lines>
+						</method>
+						<method name="PingHandler" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="23" hits="0"></line>
+								<line number="24" hits="0"></line>
+							</lines>
+						</method>
+					</methods>
+					<lines>
+						<line number="14" hits="1"></line>
+						<line number="18" hits="1"></line>
+						<line number="23" hits="0"></line>
+						<line number="24" hits="0"></line>
+					</lines>
+				</class>
+				<class name="-" filename="echoserver/handlers/samples.go" line-rate="0" branch-rate="0" complexity="0" line-count="29" line-hits="0">
+					<methods>
+						<method name="SampleHandler01" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="15" hits="0"></line>
+								<line number="16" hits="0"></line>
+								<line number="17" hits="0"></line>
+								<line number="20" hits="0"></line>
+								<line number="21" hits="0"></line>
+								<line number="22" hits="0"></line>
+								<line number="25" hits="0"></line>
+								<line number="26" hits="0"></line>
+								<line number="28" hits="0"></line>
+								<line number="31" hits="0"></line>
+								<line number="32" hits="0"></line>
+								<line number="35" hits="0"></line>
+							</lines>
+						</method>
+						<method name="asyncService" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="39" hits="0"></line>
+								<line number="40" hits="0"></line>
+								<line number="42" hits="0"></line>
+								<line number="66" hits="0"></line>
+							</lines>
+						</method>
+						<method name="@42:5" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="43" hits="0"></line>
+								<line number="44" hits="0"></line>
+								<line number="46" hits="0"></line>
+								<line number="47" hits="0"></line>
+								<line number="48" hits="0"></line>
+								<line number="50" hits="0"></line>
+								<line number="51" hits="0"></line>
+								<line number="54" hits="0"></line>
+								<line number="55" hits="0"></line>
+								<line number="56" hits="0"></line>
+								<line number="58" hits="0"></line>
+								<line number="59" hits="0"></line>
+								<line number="63" hits="0"></line>
+							</lines>
+						</method>
+					</methods>
+					<lines>
+						<line number="15" hits="0"></line>
+						<line number="16" hits="0"></line>
+						<line number="17" hits="0"></line>
+						<line number="20" hits="0"></line>
+						<line number="21" hits="0"></line>
+						<line number="22" hits="0"></line>
+						<line number="25" hits="0"></line>
+						<line number="26" hits="0"></line>
+						<line number="28" hits="0"></line>
+						<line number="31" hits="0"></line>
+						<line number="32" hits="0"></line>
+						<line number="35" hits="0"></line>
+						<line number="39" hits="0"></line>
+						<line number="40" hits="0"></line>
+						<line number="42" hits="0"></line>
+						<line number="66" hits="0"></line>
+						<line number="43" hits="0"></line>
+						<line number="44" hits="0"></line>
+						<line number="46" hits="0"></line>
+						<line number="47" hits="0"></line>
+						<line number="48" hits="0"></line>
+						<line number="50" hits="0"></line>
+						<line number="51" hits="0"></line>
+						<line number="54" hits="0"></line>
+						<line number="55" hits="0"></line>
+						<line number="56" hits="0"></line>
+						<line number="58" hits="0"></line>
+						<line number="59" hits="0"></line>
+						<line number="63" hits="0"></line>
+					</lines>
+				</class>
+				<class name="-" filename="echoserver/handlers/users.go" line-rate="0.44444445" branch-rate="0" complexity="0" line-count="9" line-hits="4">
+					<methods>
+						<method name="Users" signature="" line-rate="1" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="14" hits="1"></line>
+							</lines>
+						</method>
+						<method name="getUsers" signature="" line-rate="1" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="18" hits="1"></line>
+							</lines>
+						</method>
+						<method name="UsersNew" signature="" line-rate="1" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="23" hits="1"></line>
+							</lines>
+						</method>
+						<method name="getUsersNew" signature="" line-rate="1" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="27" hits="1"></line>
+							</lines>
+						</method>
+						<method name="UsersName" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="32" hits="0"></line>
+								<line number="33" hits="0"></line>
+							</lines>
+						</method>
+						<method name="UsersFiles" signature="" line-rate="0" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="38" hits="0"></line>
+								<line number="39" hits="0"></line>
+								<line number="40" hits="0"></line>
+							</lines>
+						</method>
+					</methods>
+					<lines>
+						<line number="14" hits="1"></line>
+						<line number="18" hits="1"></line>
+						<line number="23" hits="1"></line>
+						<line number="27" hits="1"></line>
+						<line number="32" hits="0"></line>
+						<line number="33" hits="0"></line>
+						<line number="38" hits="0"></line>
+						<line number="39" hits="0"></line>
+						<line number="40" hits="0"></line>
+					</lines>
+				</class>
+				<class name="-" filename="echoserver/handlers/cover.go" line-rate="0.73333335" branch-rate="0" complexity="0" line-count="15" line-hits="11">
+					<methods>
+						<method name="CoverHandler" signature="" line-rate="1" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="12" hits="1"></line>
+								<line number="13" hits="1"></line>
+								<line number="14" hits="1"></line>
+							</lines>
+						</method>
+						<method name="getCondition" signature="" line-rate="0.6666667" branch-rate="0" complexity="0" line-count="0" line-hits="0">
+							<lines>
+								<line number="18" hits="1"></line>
+								<line number="19" hits="1"></line>
+								<line number="20" hits="1"></line>
+								<line number="21" hits="1"></line>
+								<line number="23" hits="0"></line>
+								<line number="24" hits="0"></line>
+								<line number="27" hits="1"></line>
+								<line number="28" hits="1"></line>
+								<line number="29" hits="1"></line>
+								<line number="31" hits="0"></line>
+								<line number="32" hits="0"></line>
+								<line number="34" hits="1"></line>
+							</lines>
+						</method>
+					</methods>
+					<lines>
+						<line number="12" hits="1"></line>
+						<line number="13" hits="1"></line>
+						<line number="14" hits="1"></line>
+						<line number="18" hits="1"></line>
+						<line number="19" hits="1"></line>
+						<line number="20" hits="1"></line>
+						<line number="21" hits="1"></line>
+						<line number="23" hits="0"></line>
+						<line number="24" hits="0"></line>
+						<line number="27" hits="1"></line>
+						<line number="28" hits="1"></line>
+						<line number="29" hits="1"></line>
+						<line number="31" hits="0"></line>
+						<line number="32" hits="0"></line>
+						<line number="34" hits="1"></line>
+					</lines>
+				</class>
+			</classes>
+		</package>
+	</packages>
+	<sources>
+		<source>/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello</source>
+	</sources>
+</coverage>

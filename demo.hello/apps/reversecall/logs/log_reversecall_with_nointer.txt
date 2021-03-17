@@ -1,0 +1,14 @@
+2021/02/25 10:03:32 loading.. 1 imported (0 created) took: 802.3716ms
+2021/02/25 10:03:32 building.. 34 packages (1 main) took: 120.095478ms
+2021/02/25 10:03:33 analysis took: 96.783695ms
+2021/02/25 10:03:33 render options: {"Nointer":true,"Nostd":true,"Focus":"","Ignore":[],"Include":["github.com/labstack","golang/org/x"]}
+2021/02/25 10:03:33 no std packages: true
+2021/02/25 10:03:33 2 include prefixes: [github.com/labstack golang/org/x]
+2021/02/25 10:03:33 0 ignore prefixes: []
+2021/02/25 10:03:40 0/2572 edges
+
+2021/02/25 10:03:40 current node &{Key:example.test3b Value:{File:/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test/example/test3.go Package:example Name:test3b} N:0 LeafNodes:[]}
+2021/02/25 10:03:40 nodeList len:0
+2021/02/25 10:03:40 found reverse callees:[{File:/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test/example/test3.go Package:example Name:test3b}]
+
+2021/02/25 10:03:40 反向调用链:example.test3b<-null

@@ -1,0 +1,104 @@
+# Create grpc server + grpcui + goc center app.
+# Apps dependency: grpcui -> grpcserver -> goccenter
+#
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: grpcserver
+  namespace: default
+spec:
+  rules:
+  - host: grcui.default.k8s
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: grpcserver
+          servicePort: grpcui
+  - host: goccenter.default.k8s
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: grpcserver
+          servicePort: goc
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: grpcserver
+  namespace: default
+  labels:
+    app: grpcserver
+spec:
+  type: ClusterIP
+  selector:
+    app: grpcserver
+  ports:
+  - name: grpcui
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: goc
+    port: 7777
+    targetPort: 7777
+    protocol: TCP
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpcserver
+  namespace: default
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  minReadySeconds: 3
+  selector:
+    matchLabels:
+      app: grpcserver
+      phase: test
+  template:
+    metadata:
+      labels:
+        app: grpcserver
+        phase: test
+    spec:
+      containers:
+      - image: grpcserver-test:v1.0
+        name: grpcserver
+        command: ["sh"]
+        args: ["-c", "sleep 3 && /app/greeter_server"]
+        readinessProbe:
+          tcpSocket:
+            port: 50051
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 50051
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c", "sleep 3"]
+      - image: grpcui-test:v1.0
+        name: grpcui
+        command: ["sh"]
+        args: ["-c", "sleep 5 && /app/grpcui -plaintext -bind 0.0.0.0 -port 8080 localhost:50051"]
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+      - image: goccenter-test:v1.0
+        name: goccenter
+        ports:
+        - containerPort: 7777
+          name: http
+          protocol: TCP

@@ -1,0 +1,5 @@
+demo.hello/apps/cover/test/calculator.go:3:	add		100.0%
+demo.hello/apps/cover/test/calculator.go:7:	multiple	0.0%
+demo.hello/apps/cover/test/calculator.go:11:	divide		66.7%
+demo.hello/apps/cover/test/conditions.go:3:	getConditions	100.0%
+total:						(statements)	84.6%

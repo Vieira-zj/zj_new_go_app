@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sleep
+  namespace: k8s-test
+  # validate labels
+  # labels:
+  #   app.kubernetes.io/name: sleep
+  #   app.kubernetes.io/version: "1.0"
+  # validate annotations
+  # annotations:
+  #   admission-webhook-app.test.com/validate: "false"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sleep
+  template:
+    metadata:
+      annotations:
+        # injector annotation
+        sidecar-injector-webhook.test.com/inject: "true"
+      labels:
+        app: sleep
+    spec:
+      containers:
+      - name: sleep
+        image: tutum/curl
+        command: ["/bin/sleep", "infinity"]
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 10m
+            memory: 16Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi

@@ -1,0 +1,13 @@
+mode: count
+demo.hello/apps/cover/test/calculator.go:3.24,5.2 1 2
+demo.hello/apps/cover/test/calculator.go:7.29,9.2 1 0
+demo.hello/apps/cover/test/calculator.go:11.27,12.12 1 2
+demo.hello/apps/cover/test/calculator.go:15.2,15.14 1 2
+demo.hello/apps/cover/test/calculator.go:12.12,14.3 1 0
+demo.hello/apps/cover/test/conditions.go:3.46,5.11 2 3
+demo.hello/apps/cover/test/conditions.go:11.2,11.11 1 3
+demo.hello/apps/cover/test/conditions.go:16.2,16.12 1 3
+demo.hello/apps/cover/test/conditions.go:5.11,7.3 1 2
+demo.hello/apps/cover/test/conditions.go:7.8,9.3 1 1
+demo.hello/apps/cover/test/conditions.go:11.11,13.3 1 2
+demo.hello/apps/cover/test/conditions.go:13.8,15.3 1 1

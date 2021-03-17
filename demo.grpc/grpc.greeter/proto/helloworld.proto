@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+// demo.grpc/grpc/proto relate to out path by: "protoc --go_out=plugins=grpc:PATH"
+option go_package = "demo.grpc/grpc/proto;proto";
+
+package proto;
+
+// relate to import path by: "protoc -IPATH"
+import "demo.grpc/grpc/proto/message/hello_msg.proto";
+
+// The greeting service definition.
+service Greeter {
+  // Sends a greeting
+  rpc SayHello (message.HelloRequest) returns (message.HelloReply) {}
+}
