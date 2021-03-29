@@ -18,7 +18,12 @@ kubectl create -f deploy/echoserver_deploy.yaml
 
 ## k8s 集群内使用 client
 
-k8s 集群内使用 client 需要 namespace.default-serviceaccount 有 pod get,list 权限。
+k8s 集群内使用 client 需要 `namespace.default-serviceaccount` 有 pod get,list 权限。
+
+Role and ClusterRole:
+
+- `Role, RoleBinding`: set authorization for a namespace.
+- `ClusterRole, ClusterRoleBinding`: set authorization for the whole k8s cluster.
 
 1. Create a role with pod list auth.
 

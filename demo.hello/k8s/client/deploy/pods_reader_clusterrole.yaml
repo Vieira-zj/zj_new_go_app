@@ -1,0 +1,11 @@
+#
+# ClusterRole是集群范围对象，这里不需要定义"namespace"字段。
+#
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: pods-reader
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
