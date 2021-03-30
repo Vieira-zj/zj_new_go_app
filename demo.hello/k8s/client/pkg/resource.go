@@ -32,6 +32,11 @@ func NewResource(ctx context.Context, client *kubernetes.Clientset) *Resource {
 	return resource
 }
 
+// SetContext sets resource context.
+func (r *Resource) SetContext(c context.Context) {
+	r.ctx = c
+}
+
 /*
 Namespace
 */
@@ -47,6 +52,15 @@ func (r *Resource) CreateNamespace(name string) (*apiv1.Namespace, error) {
 		},
 	}
 	return r.client.CoreV1().Namespaces().Create(r.ctx, &namespace, metav1.CreateOptions{})
+}
+
+// GetAllNamespace returns all namespace.
+func (r *Resource) GetAllNamespace() ([]apiv1.Namespace, error) {
+	nsList, err := r.client.CoreV1().Namespaces().List(r.ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return nsList.Items, nil
 }
 
 // GetNamespace returns a namespace by name.
@@ -69,6 +83,27 @@ Pod
 // GetAllPods returns all pods in k8s cluster.
 func (r *Resource) GetAllPods() ([]apiv1.Pod, error) {
 	return r.GetPodsByNamespace("")
+}
+
+// GetNonSystemPods returns all non kube system pods.
+func (r *Resource) GetNonSystemPods() ([]apiv1.Pod, error) {
+	nsList, err := r.GetAllNamespace()
+	if err != nil {
+		return nil, err
+	}
+
+	podsList := make([]apiv1.Pod, 0, 50)
+	for _, ns := range nsList {
+		if strings.HasPrefix(ns.Name, "kube") {
+			continue
+		}
+		pods, err := r.GetPodsByNamespace(ns.Name)
+		if err != nil {
+			return nil, err
+		}
+		podsList = append(podsList, pods...)
+	}
+	return podsList, nil
 }
 
 // GetPodsByNamespace returns pods in specified namespace.

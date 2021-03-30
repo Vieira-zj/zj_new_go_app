@@ -8,8 +8,9 @@ import (
 )
 
 func runApp() {
-	deco := handlers.Deco
+	// echo refer: https://echo.labstack.com/guide/request/
 	e := echo.New()
+	deco := handlers.Deco
 	e.GET("/", deco(handlers.IndexHandler))
 	e.GET("/ping", deco(handlers.PingHandler))
 

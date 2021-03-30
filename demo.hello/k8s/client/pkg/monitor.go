@@ -9,7 +9,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// PodStatus contains pod name, status, restarts, age, readiness probe
+// PodStatus contains pod name, status, readiness and message.
 type PodStatus struct {
 	PodName   string          `json:"name"`
 	Status    string          `json:"status"`

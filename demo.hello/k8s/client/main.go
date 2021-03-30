@@ -48,8 +48,8 @@ func main() {
 
 	context, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-
 	resource := k8spkg.NewResource(context, clientset)
+
 	if *isListNamespacePods {
 		if len(*namespace) == 0 {
 			panic(errors.New("namepsace name is empty"))
