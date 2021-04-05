@@ -27,6 +27,6 @@ func init() {
 }
 
 func main() {
-	demos.Demo01Main()
+	demos.DemoMain()
 	fmt.Println("hello golang")
 }

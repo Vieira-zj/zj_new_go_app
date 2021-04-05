@@ -354,8 +354,8 @@ func demo11() {
 	}
 }
 
-// Demo01Main entry of demo 01.
-func Demo01Main() {
+// DemoMain entry of demo.
+func DemoMain() {
 	fmt.Println("demo 01 main")
 	demo08()
 }

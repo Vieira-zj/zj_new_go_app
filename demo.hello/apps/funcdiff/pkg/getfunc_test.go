@@ -21,7 +21,7 @@ func TestGetFileAllFuncs(t *testing.T) {
 }
 
 func TestGetSpecifiedFuncInfo(t *testing.T) {
-	srcPath := "/tmp/test/demo01.go"
+	srcPath := "/tmp/test/demo.go"
 	funcNames := []string{"demo01", "demo0501", "demo11"}
 
 	for _, name := range funcNames {

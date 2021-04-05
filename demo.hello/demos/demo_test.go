@@ -364,3 +364,61 @@ func TestDemo19(t *testing.T) {
 	}
 	fmt.Println("templated string:", string(output.Bytes()))
 }
+
+/*
+map and switch
+*/
+
+const (
+	UnPay = iota
+	HadPay
+	Delivery
+	Finish
+)
+
+var orderState = map[int]string{
+	UnPay:    "未支付",
+	HadPay:   "已支付",
+	Delivery: "配送中",
+	Finish:   "已完成",
+}
+
+func orderStateMap(state int) string {
+	return orderState[state]
+}
+
+func orderStateSwitch(state int) string {
+	var stateDesc = ""
+
+	switch state {
+	case UnPay:
+		stateDesc = "未支付"
+	case HadPay:
+		stateDesc = "已支付"
+	case Delivery:
+		stateDesc = "配送中"
+	case Finish:
+		stateDesc = "已完成"
+	}
+	return stateDesc
+}
+
+func BenchmarkMap(b *testing.B) {
+	// BenchmarkMap-16  74934553  13.6 ns/op
+	for n := 0; n < b.N; n++ {
+		orderStateMap(0)
+		orderStateMap(1)
+		orderStateMap(2)
+		orderStateMap(3)
+	}
+}
+
+func BenchmarkSwitch(b *testing.B) {
+	// BenchmarkSwitch-16  1000000000  0.226 ns/op
+	for n := 0; n < b.N; n++ {
+		orderStateSwitch(0)
+		orderStateSwitch(1)
+		orderStateSwitch(2)
+		orderStateSwitch(3)
+	}
+}
