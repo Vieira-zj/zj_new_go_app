@@ -5,14 +5,16 @@ import (
 	"github.com/labstack/gommon/log"
 
 	"demo.hello/echoserver/handlers"
+	"demo.hello/echoserver/utils"
 )
 
 func runApp() {
 	// echo refer: https://echo.labstack.com/guide/request/
+	deco := utils.Deco
+
 	e := echo.New()
-	deco := handlers.Deco
 	e.GET("/", deco(handlers.IndexHandler))
-	e.GET("/ping", deco(handlers.PingHandler))
+	e.GET("/ping", utils.RateLimiterDeco(deco(handlers.PingHandler)))
 
 	// router reg test
 	e.GET("/users/", deco(handlers.Users))

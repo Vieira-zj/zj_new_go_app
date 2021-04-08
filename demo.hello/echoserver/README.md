@@ -151,3 +151,45 @@ curl "http://echoserver.ns.ing/test?base=3"
 curl "http://echoserver.ns.ing/cover?cond1=true&cond2=false"
 ```
 
+## RateLimiter 测试
+
+1. 安装  HTTP 负载测试工具 vegeta
+
+```sh
+brew install vegeta
+```
+
+2. 创建配置文件 `vegeta.conf`
+
+- no limiter:
+
+```text
+GET http://localhost:8081/
+```
+
+- limiter:
+
+```text
+GET http://localhost:8081/ping
+```
+
+3. 以每个时间单元 10 个请求的速率执行 10 秒
+
+```sh
+vegeta attack -duration=10s -rate=10 -targets=vegeta.conf | vegeta report
+```
+
+测试结果：
+
+```text
+Requests      [total, rate, throughput]         100, 10.10, 1.41
+Duration      [total, attack, wait]             9.9s, 9.899s, 733.31µs
+Latencies     [min, mean, 50, 90, 95, 99, max]  302.664µs, 616.167µs, 566.177µs, 823.758µs, 928.856µs, 2.139ms, 3.14ms
+Bytes In      [total, mean]                     1686, 16.86
+Bytes Out     [total, mean]                     0, 0.00
+Success       [ratio]                           14.00%
+Status Codes  [code:count]                      200:14  429:86
+Error Set:
+429 Too Many Requests
+```
+

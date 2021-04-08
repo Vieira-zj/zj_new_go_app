@@ -165,4 +165,7 @@ else
   # build_goccenter_img
 fi
 
+# fix go lib conflict
+# go mod edit -replace google.golang.org/grpc@v1.37.0=google.golang.org/grpc@v1.26.0
+
 echo "Done"

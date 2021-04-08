@@ -1,12 +1,15 @@
-package handlers
+package utils
 
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo"
 )
+
+var ipRateLimiter = NewIPRateLimiter(1, 5)
 
 // Deco decorate echo function.
 func Deco(fn func(echo.Context) error) func(echo.Context) error {
@@ -17,6 +20,21 @@ func Deco(fn func(echo.Context) error) func(echo.Context) error {
 		return err
 	}
 }
+
+// RateLimiterDeco rate limiter decorate functions.
+func RateLimiterDeco(fn func(echo.Context) error) func(echo.Context) error {
+	return func(c echo.Context) error {
+		l := ipRateLimiter.GetLimiter(c.Request().Host)
+		if !l.Allow() {
+			return c.String(http.StatusTooManyRequests, http.StatusText(http.StatusTooManyRequests))
+		}
+		return fn(c)
+	}
+}
+
+/*
+Common
+*/
 
 func preHook(c echo.Context) {
 	printRequestInfo(c)
