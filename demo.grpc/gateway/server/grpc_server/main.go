@@ -37,7 +37,7 @@ type server2 struct {
 func (s *server1) Echo(ctx context.Context, in *pb.StringMessage) (*pb.StringMessage, error) {
 	log.Printf("Received: %v", in.GetValue())
 	time.Sleep(time.Duration(rand.Int31n(300)) * time.Millisecond) // mock profile
-	return &pb.StringMessage{Value: "Hello " + in.GetValue()}, nil
+	return &pb.StringMessage{Value: "Echo " + in.GetValue()}, nil
 }
 
 func (s *server2) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {

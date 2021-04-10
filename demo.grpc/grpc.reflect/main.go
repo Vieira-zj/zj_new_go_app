@@ -17,7 +17,7 @@ import (
 
 var debug bool
 
-func grpcApp(target, method, body string) error {
+func runGrpcApp(target, method, body string) error {
 	dialTime := time.Duration(10) * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTime)
 	defer cancel()
@@ -80,7 +80,7 @@ func main() {
 		panic(errors.New("Target address of grpc service is empty"))
 	}
 
-	if err := grpcApp(*target, *method, *body); err != nil {
+	if err := runGrpcApp(*target, *method, *body); err != nil {
 		panic(err)
 	}
 	fmt.Println("grpc reflect tool Done.")

@@ -20,10 +20,10 @@ var (
 )
 
 func main() {
-	flag.StringVar(&address, "addr", "localhost", "grpc client connect ip address.")
-	flag.StringVar(&port, "port", "50051", "grpc client connect port.")
-	flag.StringVar(&msg, "msg", "world", "message send to grpc server.")
-	flag.BoolVar(&help, "h", false, "help.")
+	flag.StringVar(&address, "addr", "localhost", "Grpc client connect ip address.")
+	flag.StringVar(&port, "port", "50051", "Grpc client connect port.")
+	flag.StringVar(&msg, "msg", "world", "Message send to grpc server.")
+	flag.BoolVar(&help, "h", false, "Help.")
 	flag.Parse()
 
 	if help {
