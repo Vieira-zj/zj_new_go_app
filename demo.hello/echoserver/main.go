@@ -18,7 +18,7 @@ func runApp() {
 
 	// router reg test
 	e.GET("/users/", deco(handlers.Users))
-	e.GET("/users/new", deco(handlers.UsersNew))
+	e.POST("/users/new", deco(handlers.UsersNew))
 	e.GET("/users/:name", deco(handlers.UsersName))
 	e.GET("/users/1/files/*", deco(handlers.UsersFiles))
 

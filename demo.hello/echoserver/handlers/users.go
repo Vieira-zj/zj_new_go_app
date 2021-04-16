@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -8,6 +9,12 @@ import (
 )
 
 // echo 复杂路由
+
+// User .
+type User struct {
+	Name string `json:"name"`
+	Aage int    `json:"age"`
+}
 
 // Users return all users.
 func Users(c echo.Context) error {
@@ -20,7 +27,13 @@ func getUsers() string {
 
 // UsersNew new a user.
 func UsersNew(c echo.Context) error {
-	return c.String(http.StatusOK, getUsersNew())
+	// body set from deco
+	body := c.Get("req_body")
+	user := &User{}
+	if err := json.Unmarshal(body.([]byte), user); err != nil {
+		c.String(http.StatusInternalServerError, "Json Unmarshal error: "+err.Error())
+	}
+	return c.JSON(http.StatusOK, user)
 }
 
 func getUsersNew() string {

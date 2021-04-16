@@ -1,96 +1,106 @@
 package utils
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"net"
-	"net/http"
 	"sync"
 	"testing"
 	"time"
 )
 
+var (
+	url = "http://127.0.0.1:8081/ping"
+)
+
+func TestHttpUtilsGet(t *testing.T) {
+	utils := NewHTTPUtils(false)
+	resp, err := utils.HTTPGet(context.TODO(), url, map[string]string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("response:", string(resp))
+}
+
+func TestHttpUtilsPost(t *testing.T) {
+	const (
+		url = "http://127.0.0.1:8081/users/new"
+		// jsonBody = `{"name": "tester01", "age": 39}`
+	)
+	jsonMap := map[string]interface{}{
+		"name": "tester01",
+		"age":  39,
+	}
+	jsonBody, err := json.Marshal(jsonMap)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	utils := NewHTTPUtils(false)
+	resp, err := utils.HTTPPost(context.TODO(), url, map[string]string{}, string(jsonBody))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("response:", string(resp))
+}
+
 /*
-Http short and long link.
+Http client test.
+
+monitor connections: watch -n 1 "netstat -n | grep 8081"
 */
 
 func TestHttpGet01(t *testing.T) {
-	// http 短连接
-	// monitor connections: watch -n 1 "netstat -n | grep 17891"
-	const times = 5
-	const url = "http://127.0.0.1:17891/ping"
-
-	client := http.Client{}
-
+	// default client => 1 connection
+	utils := NewHTTPUtils(false)
 	start := time.Now()
-	for i := 0; i < times; i++ {
-		if err := HTTPGet(client, url); err != nil {
+	for i := 0; i < 5; i++ {
+		if b, err := utils.HTTPGet(context.TODO(), url, map[string]string{}); err != nil {
 			t.Fatal(err)
+		} else {
+			fmt.Println("Response:", string(b))
 		}
 	}
 	t.Log("Orig Go Net Short Link", time.Since(start))
 }
 
 func TestHttpGet02(t *testing.T) {
-	// http 短连接 goroutine
-	const times = 5
-	const url = "http://127.0.0.1:17891/ping"
-
-	var err error
-	client := http.Client{}
+	// default client + goroutine => 5 connections
+	utils := NewHTTPUtils(false)
 	wg := sync.WaitGroup{}
-
 	start := time.Now()
-	for i := 0; i < times; i++ {
+	for i := 0; i < 5; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err != nil {
-				return
+			if b, err := utils.HTTPGet(context.TODO(), url, map[string]string{}); err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Println("Response:", string(b))
 			}
-			err = HTTPGet(client, url)
 		}()
 	}
 	wg.Wait()
-	if err != nil {
-		t.Fatal(err)
-	}
 	t.Log("Orig Go Net Short Link", time.Since(start))
 }
 
 func TestHttpGet03(t *testing.T) {
-	// http 长连接 goroutine
-	const times = 5
-	const url = "http://127.0.0.1:17891/ping"
-
-	var err error
-	httpTransport := &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 60 * time.Second,
-		}).DialContext,
-		MaxIdleConns:          500,              // 最大空闲连接
-		IdleConnTimeout:       60 * time.Second, // 空闲连接的超时时间
-		ExpectContinueTimeout: 30 * time.Second, // 等待服务第一个响应的超时时间
-		MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数
-	}
-	client := http.Client{Transport: httpTransport}
+	// custom client + goroutine => 5 connections
+	utils := NewHTTPUtils(true)
 	wg := sync.WaitGroup{}
-
 	start := time.Now()
-	for i := 0; i < times; i++ {
+	for i := 0; i < 5; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err != nil {
-				return
+			if b, err := utils.HTTPGet(context.TODO(), url, map[string]string{}); err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Println("Response:", string(b))
 			}
-			err = HTTPGet(client, url)
 		}()
 	}
 	wg.Wait()
-	if err != nil {
-		t.Fatal(err)
-	}
 	t.Log("Orig GoNet Long Link", time.Since(start))
 }
 

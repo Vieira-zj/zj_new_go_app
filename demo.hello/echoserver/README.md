@@ -151,6 +151,12 @@ curl "http://echoserver.ns.ing/test?base=3"
 curl "http://echoserver.ns.ing/cover?cond1=true&cond2=false"
 ```
 
+Test post api:
+
+```sh
+curl -XPOST "http://localhost:8081/users/new" -d '{"name": "tester01", "age": 39}'
+```
+
 ## RateLimiter 测试
 
 1. 安装  HTTP 负载测试工具 vegeta

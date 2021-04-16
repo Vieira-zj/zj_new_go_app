@@ -59,6 +59,7 @@ func printRequestInfo(c echo.Context) {
 	if len(content) > 0 {
 		c.Logger().Info("| Body: ", string(content))
 	}
+	c.Set("req_body", content)
 	printDivLine(c)
 }
 
