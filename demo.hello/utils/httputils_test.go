@@ -15,7 +15,7 @@ var (
 
 func TestHttpUtilsGet(t *testing.T) {
 	utils := NewHTTPUtils(false)
-	resp, err := utils.HTTPGet(context.TODO(), url, map[string]string{})
+	resp, err := utils.Get(context.TODO(), url, map[string]string{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestHttpUtilsPost(t *testing.T) {
 	}
 
 	utils := NewHTTPUtils(false)
-	resp, err := utils.HTTPPost(context.TODO(), url, map[string]string{}, string(jsonBody))
+	resp, err := utils.Post(context.TODO(), url, map[string]string{}, string(jsonBody))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func TestHttpUtilsPost(t *testing.T) {
 }
 
 /*
-Http client test.
+Number of http connections test.
 
 monitor connections: watch -n 1 "netstat -n | grep 8081"
 */
@@ -55,7 +55,7 @@ func TestHttpGet01(t *testing.T) {
 	utils := NewHTTPUtils(false)
 	start := time.Now()
 	for i := 0; i < 5; i++ {
-		if b, err := utils.HTTPGet(context.TODO(), url, map[string]string{}); err != nil {
+		if b, err := utils.Get(context.TODO(), url, map[string]string{}); err != nil {
 			t.Fatal(err)
 		} else {
 			fmt.Println("Response:", string(b))
@@ -73,7 +73,7 @@ func TestHttpGet02(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if b, err := utils.HTTPGet(context.TODO(), url, map[string]string{}); err != nil {
+			if b, err := utils.Get(context.TODO(), url, map[string]string{}); err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Response:", string(b))
@@ -93,7 +93,7 @@ func TestHttpGet03(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if b, err := utils.HTTPGet(context.TODO(), url, map[string]string{}); err != nil {
+			if b, err := utils.Get(context.TODO(), url, map[string]string{}); err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Response:", string(b))

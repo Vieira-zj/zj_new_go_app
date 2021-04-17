@@ -2,10 +2,26 @@ package utils
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
 )
+
+func TestCachePut(t *testing.T) {
+	shardNumber := 3
+	cache := NewCache(shardNumber, 10)
+
+	cache.Put("1", "value1")
+	cache.Put("2", "value2")
+	fmt.Println("store:", cache.store)
+	fmt.Println("lockers:", cache.lockers)
+
+	fmt.Println("cache values:")
+	for k, v := range cache.GetItems() {
+		fmt.Printf("%s=%v\n", k, v)
+	}
+}
 
 func TestCachePutGet(t *testing.T) {
 	shardNumber := 3
@@ -18,17 +34,17 @@ func TestCachePutGet(t *testing.T) {
 			defer wait.Done()
 			base *= 10
 			for j := base; j < base+10; j++ {
-				cache.Put(j, fmt.Sprintf("value%d", j))
+				cache.Put(strconv.Itoa(j), fmt.Sprintf("value%d", j))
 				time.Sleep(time.Duration(100) * time.Millisecond)
 			}
 		}(i)
 	}
 	wait.Wait()
 	fmt.Printf("Cache size: %d\n", cache.Size())
-	cache.PrintItems()
+	cache.PrintKeyValues()
 
 	for i := 0; i <= 30; i++ {
-		val, err := cache.Get(i)
+		val, err := cache.Get(strconv.Itoa(i))
 		if err != nil {
 			fmt.Println(err.Error())
 			continue

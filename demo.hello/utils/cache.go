@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 )
 
@@ -17,41 +16,41 @@ type Cache struct {
 // NewCache creates an instance of cache.
 func NewCache(shardNumber, mapSize int) *Cache {
 	c := &Cache{
-		store:       make([]map[string]interface{}, shardNumber),
-		lockers:     make([]*sync.RWMutex, shardNumber),
 		shardNumber: shardNumber,
 		mapSize:     mapSize,
+		store:       make([]map[string]interface{}, shardNumber),
+		lockers:     make([]*sync.RWMutex, shardNumber),
 	}
 	return c
 }
 
 // Put adds a kv in cache.
-func (c *Cache) Put(key int, value interface{}) {
+func (c *Cache) Put(key string, value interface{}) {
 	locker := c.getLocker(key)
 	locker.Lock()
 	defer locker.Unlock()
 
 	m := c.getMap(key)
-	if _, ok := m[strconv.Itoa(key)]; ok {
-		fmt.Printf("update existing key [%d] value\n", key)
+	if _, ok := m[key]; ok {
+		fmt.Printf("update existing key [%s] value\n", key)
 	}
-	m[strconv.Itoa(key)] = value
+	m[key] = value
 }
 
 // Get returns value by key vaule.
-func (c *Cache) Get(key int) (interface{}, error) {
+func (c *Cache) Get(key string) (interface{}, error) {
 	locker := c.getLocker(key)
 	locker.RLock()
 	defer locker.RUnlock()
 
 	m := c.getMap(key)
-	if val, ok := m[strconv.Itoa(key)]; ok {
+	if val, ok := m[key]; ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf("[%d] not found", key)
+	return nil, fmt.Errorf("[%s] not found", key)
 }
 
-func (c *Cache) getLocker(key int) *sync.RWMutex {
+func (c *Cache) getLocker(key string) *sync.RWMutex {
 	k := c.getHashKey(key)
 	if c.lockers[k] == nil {
 		c.lockers[k] = &sync.RWMutex{}
@@ -59,7 +58,7 @@ func (c *Cache) getLocker(key int) *sync.RWMutex {
 	return c.lockers[k]
 }
 
-func (c *Cache) getMap(key int) map[string]interface{} {
+func (c *Cache) getMap(key string) map[string]interface{} {
 	k := c.getHashKey(key)
 	if c.store[k] == nil {
 		c.store[k] = make(map[string]interface{}, c.mapSize)
@@ -67,44 +66,54 @@ func (c *Cache) getMap(key int) map[string]interface{} {
 	return c.store[k]
 }
 
-func (c *Cache) getHashKey(key int) int {
-	return key % c.shardNumber
+func (c *Cache) getHashKey(key string) int {
+	count := 0
+	for _, c := range key {
+		count += int(c)
+	}
+	return count % c.shardNumber
 }
 
-// Size returns size of cache.
+// Size returns size of cache items.
 func (c *Cache) Size() int {
 	size := 0
 	for _, m := range c.store {
-		size += len(m)
+		if m != nil {
+			size += len(m)
+		}
 	}
 	return size
 }
 
-// GetItems returns all items of cache.
-func (c *Cache) GetItems() []interface{} {
+// GetItems returns all key and value pairs of cache.
+func (c *Cache) GetItems() map[string]interface{} {
 	for _, locker := range c.lockers {
-		locker.RLock()
+		if locker != nil {
+			locker.RLock()
+		}
 	}
 	defer func() {
 		for _, locker := range c.lockers {
-			locker.RUnlock()
+			if locker != nil {
+				locker.RUnlock()
+			}
 		}
 	}()
 
-	retItems := make([]interface{}, 0, c.Size())
+	items := make(map[string]interface{}, c.Size())
 	for _, m := range c.store {
-		for _, v := range m {
-			retItems = append(retItems, v)
+		for k, v := range m {
+			items[k] = v
 		}
 	}
-	return retItems
+	return items
 }
 
-// PrintItems returns all items of cache.
-func (c *Cache) PrintItems() {
+// PrintKeyValues prints all keys and values of cache.
+func (c *Cache) PrintKeyValues() {
 	// allow data inconsistent and no lock here.
 	for idx, m := range c.store {
-		fmt.Printf("map [%d] items:\n", idx)
+		fmt.Printf("map%d [%d] items:\n", idx, len(m))
 		for k, v := range m {
 			fmt.Printf("%s=%v,", k, v)
 		}

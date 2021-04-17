@@ -1,4 +1,4 @@
-package utils
+package pkg
 
 import (
 	"context"
@@ -8,10 +8,18 @@ import (
 
 var (
 	jira    = NewJiraTool()
-	issueID = "SPPAY-1826"
+	issueID = "AIRPAY-61523"
 )
 
 func TestJiraGetIssue(t *testing.T) {
+	resp, err := jira.GetIssue(context.TODO(), issueID, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("get issue:", string(resp))
+}
+
+func TestJiraGetIssueByFields(t *testing.T) {
 	fields := []string{"key", "summary"}
 	resp, err := jira.GetIssue(context.TODO(), issueID, fields)
 	if err != nil {

@@ -15,7 +15,7 @@ import (
 HTTP
 */
 
-// HTTPUtils a http utils.
+// HTTPUtils a http client utils.
 type HTTPUtils struct {
 	client http.Client
 }
@@ -43,8 +43,8 @@ func NewHTTPUtils(isKeepAlive bool) *HTTPUtils {
 	}
 }
 
-// HTTPGet sends http get request.
-func (utils *HTTPUtils) HTTPGet(ctx context.Context, url string, headers map[string]string) ([]byte, error) {
+// Get sends http get request.
+func (utils *HTTPUtils) Get(ctx context.Context, url string, headers map[string]string) ([]byte, error) {
 	req, err := utils.createRequest(ctx, http.MethodGet, url, headers, "")
 	if err != nil {
 		return nil, err
@@ -52,8 +52,8 @@ func (utils *HTTPUtils) HTTPGet(ctx context.Context, url string, headers map[str
 	return utils.send(req)
 }
 
-// HTTPGetWithAuth sends http get request with auth enabled.
-func (utils *HTTPUtils) HTTPGetWithAuth(ctx context.Context, url string, headers map[string]string, name, password string) ([]byte, error) {
+// GetWithAuth sends http get request with auth enabled.
+func (utils *HTTPUtils) GetWithAuth(ctx context.Context, url string, headers map[string]string, name, password string) ([]byte, error) {
 	req, err := utils.createRequest(ctx, http.MethodGet, url, headers, "")
 	if err != nil {
 		return nil, err
@@ -62,8 +62,8 @@ func (utils *HTTPUtils) HTTPGetWithAuth(ctx context.Context, url string, headers
 	return utils.send(req)
 }
 
-// HTTPPost sends http post request.
-func (utils *HTTPUtils) HTTPPost(ctx context.Context, url string, headers map[string]string, body string) ([]byte, error) {
+// Post sends http post request.
+func (utils *HTTPUtils) Post(ctx context.Context, url string, headers map[string]string, body string) ([]byte, error) {
 	req, err := utils.createRequest(ctx, http.MethodPost, url, headers, body)
 	if err != nil {
 		return nil, err
@@ -71,8 +71,8 @@ func (utils *HTTPUtils) HTTPPost(ctx context.Context, url string, headers map[st
 	return utils.send(req)
 }
 
-// HTTPPostWithAuth sends http post request with auth enabled.
-func (utils *HTTPUtils) HTTPPostWithAuth(ctx context.Context, url string, headers map[string]string, body, name, password string) ([]byte, error) {
+// PostWithAuth sends http post request with auth enabled.
+func (utils *HTTPUtils) PostWithAuth(ctx context.Context, url string, headers map[string]string, body, name, password string) ([]byte, error) {
 	req, err := utils.createRequest(ctx, http.MethodPost, url, headers, body)
 	if err != nil {
 		return nil, err

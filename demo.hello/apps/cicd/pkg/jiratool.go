@@ -1,4 +1,4 @@
-package utils
+package pkg
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"demo.hello/utils"
 )
 
 /*
@@ -13,12 +15,12 @@ jira api docs:
 https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/
 */
 
-// JiraTool .
+// JiraTool contains jira rest APIs.
 type JiraTool struct {
 	restURL  string
 	userName string
 	userPwd  string
-	http     *HTTPUtils
+	http     *utils.HTTPUtils
 }
 
 // NewJiraTool creates an instance of jira tool.
@@ -27,7 +29,7 @@ func NewJiraTool() *JiraTool {
 		restURL:  os.Getenv("JIRA_REST_URL"),
 		userName: os.Getenv("JIRA_USER_NAME"),
 		userPwd:  os.Getenv("JIRA_USER_PASSWORD"),
-		http:     NewHTTPUtils(true),
+		http:     utils.NewHTTPUtils(true),
 	}
 }
 
@@ -67,18 +69,17 @@ func (jira *JiraTool) GetRemoteLink(ctx context.Context, issueID string) ([]byte
 
 func (jira *JiraTool) formatPath(path string) string {
 	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
+		return "/" + path
 	}
 	return path
 }
 
 func (jira *JiraTool) get(ctx context.Context, path string) ([]byte, error) {
 	url := jira.restURL + jira.formatPath(path)
-	fmt.Println(url)
 	headers := map[string]string{
 		"Accept": "application/json",
 	}
-	return jira.http.HTTPGetWithAuth(ctx, url, headers, jira.userName, jira.userPwd)
+	return jira.http.GetWithAuth(ctx, url, headers, jira.userName, jira.userPwd)
 }
 
 func (jira *JiraTool) post(ctx context.Context, path, body string) ([]byte, error) {
@@ -87,5 +88,5 @@ func (jira *JiraTool) post(ctx context.Context, path, body string) ([]byte, erro
 		"Accept":       "application/json",
 		"Content-Type": "application/json",
 	}
-	return jira.http.HTTPPostWithAuth(ctx, url, headers, body, jira.userName, jira.userPwd)
+	return jira.http.PostWithAuth(ctx, url, headers, body, jira.userName, jira.userPwd)
 }
