@@ -5,8 +5,18 @@ import (
 	"testing"
 )
 
+var issueKey = "AIRPAY-63407"
+
 func TestNewJiraIssue(t *testing.T) {
-	issue, err := NewJiraIssue(context.TODO(), jira, "AIRPAY-66085")
+	issue, err := NewJiraIssue(context.TODO(), jira, issueKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	issue.PrintText("")
+}
+
+func TestNewJiraIssueV2(t *testing.T) {
+	issue, err := NewJiraIssueV2(context.TODO(), jira, issueKey)
 	if err != nil {
 		t.Fatal(err)
 	}

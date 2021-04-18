@@ -44,6 +44,124 @@ func getPrintFieldFromSlice(slice []string) string {
 }
 
 /*
+New a jira issue V2.
+*/
+
+// RespJiraIssue .
+type RespJiraIssue struct {
+	Key    string `json:"key"`
+	Fields struct {
+		Summary string `json:"summary"`
+		Type    struct {
+			Name string `json:"name"`
+		} `json:"issuetype"`
+		Status struct {
+			Name string `json:"name"`
+		} `json:"status"`
+		Labels      []string `json:"labels"`
+		FixVersions []struct {
+			Name string `json:"name"`
+		} `json:"fixVersions"`
+		ReleaseCycle struct {
+			Value string `json:"value"`
+		} `json:"customfield_13700"`
+		ReleaseStatus string `json:"customfield_13801"`
+		IssueLinks    []struct {
+			Type struct {
+				Inward  string `json:"inward"`
+				Outward string `json:"outward"`
+			} `json:"type"`
+			InwardIssue struct {
+				Key string `json:"key"`
+			}
+			OutwardIssue struct {
+				Key string `json:"key"`
+			}
+		} `json:"issuelinks"`
+	} `json:"fields"`
+}
+
+// RespRemoteLink .
+type RespRemoteLink struct {
+	Object struct {
+		URL string `json:"url"`
+	} `json:"object"`
+}
+
+// NewJiraIssueV2 .
+func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraIssue, error) {
+	fields := []string{"key", "summary", "issuetype", "status", "labels", "fixVersions", "customfield_13700", "customfield_13801", "issuelinks"}
+	resp, err := jira.GetIssue(ctx, issueID, fields)
+	if err != nil {
+		return nil, err
+	}
+
+	respJiraIssue := &RespJiraIssue{}
+	err = json.Unmarshal(resp, respJiraIssue)
+	if err != nil {
+		return nil, err
+	}
+
+	issue := &JiraIssue{
+		Key:           respJiraIssue.Key,
+		Summary:       respJiraIssue.Fields.Summary,
+		Type:          respJiraIssue.Fields.Type.Name,
+		Status:        respJiraIssue.Fields.Status.Name,
+		Labels:        respJiraIssue.Fields.Labels,
+		ReleaseCycle:  respJiraIssue.Fields.ReleaseCycle.Value,
+		ReleaseStatus: respJiraIssue.Fields.ReleaseStatus,
+	}
+	fixIssueType(issue)
+
+	fixVersions := make([]string, 0, len(respJiraIssue.Fields.FixVersions))
+	for _, ver := range respJiraIssue.Fields.FixVersions {
+		fixVersions = append(fixVersions, ver.Name)
+	}
+	issue.FixVersions = fixVersions
+
+	issueLinks := make([]string, 0)
+	if issue.Type == "PMTask" || issue.Type == "Story" || issue.Type == "Epic" || issue.Type == "Release" {
+		for _, link := range respJiraIssue.Fields.IssueLinks {
+			if link.Type.Outward == "Contains" && len(link.OutwardIssue.Key) > 0 {
+				issueLinks = append(issueLinks, link.OutwardIssue.Key)
+			}
+		}
+	}
+	issue.SubIssues = issueLinks
+
+	issueLinks = make([]string, 0)
+	if issue.Type == "Task" || issue.Type == "Story" {
+		for _, link := range respJiraIssue.Fields.IssueLinks {
+			if link.Type.Inward == "In Release" && len(link.InwardIssue.Key) > 0 {
+				issueLinks = append(issueLinks, link.InwardIssue.Key)
+			}
+		}
+	}
+	issue.SuperIssues = issueLinks
+
+	resp, err = jira.GetRemoteLink(ctx, issueID)
+	if err != nil {
+		return nil, err
+	}
+
+	remoteLinks := make([]RespRemoteLink, 0)
+	err = json.Unmarshal(resp, &remoteLinks)
+	if err != nil {
+		return nil, err
+	}
+	links := make([]string, 0, len(remoteLinks))
+	for _, link := range remoteLinks {
+		URL := link.Object.URL
+		if strings.Contains(URL, "merge_requests") {
+			links = append(links, URL)
+		}
+	}
+	issue.MergeRequests = links
+
+	return issue, nil
+}
+
+/*
 New a jira issue.
 */
 
@@ -73,14 +191,7 @@ func NewJiraIssue(ctx context.Context, jira *JiraTool, issueID string) (*JiraIss
 		ReleaseCycle:  createReleaseCycle(fieldsMap),
 		ReleaseStatus: createReleaseStatus(fieldsMap),
 	}
-
-	if issue.Type == "Task" {
-		for _, v := range issue.Labels {
-			if v == "PM-Task" {
-				issue.Type = "PMTask"
-			}
-		}
-	}
+	fixIssueType(issue)
 
 	// issue links
 	issueLinks := fieldsMap["issuelinks"].([]interface{})
@@ -104,6 +215,16 @@ func NewJiraIssue(ctx context.Context, jira *JiraTool, issueID string) (*JiraIss
 	issue.MergeRequests = getRemoteLinks(remoteLinks)
 
 	return issue, nil
+}
+
+func fixIssueType(issue *JiraIssue) {
+	if issue.Type == "Task" {
+		for _, v := range issue.Labels {
+			if v == "PM-Task" {
+				issue.Type = "PMTask"
+			}
+		}
+	}
 }
 
 func createReleaseCycle(fieldsMap map[string]interface{}) string {

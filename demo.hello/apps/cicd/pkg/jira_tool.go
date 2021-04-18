@@ -11,7 +11,7 @@ import (
 )
 
 /*
-jira api docs:
+jira rest api docs:
 https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/
 */
 
@@ -92,15 +92,8 @@ func (jira *JiraTool) GetRemoteLink(ctx context.Context, issueID string) ([]byte
 	return jira.get(ctx, path)
 }
 
-func (jira *JiraTool) formatPath(path string) string {
-	if !strings.HasPrefix(path, "/") {
-		return "/" + path
-	}
-	return path
-}
-
 func (jira *JiraTool) get(ctx context.Context, path string) ([]byte, error) {
-	url := jira.restURL + jira.formatPath(path)
+	url := jira.restURL + formatPath(path)
 	headers := map[string]string{
 		"Accept": "application/json",
 	}
@@ -108,10 +101,17 @@ func (jira *JiraTool) get(ctx context.Context, path string) ([]byte, error) {
 }
 
 func (jira *JiraTool) post(ctx context.Context, path, body string) ([]byte, error) {
-	url := jira.restURL + jira.formatPath(path)
+	url := jira.restURL + formatPath(path)
 	headers := map[string]string{
 		"Accept":       "application/json",
 		"Content-Type": "application/json",
 	}
 	return jira.http.PostWithAuth(ctx, url, headers, body, jira.userName, jira.userPwd)
+}
+
+func formatPath(path string) string {
+	if !strings.HasPrefix(path, "/") {
+		return "/" + path
+	}
+	return path
 }
