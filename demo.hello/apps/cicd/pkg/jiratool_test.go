@@ -30,11 +30,21 @@ func TestJiraGetIssueByFields(t *testing.T) {
 
 func TestJiraSearch(t *testing.T) {
 	jql := `"Release Cycle" = "2021.04.v3" AND type = Bug`
-	resp, err := jira.Search(context.TODO(), jql)
+	fields := []string{"key", "summary", "status"}
+	resp, err := jira.Search(context.TODO(), jql, fields)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println("search results:", string(resp))
+}
+
+func TestJiraSearchIssues(t *testing.T) {
+	jql := `fixVersion = apa_v1.0.19.20210419`
+	keys, err := jira.SearchIssues(context.TODO(), jql)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(keys)
 }
 
 func TestGetIssueLink(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// JiraIssue .
+// JiraIssue struct for a jira issue.
 type JiraIssue struct {
 	Key           string   `json:"key"`
 	Summary       string   `json:"summary"`
@@ -17,21 +17,35 @@ type JiraIssue struct {
 	FixVersions   []string `json:"fixVersions"`
 	ReleaseCycle  string   `json:"releaseCycle"`
 	ReleaseStatus string   `json:"releaseStatus"`
-	SuperIssue    []string `json:"superIssue"`
+	SuperIssues   []string `json:"superIssue"`
 	SubIssues     []string `json:"subIssues"`
 	MergeRequests []string `json:"mergeRequests"`
 }
 
 // PrintText prints issue data by text.
-func (issue *JiraIssue) PrintText(prefix string, isMRPrint bool) {
-	fmt.Printf("%s[%s]: type=%s,status=%s,labels=%v,fixVersion=%v,releaseCycle={%s},releaseStatus={%s},superIssues=%v,subIssues=%v\n",
-		prefix, issue.Key, issue.Type, issue.Status, issue.Labels, issue.FixVersions, issue.ReleaseCycle, issue.ReleaseStatus, issue.SuperIssue, issue.SubIssues)
-	if isMRPrint {
-		for _, mr := range issue.MergeRequests {
-			fmt.Println("\t" + mr)
-		}
+func (issue *JiraIssue) PrintText(prefix string) {
+	labels := getPrintFieldFromSlice(issue.Labels)
+	fixVersions := getPrintFieldFromSlice(issue.FixVersions)
+	superIssues := getPrintFieldFromSlice(issue.SuperIssues)
+	subIssues := getPrintFieldFromSlice(issue.SubIssues)
+	fmt.Printf("%s[key:%s]: [type:%s],[status:%s],[labels:%s],[fixversion:%s],[relCycle:%s],[relStatus:%s],[supIssues:%s],[subIssues:%s]\n",
+		prefix, issue.Key, issue.Type, issue.Status, labels, fixVersions, issue.ReleaseCycle, issue.ReleaseStatus, superIssues, subIssues)
+	for _, mr := range issue.MergeRequests {
+		fmt.Printf("%s\t[mr:%s]\n", prefix, mr)
 	}
 }
+
+func getPrintFieldFromSlice(slice []string) string {
+	line := "-"
+	if len(slice) > 0 {
+		line = strings.Join(slice, ",")
+	}
+	return line
+}
+
+/*
+New a jira issue.
+*/
 
 // NewJiraIssue creates a jira issue instance.
 func NewJiraIssue(ctx context.Context, jira *JiraTool, issueID string) (*JiraIssue, error) {
@@ -74,7 +88,7 @@ func NewJiraIssue(ctx context.Context, jira *JiraTool, issueID string) (*JiraIss
 		issue.SubIssues = getOutwardIssueLinks(issueLinks, "Contains")
 	}
 	if issue.Type == "Task" || issue.Type == "Story" {
-		issue.SuperIssue = getInwardIssueLinks(issueLinks, "In Release")
+		issue.SuperIssues = getInwardIssueLinks(issueLinks, "In Release")
 	}
 
 	// remote links
@@ -95,7 +109,7 @@ func NewJiraIssue(ctx context.Context, jira *JiraTool, issueID string) (*JiraIss
 func createReleaseCycle(fieldsMap map[string]interface{}) string {
 	relCycle, ok := fieldsMap["customfield_13700"].(map[string]interface{})
 	if !ok {
-		return "not_exist"
+		return "not_fill"
 	}
 	return relCycle["value"].(string)
 }
@@ -103,7 +117,7 @@ func createReleaseCycle(fieldsMap map[string]interface{}) string {
 func createReleaseStatus(fieldsMap map[string]interface{}) string {
 	relStatus, ok := fieldsMap["customfield_13801"].(string)
 	if !ok {
-		return "not_exist"
+		return "not_fill"
 	}
 	return relStatus
 }
@@ -124,13 +138,15 @@ func formatFixVersionsSlice(versions []interface{}) []string {
 	}
 	return out
 }
+
 func getInwardIssueLinks(issueLinks []interface{}, linkType string) []string {
 	keys := make([]string, 0, 10)
 	for _, v := range issueLinks {
 		val := v.(map[string]interface{})
 		if val["type"].((map[string]interface{}))["inward"].(string) == linkType {
-			subIssue := val["inwardIssue"].(map[string]interface{})
-			keys = append(keys, subIssue["key"].(string))
+			if subIssue, ok := val["inwardIssue"].(map[string]interface{}); ok {
+				keys = append(keys, subIssue["key"].(string))
+			}
 		}
 	}
 	return keys
@@ -141,15 +157,16 @@ func getOutwardIssueLinks(issueLinks []interface{}, linkType string) []string {
 	for _, v := range issueLinks {
 		val := v.(map[string]interface{})
 		if val["type"].((map[string]interface{}))["outward"].(string) == linkType {
-			subIssue := val["outwardIssue"].(map[string]interface{})
-			keys = append(keys, subIssue["key"].(string))
+			if subIssue, ok := val["outwardIssue"].(map[string]interface{}); ok {
+				keys = append(keys, subIssue["key"].(string))
+			}
 		}
 	}
 	return keys
 }
 
 func getRemoteLinks(remoteLinks []interface{}) []string {
-	links := make([]string, len(remoteLinks))
+	links := make([]string, 0, len(remoteLinks))
 	for _, link := range remoteLinks {
 		mr := link.(map[string]interface{})["object"]
 		mrURL := mr.(map[string]interface{})["url"].(string)

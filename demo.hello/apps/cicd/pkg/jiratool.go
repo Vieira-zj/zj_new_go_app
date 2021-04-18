@@ -43,17 +43,42 @@ func (jira *JiraTool) GetIssue(ctx context.Context, issueID string, fields []str
 }
 
 // Search returns issues by jql.
-func (jira *JiraTool) Search(ctx context.Context, jql string) ([]byte, error) {
+func (jira *JiraTool) Search(ctx context.Context, jql string, fields []string) ([]byte, error) {
 	data := map[string]interface{}{
 		"jql":        jql,
-		"maxResults": 10,
-		"fields":     []string{"key", "summary", "status"},
+		"maxResults": 200,
+		"fields":     fields,
 	}
 	reqData, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
 	return jira.post(ctx, "search", string(reqData))
+}
+
+// SearchIssues returns issue keys from jql results.
+func (jira *JiraTool) SearchIssues(ctx context.Context, jql string) ([]string, error) {
+	resp, err := jira.Search(ctx, jql, []string{"key"})
+	if err != nil {
+		return nil, err
+	}
+
+	respMap := make(map[string]interface{})
+	err = json.Unmarshal(resp, &respMap)
+	if err != nil {
+		return nil, err
+	}
+
+	total := respMap["total"].(float64)
+	fmt.Printf("Search results count: %.0f\n", total)
+
+	issueSlice := respMap["issues"].([]interface{})
+	keys := make([]string, 0, len(issueSlice))
+	for _, item := range issueSlice {
+		issue := item.(map[string]interface{})
+		keys = append(keys, issue["key"].(string))
+	}
+	return keys, nil
 }
 
 // GetIssueLink returns issue related links.

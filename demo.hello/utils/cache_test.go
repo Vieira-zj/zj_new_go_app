@@ -11,13 +11,17 @@ import (
 func TestCachePut(t *testing.T) {
 	shardNumber := 3
 	cache := NewCache(shardNumber, 10)
+	fmt.Println(cache.GetItems())
 
 	cache.Put("1", "value1")
 	cache.Put("2", "value2")
 	fmt.Println("store:", cache.store)
 	fmt.Println("lockers:", cache.lockers)
 
-	fmt.Println("cache values:")
+	fmt.Println("\nusage:")
+	cache.PrintUsage()
+
+	fmt.Println("\ncache values:")
 	for k, v := range cache.GetItems() {
 		fmt.Printf("%s=%v\n", k, v)
 	}

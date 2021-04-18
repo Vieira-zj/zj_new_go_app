@@ -6,9 +6,9 @@ import (
 )
 
 func TestNewJiraIssue(t *testing.T) {
-	issue, err := NewJiraIssue(context.TODO(), jira, "AIRPAY-66425")
+	issue, err := NewJiraIssue(context.TODO(), jira, "AIRPAY-66085")
 	if err != nil {
 		t.Fatal(err)
 	}
-	issue.PrintText("", true)
+	issue.PrintText("")
 }

@@ -2,24 +2,25 @@ package utils
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 )
 
 // Cache local kv cache.
 type Cache struct {
-	shardNumber int
-	mapSize     int
-	store       []map[string]interface{}
-	lockers     []*sync.RWMutex
+	shard   int
+	mapSize int
+	store   []map[string]interface{}
+	lockers []*sync.RWMutex
 }
 
 // NewCache creates an instance of cache.
 func NewCache(shardNumber, mapSize int) *Cache {
 	c := &Cache{
-		shardNumber: shardNumber,
-		mapSize:     mapSize,
-		store:       make([]map[string]interface{}, shardNumber),
-		lockers:     make([]*sync.RWMutex, shardNumber),
+		shard:   shardNumber,
+		mapSize: mapSize,
+		store:   make([]map[string]interface{}, shardNumber),
+		lockers: make([]*sync.RWMutex, shardNumber),
 	}
 	return c
 }
@@ -32,7 +33,7 @@ func (c *Cache) Put(key string, value interface{}) {
 
 	m := c.getMap(key)
 	if _, ok := m[key]; ok {
-		fmt.Printf("update existing key [%s] value\n", key)
+		fmt.Printf("Update existing key [%s] value\n", key)
 	}
 	m[key] = value
 }
@@ -47,7 +48,18 @@ func (c *Cache) Get(key string) (interface{}, error) {
 	if val, ok := m[key]; ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf("[%s] not found", key)
+	return nil, fmt.Errorf("Key [%s] not found", key)
+}
+
+// IsExist returns whether key is exist.
+func (c *Cache) IsExist(key string) bool {
+	locker := c.getLocker(key)
+	locker.RLock()
+	defer locker.RUnlock()
+
+	m := c.getMap(key)
+	_, ok := m[key]
+	return ok
 }
 
 func (c *Cache) getLocker(key string) *sync.RWMutex {
@@ -71,7 +83,7 @@ func (c *Cache) getHashKey(key string) int {
 	for _, c := range key {
 		count += int(c)
 	}
-	return count % c.shardNumber
+	return count % c.shard
 }
 
 // Size returns size of cache items.
@@ -119,4 +131,14 @@ func (c *Cache) PrintKeyValues() {
 		}
 		fmt.Println()
 	}
+}
+
+// PrintUsage .
+func (c *Cache) PrintUsage() {
+	total := 0
+	for i, m := range c.store {
+		total += len(m)
+		fmt.Printf("map%d:%d/%d | ", i, len(m), c.mapSize)
+	}
+	fmt.Println("total:" + strconv.Itoa(total))
 }
