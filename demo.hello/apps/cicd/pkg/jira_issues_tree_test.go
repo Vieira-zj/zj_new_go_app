@@ -12,7 +12,7 @@ func TestOneTicketTree(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10)*time.Second)
 	defer cancel()
 
-	tree := NewJiraIssuesTree(ctx, "Ticket:"+ticket, 1)
+	tree := NewJiraIssuesTree(ctx, 1)
 	tree.Collect()
 	tree.SubmitIssue(ticket)
 
@@ -24,15 +24,14 @@ func TestOneTicketTree(t *testing.T) {
 
 func TestPrintReleaseTicketTree(t *testing.T) {
 	// release ticket -> tasks
-	issueKey := "AIRPAY-66425"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10)*time.Second)
 	defer cancel()
-	releaseTicket, err := NewJiraIssue(ctx, jira, issueKey)
+	releaseTicket, err := NewJiraIssue(ctx, jira, "AIRPAY-66425")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tree := NewJiraIssuesTree(ctx, "ReleaseTicket:"+issueKey, 3)
+	tree := NewJiraIssuesTree(ctx, 3)
 	tree.Collect()
 	for _, issueID := range releaseTicket.SubIssues {
 		tree.SubmitIssue(issueID)
@@ -56,7 +55,7 @@ func TestPrintFixVersionTree(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tree := NewJiraIssuesTree(ctx, "FixVersion:"+key, 6)
+	tree := NewJiraIssuesTree(ctx, 6)
 	tree.Collect()
 	for _, key := range keys {
 		tree.SubmitIssue(key)
@@ -71,7 +70,6 @@ func TestPrintFixVersionTree(t *testing.T) {
 }
 
 func TestPrintReleaseCycleTree(t *testing.T) {
-	key := "2021.04.v3 - AirPay"
 	jql := `"Release Cycle" = "2021.04.v3 - AirPay"`
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 	defer cancel()
@@ -80,7 +78,7 @@ func TestPrintReleaseCycleTree(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tree := NewJiraIssuesTree(ctx, "ReleaseCycle:"+key, 6)
+	tree := NewJiraIssuesTree(ctx, 6)
 	tree.Collect()
 	for _, key := range keys {
 		tree.SubmitIssue(key)

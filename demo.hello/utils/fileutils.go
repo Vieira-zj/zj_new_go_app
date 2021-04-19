@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+/*
+Common
+*/
+
 // GetGoFileAbsPath returns .go file absolute path.
 func GetGoFileAbsPath(path string) (string, error) {
 	dir, file := filepath.Split(path)
@@ -53,6 +57,10 @@ func WalkDir(dirPath, suffix string) (files []string, err error) {
 	err = filepath.Walk(dirPath, onWalk)
 	return files, err
 }
+
+/*
+File IO
+*/
 
 // CreateFile create a file with buf content.
 func CreateFile(filePath string, buf *bytes.Buffer) error {

@@ -6,10 +6,7 @@ import (
 	"testing"
 )
 
-var (
-	jira    = NewJiraTool()
-	issueID = "AIRPAY-61523"
-)
+var issueID = "AIRPAY-61523"
 
 func TestJiraGetIssue(t *testing.T) {
 	resp, err := jira.GetIssue(context.TODO(), issueID, nil)

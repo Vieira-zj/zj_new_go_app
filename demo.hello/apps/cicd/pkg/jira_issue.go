@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var isDebug = false
+
 // JiraIssue struct for a jira issue.
 type JiraIssue struct {
 	Key           string   `json:"key"`
@@ -22,20 +24,25 @@ type JiraIssue struct {
 	MergeRequests []string `json:"mergeRequests"`
 }
 
-// PrintText prints issue data by text.
+// PrintText prints issue data as text.
 func (issue *JiraIssue) PrintText(prefix string) {
-	labels := getPrintFieldFromSlice(issue.Labels)
-	fixVersions := getPrintFieldFromSlice(issue.FixVersions)
-	superIssues := getPrintFieldFromSlice(issue.SuperIssues)
-	subIssues := getPrintFieldFromSlice(issue.SubIssues)
-	fmt.Printf("%s[%s]: [type:%s],[status:%s],[labels:%s],[fixversion:%s],[relCycle:%s],[relStatus:%s],[supIssues:%s],[subIssues:%s]\n",
-		prefix, issue.Key, issue.Type, issue.Status, labels, fixVersions, issue.ReleaseCycle, issue.ReleaseStatus, superIssues, subIssues)
+	fmt.Printf("%s%s\n", prefix, issue.ToText())
 
-	if false {
+	if isDebug {
 		for _, mr := range issue.MergeRequests {
 			fmt.Printf("%s\t[mr:%s]\n", prefix, mr)
 		}
 	}
+}
+
+// ToText returns issue data as text.
+func (issue *JiraIssue) ToText() string {
+	labels := getPrintFieldFromSlice(issue.Labels)
+	fixVersions := getPrintFieldFromSlice(issue.FixVersions)
+	superIssues := getPrintFieldFromSlice(issue.SuperIssues)
+	subIssues := getPrintFieldFromSlice(issue.SubIssues)
+	return fmt.Sprintf("[%s]: [type:%s],[status:%s],[labels:%s],[fixversion:%s],[relCycle:%s],[relStatus:%s],[supIssues:%s],[subIssues:%s]\n",
+		issue.Key, issue.Type, issue.Status, labels, fixVersions, issue.ReleaseCycle, issue.ReleaseStatus, superIssues, subIssues)
 }
 
 func getPrintFieldFromSlice(slice []string) string {
@@ -91,7 +98,7 @@ type RespRemoteLink struct {
 	} `json:"object"`
 }
 
-// NewJiraIssueV2 .
+// NewJiraIssueV2 creates a jira issue instance.
 func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraIssue, error) {
 	fields := []string{"key", "summary", "issuetype", "status", "labels", "fixVersions", "customfield_13700", "customfield_13801", "issuelinks"}
 	resp, err := jira.GetIssue(ctx, issueID, fields)

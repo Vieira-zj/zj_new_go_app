@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// MergeRequest .
+// MergeRequest gitlab merge request info.
 type MergeRequest struct {
 	IID      int    `json:"iid"`
 	Title    string `json:"title"`
@@ -19,12 +19,17 @@ type MergeRequest struct {
 	Repo     string
 }
 
-// PrintText .
+// PrintText prints merge request info as text.
 func (mr *MergeRequest) PrintText(prefix string) {
-	fmt.Printf("%sMR:[%s],[%s:%s->%s],[%s]\n", prefix, mr.Title, mr.State, mr.SourceBR, mr.TargetBR, mr.WebURL)
+	fmt.Printf("%s%s", prefix, mr.ToText())
 }
 
-// NewMergeRequest .
+// ToText returns merge request info as text.
+func (mr *MergeRequest) ToText() string {
+	return fmt.Sprintf("MR:[%s],[%s:%s->%s],[%s]\n", mr.Title, mr.State, mr.SourceBR, mr.TargetBR, mr.WebURL)
+}
+
+// NewMergeRequest create a merge request instance.
 func NewMergeRequest(ctx context.Context, git *GitlabTool, mrURL string) (*MergeRequest, error) {
 	resp, err := git.GetSingleMR(ctx, mrURL)
 	if err != nil {

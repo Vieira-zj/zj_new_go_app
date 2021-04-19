@@ -15,14 +15,14 @@ gitlab rest api docs:
 https://docs.gitlab.com/ee/api/merge_requests.html#get-single-mr
 */
 
-// GitlabTool .
+// GitlabTool contains gitlab rest APIs.
 type GitlabTool struct {
 	host  string
 	token string
 	http  *utils.HTTPUtils
 }
 
-// NewGitlabTool .
+// NewGitlabTool create a GitlabTool instance.
 func NewGitlabTool() *GitlabTool {
 	return &GitlabTool{
 		host:  os.Getenv("GITLAB_HOST"),
@@ -31,7 +31,7 @@ func NewGitlabTool() *GitlabTool {
 	}
 }
 
-// SearchProject .
+// SearchProject finds a gitlab project by name and namespace.
 func (git *GitlabTool) SearchProject(ctx context.Context, name, namespace string) (string, error) {
 	resp, err := git.get(ctx, "projects?search="+name)
 	if err != nil {
@@ -59,7 +59,7 @@ func (git *GitlabTool) SearchProject(ctx context.Context, name, namespace string
 	return "", fmt.Errorf("Project [%s] not found", name)
 }
 
-// GetSingleMR .
+// GetSingleMR returns a single mr by mr web url.
 func (git *GitlabTool) GetSingleMR(ctx context.Context, mr string) ([]byte, error) {
 	items := strings.Split(mr, "/-/")
 	if len(items) != 2 {
@@ -81,7 +81,7 @@ func (git *GitlabTool) GetSingleMR(ctx context.Context, mr string) ([]byte, erro
 }
 
 func (git *GitlabTool) get(ctx context.Context, path string) ([]byte, error) {
-	url := git.host + "/api/v4/" + formatPath(path)
+	url := git.host + "/api/v4" + formatPath(path)
 	headers := map[string]string{
 		"PRIVATE-TOKEN": git.token,
 	}

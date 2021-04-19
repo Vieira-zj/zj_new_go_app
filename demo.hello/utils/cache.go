@@ -25,7 +25,7 @@ func NewCache(shardNumber, mapSize int) *Cache {
 	return c
 }
 
-// Put adds a kv in cache.
+// Put adds a kv in cache. if key exist, then overwrite.
 func (c *Cache) Put(key string, value interface{}) {
 	locker := c.getLocker(key)
 	locker.Lock()
@@ -34,6 +34,19 @@ func (c *Cache) Put(key string, value interface{}) {
 	m := c.getMap(key)
 	if _, ok := m[key]; ok {
 		fmt.Printf("Update existing key [%s] value\n", key)
+	}
+	m[key] = value
+}
+
+// PutIfEmpty adds a kv in cache when key is not exist.
+func (c *Cache) PutIfEmpty(key string, value interface{}) {
+	locker := c.getLocker(key)
+	locker.Lock()
+	defer locker.Unlock()
+
+	m := c.getMap(key)
+	if _, ok := m[key]; ok {
+		return
 	}
 	m[key] = value
 }
@@ -135,10 +148,17 @@ func (c *Cache) PrintKeyValues() {
 
 // PrintUsage .
 func (c *Cache) PrintUsage() {
+	fmt.Println(c.UsageToText())
+}
+
+// UsageToText .
+func (c *Cache) UsageToText() string {
+	line := ""
 	total := 0
 	for i, m := range c.store {
 		total += len(m)
-		fmt.Printf("map%d:%d/%d | ", i, len(m), c.mapSize)
+		line += fmt.Sprintf("map%d:%d/%d | ", i, len(m), c.mapSize)
 	}
-	fmt.Println("total:" + strconv.Itoa(total))
+	line += fmt.Sprintln("total:" + strconv.Itoa(total))
+	return line
 }

@@ -7,10 +7,6 @@ import (
 	"testing"
 )
 
-var (
-	git = NewGitlabTool()
-)
-
 func TestSearchProject(t *testing.T) {
 	projectID, err := git.SearchProject(context.TODO(), "common-micservice", "microservice")
 	if err != nil {
