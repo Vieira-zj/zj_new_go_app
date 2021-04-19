@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"time"
 
-	"demo.hello/apps/cicd/pkg"
-	serve "demo.hello/apps/cicd/server"
+	"demo.hello/cicd/pkg"
+	serve "demo.hello/cicd/server"
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/log"
 )

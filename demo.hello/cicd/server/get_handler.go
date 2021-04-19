@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"demo.hello/apps/cicd/pkg"
+	"demo.hello/cicd/pkg"
 	"github.com/labstack/echo"
 )
 

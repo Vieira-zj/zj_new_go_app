@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"demo.hello/apps/cicd/pkg"
+	"demo.hello/cicd/pkg"
 	"github.com/labstack/echo"
 )
 
@@ -58,4 +58,7 @@ func StoreReleaseCycleIssues(c echo.Context) error {
 		tree.SubmitIssue(key)
 	}
 	return c.String(http.StatusOK, fmt.Sprintf("Issues for [%s] stored.", releaseCycle))
+}
+
+func storeJQLIssues(jql, key string) {
 }
