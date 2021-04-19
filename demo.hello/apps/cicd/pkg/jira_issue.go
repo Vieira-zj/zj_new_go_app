@@ -28,10 +28,13 @@ func (issue *JiraIssue) PrintText(prefix string) {
 	fixVersions := getPrintFieldFromSlice(issue.FixVersions)
 	superIssues := getPrintFieldFromSlice(issue.SuperIssues)
 	subIssues := getPrintFieldFromSlice(issue.SubIssues)
-	fmt.Printf("%s[key:%s]: [type:%s],[status:%s],[labels:%s],[fixversion:%s],[relCycle:%s],[relStatus:%s],[supIssues:%s],[subIssues:%s]\n",
+	fmt.Printf("%s[%s]: [type:%s],[status:%s],[labels:%s],[fixversion:%s],[relCycle:%s],[relStatus:%s],[supIssues:%s],[subIssues:%s]\n",
 		prefix, issue.Key, issue.Type, issue.Status, labels, fixVersions, issue.ReleaseCycle, issue.ReleaseStatus, superIssues, subIssues)
-	for _, mr := range issue.MergeRequests {
-		fmt.Printf("%s\t[mr:%s]\n", prefix, mr)
+
+	if false {
+		for _, mr := range issue.MergeRequests {
+			fmt.Printf("%s\t[mr:%s]\n", prefix, mr)
+		}
 	}
 }
 

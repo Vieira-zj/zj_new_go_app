@@ -14,13 +14,16 @@ Worker
 
 // JiraIssuesTree handle jira issues and save in cache for search.
 type JiraIssuesTree struct {
-	Key      string
-	parallel int
-	ctx      context.Context
-	queue    chan string
-	jira     *JiraTool
-	roots    []string
-	store    *utils.Cache
+	Key        string
+	parallel   int
+	ctx        context.Context
+	roots      []string
+	issueQueue chan string
+	issueStore *utils.Cache
+	mrQueue    chan string
+	mrStore    *utils.Cache
+	jira       *JiraTool
+	git        *GitlabTool
 }
 
 // NewJiraIssuesTree creates an instance of JiraIssuesTree.
@@ -31,42 +34,50 @@ func NewJiraIssuesTree(ctx context.Context, key string, parallel int) *JiraIssue
 		mapSize   = 20
 	)
 	return &JiraIssuesTree{
-		Key:      key,
-		parallel: parallel,
-		ctx:      ctx,
-		queue:    make(chan string, queueSize),
-		jira:     NewJiraTool(),
-		roots:    make([]string, 0, parallel*mapSize),
-		store:    utils.NewCache((parallel * 2), mapSize),
+		Key:        key,
+		parallel:   parallel,
+		ctx:        ctx,
+		roots:      make([]string, 0, parallel*mapSize),
+		issueQueue: make(chan string, queueSize),
+		issueStore: utils.NewCache((parallel * 2), mapSize),
+		mrQueue:    make(chan string, queueSize),
+		mrStore:    utils.NewCache(parallel, mapSize),
+		jira:       NewJiraTool(),
+		git:        NewGitlabTool(),
 	}
 }
 
 // QueueSize returns total issue keys to be handle in queue.
 func (tree *JiraIssuesTree) QueueSize() int {
-	return len(tree.queue)
+	return len(tree.issueQueue) + len(tree.mrQueue)
 }
 
 // GetStore returns internal store.
 func (tree *JiraIssuesTree) GetStore() *utils.Cache {
-	return tree.store
+	return tree.issueStore
 }
 
-// Submit puts a jira issue key in queue.
-func (tree *JiraIssuesTree) Submit(issueID string) {
-	tree.queue <- issueID
+// SubmitIssue puts a jira issue key in queue.
+func (tree *JiraIssuesTree) SubmitIssue(issueID string) {
+	tree.issueQueue <- issueID
 }
 
-// CollectIssues handles jira issues and save in store.
-func (tree *JiraIssuesTree) CollectIssues() {
+// Collect .
+func (tree *JiraIssuesTree) Collect() {
+	tree.collectIssues()
+	tree.collectMRs()
+}
+
+func (tree *JiraIssuesTree) collectIssues() {
 	for i := 0; i < tree.parallel; i++ {
 		go func() {
 			var issueID string
 			for {
 				select {
-				case issueID = <-tree.queue:
+				case issueID = <-tree.issueQueue:
 					fmt.Println("Work on issue:", issueID)
 				case <-tree.ctx.Done():
-					fmt.Println("Worker exit.")
+					fmt.Println("Issue worker exit.")
 					return
 				}
 
@@ -74,18 +85,53 @@ func (tree *JiraIssuesTree) CollectIssues() {
 				issue, err := NewJiraIssueV2(ctx, tree.jira, issueID)
 				cancel()
 				if err != nil {
-					fmt.Println("Create jira issue failed:", err)
+					fmt.Printf("New jira issue [%s] failed: %v\n", issueID, err)
 					continue
 				}
 
-				tree.store.Put(issueID, issue)
+				tree.issueStore.Put(issueID, issue)
 				if isStoryIssue(issue.Type) {
 					tree.roots = append(tree.roots, issueID)
 					for _, subIssueID := range issue.SubIssues {
-						if !tree.store.IsExist(subIssueID) {
-							tree.queue <- subIssueID
+						if !tree.issueStore.IsExist(subIssueID) {
+							tree.issueQueue <- subIssueID
 						}
 					}
+				} else {
+					for _, mrURL := range issue.MergeRequests {
+						if !tree.mrStore.IsExist(mrURL) {
+							tree.mrQueue <- mrURL
+						}
+					}
+				}
+			}
+		}()
+	}
+}
+
+func (tree *JiraIssuesTree) collectMRs() {
+	for i := 0; i < tree.parallel; i++ {
+		go func() {
+			var mrURL string
+			for {
+				select {
+				case mrURL = <-tree.mrQueue:
+					fmt.Println("Work on mr:", mrURL)
+				case <-tree.ctx.Done():
+					fmt.Println("MR worker exit.")
+					return
+				}
+
+				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
+				mr, err := NewMergeRequest(ctx, tree.git, mrURL)
+				cancel()
+				if err != nil {
+					fmt.Printf("New merge request [%s] failed: %v\n", mrURL, err)
+					continue
+				}
+
+				if mr.TargetBR == "master" {
+					tree.mrStore.Put(mrURL, mr)
 				}
 			}
 		}()
@@ -99,19 +145,21 @@ func (tree *JiraIssuesTree) PrintText() {
 		usedIssues = make(map[string]struct{}, 10)
 		fmt.Println("\n[Issues and Sub Issues:]")
 		for _, issueID := range tree.roots {
-			item, err := tree.store.Get(issueID)
+			value, err := tree.issueStore.Get(issueID)
 			if err != nil {
 				fmt.Printf("Get issue [%s] failed: %v\n", issueID, err)
 				continue
 			}
-			issue := item.(*JiraIssue)
+			issue := value.(*JiraIssue)
 			issue.PrintText("")
 			for _, subIssueID := range issue.SubIssues {
 				usedIssues[subIssueID] = struct{}{}
-				if subIssue, err := tree.store.Get(subIssueID); err != nil {
+				if subValue, err := tree.issueStore.Get(subIssueID); err != nil {
 					fmt.Printf("Get sub issue [%s] failed: %v\n", subIssueID, err)
 				} else {
-					subIssue.(*JiraIssue).PrintText("\t")
+					subIssue := subValue.(*JiraIssue)
+					subIssue.PrintText("\t")
+					tree.printIssueMRs(subIssue, "\t\t")
 				}
 			}
 			fmt.Println()
@@ -119,20 +167,34 @@ func (tree *JiraIssuesTree) PrintText() {
 	}
 
 	fmt.Println("\n[Single Issues:]")
-	for _, item := range tree.store.GetItems() {
-		issue := item.(*JiraIssue)
+	for _, value := range tree.issueStore.GetItems() {
+		issue := value.(*JiraIssue)
 		if !isStoryIssue(issue.Type) {
 			if _, ok := usedIssues[issue.Key]; !ok {
 				issue.PrintText("")
+				tree.printIssueMRs(issue, "\t")
+				fmt.Println()
 			}
 		}
 	}
 }
 
+func (tree *JiraIssuesTree) printIssueMRs(issue *JiraIssue, prefix string) {
+	for _, mrURL := range issue.MergeRequests {
+		value, err := tree.mrStore.Get(mrURL)
+		if err != nil {
+			continue
+		}
+		value.(*MergeRequest).PrintText(prefix)
+	}
+}
+
 // PrintUsage prints tree store usage.
 func (tree *JiraIssuesTree) PrintUsage() {
-	fmt.Println("Tree store usage:")
-	tree.store.PrintUsage()
+	fmt.Println("Tree issue store usage:")
+	tree.issueStore.PrintUsage()
+	fmt.Println("Tree mr store usage:")
+	tree.mrStore.PrintUsage()
 }
 
 /*

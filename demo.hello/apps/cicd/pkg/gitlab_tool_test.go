@@ -12,7 +12,7 @@ var (
 )
 
 func TestSearchProject(t *testing.T) {
-	projectID, err := git.SearchProject(context.TODO(), "kyc_service", "base")
+	projectID, err := git.SearchProject(context.TODO(), "common-micservice", "microservice")
 	if err != nil {
 		t.Fatal(err)
 	}

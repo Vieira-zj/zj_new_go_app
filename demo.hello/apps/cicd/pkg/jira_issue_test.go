@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var issueKey = "AIRPAY-63407"
+var issueKey = "SPPAY-1236"
 
 func TestNewJiraIssue(t *testing.T) {
 	issue, err := NewJiraIssue(context.TODO(), jira, issueKey)

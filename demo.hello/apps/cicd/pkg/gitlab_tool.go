@@ -44,6 +44,11 @@ func (git *GitlabTool) SearchProject(ctx context.Context, name, namespace string
 		return "", err
 	}
 
+	if len(projects) == 1 {
+		project := projects[0].(map[string]interface{})
+		return fmt.Sprintf("%.0f", project["id"].(float64)), nil
+	}
+
 	for _, item := range projects {
 		project := item.(map[string]interface{})
 		ns := project["namespace"].(map[string]interface{})
@@ -57,6 +62,10 @@ func (git *GitlabTool) SearchProject(ctx context.Context, name, namespace string
 // GetSingleMR .
 func (git *GitlabTool) GetSingleMR(ctx context.Context, mr string) ([]byte, error) {
 	items := strings.Split(mr, "/-/")
+	if len(items) != 2 {
+		return nil, fmt.Errorf("invalid mr url: %s", mr)
+	}
+
 	path := strings.Replace(items[0], git.host, "", 1)
 	subItems := strings.Split(path, "/")
 	project := subItems[len(subItems)-1]

@@ -147,5 +147,5 @@ func printDiskUsage(nfiles, nbytes int64) {
 func main() {
 	// testCloseCh()
 	startDiskUsage()
-	fmt.Println("disusage Done.")
+	fmt.Println("diskusage Done.")
 }
