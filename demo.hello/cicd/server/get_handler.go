@@ -3,35 +3,37 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
-	"demo.hello/cicd/pkg"
 	"github.com/labstack/echo"
 )
 
-// GetReleaseCycleIssues .
-func GetReleaseCycleIssues(c echo.Context) error {
-	releaseCycle := c.QueryParam("releaseCycle")
-	tree, ok := treeMap[releaseCycle]
+// GetStoreIssues .
+func GetStoreIssues(c echo.Context) error {
+	key := c.QueryParam("storeKey")
+	tree, ok := treeMap[key]
 	if !ok {
-		return c.String(http.StatusOK, fmt.Sprintf("Release Cycle [%s] not found.\n", releaseCycle))
+		return c.String(http.StatusOK, fmt.Sprintf("StoreKey [%s] not found.\n", key))
 	}
 	return c.String(http.StatusOK, tree.ToText())
 }
 
 // GetSingleIssue .
 func GetSingleIssue(c echo.Context) error {
-	releaseCycle := c.QueryParam("releaseCycle")
+	key := c.QueryParam("storeKey")
 	issueKey := c.QueryParam("key")
 
-	tree, ok := treeMap[releaseCycle]
+	tree, ok := treeMap[key]
 	if !ok {
-		return c.String(http.StatusOK, fmt.Sprintf("Release Cycle [%s] not found.\n", releaseCycle))
+		return c.String(http.StatusOK, fmt.Sprintf("Store [%s] not found.\n", key))
 	}
 
-	value, err := tree.GetStore().Get(issueKey)
-	if err != nil {
-		return c.String(http.StatusOK, fmt.Sprintf("Get issue [%s] error: %v\n", issueKey, err))
+	outLines := make([]string, 10)
+	issue, text := tree.GetIssueAndText(issueKey, "")
+	outLines = append(outLines, text)
+	for _, subIssueKey := range issue.SubIssues {
+		_, subText := tree.GetIssueAndText(subIssueKey, "\t")
+		outLines = append(outLines, subText)
 	}
-	issue := value.(*pkg.JiraIssue)
-	return c.String(http.StatusOK, tree.IssueToText(issue, ""))
+	return c.String(http.StatusOK, strings.Join(outLines, ""))
 }

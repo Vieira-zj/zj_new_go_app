@@ -9,19 +9,14 @@ import (
 	"demo.hello/utils"
 )
 
-/*
-Worker
-*/
-
 // JiraIssuesTree handle jira issues and save in cache for search.
 type JiraIssuesTree struct {
-	Key        string
-	parallel   int
 	ctx        context.Context
-	roots      []string
+	parallel   int
+	roots      map[string]struct{}
 	issueQueue chan string
-	issueStore *utils.Cache
 	mrQueue    chan string
+	issueStore *utils.Cache
 	mrStore    *utils.Cache
 	jira       *JiraTool
 	git        *GitlabTool
@@ -37,10 +32,10 @@ func NewJiraIssuesTree(ctx context.Context, parallel int) *JiraIssuesTree {
 	return &JiraIssuesTree{
 		parallel:   parallel,
 		ctx:        ctx,
-		roots:      make([]string, 0, parallel*mapSize),
+		roots:      make(map[string]struct{}, parallel*mapSize),
 		issueQueue: make(chan string, queueSize),
-		issueStore: utils.NewCache((parallel * 2), mapSize),
 		mrQueue:    make(chan string, queueSize),
+		issueStore: utils.NewCache((parallel * 2), mapSize),
 		mrStore:    utils.NewCache(parallel, (mapSize / 2)),
 		jira:       NewJiraTool(),
 		git:        NewGitlabTool(),
@@ -85,13 +80,14 @@ func (tree *JiraIssuesTree) collectIssues() {
 				issue, err := NewJiraIssueV2(ctx, tree.jira, issueID)
 				cancel()
 				if err != nil {
-					fmt.Printf("New jira issue [%s] failed: %v\n", issueID, err)
+					content := fmt.Sprintf("New jira issue [%s] failed: %v\n", issueID, err)
+					tree.issueStore.PutIfEmpty(issueID, &JiraIssue{Err: content})
 					continue
 				}
 
 				tree.issueStore.PutIfEmpty(issueID, issue)
 				if isStoryIssue(issue.Type) {
-					tree.roots = append(tree.roots, issueID)
+					tree.roots[issueID] = struct{}{}
 					for _, subIssueID := range issue.SubIssues {
 						if !tree.issueStore.IsExist(subIssueID) {
 							tree.issueQueue <- subIssueID
@@ -122,25 +118,18 @@ func (tree *JiraIssuesTree) collectMRs() {
 					return
 				}
 
-				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(8)*time.Second)
+				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
 				mr, err := NewMergeRequest(ctx, tree.git, mrURL)
 				cancel()
 				if err != nil {
-					fmt.Printf("New merge request [%s] failed: %v\n", mrURL, err)
+					content := fmt.Sprintf("New merge request [%s] failed: %v\n", mrURL, err)
+					tree.mrStore.PutIfEmpty(mrURL, &MergeRequest{Err: content})
 					continue
 				}
-
-				if mr.TargetBR == "master" {
-					tree.mrStore.PutIfEmpty(mrURL, mr)
-				}
+				tree.mrStore.PutIfEmpty(mrURL, mr)
 			}
 		}()
 	}
-}
-
-// PrintText prints 2level tree (PMTask->DevTask, Story->Task) as text.
-func (tree *JiraIssuesTree) PrintText() {
-	fmt.Println(tree.ToText())
 }
 
 // ToText .
@@ -150,66 +139,88 @@ func (tree *JiraIssuesTree) ToText() string {
 	if len(tree.roots) > 0 {
 		usedIssues = make(map[string]struct{}, 10)
 		outLines = append(outLines, "\n[Issues and Sub Issues:]\n")
-		for _, issueID := range tree.roots {
-			value, err := tree.issueStore.Get(issueID)
-			if err != nil {
-				outLines = append(outLines, fmt.Sprintf("Get issue [%s] failed: %v\n", issueID, err))
+		for issueID := range tree.roots {
+			issue, issueText := tree.GetIssueAndText(issueID, "")
+			outLines = append(outLines, issueText)
+			if issue == nil {
 				continue
 			}
-			issue := value.(*JiraIssue)
-			outLines = append(outLines, issue.ToText())
+
 			for _, subIssueID := range issue.SubIssues {
 				usedIssues[subIssueID] = struct{}{}
-				if subValue, err := tree.issueStore.Get(subIssueID); err != nil {
-					outLines = append(outLines, fmt.Sprintf("Get sub issue [%s] failed: %v\n", subIssueID, err))
-				} else {
-					subIssue := subValue.(*JiraIssue)
-					outLines = append(outLines, "\t"+subIssue.ToText())
-					outLines = append(outLines, tree.issueMRsToText(subIssue, "\t\t"))
-				}
+				_, subIssueText := tree.GetIssueAndText(subIssueID, "\t")
+				outLines = append(outLines, subIssueText)
 			}
 			outLines = append(outLines, "\n")
 		}
 	}
 
 	outLines = append(outLines, "\n[Single Issues:]\n")
-	for _, value := range tree.issueStore.GetItems() {
-		issue := value.(*JiraIssue)
-		if !isStoryIssue(issue.Type) {
-			if _, ok := usedIssues[issue.Key]; !ok {
-				outLines = append(outLines, issue.ToText())
-				outLines = append(outLines, tree.issueMRsToText(issue, "\t"))
-				outLines = append(outLines, "\n")
-			}
+	for key, value := range tree.issueStore.GetItems() {
+		if _, ok := tree.roots[key]; ok {
+			continue
 		}
+		if _, ok := usedIssues[key]; ok {
+			continue
+		}
+
+		issue := value.(*JiraIssue)
+		if len(issue.Err) == 0 {
+			outLines = append(outLines, issue.ToText())
+			outLines = append(outLines, tree.issueMRsToText(issue, "\t"))
+		} else {
+			outLines = append(outLines, issue.Err)
+		}
+		outLines = append(outLines, "\n")
 	}
 	return strings.Join(outLines, "")
 }
 
-// IssueToText .
-func (tree *JiraIssuesTree) IssueToText(issue *JiraIssue, prefix string) string {
-	outLines := make([]string, 0, 10)
-	outLines = append(outLines, issue.ToText())
-	for _, subIssueID := range issue.SubIssues {
-		if subValue, err := tree.issueStore.Get(subIssueID); err != nil {
-			outLines = append(outLines, fmt.Sprintf("Get sub issue [%s] failed: %v\n", subIssueID, err))
-		} else {
-			subIssue := subValue.(*JiraIssue)
-			outLines = append(outLines, "\t"+subIssue.ToText())
-			outLines = append(outLines, tree.issueMRsToText(subIssue, "\t\t"))
-		}
+// GetIssueAndText .
+func (tree *JiraIssuesTree) GetIssueAndText(issueID string, prefix string) (*JiraIssue, string) {
+	value, err := tree.issueStore.Get(issueID)
+	if err != nil {
+		return nil, fmt.Sprintf("%sGet issue [%s] failed: %v\n", prefix, issueID, err)
 	}
-	return strings.Join(outLines, "")
+	issue := value.(*JiraIssue)
+	if len(issue.Err) > 0 {
+		return nil, prefix + issue.Err
+	}
+
+	retlines := make([]string, 10)
+	retlines = append(retlines, prefix+issue.ToText())
+	retlines = append(retlines, tree.issueMRsToText(issue, prefix+"\t"))
+	return issue, strings.Join(retlines, "")
 }
 
 func (tree *JiraIssuesTree) issueMRsToText(issue *JiraIssue, prefix string) string {
+	if isStoryIssue(issue.Type) {
+		return ""
+	}
+
 	outLines := make([]string, 10)
+	usedMR := make(map[string]struct{})
 	for _, mrURL := range issue.MergeRequests {
-		value, err := tree.mrStore.Get(mrURL)
-		if err != nil {
+		if _, ok := usedMR[mrURL]; ok {
 			continue
 		}
-		outLines = append(outLines, prefix+value.(*MergeRequest).ToText())
+		usedMR[mrURL] = struct{}{}
+
+		value, err := tree.mrStore.Get(mrURL)
+		if err != nil {
+			line := fmt.Sprintf("%sGet mr [%s] failed: %v\n", prefix, mrURL, err)
+			outLines = append(outLines, line)
+			continue
+		}
+		mr := value.(*MergeRequest)
+		if len(mr.Err) > 0 {
+			outLines = append(outLines, prefix+mr.Err)
+			continue
+		}
+
+		if mr.TargetBR == "master" {
+			outLines = append(outLines, prefix+mr.ToText())
+		}
 	}
 	return strings.Join(outLines, "")
 }

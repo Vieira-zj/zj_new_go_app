@@ -39,7 +39,7 @@ func printReleaseCycleTree(ctx context.Context, relCycle string) {
 		time.Sleep(time.Second)
 	}
 	time.Sleep(time.Second)
-	tree.PrintText()
+	fmt.Println(tree.ToText())
 	tree.PrintUsage()
 }
 
@@ -75,7 +75,7 @@ func main() {
 			e.GET("/store", serve.StoreReleaseCycleIssues)
 			e.GET("/store/usage", serve.StoreUsage)
 
-			e.GET("/get", serve.GetReleaseCycleIssues)
+			e.GET("/get", serve.GetStoreIssues)
 			e.GET("/get/issue", serve.GetSingleIssue)
 
 			e.Logger.SetLevel(log.INFO)
@@ -89,7 +89,10 @@ func main() {
 
 	<-quit
 	if e != nil {
-		serve.StoreCancel()
+		for _, cancel := range serve.StoreCancelMap {
+			cancel()
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
 		defer cancel()
 		if err := e.Shutdown(ctx); err != nil {

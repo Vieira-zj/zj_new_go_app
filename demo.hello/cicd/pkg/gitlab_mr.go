@@ -17,6 +17,7 @@ type MergeRequest struct {
 	SourceBR string `json:"source_branch"`
 	WebURL   string `json:"web_url"`
 	Repo     string
+	Err      string
 }
 
 // PrintText prints merge request info as text.
@@ -26,7 +27,7 @@ func (mr *MergeRequest) PrintText(prefix string) {
 
 // ToText returns merge request info as text.
 func (mr *MergeRequest) ToText() string {
-	return fmt.Sprintf("MR:[%s],[%s:%s->%s],[%s]\n", mr.Title, mr.State, mr.SourceBR, mr.TargetBR, mr.WebURL)
+	return fmt.Sprintf("MR:[%s:%s->%s],[%s],[%s]\n", mr.State, mr.SourceBR, mr.TargetBR, mr.Title, mr.WebURL)
 }
 
 // NewMergeRequest create a merge request instance.

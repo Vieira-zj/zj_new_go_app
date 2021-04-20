@@ -7,8 +7,6 @@ import (
 	"strings"
 )
 
-var isDebug = false
-
 // JiraIssue struct for a jira issue.
 type JiraIssue struct {
 	Key           string   `json:"key"`
@@ -22,6 +20,7 @@ type JiraIssue struct {
 	SuperIssues   []string `json:"superIssue"`
 	SubIssues     []string `json:"subIssues"`
 	MergeRequests []string `json:"mergeRequests"`
+	Err           string
 }
 
 // PrintText prints issue data as text.
@@ -30,7 +29,7 @@ func (issue *JiraIssue) PrintText(prefix string) {
 
 	if isDebug {
 		for _, mr := range issue.MergeRequests {
-			fmt.Printf("%s\t[mr:%s]\n", prefix, mr)
+			fmt.Printf("%s\tMR:[%s]\n", prefix, mr)
 		}
 	}
 }

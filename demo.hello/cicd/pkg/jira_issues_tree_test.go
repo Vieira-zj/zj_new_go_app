@@ -8,7 +8,7 @@ import (
 )
 
 func TestOneTicketTree(t *testing.T) {
-	ticket := "SPPAY-1236"
+	ticket := "AIRPAY-65204"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10)*time.Second)
 	defer cancel()
 
@@ -19,7 +19,8 @@ func TestOneTicketTree(t *testing.T) {
 	for tree.QueueSize() > 0 {
 		time.Sleep(time.Second)
 	}
-	tree.PrintText()
+	time.Sleep(time.Second)
+	fmt.Println(tree.ToText())
 }
 
 func TestPrintReleaseTicketTree(t *testing.T) {
@@ -40,7 +41,7 @@ func TestPrintReleaseTicketTree(t *testing.T) {
 	for tree.QueueSize() > 0 {
 		time.Sleep(time.Second)
 	}
-	tree.PrintText()
+	fmt.Println(tree.ToText())
 	tree.PrintUsage()
 }
 
@@ -65,7 +66,7 @@ func TestPrintFixVersionTree(t *testing.T) {
 		time.Sleep(time.Second)
 	}
 	time.Sleep(time.Second)
-	tree.PrintText()
+	fmt.Println(tree.ToText())
 	tree.PrintUsage()
 }
 
@@ -88,6 +89,6 @@ func TestPrintReleaseCycleTree(t *testing.T) {
 		time.Sleep(time.Second)
 	}
 	time.Sleep(time.Second)
-	tree.PrintText()
+	fmt.Println(tree.ToText())
 	tree.PrintUsage()
 }

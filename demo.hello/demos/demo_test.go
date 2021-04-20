@@ -9,6 +9,7 @@ import (
 	"sync"
 	"testing"
 	"text/template"
+	"time"
 	"unsafe"
 
 	"gopkg.in/yaml.v2"
@@ -363,6 +364,17 @@ func TestDemo19(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println("templated string:", string(output.Bytes()))
+}
+
+func TestDemo20(t *testing.T) {
+	expired := 3
+	old := time.Now().Unix() + int64(expired)
+	time.Sleep(time.Duration(4) * time.Second)
+	if time.Now().Unix() > old {
+		fmt.Println("expired")
+	} else {
+		fmt.Println("not expired")
+	}
 }
 
 /*

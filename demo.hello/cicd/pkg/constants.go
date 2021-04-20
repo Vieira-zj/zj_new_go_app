@@ -1,6 +1,7 @@
 package pkg
 
 var (
-	jira = NewJiraTool()
-	git  = NewGitlabTool()
+	jira    = NewJiraTool()
+	git     = NewGitlabTool()
+	isDebug = false
 )
