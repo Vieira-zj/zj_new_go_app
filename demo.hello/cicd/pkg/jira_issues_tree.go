@@ -68,31 +68,22 @@ func (tree *JiraIssuesTree) QueueSize() int {
 	return len(tree.issueQueue) + len(tree.mrQueue)
 }
 
-func (tree *JiraIssuesTree) waitDone() {
-	go func() {
-		for i := 0; i < 3; {
-			if tree.QueueSize() > 0 {
-				i = 0
-			} else {
-				i++
-			}
-			time.Sleep(time.Second)
-		}
-		tree.running = false
-	}()
-}
-
 /*
 Collect issues data.
 */
 
 // SubmitIssue puts a jira issue key in queue.
-func (tree *JiraIssuesTree) SubmitIssue(issueID string) {
+func (tree *JiraIssuesTree) SubmitIssue(issueID string) error {
+	tree.collect()
 	tree.issueQueue <- issueID
+	return nil
 }
 
-// Collect fetches issue and merge request data.
-func (tree *JiraIssuesTree) Collect() {
+// collect fetches issue and merge request data.
+func (tree *JiraIssuesTree) collect() {
+	if tree.running {
+		return
+	}
 	tree.running = true
 	tree.collectIssues()
 	tree.collectIssueMRs()
@@ -136,7 +127,7 @@ func (tree *JiraIssuesTree) collectIssues() {
 							tree.issueQueue <- subIssueID
 						}
 					}
-				} else if issue.Type == "Task" {
+				} else if issue.Type == "Task" || issue.Type == "Bug" {
 					for _, mrURL := range issue.MergeRequests {
 						if !tree.mrStore.IsExist(mrURL) {
 							tree.mrQueue <- mrURL
@@ -227,6 +218,20 @@ func (tree *JiraIssuesTree) addStorySuperIssues() {
 	}()
 }
 
+func (tree *JiraIssuesTree) waitDone() {
+	go func() {
+		for i := 0; i < 3; {
+			if tree.QueueSize() > 0 {
+				i = 0
+			} else {
+				i++
+			}
+			time.Sleep(time.Second)
+		}
+		tree.running = false
+	}()
+}
+
 /*
 Print text.
 */
@@ -275,10 +280,18 @@ func (tree *JiraIssuesTree) ToText() string {
 	outLines = append(outLines, "\n[Single Issues:]\n")
 	for _, value := range tree.issueStore.GetItems() {
 		issue := value.(*JiraIssue)
-		if len(issue.SuperIssues) > 0 {
+		found := false
+		for _, supIssueID := range issue.SuperIssues {
+			if _, err := tree.issueStore.Get(supIssueID); err == nil {
+				found = true
+				break
+			}
+		}
+		if found {
 			continue
 		}
-		if issue.Type == "Task" {
+
+		if issue.Type == "Task" || issue.Type == "Bug" {
 			if len(issue.Err) == 0 {
 				outLines = append(outLines, issue.ToText())
 				outLines = append(outLines, tree.issueMRsToText(issue, "\t"))

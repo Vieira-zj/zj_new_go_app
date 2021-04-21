@@ -3,23 +3,28 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 )
 
-func TestOneTicketTree(t *testing.T) {
-	ticket := "SPPAY-196"
+func TestTicketsTree(t *testing.T) {
+	tickets := "AIRPAY-66492,SPPAY-2210,AIRPAY-57284,AIRPAY-62043"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 	defer cancel()
 
 	tree := NewJiraIssuesTree(ctx, 3)
-	tree.Collect()
-	tree.SubmitIssue(ticket)
+	for _, ticket := range strings.Split(tickets, ",") {
+		if err := tree.SubmitIssue(ticket); err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	for tree.IsRunning() {
 		time.Sleep(time.Second)
 	}
 	fmt.Println(tree.ToText())
+	tree.PrintUsage()
 }
 
 func TestPrintReleaseTicketTree(t *testing.T) {
@@ -32,9 +37,10 @@ func TestPrintReleaseTicketTree(t *testing.T) {
 	}
 
 	tree := NewJiraIssuesTree(ctx, 3)
-	tree.Collect()
 	for _, issueID := range releaseTicket.SubIssues {
-		tree.SubmitIssue(issueID)
+		if err := tree.SubmitIssue(issueID); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	for tree.IsRunning() {
@@ -46,7 +52,7 @@ func TestPrintReleaseTicketTree(t *testing.T) {
 
 func TestPrintFixVersionTree(t *testing.T) {
 	// fix version -> pm/story tasks -> tasks
-	key := "apa_v1.0.19.20210419"
+	key := "apa_v1.0.20.20210426"
 	jql := fmt.Sprintf("fixVersion = %s", key)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 	defer cancel()
@@ -56,9 +62,10 @@ func TestPrintFixVersionTree(t *testing.T) {
 	}
 
 	tree := NewJiraIssuesTree(ctx, 6)
-	tree.Collect()
 	for _, key := range keys {
-		tree.SubmitIssue(key)
+		if err := tree.SubmitIssue(key); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	for tree.IsRunning() {
@@ -78,9 +85,10 @@ func TestPrintReleaseCycleTree(t *testing.T) {
 	}
 
 	tree := NewJiraIssuesTree(ctx, 6)
-	tree.Collect()
 	for _, key := range keys {
-		tree.SubmitIssue(key)
+		if err := tree.SubmitIssue(key); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	for tree.IsRunning() {

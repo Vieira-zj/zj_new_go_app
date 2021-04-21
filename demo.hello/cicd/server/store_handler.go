@@ -2,9 +2,10 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"demo.hello/cicd/pkg"
@@ -18,66 +19,66 @@ var (
 	StoreCancelMap map[string]context.CancelFunc = make(map[string]context.CancelFunc)
 )
 
-// StoreIssues .
-func StoreIssues(c echo.Context) error {
-	var key, jql string
-	releaseCycle := c.QueryParam("releaseCycle")
-	fixVersion := c.QueryParam("fixVersion")
-	query := c.QueryParam("query")
-	forceUpdate := c.QueryParam("forceUpdate")
-
-	if len(releaseCycle) > 0 {
-		key = releaseCycle
-		jql = fmt.Sprintf(`"Release Cycle" = "%s"`, releaseCycle)
-	} else if len(fixVersion) > 0 {
-		key = fixVersion
-		jql = fmt.Sprintf("fixVersion = %s", fixVersion)
-	} else if len(query) > 0 {
-		key = query
-		jql = query
-	} else {
-		return c.String(http.StatusBadRequest, fmt.Sprintln("no query found."))
-	}
-
-	retContent := storeJQLIssues(key, jql, forceUpdate)
-	return c.String(http.StatusOK, retContent)
+// StoreIssuesReq .
+type StoreIssuesReq struct {
+	ReleaseCycle string `json:"releaseCycle"`
+	FixVersion   string `json:"fixVersion"`
+	Query        string `json:"query"`
+	ForceUpdate  bool   `json:"forceUpdate"`
 }
 
-func storeJQLIssues(key, jql, forceUpdate string) string {
+// StoreIssues .
+func StoreIssues(c echo.Context) error {
+	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Read request body failed.")
+	}
+
+	req := &StoreIssuesReq{}
+	if err := json.Unmarshal(body, &req); err != nil {
+		return c.String(http.StatusInternalServerError, "Unmarshal body failed.")
+	}
+
+	if len(req.ReleaseCycle) > 0 {
+		jql := fmt.Sprintf(`"Release Cycle" = "%s"`, req.ReleaseCycle)
+		return c.String(http.StatusOK, storeJQLIssues(req.ReleaseCycle, jql, req.ForceUpdate))
+	}
+	if len(req.FixVersion) > 0 {
+		jql := fmt.Sprintf("fixVersion = %s", req.FixVersion)
+		return c.String(http.StatusOK, storeJQLIssues(req.FixVersion, jql, req.ForceUpdate))
+	}
+	if len(req.Query) > 0 {
+		return c.String(http.StatusOK, storeJQLIssues(req.Query, req.Query, req.ForceUpdate))
+	}
+	return c.String(http.StatusBadRequest, fmt.Sprintln("No query found."))
+}
+
+func storeJQLIssues(key, jql string, forceUpdate bool) string {
 	if _, ok := TreeMap[key]; ok {
-		if strings.ToLower(forceUpdate) == "true" {
-			cancel := StoreCancelMap[key]
-			cancel()
+		if forceUpdate {
+			fmt.Printf("Force update for store [%s].\n", key)
+			StoreCancelMap[key]()
 			delete(TreeMap, key)
 		} else {
-			return fmt.Sprintf("Store for key [%s] exist.", key)
+			return fmt.Sprintf("Store [%s] already exist.\n", key)
 		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
 	defer cancel()
-	keys, err := jira.SearchIssues(ctx, jql)
+	issues, err := jira.SearchIssues(ctx, jql)
 	if err != nil {
-		return fmt.Sprintf("Search issues for jql [%s] failed: %v\n", jql, err)
+		return fmt.Sprintf("Search issues by jql [%s] failed: %v\n", jql, err)
 	}
 
 	ctx, cancel = context.WithCancel(context.Background())
 	StoreCancelMap[key] = cancel
 	tree := pkg.NewJiraIssuesTree(ctx, 8)
 	TreeMap[key] = tree
-	tree.Collect()
-	for _, key := range keys {
-		tree.SubmitIssue(key)
+	for _, issueID := range issues {
+		if err := tree.SubmitIssue(issueID); err != nil {
+			return fmt.Sprintf("Submit issue [%s] failed: %v\n", key, err)
+		}
 	}
-	return fmt.Sprintf("Issues for key [%s] stored.", key)
-}
-
-// StoreUsage .
-func StoreUsage(c echo.Context) error {
-	key := c.QueryParam("storeKey")
-	tree, ok := TreeMap[key]
-	if !ok {
-		return c.String(http.StatusOK, fmt.Sprintf("StoreKey [%s] not found.\n", key))
-	}
-	return c.String(http.StatusOK, tree.UsageToText())
+	return fmt.Sprintf("Store [%s] saved.\n", key)
 }

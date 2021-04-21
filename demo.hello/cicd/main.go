@@ -31,9 +31,10 @@ func printReleaseCycleTree(ctx context.Context, relCycle string) {
 	}
 
 	tree := pkg.NewJiraIssuesTree(ctx, 8)
-	tree.Collect()
 	for _, key := range keys {
-		tree.SubmitIssue(key)
+		if err := tree.SubmitIssue(key); err != nil {
+			panic(err)
+		}
 	}
 
 	for tree.QueueSize() > 0 {
@@ -76,11 +77,11 @@ func main() {
 			e.GET("/", serve.Index)
 			e.GET("/ping", serve.Ping)
 
-			e.GET("/store", serve.StoreIssues)
-			e.GET("/store/usage", serve.StoreUsage)
+			e.POST("/store", serve.StoreIssues)
+			e.POST("/store/usage", serve.StoreUsage)
 
-			e.GET("/get", serve.GetStoreIssues)
-			e.GET("/get/issue", serve.GetSingleIssue)
+			e.POST("/get", serve.GetStoreIssues)
+			e.POST("/get/issue", serve.GetSingleIssue)
 
 			e.Logger.SetLevel(log.INFO)
 			e.Logger.Fatal(e.Start(":8081"))
@@ -96,18 +97,23 @@ func main() {
 					return
 				case <-c:
 					now := time.Now().Unix()
-					delKeys := make([]string, 0, 3)
+					delKeys := make([]string, 0)
 					for key, tree := range serve.TreeMap {
 						if now > tree.GetExpired() {
 							delKeys = append(delKeys, key)
-						} else if !tree.IsRunning() {
-							serve.StoreCancelMap[key]()
+						} else {
+							if !tree.IsRunning() {
+								serve.StoreCancelMap[key]()
+							}
 						}
 					}
 					for _, key := range delKeys {
-						fmt.Printf("Store [%s] is expired and remmove.\n", key)
-						serve.StoreCancelMap[key]()
-						delete(serve.TreeMap, key)
+						tree := serve.TreeMap[key]
+						if !tree.IsRunning() {
+							fmt.Printf("Store [%s] is expired and remove.\n", key)
+							serve.StoreCancelMap[key]()
+							delete(serve.TreeMap, key)
+						}
 					}
 				}
 			}
