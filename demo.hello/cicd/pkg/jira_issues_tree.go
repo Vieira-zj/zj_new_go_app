@@ -13,7 +13,10 @@ import (
 type JiraIssuesTree struct {
 	ctx        context.Context
 	parallel   int
-	roots      map[string]struct{}
+	expired    int64
+	running    bool
+	epics      map[string]struct{}
+	stories    map[string]struct{}
 	issueQueue chan string
 	mrQueue    chan string
 	issueStore *utils.Cache
@@ -30,9 +33,12 @@ func NewJiraIssuesTree(ctx context.Context, parallel int) *JiraIssuesTree {
 		mapSize   = 20
 	)
 	return &JiraIssuesTree{
-		parallel:   parallel,
 		ctx:        ctx,
-		roots:      make(map[string]struct{}, parallel*mapSize),
+		parallel:   parallel,
+		expired:    time.Now().Unix() + int64(expired),
+		running:    false,
+		epics:      make(map[string]struct{}, mapSize/2),
+		stories:    make(map[string]struct{}, mapSize),
 		issueQueue: make(chan string, queueSize),
 		mrQueue:    make(chan string, queueSize),
 		issueStore: utils.NewCache((parallel * 2), mapSize),
@@ -42,25 +48,56 @@ func NewJiraIssuesTree(ctx context.Context, parallel int) *JiraIssuesTree {
 	}
 }
 
+// GetStore returns internal store.
+func (tree *JiraIssuesTree) GetStore() *utils.Cache {
+	return tree.issueStore
+}
+
+// GetExpired .
+func (tree *JiraIssuesTree) GetExpired() int64 {
+	return tree.expired
+}
+
+// IsRunning .
+func (tree *JiraIssuesTree) IsRunning() bool {
+	return tree.running
+}
+
 // QueueSize returns total issue keys to be handle in queue.
 func (tree *JiraIssuesTree) QueueSize() int {
 	return len(tree.issueQueue) + len(tree.mrQueue)
 }
 
-// GetStore returns internal store.
-func (tree *JiraIssuesTree) GetStore() *utils.Cache {
-	return tree.issueStore
+func (tree *JiraIssuesTree) waitDone() {
+	go func() {
+		for i := 0; i < 3; {
+			if tree.QueueSize() > 0 {
+				i = 0
+			} else {
+				i++
+			}
+			time.Sleep(time.Second)
+		}
+		tree.running = false
+	}()
 }
+
+/*
+Collect issues data.
+*/
 
 // SubmitIssue puts a jira issue key in queue.
 func (tree *JiraIssuesTree) SubmitIssue(issueID string) {
 	tree.issueQueue <- issueID
 }
 
-// Collect .
+// Collect fetches issue and merge request data.
 func (tree *JiraIssuesTree) Collect() {
+	tree.running = true
 	tree.collectIssues()
-	tree.collectMRs()
+	tree.collectIssueMRs()
+	// tree.addStorySuperIssues()
+	tree.waitDone()
 }
 
 func (tree *JiraIssuesTree) collectIssues() {
@@ -76,24 +113,30 @@ func (tree *JiraIssuesTree) collectIssues() {
 					return
 				}
 
-				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
-				issue, err := NewJiraIssueV2(ctx, tree.jira, issueID)
-				cancel()
-				if err != nil {
-					content := fmt.Sprintf("New jira issue [%s] failed: %v\n", issueID, err)
-					tree.issueStore.PutIfEmpty(issueID, &JiraIssue{Err: content})
+				issue := tree.collectOneIssue(issueID)
+				if len(issue.Err) > 0 {
 					continue
 				}
 
-				tree.issueStore.PutIfEmpty(issueID, issue)
-				if isStoryIssue(issue.Type) {
-					tree.roots[issueID] = struct{}{}
+				if issue.Type == "Epic" {
+					tree.epics[issueID] = struct{}{}
+					// handle link story to epic
+					for _, subIssueID := range issue.SubIssues {
+						subIssue := tree.collectOneIssue(subIssueID)
+						if len(issue.Err) > 0 {
+							continue
+						}
+						subIssue.SuperIssues = append(issue.SuperIssues, issueID)
+						tree.issueQueue <- subIssueID
+					}
+				} else if isStoryIssue(issue.Type) {
+					tree.stories[issueID] = struct{}{}
 					for _, subIssueID := range issue.SubIssues {
 						if !tree.issueStore.IsExist(subIssueID) {
 							tree.issueQueue <- subIssueID
 						}
 					}
-				} else {
+				} else if issue.Type == "Task" {
 					for _, mrURL := range issue.MergeRequests {
 						if !tree.mrStore.IsExist(mrURL) {
 							tree.mrQueue <- mrURL
@@ -105,7 +148,23 @@ func (tree *JiraIssuesTree) collectIssues() {
 	}
 }
 
-func (tree *JiraIssuesTree) collectMRs() {
+func (tree *JiraIssuesTree) collectOneIssue(issueID string) *JiraIssue {
+	if value, err := tree.issueStore.Get(issueID); err == nil {
+		return value.(*JiraIssue)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
+	defer cancel()
+	issue, err := NewJiraIssueV2(ctx, tree.jira, issueID)
+	if err != nil {
+		content := fmt.Sprintf("New jira issue [%s] failed: %v\n", issueID, err)
+		issue = &JiraIssue{Err: content}
+	}
+	tree.issueStore.PutIfEmpty(issueID, issue)
+	return issue
+}
+
+func (tree *JiraIssuesTree) collectIssueMRs() {
 	for i := 0; i < tree.parallel; i++ {
 		go func() {
 			var mrURL string
@@ -132,46 +191,102 @@ func (tree *JiraIssuesTree) collectMRs() {
 	}
 }
 
+// @deprecated: low performance
+func (tree *JiraIssuesTree) addStorySuperIssues() {
+	go func() {
+		time.Sleep(time.Second)
+		for tree.QueueSize() > 0 {
+			time.Sleep(time.Second)
+		}
+
+		for storyID := range tree.stories {
+			value, err := tree.issueStore.Get(storyID)
+			if err != nil {
+				fmt.Printf("Get story [%s] failed: %v\n", storyID, err)
+			}
+			story := value.(*JiraIssue)
+			for epicID := range tree.epics {
+				value, err := tree.issueStore.Get(epicID)
+				if err != nil {
+					fmt.Printf("Get epic [%s] failed: %v\n", epicID, err)
+				}
+				isFound := false
+				epic := value.(*JiraIssue)
+				for _, subIssueID := range epic.SubIssues {
+					if storyID == subIssueID {
+						isFound = true
+						story.SuperIssues = append(story.SuperIssues, epicID)
+						break
+					}
+				}
+				if isFound {
+					break
+				}
+			}
+		}
+	}()
+}
+
+/*
+Print text.
+*/
+
 // ToText .
 func (tree *JiraIssuesTree) ToText() string {
 	outLines := make([]string, 0, 100)
-	var usedIssues map[string]struct{}
-	if len(tree.roots) > 0 {
-		usedIssues = make(map[string]struct{}, 10)
-		outLines = append(outLines, "\n[Issues and Sub Issues:]\n")
-		for issueID := range tree.roots {
-			issue, issueText := tree.GetIssueAndText(issueID, "")
-			outLines = append(outLines, issueText)
-			if issue == nil {
+	outLines = append(outLines, "\n[Epic, Story and Tasks:]\n")
+	for epicID := range tree.epics {
+		epic, epicText := tree.GetIssueAndText(epicID, "")
+		outLines = append(outLines, epicText)
+		if epic == nil {
+			continue
+		}
+		for _, storyID := range epic.SubIssues {
+			story, storyText := tree.GetIssueAndText(storyID, "\t")
+			outLines = append(outLines, storyText)
+			if story == nil {
 				continue
 			}
-
-			for _, subIssueID := range issue.SubIssues {
-				usedIssues[subIssueID] = struct{}{}
-				_, subIssueText := tree.GetIssueAndText(subIssueID, "\t")
-				outLines = append(outLines, subIssueText)
+			for _, issueID := range story.SubIssues {
+				_, issueText := tree.GetIssueAndText(issueID, "\t\t")
+				outLines = append(outLines, issueText)
 			}
-			outLines = append(outLines, "\n")
 		}
+		outLines = append(outLines, "\n")
+	}
+
+	outLines = append(outLines, "\n[Single Stories:]\n")
+	for storyID := range tree.stories {
+		story, storyText := tree.GetIssueAndText(storyID, "")
+		if len(story.SuperIssues) > 0 {
+			continue
+		}
+		outLines = append(outLines, storyText)
+		if story == nil {
+			continue
+		}
+		for _, issueID := range story.SubIssues {
+			_, issueText := tree.GetIssueAndText(issueID, "\t")
+			outLines = append(outLines, issueText)
+		}
+		outLines = append(outLines, "\n")
 	}
 
 	outLines = append(outLines, "\n[Single Issues:]\n")
-	for key, value := range tree.issueStore.GetItems() {
-		if _, ok := tree.roots[key]; ok {
-			continue
-		}
-		if _, ok := usedIssues[key]; ok {
-			continue
-		}
-
+	for _, value := range tree.issueStore.GetItems() {
 		issue := value.(*JiraIssue)
-		if len(issue.Err) == 0 {
-			outLines = append(outLines, issue.ToText())
-			outLines = append(outLines, tree.issueMRsToText(issue, "\t"))
-		} else {
-			outLines = append(outLines, issue.Err)
+		if len(issue.SuperIssues) > 0 {
+			continue
 		}
-		outLines = append(outLines, "\n")
+		if issue.Type == "Task" {
+			if len(issue.Err) == 0 {
+				outLines = append(outLines, issue.ToText())
+				outLines = append(outLines, tree.issueMRsToText(issue, "\t"))
+			} else {
+				outLines = append(outLines, issue.Err)
+			}
+			outLines = append(outLines, "\n")
+		}
 	}
 	return strings.Join(outLines, "")
 }

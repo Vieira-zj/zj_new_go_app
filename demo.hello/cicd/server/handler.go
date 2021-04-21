@@ -9,9 +9,8 @@ import (
 )
 
 var (
-	count   = 0
-	jira    = pkg.NewJiraTool()
-	treeMap = make(map[string]*pkg.JiraIssuesTree)
+	count = 0
+	jira  = pkg.NewJiraTool()
 )
 
 // Index .

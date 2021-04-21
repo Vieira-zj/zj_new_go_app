@@ -59,3 +59,11 @@ func TestGetRemoteLink(t *testing.T) {
 	}
 	fmt.Println("remote links:", string(resp))
 }
+
+func TestGetIssuesInEpic(t *testing.T) {
+	keys, err := jira.GetIssuesInEpic(context.TODO(), "SPPAY-196")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(keys)
+}

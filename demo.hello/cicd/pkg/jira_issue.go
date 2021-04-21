@@ -128,26 +128,36 @@ func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraI
 	}
 	issue.FixVersions = fixVersions
 
-	issueLinks := make([]string, 0)
-	if issue.Type == "PMTask" || issue.Type == "Story" || issue.Type == "Epic" || issue.Type == "Release" {
+	// handle sub issues
+	if issue.Type == "PMTask" || issue.Type == "Story" || issue.Type == "Release" {
+		issueLinks := make([]string, 0)
 		for _, link := range respJiraIssue.Fields.IssueLinks {
 			if link.Type.Outward == "Contains" && len(link.OutwardIssue.Key) > 0 {
 				issueLinks = append(issueLinks, link.OutwardIssue.Key)
 			}
 		}
+		issue.SubIssues = issueLinks
 	}
-	issue.SubIssues = issueLinks
+	if issue.Type == "Epic" {
+		issueLinks, err := jira.GetIssuesInEpic(ctx, issueID)
+		if err != nil {
+			return nil, err
+		}
+		issue.SubIssues = issueLinks
+	}
 
-	issueLinks = make([]string, 0)
+	// handle super issues
 	if issue.Type == "Task" || issue.Type == "Story" {
+		issueLinks := make([]string, 0)
 		for _, link := range respJiraIssue.Fields.IssueLinks {
 			if link.Type.Inward == "In Release" && len(link.InwardIssue.Key) > 0 {
 				issueLinks = append(issueLinks, link.InwardIssue.Key)
 			}
 		}
+		issue.SuperIssues = issueLinks
 	}
-	issue.SuperIssues = issueLinks
 
+	// handle remote link
 	resp, err = jira.GetRemoteLink(ctx, issueID)
 	if err != nil {
 		return nil, err

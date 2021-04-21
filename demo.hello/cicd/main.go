@@ -18,6 +18,7 @@ var (
 	jira = pkg.NewJiraTool()
 
 	help         bool
+	cli          bool
 	server       bool
 	releaseCycle string
 )
@@ -45,7 +46,8 @@ func printReleaseCycleTree(ctx context.Context, relCycle string) {
 
 func main() {
 	flag.BoolVar(&help, "h", false, "help.")
-	flag.BoolVar(&server, "server", false, "run http server.")
+	flag.BoolVar(&cli, "cli", false, "run command line mode.")
+	flag.BoolVar(&server, "server", false, "run server mode.")
 	flag.StringVar(&releaseCycle, "releaseCycle", "", "Release Cycle for jira issues.")
 
 	flag.Parse()
@@ -54,12 +56,14 @@ func main() {
 		return
 	}
 
-	// cli
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	mainCtx, mainCancel := context.WithCancel(context.Background())
+	defer mainCancel()
 
-	if len(releaseCycle) > 0 {
-		printReleaseCycleTree(ctx, releaseCycle)
+	// cli
+	if cli {
+		if len(releaseCycle) > 0 {
+			printReleaseCycleTree(mainCtx, releaseCycle)
+		}
 		return
 	}
 
@@ -72,7 +76,7 @@ func main() {
 			e.GET("/", serve.Index)
 			e.GET("/ping", serve.Ping)
 
-			e.GET("/store", serve.StoreReleaseCycleIssues)
+			e.GET("/store", serve.StoreIssues)
 			e.GET("/store/usage", serve.StoreUsage)
 
 			e.GET("/get", serve.GetStoreIssues)
@@ -81,14 +85,42 @@ func main() {
 			e.Logger.SetLevel(log.INFO)
 			e.Logger.Fatal(e.Start(":8081"))
 		}()
+
+		// schedule job
+		go func() {
+			c := time.Tick(time.Duration(10) * time.Second)
+			for {
+				select {
+				case <-mainCtx.Done():
+					fmt.Println("Schedule job exit.")
+					return
+				case <-c:
+					now := time.Now().Unix()
+					delKeys := make([]string, 0, 3)
+					for key, tree := range serve.TreeMap {
+						if now > tree.GetExpired() {
+							delKeys = append(delKeys, key)
+						} else if !tree.IsRunning() {
+							serve.StoreCancelMap[key]()
+						}
+					}
+					for _, key := range delKeys {
+						fmt.Printf("Store [%s] is expired and remmove.\n", key)
+						serve.StoreCancelMap[key]()
+						delete(serve.TreeMap, key)
+					}
+				}
+			}
+		}()
 	}
 
-	// quit
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 
+	// quit
 	<-quit
-	if e != nil {
+	if server && e != nil {
+		mainCancel()
 		for _, cancel := range serve.StoreCancelMap {
 			cancel()
 		}
@@ -99,5 +131,5 @@ func main() {
 			panic(err)
 		}
 	}
-	fmt.Println("Stopped.")
+	fmt.Println("Server stopped.")
 }

@@ -8,24 +8,23 @@ import (
 )
 
 func TestOneTicketTree(t *testing.T) {
-	ticket := "AIRPAY-65204"
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10)*time.Second)
+	ticket := "SPPAY-196"
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 	defer cancel()
 
-	tree := NewJiraIssuesTree(ctx, 1)
+	tree := NewJiraIssuesTree(ctx, 3)
 	tree.Collect()
 	tree.SubmitIssue(ticket)
 
-	for tree.QueueSize() > 0 {
+	for tree.IsRunning() {
 		time.Sleep(time.Second)
 	}
-	time.Sleep(time.Second)
 	fmt.Println(tree.ToText())
 }
 
 func TestPrintReleaseTicketTree(t *testing.T) {
 	// release ticket -> tasks
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 	defer cancel()
 	releaseTicket, err := NewJiraIssue(ctx, jira, "AIRPAY-66425")
 	if err != nil {
@@ -38,7 +37,7 @@ func TestPrintReleaseTicketTree(t *testing.T) {
 		tree.SubmitIssue(issueID)
 	}
 
-	for tree.QueueSize() > 0 {
+	for tree.IsRunning() {
 		time.Sleep(time.Second)
 	}
 	fmt.Println(tree.ToText())
@@ -62,10 +61,9 @@ func TestPrintFixVersionTree(t *testing.T) {
 		tree.SubmitIssue(key)
 	}
 
-	for tree.QueueSize() > 0 {
+	for tree.IsRunning() {
 		time.Sleep(time.Second)
 	}
-	time.Sleep(time.Second)
 	fmt.Println(tree.ToText())
 	tree.PrintUsage()
 }
@@ -85,10 +83,9 @@ func TestPrintReleaseCycleTree(t *testing.T) {
 		tree.SubmitIssue(key)
 	}
 
-	for tree.QueueSize() > 0 {
+	for tree.IsRunning() {
 		time.Sleep(time.Second)
 	}
-	time.Sleep(time.Second)
 	fmt.Println(tree.ToText())
 	tree.PrintUsage()
 }

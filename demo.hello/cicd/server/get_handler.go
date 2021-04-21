@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo"
 )
@@ -11,9 +12,13 @@ import (
 // GetStoreIssues .
 func GetStoreIssues(c echo.Context) error {
 	key := c.QueryParam("storeKey")
-	tree, ok := treeMap[key]
+	tree, ok := TreeMap[key]
 	if !ok {
 		return c.String(http.StatusOK, fmt.Sprintf("StoreKey [%s] not found.\n", key))
+	}
+
+	for tree.IsRunning() {
+		time.Sleep(time.Duration(500) * time.Millisecond)
 	}
 	return c.String(http.StatusOK, tree.ToText())
 }
@@ -23,9 +28,13 @@ func GetSingleIssue(c echo.Context) error {
 	key := c.QueryParam("storeKey")
 	issueKey := c.QueryParam("key")
 
-	tree, ok := treeMap[key]
+	tree, ok := TreeMap[key]
 	if !ok {
 		return c.String(http.StatusOK, fmt.Sprintf("Store [%s] not found.\n", key))
+	}
+
+	for tree.IsRunning() {
+		time.Sleep(time.Duration(500) * time.Millisecond)
 	}
 
 	outLines := make([]string, 10)

@@ -12,26 +12,43 @@ import (
 )
 
 var (
+	// TreeMap .
+	TreeMap = make(map[string]*pkg.JiraIssuesTree)
 	// StoreCancelMap .
 	StoreCancelMap map[string]context.CancelFunc = make(map[string]context.CancelFunc)
 )
 
-// StoreReleaseCycleIssues .
-func StoreReleaseCycleIssues(c echo.Context) error {
+// StoreIssues .
+func StoreIssues(c echo.Context) error {
+	var key, jql string
 	releaseCycle := c.QueryParam("releaseCycle")
+	fixVersion := c.QueryParam("fixVersion")
+	query := c.QueryParam("query")
 	forceUpdate := c.QueryParam("forceUpdate")
-	jql := fmt.Sprintf(`"Release Cycle" = "%s"`, releaseCycle)
 
-	retContent := storeJQLIssues(releaseCycle, jql, forceUpdate)
+	if len(releaseCycle) > 0 {
+		key = releaseCycle
+		jql = fmt.Sprintf(`"Release Cycle" = "%s"`, releaseCycle)
+	} else if len(fixVersion) > 0 {
+		key = fixVersion
+		jql = fmt.Sprintf("fixVersion = %s", fixVersion)
+	} else if len(query) > 0 {
+		key = query
+		jql = query
+	} else {
+		return c.String(http.StatusBadRequest, fmt.Sprintln("no query found."))
+	}
+
+	retContent := storeJQLIssues(key, jql, forceUpdate)
 	return c.String(http.StatusOK, retContent)
 }
 
 func storeJQLIssues(key, jql, forceUpdate string) string {
-	if _, ok := treeMap[key]; ok {
+	if _, ok := TreeMap[key]; ok {
 		if strings.ToLower(forceUpdate) == "true" {
 			cancel := StoreCancelMap[key]
 			cancel()
-			delete(treeMap, key)
+			delete(TreeMap, key)
 		} else {
 			return fmt.Sprintf("Store for key [%s] exist.", key)
 		}
@@ -47,7 +64,7 @@ func storeJQLIssues(key, jql, forceUpdate string) string {
 	ctx, cancel = context.WithCancel(context.Background())
 	StoreCancelMap[key] = cancel
 	tree := pkg.NewJiraIssuesTree(ctx, 8)
-	treeMap[key] = tree
+	TreeMap[key] = tree
 	tree.Collect()
 	for _, key := range keys {
 		tree.SubmitIssue(key)
@@ -58,7 +75,7 @@ func storeJQLIssues(key, jql, forceUpdate string) string {
 // StoreUsage .
 func StoreUsage(c echo.Context) error {
 	key := c.QueryParam("storeKey")
-	tree, ok := treeMap[key]
+	tree, ok := TreeMap[key]
 	if !ok {
 		return c.String(http.StatusOK, fmt.Sprintf("StoreKey [%s] not found.\n", key))
 	}

@@ -62,23 +62,17 @@ func (jira *JiraTool) SearchIssues(ctx context.Context, jql string) ([]string, e
 	if err != nil {
 		return nil, err
 	}
+	return getIssueKeysFromJQLResults(resp)
+}
 
-	respMap := make(map[string]interface{})
-	err = json.Unmarshal(resp, &respMap)
+// GetIssuesInEpic .
+func (jira *JiraTool) GetIssuesInEpic(ctx context.Context, epicID string) ([]string, error) {
+	jql := fmt.Sprintf(`"Epic Link" = %s`, epicID)
+	resp, err := jira.Search(ctx, jql, []string{"key"})
 	if err != nil {
 		return nil, err
 	}
-
-	total := respMap["total"].(float64)
-	fmt.Printf("Search results count: %.0f\n", total)
-
-	issueSlice := respMap["issues"].([]interface{})
-	keys := make([]string, 0, len(issueSlice))
-	for _, item := range issueSlice {
-		issue := item.(map[string]interface{})
-		keys = append(keys, issue["key"].(string))
-	}
-	return keys, nil
+	return getIssueKeysFromJQLResults(resp)
 }
 
 // GetIssueLink returns issue related links.
@@ -114,4 +108,23 @@ func formatPath(path string) string {
 		return "/" + path
 	}
 	return path
+}
+
+func getIssueKeysFromJQLResults(resp []byte) ([]string, error) {
+	respMap := make(map[string]interface{})
+	err := json.Unmarshal(resp, &respMap)
+	if err != nil {
+		return nil, err
+	}
+
+	total := respMap["total"].(float64)
+	fmt.Printf("Search results count: %.0f\n", total)
+
+	issueSlice := respMap["issues"].([]interface{})
+	keys := make([]string, 0, len(issueSlice))
+	for _, item := range issueSlice {
+		issue := item.(map[string]interface{})
+		keys = append(keys, issue["key"].(string))
+	}
+	return keys, nil
 }
