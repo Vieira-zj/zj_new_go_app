@@ -103,6 +103,10 @@ func (jira *JiraTool) post(ctx context.Context, path, body string) ([]byte, erro
 	return jira.http.PostWithAuth(ctx, url, headers, body, jira.userName, jira.userPwd)
 }
 
+/*
+Common
+*/
+
 func formatPath(path string) string {
 	if !strings.HasPrefix(path, "/") {
 		return "/" + path

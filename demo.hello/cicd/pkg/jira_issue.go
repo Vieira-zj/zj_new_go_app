@@ -7,6 +7,13 @@ import (
 	"strings"
 )
 
+/*
+Jira issue types:
+level 1: Epic
+level 2: Story, PMTask, Release
+level 3: Task, Bug
+*/
+
 // JiraIssue struct for a jira issue.
 type JiraIssue struct {
 	Key           string   `json:"key"`
@@ -147,7 +154,7 @@ func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraI
 	}
 
 	// handle super issues
-	if issue.Type == "Task" || issue.Type == "Story" {
+	if issue.Type == "Task" || issue.Type == "Bug" || issue.Type == "Story" {
 		issueLinks := make([]string, 0)
 		for _, link := range respJiraIssue.Fields.IssueLinks {
 			if link.Type.Inward == "In Release" && len(link.InwardIssue.Key) > 0 {

@@ -9,6 +9,18 @@ import (
 	"demo.hello/utils"
 )
 
+// Tree .
+type Tree interface {
+	GetIssueStore() *utils.Cache
+	GetMRStore() *utils.Cache
+	GetExpired() int64
+	IsRunning() bool
+	WaitDone()
+	SubmitIssue(issueID string)
+	getEpics() map[string]struct{}
+	getStories() map[string]struct{}
+}
+
 // JiraIssuesTree handle jira issues and save in cache for search.
 type JiraIssuesTree struct {
 	ctx        context.Context
@@ -28,10 +40,6 @@ type JiraIssuesTree struct {
 // NewJiraIssuesTree creates an instance of JiraIssuesTree.
 func NewJiraIssuesTree(ctx context.Context, parallel int) *JiraIssuesTree {
 	// 1.queueSize设置太小可能会导致阻塞 2.分片存储，mapSize不需要设置过大
-	const (
-		queueSize = 30
-		mapSize   = 20
-	)
 	return &JiraIssuesTree{
 		ctx:        ctx,
 		parallel:   parallel,
@@ -41,16 +49,21 @@ func NewJiraIssuesTree(ctx context.Context, parallel int) *JiraIssuesTree {
 		stories:    make(map[string]struct{}, mapSize),
 		issueQueue: make(chan string, queueSize),
 		mrQueue:    make(chan string, queueSize),
-		issueStore: utils.NewCache((parallel * 2), mapSize),
-		mrStore:    utils.NewCache(parallel, (mapSize / 2)),
+		issueStore: utils.NewCache(parallel, mapSize),
+		mrStore:    utils.NewCache(parallel, mapSize),
 		jira:       NewJiraTool(),
 		git:        NewGitlabTool(),
 	}
 }
 
-// GetStore returns internal store.
-func (tree *JiraIssuesTree) GetStore() *utils.Cache {
+// GetIssueStore .
+func (tree *JiraIssuesTree) GetIssueStore() *utils.Cache {
 	return tree.issueStore
+}
+
+// GetMRStore .
+func (tree *JiraIssuesTree) GetMRStore() *utils.Cache {
+	return tree.mrStore
 }
 
 // GetExpired .
@@ -63,21 +76,40 @@ func (tree *JiraIssuesTree) IsRunning() bool {
 	return tree.running
 }
 
-// QueueSize returns total issue keys to be handle in queue.
-func (tree *JiraIssuesTree) QueueSize() int {
+// WaitDone .
+func (tree *JiraIssuesTree) WaitDone() {
+	for i := 0; i < 3; {
+		if tree.queueSize() > 0 {
+			i = 0
+		} else {
+			i++
+		}
+		time.Sleep(time.Second)
+	}
+	tree.running = false
+}
+
+// SubmitIssue puts a jira issue key in queue.
+func (tree *JiraIssuesTree) SubmitIssue(issueID string) {
+	tree.collect()
+	tree.issueQueue <- issueID
+}
+
+func (tree *JiraIssuesTree) getEpics() map[string]struct{} {
+	return tree.epics
+}
+
+func (tree *JiraIssuesTree) getStories() map[string]struct{} {
+	return tree.stories
+}
+
+func (tree *JiraIssuesTree) queueSize() int {
 	return len(tree.issueQueue) + len(tree.mrQueue)
 }
 
 /*
 Collect issues data.
 */
-
-// SubmitIssue puts a jira issue key in queue.
-func (tree *JiraIssuesTree) SubmitIssue(issueID string) error {
-	tree.collect()
-	tree.issueQueue <- issueID
-	return nil
-}
 
 // collect fetches issue and merge request data.
 func (tree *JiraIssuesTree) collect() {
@@ -88,7 +120,6 @@ func (tree *JiraIssuesTree) collect() {
 	tree.collectIssues()
 	tree.collectIssueMRs()
 	// tree.addStorySuperIssues()
-	tree.waitDone()
 }
 
 func (tree *JiraIssuesTree) collectIssues() {
@@ -162,7 +193,7 @@ func (tree *JiraIssuesTree) collectIssueMRs() {
 			for {
 				select {
 				case mrURL = <-tree.mrQueue:
-					fmt.Println("Work on mr:", mrURL)
+					fmt.Println("Work on MR:", mrURL)
 				case <-tree.ctx.Done():
 					fmt.Println("MR worker exit.")
 					return
@@ -185,11 +216,7 @@ func (tree *JiraIssuesTree) collectIssueMRs() {
 // @deprecated: low performance
 func (tree *JiraIssuesTree) addStorySuperIssues() {
 	go func() {
-		time.Sleep(time.Second)
-		for tree.QueueSize() > 0 {
-			time.Sleep(time.Second)
-		}
-
+		tree.WaitDone()
 		for storyID := range tree.stories {
 			value, err := tree.issueStore.Get(storyID)
 			if err != nil {
@@ -218,42 +245,28 @@ func (tree *JiraIssuesTree) addStorySuperIssues() {
 	}()
 }
 
-func (tree *JiraIssuesTree) waitDone() {
-	go func() {
-		for i := 0; i < 3; {
-			if tree.QueueSize() > 0 {
-				i = 0
-			} else {
-				i++
-			}
-			time.Sleep(time.Second)
-		}
-		tree.running = false
-	}()
-}
-
 /*
 Print text.
 */
 
-// ToText .
-func (tree *JiraIssuesTree) ToText() string {
+// GetIssuesTreeText .
+func GetIssuesTreeText(tree Tree) string {
 	outLines := make([]string, 0, 100)
 	outLines = append(outLines, "\n[Epic, Story and Tasks:]\n")
-	for epicID := range tree.epics {
-		epic, epicText := tree.GetIssueAndText(epicID, "")
+	for epicID := range tree.getEpics() {
+		epic, epicText := GetIssueAndText(tree, epicID, "")
 		outLines = append(outLines, epicText)
 		if epic == nil {
 			continue
 		}
 		for _, storyID := range epic.SubIssues {
-			story, storyText := tree.GetIssueAndText(storyID, "\t")
+			story, storyText := GetIssueAndText(tree, storyID, "\t")
 			outLines = append(outLines, storyText)
 			if story == nil {
 				continue
 			}
 			for _, issueID := range story.SubIssues {
-				_, issueText := tree.GetIssueAndText(issueID, "\t\t")
+				_, issueText := GetIssueAndText(tree, issueID, "\t\t")
 				outLines = append(outLines, issueText)
 			}
 		}
@@ -261,8 +274,8 @@ func (tree *JiraIssuesTree) ToText() string {
 	}
 
 	outLines = append(outLines, "\n[Single Stories:]\n")
-	for storyID := range tree.stories {
-		story, storyText := tree.GetIssueAndText(storyID, "")
+	for storyID := range tree.getStories() {
+		story, storyText := GetIssueAndText(tree, storyID, "")
 		if len(story.SuperIssues) > 0 {
 			continue
 		}
@@ -271,18 +284,18 @@ func (tree *JiraIssuesTree) ToText() string {
 			continue
 		}
 		for _, issueID := range story.SubIssues {
-			_, issueText := tree.GetIssueAndText(issueID, "\t")
+			_, issueText := GetIssueAndText(tree, issueID, "\t")
 			outLines = append(outLines, issueText)
 		}
 		outLines = append(outLines, "\n")
 	}
 
 	outLines = append(outLines, "\n[Single Issues:]\n")
-	for _, value := range tree.issueStore.GetItems() {
+	for _, value := range tree.GetIssueStore().GetItems() {
 		issue := value.(*JiraIssue)
 		found := false
 		for _, supIssueID := range issue.SuperIssues {
-			if _, err := tree.issueStore.Get(supIssueID); err == nil {
+			if _, err := tree.GetIssueStore().Get(supIssueID); err == nil {
 				found = true
 				break
 			}
@@ -294,7 +307,7 @@ func (tree *JiraIssuesTree) ToText() string {
 		if issue.Type == "Task" || issue.Type == "Bug" {
 			if len(issue.Err) == 0 {
 				outLines = append(outLines, issue.ToText())
-				outLines = append(outLines, tree.issueMRsToText(issue, "\t"))
+				outLines = append(outLines, getIssueMRsText(tree, issue, "\t"))
 			} else {
 				outLines = append(outLines, issue.Err)
 			}
@@ -305,8 +318,8 @@ func (tree *JiraIssuesTree) ToText() string {
 }
 
 // GetIssueAndText .
-func (tree *JiraIssuesTree) GetIssueAndText(issueID string, prefix string) (*JiraIssue, string) {
-	value, err := tree.issueStore.Get(issueID)
+func GetIssueAndText(tree Tree, issueID string, prefix string) (*JiraIssue, string) {
+	value, err := tree.GetIssueStore().Get(issueID)
 	if err != nil {
 		return nil, fmt.Sprintf("%sGet issue [%s] failed: %v\n", prefix, issueID, err)
 	}
@@ -317,11 +330,11 @@ func (tree *JiraIssuesTree) GetIssueAndText(issueID string, prefix string) (*Jir
 
 	retlines := make([]string, 10)
 	retlines = append(retlines, prefix+issue.ToText())
-	retlines = append(retlines, tree.issueMRsToText(issue, prefix+"\t"))
+	retlines = append(retlines, getIssueMRsText(tree, issue, prefix+"\t"))
 	return issue, strings.Join(retlines, "")
 }
 
-func (tree *JiraIssuesTree) issueMRsToText(issue *JiraIssue, prefix string) string {
+func getIssueMRsText(tree Tree, issue *JiraIssue, prefix string) string {
 	if isStoryIssue(issue.Type) {
 		return ""
 	}
@@ -334,7 +347,7 @@ func (tree *JiraIssuesTree) issueMRsToText(issue *JiraIssue, prefix string) stri
 		}
 		usedMR[mrURL] = struct{}{}
 
-		value, err := tree.mrStore.Get(mrURL)
+		value, err := tree.GetMRStore().Get(mrURL)
 		if err != nil {
 			line := fmt.Sprintf("%sGet mr [%s] failed: %v\n", prefix, mrURL, err)
 			outLines = append(outLines, line)
@@ -353,18 +366,23 @@ func (tree *JiraIssuesTree) issueMRsToText(issue *JiraIssue, prefix string) stri
 	return strings.Join(outLines, "")
 }
 
-// PrintUsage prints tree store usage.
-func (tree *JiraIssuesTree) PrintUsage() {
-	fmt.Println(tree.UsageToText())
-}
-
-// UsageToText returns tree store usage.
-func (tree *JiraIssuesTree) UsageToText() string {
+// GetIssuesTreeUsageText returns tree store usage.
+func GetIssuesTreeUsageText(tree Tree) string {
 	outLines := make([]string, 0, 5)
 	outLines = append(outLines, "Tree issue store usage:\n")
-	outLines = append(outLines, tree.issueStore.UsageToText())
-	outLines = append(outLines, "Tree mr store usage:\n")
-	outLines = append(outLines, tree.mrStore.UsageToText())
+	outLines = append(outLines, tree.GetIssueStore().UsageToText())
+	outLines = append(outLines, "Tree MR store usage:\n")
+	outLines = append(outLines, tree.GetMRStore().UsageToText())
+	return strings.Join(outLines, "")
+}
+
+// GetIssuesTreeSummary .
+func GetIssuesTreeSummary(tree Tree) string {
+	outLines := make([]string, 0, 5)
+	outLines = append(outLines, fmt.Sprintf("Total Epics: %d\n", len(tree.getEpics())))
+	outLines = append(outLines, fmt.Sprintf("Total Stories (PMTask): %d\n", len(tree.getStories())))
+	totalTasks := tree.GetIssueStore().Size() - len(tree.getEpics()) - len(tree.getStories())
+	outLines = append(outLines, fmt.Sprintf("Total Tasks (include Bugs): %d\n", totalTasks))
 	return strings.Join(outLines, "")
 }
 

@@ -32,17 +32,12 @@ func printReleaseCycleTree(ctx context.Context, relCycle string) {
 
 	tree := pkg.NewJiraIssuesTree(ctx, 8)
 	for _, key := range keys {
-		if err := tree.SubmitIssue(key); err != nil {
-			panic(err)
-		}
+		tree.SubmitIssue(key)
 	}
 
-	for tree.QueueSize() > 0 {
-		time.Sleep(time.Second)
-	}
-	time.Sleep(time.Second)
-	fmt.Println(tree.ToText())
-	tree.PrintUsage()
+	tree.WaitDone()
+	fmt.Println(pkg.GetIssuesTreeText(tree))
+	fmt.Println(pkg.GetIssuesTreeUsageText(tree))
 }
 
 func main() {

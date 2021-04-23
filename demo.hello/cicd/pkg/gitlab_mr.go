@@ -27,7 +27,9 @@ func (mr *MergeRequest) PrintText(prefix string) {
 
 // ToText returns merge request info as text.
 func (mr *MergeRequest) ToText() string {
-	return fmt.Sprintf("MR:[%s:%s->%s],[%s]\n", mr.State, mr.SourceBR, mr.TargetBR, mr.Title)
+	items := strings.Split(mr.Repo, "/")
+	repoName := items[len(items)-1]
+	return fmt.Sprintf("MR:[%s] [%s:%s->%s],[%s]\n", repoName, mr.State, mr.SourceBR, mr.TargetBR, mr.Title)
 }
 
 // NewMergeRequest create a merge request instance.

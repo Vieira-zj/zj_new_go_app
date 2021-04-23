@@ -20,24 +20,34 @@ type HTTPUtils struct {
 	client http.Client
 }
 
-// NewHTTPUtils creates a http utils instance.
-func NewHTTPUtils(isKeepAlive bool) *HTTPUtils {
-	if !isKeepAlive {
-		return &HTTPUtils{
-			client: http.Client{},
+// NewDefaultHTTPUtils creates a http util with default client.
+func NewDefaultHTTPUtils() *HTTPUtils {
+	return &HTTPUtils{
+		client: http.Client{},
+	}
+}
+
+// NewHTTPUtils creates a http util instance.
+func NewHTTPUtils(isKeepAlives bool) *HTTPUtils {
+	// http client 默认是长链接
+	var httpTransport *http.Transport
+	if isKeepAlives {
+		httpTransport = &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 60 * time.Second,
+			}).DialContext,
+			MaxIdleConns:          500,              // 最大空闲连接
+			IdleConnTimeout:       60 * time.Second, // 空闲连接的超时时间
+			ExpectContinueTimeout: 30 * time.Second, // 等待服务第一个响应的超时时间
+			MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数
+		}
+	} else {
+		httpTransport = &http.Transport{
+			DisableKeepAlives: true,
 		}
 	}
 
-	httpTransport := &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 60 * time.Second,
-		}).DialContext,
-		MaxIdleConns:          500,              // 最大空闲连接
-		IdleConnTimeout:       60 * time.Second, // 空闲连接的超时时间
-		ExpectContinueTimeout: 30 * time.Second, // 等待服务第一个响应的超时时间
-		MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数
-	}
 	return &HTTPUtils{
 		client: http.Client{Transport: httpTransport},
 	}
@@ -104,6 +114,9 @@ func (utils *HTTPUtils) createRequest(ctx context.Context, method string, url st
 func (utils *HTTPUtils) send(req *http.Request) ([]byte, error) {
 	resp, err := utils.client.Do(req)
 	if err != nil {
+		if resp != nil {
+			defer resp.Body.Close()
+		}
 		return nil, err
 	}
 	defer resp.Body.Close()

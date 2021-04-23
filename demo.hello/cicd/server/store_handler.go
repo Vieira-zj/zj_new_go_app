@@ -76,9 +76,7 @@ func storeJQLIssues(key, jql string, forceUpdate bool) string {
 	tree := pkg.NewJiraIssuesTree(ctx, 8)
 	TreeMap[key] = tree
 	for _, issueID := range issues {
-		if err := tree.SubmitIssue(issueID); err != nil {
-			return fmt.Sprintf("Submit issue [%s] failed: %v\n", key, err)
-		}
+		tree.SubmitIssue(issueID)
 	}
 	return fmt.Sprintf("Store [%s] saved.\n", key)
 }

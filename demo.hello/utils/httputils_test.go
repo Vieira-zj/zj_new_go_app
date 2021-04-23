@@ -51,7 +51,21 @@ monitor connections: watch -n 1 "netstat -n | grep 8081"
 */
 
 func TestHttpGet01(t *testing.T) {
-	// default client => 1 connection
+	// long client => 1 connection
+	utils := NewDefaultHTTPUtils()
+	start := time.Now()
+	for i := 0; i < 5; i++ {
+		if b, err := utils.Get(context.TODO(), url, map[string]string{}); err != nil {
+			t.Fatal(err)
+		} else {
+			fmt.Println("Response:", string(b))
+		}
+	}
+	t.Log("Time:", time.Since(start))
+}
+
+func TestHttpGet02(t *testing.T) {
+	// short client => 5 connection
 	utils := NewHTTPUtils(false)
 	start := time.Now()
 	for i := 0; i < 5; i++ {
@@ -61,12 +75,12 @@ func TestHttpGet01(t *testing.T) {
 			fmt.Println("Response:", string(b))
 		}
 	}
-	t.Log("Orig Go Net Short Link", time.Since(start))
+	t.Log("Time:", time.Since(start))
 }
 
-func TestHttpGet02(t *testing.T) {
-	// default client + goroutine => 5 connections
-	utils := NewHTTPUtils(false)
+func TestHttpGet03(t *testing.T) {
+	// long client + goroutine => 5 connections
+	utils := NewDefaultHTTPUtils()
 	wg := sync.WaitGroup{}
 	start := time.Now()
 	for i := 0; i < 5; i++ {
@@ -81,11 +95,11 @@ func TestHttpGet02(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	t.Log("Orig Go Net Short Link", time.Since(start))
+	t.Log("Time:", time.Since(start))
 }
 
-func TestHttpGet03(t *testing.T) {
-	// custom client + goroutine => 5 connections
+func TestHttpGet04(t *testing.T) {
+	// custom long client + goroutine => 5 connections
 	utils := NewHTTPUtils(true)
 	wg := sync.WaitGroup{}
 	start := time.Now()
@@ -101,7 +115,7 @@ func TestHttpGet03(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	t.Log("Orig GoNet Long Link", time.Since(start))
+	t.Log("Time:", time.Since(start))
 }
 
 /*

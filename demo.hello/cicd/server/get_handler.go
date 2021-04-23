@@ -8,8 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 
+	"demo.hello/cicd/pkg"
 	"github.com/labstack/echo"
 )
 
@@ -31,10 +31,8 @@ func GetStoreIssues(c echo.Context) error {
 		return c.String(http.StatusOK, fmt.Sprintf("StoreKey [%s] not found.\n", req.StoreKey))
 	}
 
-	for tree.IsRunning() {
-		time.Sleep(time.Duration(500) * time.Millisecond)
-	}
-	return c.String(http.StatusOK, tree.ToText())
+	tree.WaitDone()
+	return c.String(http.StatusOK, pkg.GetIssuesTreeText(tree))
 }
 
 // GetSingleIssue .
@@ -49,14 +47,12 @@ func GetSingleIssue(c echo.Context) error {
 		return c.String(http.StatusOK, fmt.Sprintf("Store [%s] not found.\n", req.StoreKey))
 	}
 
-	for tree.IsRunning() {
-		time.Sleep(time.Duration(500) * time.Millisecond)
-	}
+	tree.WaitDone()
 	outLines := make([]string, 10)
-	issue, text := tree.GetIssueAndText(req.IssueKey, "")
+	issue, text := pkg.GetIssueAndText(tree, req.IssueKey, "")
 	outLines = append(outLines, text)
 	for _, subIssueKey := range issue.SubIssues {
-		_, subText := tree.GetIssueAndText(subIssueKey, "\t")
+		_, subText := pkg.GetIssueAndText(tree, subIssueKey, "\t")
 		outLines = append(outLines, subText)
 	}
 	return c.String(http.StatusOK, strings.Join(outLines, ""))
@@ -73,7 +69,7 @@ func StoreUsage(c echo.Context) error {
 	if !ok {
 		return c.String(http.StatusOK, fmt.Sprintf("StoreKey [%s] not found.\n", req.StoreKey))
 	}
-	return c.String(http.StatusOK, tree.UsageToText())
+	return c.String(http.StatusOK, pkg.GetIssuesTreeUsageText(tree))
 }
 
 func parseBodyToGetStoreIssuesReq(reader io.ReadCloser) (*GetStoreIssuesReq, error) {

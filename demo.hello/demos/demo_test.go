@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"text/template"
@@ -433,4 +434,44 @@ func BenchmarkSwitch(b *testing.B) {
 		orderStateSwitch(2)
 		orderStateSwitch(3)
 	}
+}
+
+/*
+imply an interface
+*/
+
+type sub interface {
+	getData() []string
+}
+
+type subOne struct {
+	Data []string
+}
+
+func (sub *subOne) getData() []string {
+	return sub.Data
+}
+
+type subTwo struct {
+	Data []string
+}
+
+func (sub *subTwo) getData() []string {
+	return sub.Data
+}
+
+func printData(s sub) {
+	fmt.Println(strings.Join(s.getData(), ","))
+}
+
+func TestDemo21(t *testing.T) {
+	sub1 := subOne{
+		Data: []string{"1", "2", "3"},
+	}
+	printData(&sub1)
+
+	sub2 := subTwo{
+		Data: []string{"one", "two", "three"},
+	}
+	printData(&sub2)
 }
