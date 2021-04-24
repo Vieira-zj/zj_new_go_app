@@ -56,10 +56,10 @@ func (git *GitlabTool) SearchProject(ctx context.Context, name, namespace string
 			return fmt.Sprintf("%.0f", project["id"].(float64)), nil
 		}
 	}
-	return "", fmt.Errorf("Project [%s] not found", name)
+	return "", fmt.Errorf("Gitlab project [%s] not found", name)
 }
 
-// GetSingleMR returns a single mr by mr web url.
+// GetSingleMR returns a single mr by web url.
 func (git *GitlabTool) GetSingleMR(ctx context.Context, mr string) ([]byte, error) {
 	items := strings.Split(mr, "/-/")
 	if len(items) != 2 {

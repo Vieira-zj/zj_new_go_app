@@ -9,9 +9,9 @@ import (
 
 /*
 Jira issue types:
-level 1: Epic
-level 2: Story, PMTask, Release
-level 3: Task, Bug
+level1: Epic
+level2: Story, PMTask, Release
+level3: Task, Bug
 */
 
 // JiraIssue struct for a jira issue.
@@ -30,18 +30,7 @@ type JiraIssue struct {
 	Err           string
 }
 
-// PrintText prints issue data as text.
-func (issue *JiraIssue) PrintText(prefix string) {
-	fmt.Printf("%s%s\n", prefix, issue.ToText())
-
-	if isDebug {
-		for _, mr := range issue.MergeRequests {
-			fmt.Printf("%s\tMR:[%s]\n", prefix, mr)
-		}
-	}
-}
-
-// ToText returns issue data as text.
+// ToText returns jira issue data as text.
 func (issue *JiraIssue) ToText() string {
 	labels := getPrintFieldFromSlice(issue.Labels)
 	fixVersions := getPrintFieldFromSlice(issue.FixVersions)
@@ -63,7 +52,7 @@ func getPrintFieldFromSlice(slice []string) string {
 New a jira issue V2.
 */
 
-// RespJiraIssue .
+// RespJiraIssue struct for jira issue json response.
 type RespJiraIssue struct {
 	Key    string `json:"key"`
 	Fields struct {
@@ -97,14 +86,14 @@ type RespJiraIssue struct {
 	} `json:"fields"`
 }
 
-// RespRemoteLink .
+// RespRemoteLink struct for jira issue remote links json response.
 type RespRemoteLink struct {
 	Object struct {
 		URL string `json:"url"`
 	} `json:"object"`
 }
 
-// NewJiraIssueV2 creates a jira issue instance.
+// NewJiraIssueV2 creates a JiraIssue instance.
 func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraIssue, error) {
 	fields := []string{"key", "summary", "issuetype", "status", "labels", "fixVersions", "customfield_13700", "customfield_13801", "issuelinks"}
 	resp, err := jira.GetIssue(ctx, issueID, fields)
@@ -136,7 +125,13 @@ func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraI
 	issue.FixVersions = fixVersions
 
 	// handle sub issues
-	if issue.Type == "PMTask" || issue.Type == "Story" || issue.Type == "Release" {
+	if issue.Type == issueTypeEpic {
+		issueLinks, err := jira.GetIssuesInEpic(ctx, issueID)
+		if err != nil {
+			return nil, err
+		}
+		issue.SubIssues = issueLinks
+	} else if issue.Type == issueTypePMTask || issue.Type == issueTypeStory || issue.Type == issueTypeRelease {
 		issueLinks := make([]string, 0)
 		for _, link := range respJiraIssue.Fields.IssueLinks {
 			if link.Type.Outward == "Contains" && len(link.OutwardIssue.Key) > 0 {
@@ -145,16 +140,9 @@ func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraI
 		}
 		issue.SubIssues = issueLinks
 	}
-	if issue.Type == "Epic" {
-		issueLinks, err := jira.GetIssuesInEpic(ctx, issueID)
-		if err != nil {
-			return nil, err
-		}
-		issue.SubIssues = issueLinks
-	}
 
 	// handle super issues
-	if issue.Type == "Task" || issue.Type == "Bug" || issue.Type == "Story" {
+	if issue.Type == issueTypeTask || issue.Type == issueTypeBug || issue.Type == issueTypeStory {
 		issueLinks := make([]string, 0)
 		for _, link := range respJiraIssue.Fields.IssueLinks {
 			if link.Type.Inward == "In Release" && len(link.InwardIssue.Key) > 0 {
@@ -221,10 +209,10 @@ func NewJiraIssue(ctx context.Context, jira *JiraTool, issueID string) (*JiraIss
 
 	// issue links
 	issueLinks := fieldsMap["issuelinks"].([]interface{})
-	if issue.Type == "PMTask" || issue.Type == "Story" || issue.Type == "Epic" || issue.Type == "Release" {
+	if issue.Type == issueTypePMTask || issue.Type == issueTypeStory || issue.Type == issueTypeEpic || issue.Type == issueTypeRelease {
 		issue.SubIssues = getOutwardIssueLinks(issueLinks, "Contains")
 	}
-	if issue.Type == "Task" || issue.Type == "Story" {
+	if issue.Type == issueTypeTask || issue.Type == issueTypeStory {
 		issue.SuperIssues = getInwardIssueLinks(issueLinks, "In Release")
 	}
 
@@ -244,29 +232,28 @@ func NewJiraIssue(ctx context.Context, jira *JiraTool, issueID string) (*JiraIss
 }
 
 func fixIssueType(issue *JiraIssue) {
-	if issue.Type == "Task" {
+	if issue.Type == issueTypeTask {
 		for _, v := range issue.Labels {
 			if v == "PM-Task" {
-				issue.Type = "PMTask"
+				issue.Type = issueTypePMTask
+				return
 			}
 		}
 	}
 }
 
 func createReleaseCycle(fieldsMap map[string]interface{}) string {
-	relCycle, ok := fieldsMap["customfield_13700"].(map[string]interface{})
-	if !ok {
-		return "not_fill"
+	if relCycle, ok := fieldsMap["customfield_13700"].(map[string]interface{}); ok {
+		return relCycle["value"].(string)
 	}
-	return relCycle["value"].(string)
+	return "not_fill"
 }
 
 func createReleaseStatus(fieldsMap map[string]interface{}) string {
-	relStatus, ok := fieldsMap["customfield_13801"].(string)
-	if !ok {
-		return "not_fill"
+	if relStatus, ok := fieldsMap["customfield_13801"].(string); ok {
+		return relStatus
 	}
-	return relStatus
+	return "not_fill"
 }
 
 func formatLabelsSlice(labels []interface{}) []string {

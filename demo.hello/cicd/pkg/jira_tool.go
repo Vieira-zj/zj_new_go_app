@@ -23,7 +23,7 @@ type JiraTool struct {
 	http     *utils.HTTPUtils
 }
 
-// NewJiraTool creates an instance of jira tool.
+// NewJiraTool creates a JiraTool instance.
 func NewJiraTool() *JiraTool {
 	return &JiraTool{
 		restURL:  os.Getenv("JIRA_REST_URL"),
@@ -42,7 +42,7 @@ func (jira *JiraTool) GetIssue(ctx context.Context, issueID string, fields []str
 	return jira.get(ctx, path)
 }
 
-// Search returns issues by jql.
+// Search finds issues by jql.
 func (jira *JiraTool) Search(ctx context.Context, jql string, fields []string) ([]byte, error) {
 	data := map[string]interface{}{
 		"jql":        jql,
@@ -56,7 +56,7 @@ func (jira *JiraTool) Search(ctx context.Context, jql string, fields []string) (
 	return jira.post(ctx, "search", string(reqData))
 }
 
-// SearchIssues returns issue keys from jql results.
+// SearchIssues returns issue keys by jql search.
 func (jira *JiraTool) SearchIssues(ctx context.Context, jql string) ([]string, error) {
 	resp, err := jira.Search(ctx, jql, []string{"key"})
 	if err != nil {
@@ -65,7 +65,7 @@ func (jira *JiraTool) SearchIssues(ctx context.Context, jql string) ([]string, e
 	return getIssueKeysFromJQLResults(resp)
 }
 
-// GetIssuesInEpic .
+// GetIssuesInEpic retruns stories linked to a epic.
 func (jira *JiraTool) GetIssuesInEpic(ctx context.Context, epicID string) ([]string, error) {
 	jql := fmt.Sprintf(`"Epic Link" = %s`, epicID)
 	resp, err := jira.Search(ctx, jql, []string{"key"})
@@ -75,12 +75,12 @@ func (jira *JiraTool) GetIssuesInEpic(ctx context.Context, epicID string) ([]str
 	return getIssueKeysFromJQLResults(resp)
 }
 
-// GetIssueLink returns issue related links.
+// GetIssueLink returns issue links.
 func (jira *JiraTool) GetIssueLink(ctx context.Context, issueID string) ([]byte, error) {
 	return jira.GetIssue(ctx, issueID, []string{"issuelinks"})
 }
 
-// GetRemoteLink returns issue related remote links.
+// GetRemoteLink returns issue remote links.
 func (jira *JiraTool) GetRemoteLink(ctx context.Context, issueID string) ([]byte, error) {
 	path := fmt.Sprintf("issue/%s/remotelink", issueID)
 	return jira.get(ctx, path)
@@ -89,7 +89,7 @@ func (jira *JiraTool) GetRemoteLink(ctx context.Context, issueID string) ([]byte
 func (jira *JiraTool) get(ctx context.Context, path string) ([]byte, error) {
 	url := jira.restURL + formatPath(path)
 	headers := map[string]string{
-		"Accept": "application/json",
+		"Accept": textAppJSON,
 	}
 	return jira.http.GetWithAuth(ctx, url, headers, jira.userName, jira.userPwd)
 }
@@ -97,8 +97,8 @@ func (jira *JiraTool) get(ctx context.Context, path string) ([]byte, error) {
 func (jira *JiraTool) post(ctx context.Context, path, body string) ([]byte, error) {
 	url := jira.restURL + formatPath(path)
 	headers := map[string]string{
-		"Accept":       "application/json",
-		"Content-Type": "application/json",
+		"Accept":       textAppJSON,
+		"Content-Type": textAppJSON,
 	}
 	return jira.http.PostWithAuth(ctx, url, headers, body, jira.userName, jira.userPwd)
 }

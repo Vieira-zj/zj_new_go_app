@@ -78,7 +78,7 @@ func (c *Cache) IsExist(key string) bool {
 func (c *Cache) getLocker(key string) *sync.RWMutex {
 	k := c.getHashKey(key)
 	if c.lockers[k] == nil {
-		c.lockers[k] = &sync.RWMutex{}
+		c.lockers[k] = new(sync.RWMutex)
 	}
 	return c.lockers[k]
 }

@@ -96,17 +96,12 @@ func main() {
 					for key, tree := range serve.TreeMap {
 						if now > tree.GetExpired() {
 							delKeys = append(delKeys, key)
-						} else {
-							if !tree.IsRunning() {
-								serve.StoreCancelMap[key]()
-							}
 						}
 					}
 					for _, key := range delKeys {
 						tree := serve.TreeMap[key]
 						if !tree.IsRunning() {
 							fmt.Printf("Store [%s] is expired and remove.\n", key)
-							serve.StoreCancelMap[key]()
 							delete(serve.TreeMap, key)
 						}
 					}
@@ -122,10 +117,6 @@ func main() {
 	<-quit
 	if server && e != nil {
 		mainCancel()
-		for _, cancel := range serve.StoreCancelMap {
-			cancel()
-		}
-
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
 		defer cancel()
 		if err := e.Shutdown(ctx); err != nil {

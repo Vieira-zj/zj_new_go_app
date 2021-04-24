@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+func TestRemoveDulpicatedItem(t *testing.T) {
+	s := []string{"a", "b", "c", "d", "c", "a"}
+	ret := removeDulpicatedItem(s)
+	fmt.Println(strings.Join(ret, ","))
+}
+
 func TestTicketsTree(t *testing.T) {
 	tickets := "AIRPAY-66492,SPPAY-2210,AIRPAY-57284,AIRPAY-62043"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)

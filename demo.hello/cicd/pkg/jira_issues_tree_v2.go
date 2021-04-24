@@ -11,7 +11,6 @@ import (
 
 // JiraIssuesTreeV2 .
 type JiraIssuesTreeV2 struct {
-	ctx        context.Context
 	wg         sync.WaitGroup
 	expired    int64
 	running    bool
@@ -25,9 +24,8 @@ type JiraIssuesTreeV2 struct {
 }
 
 // NewJiraIssuesTreeV2 .
-func NewJiraIssuesTreeV2(ctx context.Context, parallel int) *JiraIssuesTreeV2 {
+func NewJiraIssuesTreeV2(parallel int) *JiraIssuesTreeV2 {
 	return &JiraIssuesTreeV2{
-		ctx:        ctx,
 		wg:         sync.WaitGroup{},
 		expired:    time.Now().Unix() + int64(expired),
 		running:    false,
@@ -56,6 +54,16 @@ func (tree *JiraIssuesTreeV2) GetExpired() int64 {
 	return tree.expired
 }
 
+// GetEpics .
+func (tree *JiraIssuesTreeV2) GetEpics() map[string]struct{} {
+	return tree.epics
+}
+
+// GetStories .
+func (tree *JiraIssuesTreeV2) GetStories() map[string]struct{} {
+	return tree.stories
+}
+
 // IsRunning .
 func (tree *JiraIssuesTreeV2) IsRunning() bool {
 	return tree.running
@@ -75,18 +83,11 @@ func (tree *JiraIssuesTreeV2) SubmitIssue(issueID string) {
 	tree.collectIssues(issueID)
 }
 
-func (tree *JiraIssuesTreeV2) getEpics() map[string]struct{} {
-	return tree.epics
-}
-
-func (tree *JiraIssuesTreeV2) getStories() map[string]struct{} {
-	return tree.stories
-}
-
 /*
-Collect data.
+Collect issue data.
 */
 
+// collectIssues fetches issues data and save in store.
 func (tree *JiraIssuesTreeV2) collectIssues(issueID string) {
 	tree.wg.Add(1)
 	go func() {
@@ -98,10 +99,17 @@ func (tree *JiraIssuesTreeV2) collectIssues(issueID string) {
 		}()
 
 		issue := tree.collectOneIssue(issueID)
-		if issue.Type == "Epic" {
+		if len(issue.Err) > 0 {
+			return
+		}
+
+		if issue.Type == issueTypeEpic {
 			tree.epics[issueID] = struct{}{}
 			for _, subIssueID := range issue.SubIssues {
 				subIssue := tree.collectOneIssue(subIssueID)
+				if len(subIssue.Err) > 0 {
+					continue
+				}
 				subIssue.SuperIssues = append(subIssue.SuperIssues, issueID)
 				tree.collectIssues(subIssueID)
 			}
@@ -110,10 +118,9 @@ func (tree *JiraIssuesTreeV2) collectIssues(issueID string) {
 			for _, subIssueID := range issue.SubIssues {
 				tree.collectIssues(subIssueID)
 			}
-		} else if issue.Type == "Task" || issue.Type == "Bug" {
-			for _, mrURL := range issue.MergeRequests {
-				tree.collectIssueMRs(mrURL)
-			}
+		}
+		for _, mrURL := range issue.MergeRequests {
+			tree.collectIssueMRs(mrURL)
 		}
 	}()
 }
@@ -130,7 +137,6 @@ func (tree *JiraIssuesTreeV2) collectOneIssue(issueID string) *JiraIssue {
 		content := fmt.Sprintf("New jira issue [%s] failed: %v\n", issueID, err)
 		issue = &JiraIssue{Err: content}
 	}
-
 	tree.issueStore.PutIfEmpty(issueID, issue)
 	return issue
 }

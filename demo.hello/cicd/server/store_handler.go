@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -12,71 +14,86 @@ import (
 	"github.com/labstack/echo"
 )
 
-var (
-	// TreeMap .
-	TreeMap = make(map[string]*pkg.JiraIssuesTree)
-	// StoreCancelMap .
-	StoreCancelMap map[string]context.CancelFunc = make(map[string]context.CancelFunc)
-)
-
-// StoreIssuesReq .
-type StoreIssuesReq struct {
-	ReleaseCycle string `json:"releaseCycle"`
-	FixVersion   string `json:"fixVersion"`
-	Query        string `json:"query"`
+// IssuesHandlerReq .
+type IssuesHandlerReq struct {
+	StoreKey     string `json:"storeKey"`
+	IssueKey     string `json:"issueKey"`
+	StoreKeyType string `json:"storeKeyType"`
 	ForceUpdate  bool   `json:"forceUpdate"`
 }
 
 // StoreIssues .
 func StoreIssues(c echo.Context) error {
-	body, err := ioutil.ReadAll(c.Request().Body)
+	req, err := parseBodyToIssuesHandlerReq(c.Request().Body)
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Read request body failed.")
+		c.String(http.StatusInternalServerError, err.Error())
 	}
 
-	req := &StoreIssuesReq{}
-	if err := json.Unmarshal(body, &req); err != nil {
-		return c.String(http.StatusInternalServerError, "Unmarshal body failed.")
+	jql, err := getJQLFromReq(req)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
 	}
-
-	if len(req.ReleaseCycle) > 0 {
-		jql := fmt.Sprintf(`"Release Cycle" = "%s"`, req.ReleaseCycle)
-		return c.String(http.StatusOK, storeJQLIssues(req.ReleaseCycle, jql, req.ForceUpdate))
+	_, err = storeJQLIssues(req.StoreKey, jql, req.ForceUpdate)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	if len(req.FixVersion) > 0 {
-		jql := fmt.Sprintf("fixVersion = %s", req.FixVersion)
-		return c.String(http.StatusOK, storeJQLIssues(req.FixVersion, jql, req.ForceUpdate))
-	}
-	if len(req.Query) > 0 {
-		return c.String(http.StatusOK, storeJQLIssues(req.Query, req.Query, req.ForceUpdate))
-	}
-	return c.String(http.StatusBadRequest, fmt.Sprintln("No query found."))
+	return c.String(http.StatusOK, fmt.Sprintf("Store [%s] saved.\n", req.StoreKey))
 }
 
-func storeJQLIssues(key, jql string, forceUpdate bool) string {
+func parseBodyToIssuesHandlerReq(reader io.ReadCloser) (*IssuesHandlerReq, error) {
+	body, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, errors.New("Read request body failed")
+	}
+	req := &IssuesHandlerReq{}
+	if err := json.Unmarshal(body, &req); err != nil {
+		return nil, errors.New("Unmarshal body failed")
+	}
+	return req, nil
+}
+
+func getJQLFromReq(req *IssuesHandlerReq) (string, error) {
+	var jql string
+	if req.StoreKeyType == typeReleaseCycle {
+		jql = fmt.Sprintf(`"Release Cycle" = "%s"`, req.StoreKey)
+	} else if req.StoreKeyType == typeFixVersion {
+		jql = fmt.Sprintf("fixVersion = %s", req.StoreKey)
+	} else if req.StoreKeyType == typeJQL {
+		jql = req.StoreKey
+	} else {
+		return "", fmt.Errorf("Invalid store key type: %s", req.StoreKeyType)
+	}
+
+	if len(jql) == 0 {
+		return "", errors.New("No query found in request")
+	}
+	return jql, nil
+}
+
+func storeJQLIssues(key, jql string, forceUpdate bool) (pkg.Tree, error) {
+	locker.Lock()
+	defer locker.Unlock()
+
 	if _, ok := TreeMap[key]; ok {
 		if forceUpdate {
 			fmt.Printf("Force update for store [%s].\n", key)
-			StoreCancelMap[key]()
 			delete(TreeMap, key)
 		} else {
-			return fmt.Sprintf("Store [%s] already exist.\n", key)
+			return nil, fmt.Errorf("Store [%s] already exist", key)
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(searchTimeout)*time.Second)
 	defer cancel()
 	issues, err := jira.SearchIssues(ctx, jql)
 	if err != nil {
-		return fmt.Sprintf("Search issues by jql [%s] failed: %v\n", jql, err)
+		return nil, fmt.Errorf("Search issues by jql [%s] failed: %v", jql, err)
 	}
 
-	ctx, cancel = context.WithCancel(context.Background())
-	StoreCancelMap[key] = cancel
-	tree := pkg.NewJiraIssuesTree(ctx, 8)
+	tree := pkg.NewJiraIssuesTreeV2(Parallel)
 	TreeMap[key] = tree
 	for _, issueID := range issues {
 		tree.SubmitIssue(issueID)
 	}
-	return fmt.Sprintf("Store [%s] saved.\n", key)
+	return tree, nil
 }

@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	"testing"
 )
 
@@ -12,7 +13,7 @@ func TestNewJiraIssue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	issue.PrintText("")
+	fmt.Println(issue.ToText())
 }
 
 func TestNewJiraIssueV2(t *testing.T) {
@@ -20,5 +21,5 @@ func TestNewJiraIssueV2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	issue.PrintText("")
+	fmt.Println(issue.ToText())
 }
