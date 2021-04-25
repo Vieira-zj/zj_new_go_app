@@ -146,11 +146,6 @@ func (c *Cache) PrintKeyValues() {
 	}
 }
 
-// PrintUsage .
-func (c *Cache) PrintUsage() {
-	fmt.Println(c.UsageToText())
-}
-
 // UsageToText .
 func (c *Cache) UsageToText() string {
 	line := ""

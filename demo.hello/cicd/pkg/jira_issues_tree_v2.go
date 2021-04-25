@@ -120,7 +120,7 @@ func (tree *JiraIssuesTreeV2) collectIssues(issueID string) {
 			}
 		}
 		for _, mrURL := range issue.MergeRequests {
-			tree.collectIssueMRs(mrURL)
+			tree.collectIssueMRs(issueID, mrURL)
 		}
 	}()
 }
@@ -134,17 +134,17 @@ func (tree *JiraIssuesTreeV2) collectOneIssue(issueID string) *JiraIssue {
 	issue, err := NewJiraIssueV2(ctx, tree.jira, issueID)
 	cancel()
 	if err != nil {
-		content := fmt.Sprintf("New jira issue [%s] failed: %v\n", issueID, err)
-		issue = &JiraIssue{Err: content}
+		content := fmt.Sprintf("New jira issue failed: %v\n", err)
+		issue = &JiraIssue{Key: issueID, Err: content}
 	}
 	tree.issueStore.PutIfEmpty(issueID, issue)
 	return issue
 }
 
-func (tree *JiraIssuesTreeV2) collectIssueMRs(mrURL string) {
+func (tree *JiraIssuesTreeV2) collectIssueMRs(issueID, mrURL string) {
 	tree.wg.Add(1)
 	go func() {
-		fmt.Println("Work on MR:", mrURL)
+		fmt.Printf("Work on MR (linked issue %s): %s\n", issueID, mrURL)
 		tree.semaphore <- struct{}{}
 		defer func() {
 			tree.wg.Done()
@@ -152,12 +152,17 @@ func (tree *JiraIssuesTreeV2) collectIssueMRs(mrURL string) {
 		}()
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
-		mr, err := NewMergeRequest(ctx, tree.git, mrURL)
-		cancel()
-		if err != nil {
-			content := fmt.Sprintf("New merge request [%s] failed: %v\n", mrURL, err)
-			tree.mrStore.PutIfEmpty(mrURL, &MergeRequest{Err: content})
+		defer cancel()
+		if mr, err := NewMergeRequest(ctx, tree.git, mrURL); err == nil {
+			mr.LinkedIssue = issueID
+			tree.mrStore.PutIfEmpty(mrURL, mr)
+		} else {
+			content := fmt.Sprintf("New merge request failed: %v\n", err)
+			mr := &MergeRequest{WebURL: mrURL, Err: content}
+			if repo, err := getMRRepo(mrURL); err == nil {
+				mr.Repo = repo
+			}
+			tree.mrStore.PutIfEmpty(mrURL, mr)
 		}
-		tree.mrStore.PutIfEmpty(mrURL, mr)
 	}()
 }

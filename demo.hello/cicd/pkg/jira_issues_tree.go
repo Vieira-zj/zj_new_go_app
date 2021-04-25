@@ -3,7 +3,6 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"demo.hello/utils"
@@ -205,7 +204,11 @@ func (tree *JiraIssuesTree) collectIssueMRs() {
 					tree.mrStore.PutIfEmpty(mrURL, mr)
 				} else {
 					content := fmt.Sprintf("New merge request [%s] failed: %v\n", mrURL, err)
-					tree.mrStore.PutIfEmpty(mrURL, &MergeRequest{Err: content})
+					mr := &MergeRequest{Err: content}
+					if repo, err := getMRRepo(mrURL); err == nil {
+						mr.Repo = repo
+					}
+					tree.mrStore.PutIfEmpty(mrURL, mr)
 				}
 				cancel()
 			}
@@ -243,153 +246,6 @@ func (tree *JiraIssuesTree) addStorySuperIssues() {
 			}
 		}
 	}()
-}
-
-/*
-Print tree text.
-*/
-
-// GetIssuesTreeText .
-func GetIssuesTreeText(tree Tree) string {
-	outLines := make([]string, 0, 100)
-	errLines := make([]string, 0, 10)
-	errLines = append(errLines, "\n[Failed Tasks:]\n")
-
-	outLines = append(outLines, "\n[Epic, Story and Tasks:]\n")
-	for epicID := range tree.GetEpics() {
-		epic, epicText := GetIssueAndMRsText(tree, epicID, "")
-		if epic == nil {
-			errLines = append(errLines, epicText)
-			continue
-		}
-		outLines = append(outLines, epicText)
-		for _, storyID := range epic.SubIssues {
-			story, storyText := GetIssueAndMRsText(tree, storyID, "\t")
-			if story == nil {
-				errLines = append(errLines, storyText)
-				continue
-			}
-			outLines = append(outLines, storyText)
-			for _, issueID := range story.SubIssues {
-				if issue, issueText := GetIssueAndMRsText(tree, issueID, "\t\t"); issue == nil {
-					errLines = append(errLines, issueText)
-				} else {
-					outLines = append(outLines, issueText)
-				}
-			}
-		}
-		outLines = append(outLines, "\n")
-	}
-
-	outLines = append(outLines, "\n[Single Stories:]\n")
-	for storyID := range tree.GetStories() {
-		story, storyText := GetIssueAndMRsText(tree, storyID, "")
-		if story == nil {
-			errLines = append(errLines, storyText)
-			continue
-		}
-		if isDulplicatedIssue(tree, story) {
-			continue
-		}
-		outLines = append(outLines, storyText)
-		for _, issueID := range story.SubIssues {
-			if issue, issueText := GetIssueAndMRsText(tree, issueID, "\t"); issue == nil {
-				errLines = append(errLines, issueText)
-			} else {
-				outLines = append(outLines, issueText)
-			}
-		}
-		outLines = append(outLines, "\n")
-	}
-
-	outLines = append(outLines, "\n[Single Tasks (Bugs):]\n")
-	for issueID := range tree.GetIssueStore().GetItems() {
-		if issue, issueText := GetIssueAndMRsText(tree, issueID, ""); issue != nil {
-			if (issue.Type == issueTypeTask || issue.Type == issueTypeBug) && !isDulplicatedIssue(tree, issue) {
-				outLines = append(outLines, issueText)
-				outLines = append(outLines, "\n")
-			}
-		} else {
-			errLines = append(errLines, issueText)
-		}
-	}
-
-	outLines = append(outLines, removeDulpicatedItem(errLines)...)
-	return strings.Join(outLines, "")
-}
-
-// GetIssueAndMRsText .
-func GetIssueAndMRsText(tree Tree, issueID string, prefix string) (*JiraIssue, string) {
-	value, err := tree.GetIssueStore().Get(issueID)
-	if err != nil {
-		return nil, fmt.Sprintf("%sGet issue [%s] from store failed: %v\n", prefix, issueID, err)
-	}
-	issue := value.(*JiraIssue)
-	if len(issue.Err) > 0 {
-		return nil, prefix + issue.Err
-	}
-
-	retlines := make([]string, 10)
-	retlines = append(retlines, prefix+issue.ToText())
-	retlines = append(retlines, getIssueMRsText(tree, issue, prefix+"\t"))
-	return issue, strings.Join(retlines, "")
-}
-
-// GetIssuesTreeUsageText returns tree store usage.
-func GetIssuesTreeUsageText(tree Tree) string {
-	outLines := make([]string, 0, 5)
-	outLines = append(outLines, "Tree issue store usage:\n")
-	outLines = append(outLines, tree.GetIssueStore().UsageToText())
-	outLines = append(outLines, "Tree MR store usage:\n")
-	outLines = append(outLines, tree.GetMRStore().UsageToText())
-	return strings.Join(outLines, "")
-}
-
-// GetIssuesTreeSummaryText .
-func GetIssuesTreeSummaryText(tree Tree) string {
-	outLines := make([]string, 0, 5)
-	outLines = append(outLines, fmt.Sprintf("Total Epics: %d\n", len(tree.GetEpics())))
-	outLines = append(outLines, fmt.Sprintf("Total Stories (PMTask): %d\n", len(tree.GetStories())))
-	totalTasks := tree.GetIssueStore().Size() - len(tree.GetEpics()) - len(tree.GetStories())
-	outLines = append(outLines, fmt.Sprintf("Total Tasks (include Bugs): %d\n", totalTasks))
-	return strings.Join(outLines, "")
-}
-
-func getIssueMRsText(tree Tree, issue *JiraIssue, prefix string) string {
-	outLines := make([]string, 5)
-	dulplicatedMR := make(map[string]struct{}, 5)
-	for _, mrURL := range issue.MergeRequests {
-		if _, ok := dulplicatedMR[mrURL]; ok {
-			continue
-		}
-		dulplicatedMR[mrURL] = struct{}{}
-
-		value, err := tree.GetMRStore().Get(mrURL)
-		if err != nil {
-			line := fmt.Sprintf("%sGet MR [%s] from store failed: %v\n", prefix, mrURL, err)
-			outLines = append(outLines, line)
-			continue
-		}
-		mr := value.(*MergeRequest)
-		if len(mr.Err) > 0 {
-			outLines = append(outLines, prefix+mr.Err)
-			continue
-		}
-
-		if mr.TargetBR == "master" {
-			outLines = append(outLines, prefix+mr.ToText())
-		}
-	}
-	return strings.Join(outLines, "")
-}
-
-func isDulplicatedIssue(tree Tree, issue *JiraIssue) bool {
-	for _, supIssueID := range issue.SuperIssues {
-		if _, err := tree.GetIssueStore().Get(supIssueID); err == nil {
-			return true
-		}
-	}
-	return false
 }
 
 /*

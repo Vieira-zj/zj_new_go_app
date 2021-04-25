@@ -19,7 +19,7 @@ func TestCachePut(t *testing.T) {
 	fmt.Println("lockers:", cache.lockers)
 
 	fmt.Println("\nusage:")
-	cache.PrintUsage()
+	fmt.Println(cache.UsageToText())
 
 	fmt.Println("\ncache values:")
 	for k, v := range cache.GetItems() {

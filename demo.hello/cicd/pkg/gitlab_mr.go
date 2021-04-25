@@ -10,14 +10,15 @@ import (
 
 // MergeRequest struct for gitlab merge request.
 type MergeRequest struct {
-	IID      int    `json:"iid"`
-	Title    string `json:"title"`
-	State    string `json:"state"`
-	TargetBR string `json:"target_branch"`
-	SourceBR string `json:"source_branch"`
-	WebURL   string `json:"web_url"`
-	Repo     string
-	Err      string
+	IID         int    `json:"iid"`
+	Title       string `json:"title"`
+	State       string `json:"state"`
+	TargetBR    string `json:"target_branch"`
+	SourceBR    string `json:"source_branch"`
+	WebURL      string `json:"web_url"`
+	Repo        string
+	LinkedIssue string
+	Err         string
 }
 
 // ToText returns merge request data as text.
