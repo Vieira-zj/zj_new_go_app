@@ -34,10 +34,30 @@ func printReleaseCycleTree(ctx context.Context, relCycle string) {
 	for _, key := range keys {
 		tree.SubmitIssue(key)
 	}
-
 	tree.WaitDone()
 	fmt.Println(pkg.GetIssuesTreeText(tree))
 	fmt.Println(pkg.GetIssuesTreeUsageText(tree))
+}
+
+func refreshData() {
+	// TODO: refresh data by interval
+}
+
+func removeExpiredData() {
+	now := time.Now().Unix()
+	delKeys := make([]string, 0)
+	for key, tree := range serve.TreeMap {
+		if now > tree.GetExpired() {
+			delKeys = append(delKeys, key)
+		}
+	}
+	for _, key := range delKeys {
+		tree := serve.TreeMap[key]
+		if !tree.IsRunning() {
+			delete(serve.TreeMap, key)
+			fmt.Printf("Store [%s] is expired and removed.\n", key)
+		}
+	}
 }
 
 func main() {
@@ -72,11 +92,12 @@ func main() {
 			e.GET("/", serve.Index)
 			e.GET("/ping", serve.Ping)
 
-			e.POST("/store", serve.StoreIssues)
+			e.POST("/store/save", serve.StoreIssues)
 			e.POST("/store/usage", serve.StoreUsage)
 
-			e.POST("/get", serve.GetStoreIssues)
+			e.POST("/get/store", serve.GetStoreIssues)
 			e.POST("/get/issue", serve.GetSingleIssue)
+			e.POST("/get/repos", serve.GetRepos)
 
 			e.Logger.SetLevel(log.INFO)
 			e.Logger.Fatal(e.Start(":8081"))
@@ -91,20 +112,8 @@ func main() {
 					fmt.Println("Schedule job exit.")
 					return
 				case <-c:
-					now := time.Now().Unix()
-					delKeys := make([]string, 0)
-					for key, tree := range serve.TreeMap {
-						if now > tree.GetExpired() {
-							delKeys = append(delKeys, key)
-						}
-					}
-					for _, key := range delKeys {
-						tree := serve.TreeMap[key]
-						if !tree.IsRunning() {
-							fmt.Printf("Store [%s] is expired and remove.\n", key)
-							delete(serve.TreeMap, key)
-						}
-					}
+					refreshData()
+					removeExpiredData()
 				}
 			}
 		}()

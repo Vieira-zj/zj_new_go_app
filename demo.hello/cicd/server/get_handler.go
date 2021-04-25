@@ -47,8 +47,8 @@ func GetSingleIssue(c echo.Context) error {
 	if !ok {
 		return c.String(http.StatusOK, fmt.Sprintf("Store [%s] not found.\n", req.StoreKey))
 	}
-
 	tree.WaitDone()
+
 	outLines := make([]string, 10)
 	issue, text := pkg.GetIssueAndMRsText(tree, req.IssueKey, "")
 	outLines = append(outLines, text)
@@ -59,20 +59,39 @@ func GetSingleIssue(c echo.Context) error {
 	return c.String(http.StatusOK, strings.Join(outLines, ""))
 }
 
+// GetRepos .
+func GetRepos(c echo.Context) error {
+	tree, err := getStore(c)
+	if err != nil {
+		c.String(http.StatusOK, err.Error())
+	}
+	content := pkg.GetDeployReposText(tree) + "\n" + pkg.GetShortDeployReposText(tree)
+	return c.String(http.StatusOK, content)
+}
+
 // StoreUsage .
 func StoreUsage(c echo.Context) error {
+	tree, err := getStore(c)
+	if err != nil {
+		c.String(http.StatusOK, err.Error())
+	}
+	content := pkg.GetIssuesTreeUsageText(tree) + "\n" + pkg.GetIssuesTreeSummaryText(tree)
+	return c.String(http.StatusOK, content)
+}
+
+func getStore(c echo.Context) (pkg.Tree, error) {
 	locker.RLock()
 	defer locker.RUnlock()
 
 	req, err := parseBodyToIssuesHandlerReq(c.Request().Body)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		return nil, err
 	}
 
 	tree, ok := TreeMap[req.StoreKey]
 	if !ok {
-		return c.String(http.StatusOK, fmt.Sprintf("Store [%s] not found.\n", req.StoreKey))
+		return nil, fmt.Errorf("Store [%s] not found", req.StoreKey)
 	}
-	content := pkg.GetIssuesTreeUsageText(tree) + "\n" + pkg.GetIssuesTreeSummaryText(tree)
-	return c.String(http.StatusOK, content)
+	tree.WaitDone()
+	return tree, nil
 }

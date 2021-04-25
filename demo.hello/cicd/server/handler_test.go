@@ -15,3 +15,17 @@ func TestURLEncode(t *testing.T) {
 		fmt.Println(url.QueryEscape(value))
 	}
 }
+
+func TestLoop(t *testing.T) {
+outer:
+	for i := 0; i < 10; i++ {
+		for _, j := range []string{"a", "b", "c"} {
+			if i%2 == 0 && j == "b" {
+				fmt.Println()
+				continue outer
+			}
+			fmt.Printf("%d:%s,", i, j)
+		}
+		fmt.Println()
+	}
+}

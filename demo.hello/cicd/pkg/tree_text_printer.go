@@ -153,7 +153,7 @@ func isDulplicatedIssue(tree Tree, issue *JiraIssue) bool {
 }
 
 /*
-Print repo test.
+Print deploy repo text.
 */
 
 // GetDeployReposText .
