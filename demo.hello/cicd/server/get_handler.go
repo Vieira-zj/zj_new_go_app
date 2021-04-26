@@ -63,7 +63,7 @@ func GetSingleIssue(c echo.Context) error {
 func GetRepos(c echo.Context) error {
 	tree, err := getStore(c)
 	if err != nil {
-		c.String(http.StatusOK, err.Error())
+		return c.String(http.StatusOK, err.Error())
 	}
 	content := pkg.GetDeployReposText(tree) + "\n" + pkg.GetShortDeployReposText(tree)
 	return c.String(http.StatusOK, content)
@@ -73,7 +73,7 @@ func GetRepos(c echo.Context) error {
 func StoreUsage(c echo.Context) error {
 	tree, err := getStore(c)
 	if err != nil {
-		c.String(http.StatusOK, err.Error())
+		return c.String(http.StatusOK, err.Error())
 	}
 	content := pkg.GetIssuesTreeUsageText(tree) + "\n" + pkg.GetIssuesTreeSummaryText(tree)
 	return c.String(http.StatusOK, content)

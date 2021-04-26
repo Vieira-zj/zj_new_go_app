@@ -88,7 +88,6 @@ func main() {
 	if server {
 		go func() {
 			e = echo.New()
-
 			e.GET("/", serve.Index)
 			e.GET("/ping", serve.Ping)
 
