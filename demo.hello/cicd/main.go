@@ -40,7 +40,7 @@ func printReleaseCycleTree(ctx context.Context, relCycle string) {
 }
 
 func refreshData() {
-	// TODO: refresh data by interval
+	// TODO: refresh data with interval
 }
 
 func removeExpiredData() {
@@ -62,8 +62,8 @@ func removeExpiredData() {
 
 func main() {
 	flag.BoolVar(&help, "h", false, "help.")
-	flag.BoolVar(&cli, "cli", false, "run command line mode.")
 	flag.BoolVar(&server, "server", false, "run server mode.")
+	flag.BoolVar(&cli, "cli", false, "run command line mode.")
 	flag.StringVar(&releaseCycle, "releaseCycle", "", "Release Cycle for jira issues.")
 
 	flag.Parse()
