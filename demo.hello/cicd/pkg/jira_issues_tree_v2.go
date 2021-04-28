@@ -98,7 +98,7 @@ func (tree *JiraIssuesTreeV2) collectIssues(issueID string) {
 			<-tree.semaphore
 		}()
 
-		issue := tree.collectOneIssue(issueID)
+		issue := tree.collectOneIssue(issueID, false)
 		if len(issue.Err) > 0 {
 			return
 		}
@@ -106,7 +106,8 @@ func (tree *JiraIssuesTreeV2) collectIssues(issueID string) {
 		if issue.Type == issueTypeEpic {
 			tree.epics[issueID] = struct{}{}
 			for _, subIssueID := range issue.SubIssues {
-				subIssue := tree.collectOneIssue(subIssueID)
+				// 注：这里使用强制更新，否则当前SuperIssues修改可能丢失。（并发调用collectOneIssue加载同一个issue问题）
+				subIssue := tree.collectOneIssue(subIssueID, true)
 				if len(subIssue.Err) > 0 {
 					continue
 				}
@@ -125,7 +126,7 @@ func (tree *JiraIssuesTreeV2) collectIssues(issueID string) {
 	}()
 }
 
-func (tree *JiraIssuesTreeV2) collectOneIssue(issueID string) *JiraIssue {
+func (tree *JiraIssuesTreeV2) collectOneIssue(issueID string, forceUpdate bool) *JiraIssue {
 	if value, err := tree.issueStore.Get(issueID); err == nil {
 		return value.(*JiraIssue)
 	}
@@ -137,7 +138,13 @@ func (tree *JiraIssuesTreeV2) collectOneIssue(issueID string) *JiraIssue {
 		content := fmt.Sprintf("New jira issue failed: %v\n", err)
 		issue = &JiraIssue{Key: issueID, Err: content}
 	}
-	tree.issueStore.PutIfEmpty(issueID, issue)
+
+	// note: make sure the returned issue is stored in cache, use forceUpdate=true.
+	if forceUpdate {
+		tree.issueStore.Put(issueID, issue)
+	} else {
+		tree.issueStore.PutIfEmpty(issueID, issue)
+	}
 	return issue
 }
 
@@ -165,4 +172,18 @@ func (tree *JiraIssuesTreeV2) collectIssueMRs(issueID, mrURL string) {
 			tree.mrStore.PutIfEmpty(mrURL, mr)
 		}
 	}()
+}
+
+func (tree *JiraIssuesTreeV2) waitIssueStored(issueID string) {
+	var timeout float64 = 5
+	start := time.Now()
+	for {
+		if _, err := tree.issueStore.Get(issueID); err == nil {
+			break
+		}
+		if time.Since(start).Seconds() > timeout {
+			fmt.Printf("Wait for ticket [%s] stored timeout.", issueID)
+			break
+		}
+	}
 }

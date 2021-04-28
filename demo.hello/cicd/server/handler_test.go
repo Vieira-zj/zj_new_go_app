@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"testing"
+	"time"
 )
 
 func TestURLEncode(t *testing.T) {
@@ -28,4 +29,16 @@ outer:
 		}
 		fmt.Println()
 	}
+}
+
+func TestTimeSince(t *testing.T) {
+	var timeout float64 = 3
+	start := time.Now()
+	for {
+		if time.Since(start).Seconds() > timeout {
+			break
+		}
+		time.Sleep(time.Duration(500) * time.Millisecond)
+	}
+	fmt.Println("time since seconds:", time.Since(start))
 }

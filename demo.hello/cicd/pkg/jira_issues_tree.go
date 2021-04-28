@@ -259,10 +259,9 @@ func isStoryIssue(issueType string) bool {
 func removeDulpicatedItem(s []string) []string {
 	m := make(map[string]struct{}, len(s))
 	for _, item := range s {
-		if _, ok := m[item]; ok {
-			continue
+		if _, ok := m[item]; !ok {
+			m[item] = struct{}{}
 		}
-		m[item] = struct{}{}
 	}
 
 	retSlice := make([]string, 0, len(m))
