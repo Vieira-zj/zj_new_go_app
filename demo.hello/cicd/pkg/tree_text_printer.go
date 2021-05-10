@@ -15,7 +15,7 @@ func GetIssuesTreeText(tree Tree) string {
 	errLines := make([]string, 0, 10)
 	errLines = append(errLines, "\n[Failed Tasks:]\n")
 
-	outLines = append(outLines, "\n[Epic, Story and Tasks:]\n")
+	outLines = append(outLines, "\n[Epic:]\n")
 	for epicID := range tree.GetEpics() {
 		epic, epicText := GetIssueAndMRsText(tree, epicID, "")
 		if epic == nil {
@@ -41,7 +41,7 @@ func GetIssuesTreeText(tree Tree) string {
 		outLines = append(outLines, "\n")
 	}
 
-	outLines = append(outLines, "\n[Single Stories:]\n")
+	outLines = append(outLines, "\n[Stories / PM-Tasks:]\n")
 	for storyID := range tree.GetStories() {
 		story, storyText := GetIssueAndMRsText(tree, storyID, "")
 		if story == nil {
@@ -62,7 +62,7 @@ func GetIssuesTreeText(tree Tree) string {
 		outLines = append(outLines, "\n")
 	}
 
-	outLines = append(outLines, "\n[Single Tasks (Bugs):]\n")
+	outLines = append(outLines, "\n[Single Tasks / Bugs:]\n")
 	for issueID := range tree.GetIssueStore().GetItems() {
 		if issue, issueText := GetIssueAndMRsText(tree, issueID, ""); issue != nil {
 			if (issue.Type == issueTypeTask || issue.Type == issueTypeBug) && !isDulplicatedIssue(tree, issue) {

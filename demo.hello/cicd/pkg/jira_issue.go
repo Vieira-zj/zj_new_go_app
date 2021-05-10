@@ -152,7 +152,7 @@ func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraI
 		issue.SuperIssues = issueLinks
 	}
 
-	// handle remote link
+	// handle remote links
 	resp, err = jira.GetRemoteLink(ctx, issueID)
 	if err != nil {
 		return nil, err

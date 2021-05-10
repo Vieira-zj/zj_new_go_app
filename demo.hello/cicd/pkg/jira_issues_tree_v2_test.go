@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+func TestSingleTicketV2(t *testing.T) {
+	ticket := "SPPAY-3608"
+	tree := NewJiraIssuesTreeV2(2)
+	tree.SubmitIssue(ticket)
+	tree.WaitDone()
+	fmt.Println(GetIssuesTreeText(tree))
+}
+
 func TestTicketsTreeV2(t *testing.T) {
 	tickets := "AIRPAY-66492,SPPAY-2210,AIRPAY-57284,AIRPAY-62043"
 	tree := NewJiraIssuesTreeV2(5)
