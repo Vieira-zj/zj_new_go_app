@@ -475,3 +475,34 @@ func TestDemo21(t *testing.T) {
 	}
 	printData(&sub2)
 }
+
+/*
+chan close
+*/
+
+func TestDemo22(t *testing.T) {
+	// 从关闭的channel中不但可以读取出已发送的数据，还可以不断的读取零值
+	ch := make(chan int, 5)
+	for i := 1; i < 4; i++ {
+		ch <- i
+	}
+	close(ch)
+
+	for i := 0; i < 5; i++ {
+		fmt.Println(<-ch)
+	}
+}
+
+func TestDemo23(t *testing.T) {
+	// 如果通过range读取，channel关闭后，读取完已发送的数据，for循环会跳出
+	ch := make(chan int, 5)
+	for i := 1; i < 4; i++ {
+		ch <- i
+	}
+	close(ch)
+	fmt.Println("channel closed")
+
+	for i := range ch {
+		fmt.Println(i)
+	}
+}

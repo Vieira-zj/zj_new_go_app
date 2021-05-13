@@ -91,8 +91,8 @@ Collect issue data.
 func (tree *JiraIssuesTreeV2) collectIssues(issueID string) {
 	tree.wg.Add(1)
 	go func() {
-		fmt.Println("Work on issue:", issueID)
 		tree.semaphore <- struct{}{}
+		fmt.Println("Work on issue:", issueID)
 		defer func() {
 			tree.wg.Done()
 			<-tree.semaphore

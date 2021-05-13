@@ -4,9 +4,38 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
+
+func TestBlockedQueue(t *testing.T) {
+	parallelCount := 5
+	queue := make(chan int, 10)
+	wg := sync.WaitGroup{}
+
+	for i := 0; i < parallelCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for val := range queue {
+				fmt.Printf("go func: %d, time: %d\n", val, time.Now().Unix())
+				time.Sleep(time.Second)
+			}
+		}()
+	}
+
+	for i := 0; i < 30; i++ {
+		queue <- i
+		queue <- i + 1
+	}
+
+	fmt.Println("queue size:", len(queue))
+	close(queue)
+	fmt.Println("queue closed.")
+	// 1. 读取完chan中已发送的数据，for range 循环退出；2. 所有goroutine执行完成
+	wg.Wait()
+}
 
 func TestRemoveDulpicatedItem(t *testing.T) {
 	s := []string{"a", "b", "c", "d", "c", "a"}
