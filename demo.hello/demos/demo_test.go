@@ -437,6 +437,37 @@ func BenchmarkSwitch(b *testing.B) {
 }
 
 /*
+switch
+*/
+
+type mockErrorType int
+
+const (
+	RunTimeError = iota
+	NilError
+	IndexOutOfRange
+	InvalidValue
+	UnMatchedType
+)
+
+func getErrorTypeMessage(errType mockErrorType) string {
+	switch errType {
+	case RunTimeError, NilError, IndexOutOfRange:
+		return "unexpected error"
+	case InvalidValue, UnMatchedType:
+		return "catch exception"
+	default:
+		return "invalid error type"
+	}
+}
+
+func TestDemoSwitch(t *testing.T) {
+	for _, errType := range []mockErrorType{NilError, InvalidValue, IndexOutOfRange, UnMatchedType, 10} {
+		fmt.Println(getErrorTypeMessage(errType))
+	}
+}
+
+/*
 imply an interface
 */
 
