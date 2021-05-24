@@ -8,11 +8,13 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"text/template"
 	"time"
 	"unsafe"
 
+	"github.com/bep/debounce"
 	"gopkg.in/yaml.v2"
 )
 
@@ -536,4 +538,23 @@ func TestDemo23(t *testing.T) {
 	for i := range ch {
 		fmt.Println(i)
 	}
+}
+
+func TestDemo24(t *testing.T) {
+	// Debouncing（防抖动） 是一种避免事件重复的方法，我们设置一个小的延迟，如果在达到延迟之前发生了其他事件，则重启计时器
+	var count uint32
+
+	addFunc := func() {
+		atomic.AddUint32(&count, 1)
+	}
+
+	debounce := debounce.New(time.Duration(200) * time.Millisecond)
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 10; j++ {
+			debounce(addFunc)
+			time.Sleep(time.Duration(50) * time.Millisecond)
+		}
+		time.Sleep(time.Duration(200) * time.Millisecond)
+	}
+	fmt.Println("count:", count)
 }

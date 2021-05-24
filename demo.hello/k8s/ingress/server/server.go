@@ -17,7 +17,7 @@ import (
 // A Server serves HTTP pages.
 type Server struct {
 	cfg          *config
-	routingTable atomic.Value
+	routingTable atomic.Value // 使用的是 atomic.Value 来存储路由表
 	ready        *Event
 }
 

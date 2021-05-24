@@ -59,6 +59,7 @@ csrName=${service}.${namespace}
 tmpdir=$(mktemp -d)
 echo "creating certs in tmpdir ${tmpdir} "
 
+# create server.csr, server-key.pem
 cat <<EOF >> ${tmpdir}/csr.conf
 [req]
 req_extensions = v3_req
@@ -81,7 +82,7 @@ openssl req -new -key ${tmpdir}/server-key.pem -subj "/CN=${service}.${namespace
 # clean-up any previously created CSR for our service. Ignore errors if not present.
 kubectl delete csr ${csrName} 2>/dev/null || true
 
-# create  server cert/key CSR and  send to k8s API
+# create server cert/key CSR and send to k8s API
 cat <<EOF | kubectl create -f -
 apiVersion: certificates.k8s.io/v1beta1
 kind: CertificateSigningRequest

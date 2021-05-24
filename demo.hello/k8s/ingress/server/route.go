@@ -26,6 +26,13 @@ func NewRoutingTable(payload *watcher.Payload) *RoutingTable {
 		certificatesByHost: make(map[string]map[string]*tls.Certificate),
 	}
 	rt.init(payload)
+
+	fmt.Println("[route] table records:")
+	for host, backends := range rt.backendsByHost {
+		for _, backend := range backends {
+			fmt.Printf("ingress_host:%s,ingress_path:%s,backend_service:%s\n", host, backend.pathRE.String(), backend.url.Host)
+		}
+	}
 	return rt
 }
 
@@ -58,7 +65,8 @@ func (rt *RoutingTable) addBackend(ingressPayload watcher.IngressPayload, rule e
 	if rule.HTTP == nil {
 		if ingressPayload.Ingress.Spec.Backend != nil {
 			backend := ingressPayload.Ingress.Spec.Backend
-			rtb, err := newRoutingTableBackend("", backend.ServiceName, rt.getServicePort(ingressPayload, backend.ServiceName, backend.ServicePort))
+			rtb, err := newRoutingTableBackend("", backend.ServiceName,
+				rt.getServicePort(ingressPayload, backend.ServiceName, backend.ServicePort))
 			if err != nil {
 				// this shouldn't happen
 				fmt.Println(err)
@@ -106,6 +114,7 @@ func (rt *RoutingTable) GetBackend(host, path string) (*url.URL, error) {
 	return nil, errors.New("backend not found")
 }
 
+// getServicePort used for ingress api version: k8s.io/api/extensions/v1beta1
 func (rt *RoutingTable) getServicePort(ingressPayload watcher.IngressPayload, serviceName string, servicePort intstr.IntOrString) int {
 	if servicePort.Type == intstr.Int {
 		return servicePort.IntValue()

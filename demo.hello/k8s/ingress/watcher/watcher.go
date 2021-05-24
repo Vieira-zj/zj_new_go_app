@@ -15,10 +15,14 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-// IngressPayload links ingress to service data.
+/*
+Watcher 负责查询 Kubernetes 和创建 Payloads 的，Payloads 包含了满足 HTTP 请求所需要的所有的 Kubernetes 数据。
+*/
+
+// IngressPayload Ingress 加上他的服务端口。
 type IngressPayload struct {
-	Ingress      *extensionsv1beta1.Ingress
-	ServicePorts map[string]map[string]int // service_name:port_name:port
+	Ingress      *extensionsv1beta1.Ingress // ingress configuration
+	ServicePorts map[string]map[string]int  // service_name:port_name:port
 }
 
 // Payload a collection of Kubernetes data loaded by the watcher.
@@ -65,6 +69,7 @@ func (w *Watcher) Run(ctx context.Context) error {
 		ingressPayload.ServicePorts[svc.Name] = m
 	}
 
+	// 检测到 k8s 变更时，从头开始重新构建所有的数据
 	onChange := func() {
 		// 获得所有的 Ingress
 		ingresses, err := ingressLister.List(labels.Everything())
@@ -72,6 +77,7 @@ func (w *Watcher) Run(ctx context.Context) error {
 			fmt.Println("failed to list ingresses")
 			return
 		}
+		fmt.Println("[watcher] total ingresses:", len(ingresses))
 
 		payload := &Payload{
 			TLSCertificates: make(map[string]*tls.Certificate),
@@ -97,7 +103,7 @@ func (w *Watcher) Run(ctx context.Context) error {
 				}
 			}
 
-			// 证书处理
+			// 如果有 TLS 规则，则从 secrets 对象中加载证书
 			for _, rec := range ingress.Spec.TLS {
 				if rec.SecretName != "" {
 					secret, err := secretLister.Secrets(ingress.Namespace).Get(rec.SecretName)
@@ -115,10 +121,11 @@ func (w *Watcher) Run(ctx context.Context) error {
 			}
 		}
 
-		// payload includes all ingressres and certs data in k8s => server.Update(payload)
+		// payload includes all ingressres and certs => server.Update(payload) => sync route
 		w.onChange(payload)
 	}
 
+	// debouncing（防抖动）是一种避免事件重复的方法，我们设置一个小的延迟，如果在达到延迟之前发生了其他事件，则重启计时器
 	debounced := debounce.New(time.Second)
 	handler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {

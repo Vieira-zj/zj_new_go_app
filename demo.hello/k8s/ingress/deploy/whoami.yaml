@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami
+  namespace: k8s-test
+  labels:
+    app: whoami
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: whoami
+  template:
+    metadata:
+      labels:
+        app: whoami
+    spec:
+      containers:
+      - name: whoami
+        image: k8s.gcr.io/echoserver:1.10
+        ports:
+        - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: whoami
+  namespace: k8s-test
+spec:
+  selector:
+    app: whoami
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
