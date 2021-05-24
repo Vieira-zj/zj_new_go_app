@@ -4,7 +4,7 @@ set -eu
 root_dir=$(pwd)
 
 function build_image() {
-    exec_file="k8s-simple-ingress-controller"
+    local exec_file="k8s-simple-ingress-controller"
     cd $root_dir
     eval $(minikube -p minikube docker-env)
     GOOS=linux GOARCH=amd64 go build -o ${exec_file} .
