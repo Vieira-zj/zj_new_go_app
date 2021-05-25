@@ -9,6 +9,7 @@ import (
 var issueID = "AIRPAY-61523"
 
 func TestJiraGetIssue(t *testing.T) {
+	jira := NewJiraTool()
 	resp, err := jira.GetIssue(context.TODO(), issueID, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -17,6 +18,7 @@ func TestJiraGetIssue(t *testing.T) {
 }
 
 func TestJiraGetIssueByFields(t *testing.T) {
+	jira := NewJiraTool()
 	fields := []string{"key", "summary"}
 	resp, err := jira.GetIssue(context.TODO(), issueID, fields)
 	if err != nil {
@@ -26,6 +28,7 @@ func TestJiraGetIssueByFields(t *testing.T) {
 }
 
 func TestJiraSearch(t *testing.T) {
+	jira := NewJiraTool()
 	jql := `"Release Cycle" = "2021.04.v3" AND type = Bug`
 	fields := []string{"key", "summary", "status"}
 	resp, err := jira.Search(context.TODO(), jql, fields)
@@ -36,6 +39,7 @@ func TestJiraSearch(t *testing.T) {
 }
 
 func TestJiraSearchIssues(t *testing.T) {
+	jira := NewJiraTool()
 	jql := `fixVersion = apa_v1.0.19.20210419`
 	keys, err := jira.SearchIssues(context.TODO(), jql)
 	if err != nil {
@@ -45,6 +49,7 @@ func TestJiraSearchIssues(t *testing.T) {
 }
 
 func TestGetIssueLink(t *testing.T) {
+	jira := NewJiraTool()
 	resp, err := jira.GetIssueLink(context.TODO(), issueID)
 	if err != nil {
 		t.Fatal(err)
@@ -53,6 +58,7 @@ func TestGetIssueLink(t *testing.T) {
 }
 
 func TestGetRemoteLink(t *testing.T) {
+	jira := NewJiraTool()
 	resp, err := jira.GetRemoteLink(context.TODO(), issueID)
 	if err != nil {
 		t.Fatal(err)
@@ -61,6 +67,7 @@ func TestGetRemoteLink(t *testing.T) {
 }
 
 func TestGetIssuesInEpic(t *testing.T) {
+	jira := NewJiraTool()
 	keys, err := jira.GetIssuesInEpic(context.TODO(), "SPPAY-196")
 	if err != nil {
 		t.Fatal(err)

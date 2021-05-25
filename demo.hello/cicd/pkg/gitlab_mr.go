@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -52,5 +51,5 @@ func getMRRepo(mrURL string) (string, error) {
 	if len(items) != 2 {
 		return "", fmt.Errorf("invalid mr url: %s", mrURL)
 	}
-	return strings.Replace(items[0], os.Getenv("GITLAB_HOST")+"/", "", 1), nil
+	return strings.Replace(items[0], gitlabHost+"/", "", 1), nil
 }

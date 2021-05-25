@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"demo.hello/utils"
@@ -26,9 +25,9 @@ type JiraTool struct {
 // NewJiraTool creates a JiraTool instance.
 func NewJiraTool() *JiraTool {
 	return &JiraTool{
-		restURL:  os.Getenv("JIRA_REST_URL"),
-		userName: os.Getenv("JIRA_USER_NAME"),
-		userPwd:  os.Getenv("JIRA_USER_PASSWORD"),
+		restURL:  jiraHost,
+		userName: jiraUserName,
+		userPwd:  jiraUserPwd,
 		http:     utils.NewHTTPUtils(true),
 	}
 }

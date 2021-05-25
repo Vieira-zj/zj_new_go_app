@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"demo.hello/utils"
@@ -25,8 +24,8 @@ type GitlabTool struct {
 // NewGitlabTool create a GitlabTool instance.
 func NewGitlabTool() *GitlabTool {
 	return &GitlabTool{
-		host:  os.Getenv("GITLAB_HOST"),
-		token: os.Getenv("GITLAB_TOKEN"),
+		host:  gitlabHost,
+		token: gitlabToken,
 		http:  utils.NewHTTPUtils(true),
 	}
 }

@@ -60,6 +60,7 @@ func TestTicketsTree(t *testing.T) {
 
 func TestPrintReleaseTicketTree(t *testing.T) {
 	// release ticket -> tasks
+	jira := NewJiraTool()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 	defer cancel()
 	releaseTicket, err := NewJiraIssue(ctx, jira, "AIRPAY-66425")
@@ -79,6 +80,7 @@ func TestPrintReleaseTicketTree(t *testing.T) {
 
 func TestPrintFixVersionTree(t *testing.T) {
 	// fix version -> pm/story tasks -> tasks
+	jira := NewJiraTool()
 	key := "apa_v1.0.20.20210426"
 	jql := fmt.Sprintf("fixVersion = %s", key)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
@@ -99,6 +101,7 @@ func TestPrintFixVersionTree(t *testing.T) {
 }
 
 func TestPrintReleaseCycleTree(t *testing.T) {
+	jira := NewJiraTool()
 	jql := `"Release Cycle" = "2021.04.v4 - AirPay"`
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 	defer cancel()
