@@ -10,6 +10,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/emicklei/proto v1.9.0
 	github.com/evanphx/json-patch v4.9.0+incompatible
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/go-xorm/xorm v0.7.9
 	github.com/gogo/protobuf v1.3.2 // indirect

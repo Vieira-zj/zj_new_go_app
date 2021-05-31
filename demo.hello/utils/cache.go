@@ -92,6 +92,7 @@ func (c *Cache) getMap(key string) map[string]interface{} {
 }
 
 func (c *Cache) getHashKey(key string) int {
+	// TODO: add salt by random number or nano time.
 	count := 0
 	for _, c := range key {
 		count += int(c)

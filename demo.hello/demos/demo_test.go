@@ -558,3 +558,62 @@ func TestDemo24(t *testing.T) {
 	}
 	fmt.Println("count:", count)
 }
+
+/*
+status by binary
+refer: github.com/fsnotify/fsnotify
+*/
+
+type Op uint32
+
+const (
+	Create Op = 1 << iota
+	Write
+	Remove
+	Rename
+)
+
+func (op Op) String() string {
+	var buffer bytes.Buffer
+	if op&Create == Create {
+		buffer.WriteString("|Create")
+	}
+	if op&Write == Write {
+		buffer.WriteString("|Write")
+	}
+	if op&Remove == Remove {
+		buffer.WriteString("|Remove")
+	}
+	if op&Rename == Rename {
+		buffer.WriteString("|Rename")
+	}
+
+	if buffer.Len() == 0 {
+		return ""
+	}
+	return buffer.String()[1:]
+}
+
+func (op Op) hasCreate() bool {
+	if op&Create != 0 {
+		return true
+	}
+	return false
+}
+
+func (op Op) hasWrite() bool {
+	if op&Write != 0 {
+		return true
+	}
+	return false
+}
+
+func TestDemo25(t *testing.T) {
+	fmt.Printf("all operations: create=%d, write=%d, remove=%d, rename=%d\n", Create, Write, Remove, Rename)
+	op := Create
+	op += Rename
+	op += Remove
+	fmt.Println("op has create:", op.hasCreate())
+	fmt.Println("op has write:", op.hasWrite())
+	fmt.Println("cur op:", op)
+}
