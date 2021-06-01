@@ -234,7 +234,7 @@ func NewJiraIssue(ctx context.Context, jira *JiraTool, issueID string) (*JiraIss
 func fixIssueType(issue *JiraIssue) {
 	if issue.Type == issueTypeTask {
 		for _, v := range issue.Labels {
-			if v == "PM-Task" {
+			if strings.ToLower(v) == "pm-task" {
 				issue.Type = issueTypePMTask
 				return
 			}

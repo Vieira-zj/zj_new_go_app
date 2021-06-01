@@ -11,8 +11,14 @@ function run_server() {
     go run main.go -server
 }
 
-source ${project_root_path}/env.sh
+function run_test() {
+    case=$1
+    go test -timeout 30s -run ^${case}$ demo.hello/cicd/pkg -v -count=1
+}
+
+# source ${project_root_path}/env.sh
 # print_releasecycle_tickets
-run_server
+run_test TestSingleTicketV2
+# run_server
 
 echo "done."

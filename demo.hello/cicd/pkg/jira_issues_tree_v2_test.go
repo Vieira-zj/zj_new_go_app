@@ -9,7 +9,7 @@ import (
 )
 
 func TestSingleTicketV2(t *testing.T) {
-	ticket := "SPPAY-3608"
+	ticket := "AIRPAY-61618"
 	tree := NewJiraIssuesTreeV2(2)
 	tree.SubmitIssue(ticket)
 	tree.WaitDone()
