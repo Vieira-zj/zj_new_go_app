@@ -62,6 +62,14 @@ func WalkDir(dirPath, suffix string) (files []string, err error) {
 File IO
 */
 
+// IsExist .
+func IsExist(filePath string) bool {
+	if _, err := os.Stat(filePath); err != nil {
+		return !os.IsNotExist(err)
+	}
+	return true
+}
+
 // CreateFile create a file with buf content.
 func CreateFile(filePath string, buf *bytes.Buffer) error {
 	newFile, err := os.Create(filePath)

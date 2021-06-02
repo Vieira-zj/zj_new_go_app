@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"runtime"
+	"strings"
 
 	"demo.hello/demos"
 )
@@ -27,6 +29,12 @@ func init() {
 }
 
 func main() {
+	flag.Parse()
+	inputArgs := flag.Args()
+	if len(inputArgs) > 0 {
+		fmt.Println("input args:", strings.Join(inputArgs, ","))
+	}
+
 	demos.DemoMain()
 	fmt.Println("hello golang")
 }

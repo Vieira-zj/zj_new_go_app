@@ -51,6 +51,11 @@ func TestWalkDir(t *testing.T) {
 	}
 }
 
+func TestIsExist(t *testing.T) {
+	filePath := "/tmp/test/data.json"
+	fmt.Println("file exist:", IsExist(filePath))
+}
+
 func TestCreateFile(t *testing.T) {
 	filePath := "/tmp/test/test.txt"
 	buf := bytes.NewBuffer([]byte("Create file with content test."))

@@ -356,6 +356,6 @@ func demo11() {
 
 // DemoMain entry of demo.
 func DemoMain() {
-	fmt.Println("demo 01 main")
-	demo08()
+	fmt.Println("demo main")
+	demo10()
 }

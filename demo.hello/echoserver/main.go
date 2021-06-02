@@ -1,6 +1,12 @@
 package main
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/log"
 
@@ -8,7 +14,7 @@ import (
 	"demo.hello/echoserver/utils"
 )
 
-func runApp() {
+func main() {
 	// echo refer: https://echo.labstack.com/guide/request/
 	deco := utils.Deco
 
@@ -26,10 +32,19 @@ func runApp() {
 	e.GET("/cover", deco(handlers.CoverHandler))
 	e.GET("/sample/01", deco(handlers.SampleHandler01))
 
-	e.Logger.SetLevel(log.INFO)
-	e.Logger.Fatal(e.Start(":8081"))
-}
+	go func() {
+		e.Logger.SetLevel(log.INFO)
+		e.Logger.Fatal(e.Start(":8081"))
+	}()
 
-func main() {
-	runApp()
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
+
+	<-quit
+	e.Logger.Info("Stopping server.")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		panic(err)
+	}
 }

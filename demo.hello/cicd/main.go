@@ -124,6 +124,7 @@ func main() {
 	// quit
 	<-quit
 	if server && e != nil {
+		fmt.Println("Stopping server.")
 		mainCancel()
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
 		defer cancel()
@@ -131,5 +132,4 @@ func main() {
 			panic(err)
 		}
 	}
-	fmt.Println("Server stopped.")
 }
