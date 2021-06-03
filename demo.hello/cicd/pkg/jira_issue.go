@@ -125,12 +125,13 @@ func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraI
 	issue.FixVersions = fixVersions
 
 	// handle sub issues
+	issue.SubIssues = make([]string, 0)
 	if issue.Type == issueTypeEpic {
 		issueLinks, err := jira.GetIssuesInEpic(ctx, issueID)
 		if err != nil {
 			return nil, err
 		}
-		issue.SubIssues = issueLinks
+		issue.SubIssues = append(issue.SubIssues, issueLinks...)
 	}
 	if issue.Type == issueTypePMTask || issue.Type == issueTypeStory || issue.Type == issueTypeRelease || issue.Type == issueTypeEpic {
 		issueLinks := make([]string, 0)
@@ -139,7 +140,7 @@ func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraI
 				issueLinks = append(issueLinks, link.OutwardIssue.Key)
 			}
 		}
-		issue.SubIssues = issueLinks
+		issue.SubIssues = append(issue.SubIssues, issueLinks...)
 	}
 
 	// handle super issues

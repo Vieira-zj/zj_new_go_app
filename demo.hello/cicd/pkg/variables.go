@@ -1,6 +1,9 @@
 package pkg
 
-import "os"
+import (
+	"os"
+	"sync"
+)
 
 const (
 	textAppJSON = "application/json"
@@ -21,6 +24,8 @@ const (
 var (
 	jiraHost, jiraUserName, jiraUserPwd string
 	gitlabHost, gitlabToken             string
+
+	locker = new(sync.Mutex)
 )
 
 func init() {

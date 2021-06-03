@@ -17,7 +17,7 @@ func TestSingleTicketV2(t *testing.T) {
 }
 
 func TestTicketsTreeV2(t *testing.T) {
-	tickets := "AIRPAY-66492,SPPAY-2210,AIRPAY-57284,AIRPAY-62043"
+	tickets := "SPPAY-69,SPPAY-6216,SPPAY-4611"
 	tree := NewJiraIssuesTreeV2(5)
 	for _, ticket := range strings.Split(tickets, ",") {
 		tree.SubmitIssue(ticket)

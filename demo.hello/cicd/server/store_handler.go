@@ -90,7 +90,7 @@ func storeJQLIssues(key, jql string, forceUpdate bool) (pkg.Tree, error) {
 		return nil, fmt.Errorf("Search issues by jql [%s] failed: %v", jql, err)
 	}
 
-	tree := pkg.NewJiraIssuesTreeV2(parallel)
+	tree := pkg.NewJiraIssuesTreeV2(Parallel)
 	TreeMap[key] = tree
 	for _, issueID := range issues {
 		tree.SubmitIssue(issueID)

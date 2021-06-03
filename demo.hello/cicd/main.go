@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -15,29 +16,11 @@ import (
 )
 
 var (
-	jira = pkg.NewJiraTool()
-
-	help         bool
-	cli          bool
-	server       bool
-	releaseCycle string
+	help     bool
+	cli      bool
+	parallel int
+	server   bool
 )
-
-func printReleaseCycleTree(ctx context.Context, relCycle string) {
-	jql := fmt.Sprintf(`"Release Cycle" = "%s"`, relCycle)
-	keys, err := jira.SearchIssues(ctx, jql)
-	if err != nil {
-		panic(err)
-	}
-
-	tree := pkg.NewJiraIssuesTree(ctx, 8)
-	for _, key := range keys {
-		tree.SubmitIssue(key)
-	}
-	tree.WaitDone()
-	fmt.Println(pkg.GetIssuesTreeText(tree))
-	fmt.Println(pkg.GetIssuesTreeUsageText(tree))
-}
 
 func refreshData() {
 	// TODO: refresh data with interval
@@ -62,9 +45,9 @@ func removeExpiredData() {
 
 func main() {
 	flag.BoolVar(&help, "h", false, "help.")
-	flag.BoolVar(&server, "server", false, "run server mode.")
 	flag.BoolVar(&cli, "cli", false, "run command line mode.")
-	flag.StringVar(&releaseCycle, "releaseCycle", "", "Release Cycle for jira issues.")
+	flag.BoolVar(&server, "svr", false, "run server mode.")
+	flag.IntVar(&parallel, "p", 10, "parallel goroutine number.")
 
 	flag.Parse()
 	if help {
@@ -77,8 +60,13 @@ func main() {
 
 	// cli
 	if cli {
-		if len(releaseCycle) > 0 {
-			printReleaseCycleTree(mainCtx, releaseCycle)
+		cmd := pkg.NewCmd(parallel)
+		args := flag.Args()
+		if len(args) == 0 {
+			panic(errors.New("No query defined"))
+		}
+		if err := cmd.PrintJiraIssuesTree(args[0]); err != nil {
+			panic(err)
 		}
 		return
 	}
@@ -86,6 +74,7 @@ func main() {
 	// server
 	var e *echo.Echo
 	if server {
+		serve.Parallel = parallel
 		go func() {
 			e = echo.New()
 			e.GET("/", serve.Index)

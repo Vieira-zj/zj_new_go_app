@@ -11,12 +11,13 @@ const (
 	typeFixVersion   = "FixVersion"
 	typeJQL          = "jql"
 
-	parallel        = 10
 	searchTimeout   = 3
 	newStoreTimeout = 20
 )
 
 var (
+	// Parallel .
+	Parallel = 10
 	// TreeMap .
 	TreeMap = make(map[string]pkg.Tree)
 	// StoreCancelMap global cancel funcs, only for issues tree v1.
