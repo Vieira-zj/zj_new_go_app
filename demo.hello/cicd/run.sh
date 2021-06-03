@@ -20,9 +20,9 @@ function run_server() {
     go run main.go -svc
 }
 
-# source ${project_root_path}/env.sh
-# build_bin
-# run_test TestTicketsTreeV2
+source ${project_root_path}/env.sh
+build_bin
+# run_test TestIssueKeySort
 
 # print_tickets
 # run_server

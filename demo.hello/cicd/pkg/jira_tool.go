@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"demo.hello/utils"
 )
@@ -14,7 +15,10 @@ jira rest api docs:
 https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/
 */
 
-var _jira *JiraTool
+var (
+	_jira    *JiraTool
+	jiraOnce sync.Once
+)
 
 // JiraTool contains jira rest APIs.
 type JiraTool struct {
@@ -26,18 +30,14 @@ type JiraTool struct {
 
 // NewJiraTool creates a JiraTool instance.
 func NewJiraTool() *JiraTool {
-	locker.Lock()
-	defer locker.Unlock()
-	if _jira != nil {
-		return _jira
-	}
-
-	_jira := &JiraTool{
-		restURL:  jiraHost,
-		userName: jiraUserName,
-		userPwd:  jiraUserPwd,
-		http:     utils.NewHTTPUtils(true),
-	}
+	jiraOnce.Do(func() {
+		_jira = &JiraTool{
+			restURL:  jiraHost,
+			userName: jiraUserName,
+			userPwd:  jiraUserPwd,
+			http:     utils.NewHTTPUtils(true),
+		}
+	})
 	return _jira
 }
 

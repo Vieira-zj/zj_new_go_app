@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"os"
-	"sync"
 )
 
 const (
@@ -24,8 +23,6 @@ const (
 var (
 	jiraHost, jiraUserName, jiraUserPwd string
 	gitlabHost, gitlabToken             string
-
-	locker = new(sync.Mutex)
 )
 
 func init() {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"demo.hello/utils"
 )
@@ -14,7 +15,10 @@ gitlab rest api docs:
 https://docs.gitlab.com/ee/api/merge_requests.html#get-single-mr
 */
 
-var _gitlab *GitlabTool
+var (
+	_gitlab *GitlabTool
+	gitOnce sync.Once
+)
 
 // GitlabTool contains gitlab rest APIs.
 type GitlabTool struct {
@@ -25,17 +29,13 @@ type GitlabTool struct {
 
 // NewGitlabTool create a GitlabTool instance.
 func NewGitlabTool() *GitlabTool {
-	locker.Lock()
-	defer locker.Unlock()
-	if _gitlab != nil {
-		return _gitlab
-	}
-
-	_gitlab = &GitlabTool{
-		host:  gitlabHost,
-		token: gitlabToken,
-		http:  utils.NewHTTPUtils(true),
-	}
+	gitOnce.Do(func() {
+		_gitlab = &GitlabTool{
+			host:  gitlabHost,
+			token: gitlabToken,
+			http:  utils.NewHTTPUtils(true),
+		}
+	})
 	return _gitlab
 }
 
