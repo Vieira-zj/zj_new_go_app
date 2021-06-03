@@ -131,7 +131,8 @@ func NewJiraIssueV2(ctx context.Context, jira *JiraTool, issueID string) (*JiraI
 			return nil, err
 		}
 		issue.SubIssues = issueLinks
-	} else if issue.Type == issueTypePMTask || issue.Type == issueTypeStory || issue.Type == issueTypeRelease {
+	}
+	if issue.Type == issueTypePMTask || issue.Type == issueTypeStory || issue.Type == issueTypeRelease || issue.Type == issueTypeEpic {
 		issueLinks := make([]string, 0)
 		for _, link := range respJiraIssue.Fields.IssueLinks {
 			if link.Type.Outward == "Contains" && len(link.OutwardIssue.Key) > 0 {
