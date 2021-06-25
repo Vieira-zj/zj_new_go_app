@@ -31,6 +31,7 @@ func main() {
 	// test
 	e.GET("/cover", deco(handlers.CoverHandler))
 	e.GET("/sample/01", deco(handlers.SampleHandler01))
+	e.GET("/sample/02", deco(handlers.SampleHandler02))
 
 	go func() {
 		e.Logger.SetLevel(log.INFO)

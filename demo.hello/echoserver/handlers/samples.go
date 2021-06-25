@@ -5,13 +5,40 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/labstack/echo"
 )
 
-// SampleHandler01 test handler.
+// SampleHandler01 test connection closed from client (refresh page in chrome).
 func SampleHandler01(c echo.Context) error {
+	wait := c.QueryParam("wait")
+	waitTime, err := strconv.Atoi(wait)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(c echo.Context, wait int) {
+		defer wg.Done()
+		select {
+		case <-time.After(time.Duration(wait) * time.Second):
+			c.Logger().Info("process done")
+			return
+		case <-c.Request().Context().Done():
+			c.Logger().Info("cannel from client")
+			return
+		}
+	}(c, waitTime)
+
+	wg.Wait()
+	return c.String(http.StatusOK, "process finished")
+}
+
+// SampleHandler02 test async handler.
+func SampleHandler02(c echo.Context) error {
 	base := c.QueryParam("base")
 	if len(base) == 0 {
 		base = "10"

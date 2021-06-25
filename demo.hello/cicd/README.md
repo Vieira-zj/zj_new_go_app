@@ -1,30 +1,31 @@
-# README
+# Readme
 
-> Get jira issues and linked MR data, and store in cache for search.
+> Get jira issues and linked MRs data, and store in cache for search.
 
 ## Data Struct
 
-Cache存储使用 sharding map + 读写锁，通过设置合理的并发数和分片数，减少锁竞争。
+使用自定义Tree结构体保存一个查询结果，一个cache保存issue数据，另一个cache保存MR数据。
 
-一个map保存issue结构体，另一个map保存MR结构体。
+Cache使用 sharding map + RW locker, 通过设置合理的并发数和分片数，减少锁竞争。
 
 > TODO: Hash函数的随机性，减少热点数据。
 
 ## Data Collect
 
-使用 Goroutine + Fix Channel + waitGroup 完成issue和MR数据收集。
+使用 Goroutine + Fix Channel + WaitGroup 完成issue和MR数据收集。
 
-|              | Goroutine + Blocked Queue (Channel)                          | Goroutine + Semaphore + waitGroup                            |
-| ------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 描述         | 启动固定数量的goroutine, 消费阻塞队列中的任务。              | 每个任务启动一个goroutine来执行，通过 semaphore 来控制goroutine数量。 |
-| 网络请求     | 在固定的goroutine中发起网络请求，只需建立一个长连接。        | 每个goroutine中都会建立一个网络连接。                        |
-| 任务状态判断 | 不能准确判断任务是否执行完成。<br />需要保存全局cancel函数，通过定时任务来停止已完成的任务，否则goroutine会泄露。 | 通过 waitgroup 可准确判断任务是否执行完成。                  |
-| 性能         | 由固定数量的goroutine来分别处理ticket和MR任务。              | Ticket和MR任务共享goroutine来处理。                          |
-| 适用场景     | 作为worker持续的处理任务。                                   | 执行短期任务，完成后停止。                                   |
+|               | Goroutine + Blocked Queue (Channel)                          | Goroutine + Semaphore + waitGroup                            |
+| ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 描述          | 启动固定数量的goroutine, 消费阻塞队列中的任务。              | 每个任务启动一个goroutine来执行，通过 semaphore 来控制goroutine数量。 |
+| 网络请求      | 在固定的goroutine中发起网络请求，只需建立一个长连接。        | 每个goroutine中都会建立一个新的网络连接。                    |
+| 任务状态判断  | 不能准确判断任务是否执行完成。<br />需要保存全局cancel函数，通过定时任务来停止已完成的任务，否则goroutine会泄露。 | 通过 waitgroup 可准确判断任务是否执行完成。                  |
+| 性能          | 由固定数量的goroutine来分别处理ticket和MR任务。              | Ticket和MR任务共享goroutine来完成处理。                      |
+| 适用场景      | 作为worker持续的处理任务。                                   | 执行短期任务，完成后停止。                                   |
+| Goroutine数量 | 固定数量goroutine.                                           | 根据提交的任务启动多个goroutine, 虽然处于阻塞状态，会占用file handler. |
 
 配置项：
 
-- `parallel`：默认设置为10. 可通过调高并发数来实时拉取数据。
+- `parallel`：默认设置为10, 可通过调高并发数来实时拉取数据。
 - `refreshInterval`：刷新周期。根据每个store中缓存的数据量来定时更新数据。
 - `expired`：数据过期时间。（TODO: 淘汰策略）
 
@@ -33,6 +34,8 @@ Cache存储使用 sharding map + 读写锁，通过设置合理的并发数和�
 从map中构造结构化数据给前端展示。
 
 ## Rest APIs
+
+查询过程加锁，保证数据一致性。
 
 - Test
 
