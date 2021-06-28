@@ -27,6 +27,7 @@ func ListenAndServe(address string, handler TCPHandler, closeCh chan struct{}) {
 	}()
 
 	for {
+		// 同时处理多个请求（每个请求对应一个连接）
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatal(fmt.Sprintf("accept err: %v", err))
