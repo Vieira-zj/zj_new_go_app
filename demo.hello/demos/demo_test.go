@@ -2,6 +2,7 @@ package demos
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -616,4 +617,52 @@ func TestDemo25(t *testing.T) {
 	fmt.Println("op has create:", op.hasCreate())
 	fmt.Println("op has write:", op.hasWrite())
 	fmt.Println("cur op:", op)
+}
+
+/*
+async task, and cancel
+*/
+
+func myTask(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, idx int) {
+	defer wg.Done()
+	if (idx > 0) && (idx%7 == 0) {
+		time.Sleep(time.Duration(3) * time.Second)
+		fmt.Printf("task %d mock failed\n", idx)
+		cancel()
+		return
+	}
+
+	ch := make(chan struct{})
+	go func(ch chan struct{}, idx int) {
+		fmt.Printf("task %d process ...\n", idx)
+		time.Sleep(time.Duration(idx) * time.Second)
+		ch <- struct{}{}
+	}(ch, idx)
+
+	select {
+	case <-ch:
+		fmt.Printf("task %d done\n", idx)
+		return
+	case <-ctx.Done():
+		fmt.Printf("task %d cancelled\n", idx)
+		return
+	}
+}
+
+func TestDemo26(t *testing.T) {
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go myTask(ctx, cancel, &wg, i)
+		}
+		fmt.Println("all tasks started")
+	}()
+
+	time.Sleep(time.Second) // wait wg.Add(1) done
+	wg.Wait()
+	fmt.Println("all tasks finished")
 }
