@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -665,4 +666,45 @@ func TestDemo26(t *testing.T) {
 	time.Sleep(time.Second) // wait wg.Add(1) done
 	wg.Wait()
 	fmt.Println("all tasks finished")
+}
+
+func TestDemo27(t *testing.T) {
+	// sort slice
+	printChars := func(chars []rune) {
+		for _, ch := range chars {
+			fmt.Printf("%c,", ch)
+		}
+		println()
+	}
+
+	// sort slice of char
+	word := "helloworld"
+	sl := make([]rune, 0, len(word))
+	for _, ch := range word {
+		sl = append(sl, ch)
+	}
+	fmt.Println("src slice:")
+	printChars(sl)
+
+	sort.Slice(sl, func(i, j int) bool {
+		return sl[i] < sl[j]
+	})
+	fmt.Println("sorted slice:")
+	printChars(sl)
+
+	// sort slice of interface
+	input := "this is a slice sort test"
+	words := strings.Split(input, " ")
+	s := make([]interface{}, 0, len(words))
+	for _, word := range words {
+		s = append(s, word)
+	}
+	fmt.Println("\nsrc slice:", s)
+
+	sort.Slice(s, func(i, j int) bool {
+		srcWord := s[i].(string)
+		dstWord := s[j].(string)
+		return srcWord[0] < dstWord[0]
+	})
+	fmt.Println("sorted slice:", s)
 }
