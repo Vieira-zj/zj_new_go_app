@@ -65,7 +65,7 @@ File IO
 // IsExist .
 func IsExist(filePath string) bool {
 	if _, err := os.Stat(filePath); err != nil {
-		return !os.IsNotExist(err)
+		return os.IsExist(err)
 	}
 	return true
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -12,6 +13,17 @@ import (
 var (
 	url = "http://127.0.0.1:8081/ping"
 )
+
+func TestGetHostIP(t *testing.T) {
+	hosts := []string{"https://www.baidu.com/"}
+	for _, host := range hosts {
+		ips, err := GetHostIP(host)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("host ips:", strings.Join(ips, ", "))
+	}
+}
 
 func TestHttpUtilsGet(t *testing.T) {
 	utils := NewHTTPUtils(false)

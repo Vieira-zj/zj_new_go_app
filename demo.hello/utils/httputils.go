@@ -7,9 +7,33 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	neturl "net/url"
 	"strings"
 	"time"
 )
+
+/*
+Common
+*/
+
+// GetHostIP .
+func GetHostIP(url string) ([]string, error) {
+	parsed, err := neturl.Parse(url)
+	if err != nil {
+		return nil, err
+	}
+
+	ips, err := net.LookupIP(parsed.Host)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]string, 0, len(ips))
+	for _, ip := range ips {
+		ret = append(ret, ip.To4().String())
+	}
+	return ret, nil
+}
 
 /*
 HTTP

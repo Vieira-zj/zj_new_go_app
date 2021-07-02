@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -707,4 +709,21 @@ func TestDemo27(t *testing.T) {
 		return srcWord[0] < dstWord[0]
 	})
 	fmt.Println("sorted slice:", s)
+}
+
+func TestDemo28(t *testing.T) {
+	// io, write content to file
+	str := "file write test.\n"
+	output, err := os.OpenFile("/tmp/test/output.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer output.Close()
+
+	writer := io.MultiWriter(output, os.Stdout)
+	n, err := io.Copy(writer, bytes.NewReader([]byte(str)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("write total bytes:", n)
 }
