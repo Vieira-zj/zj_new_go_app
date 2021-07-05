@@ -5,8 +5,37 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"reflect"
+	"time"
 	"unsafe"
 )
+
+//
+// Date time
+//
+
+// IsWeekDay .
+func IsWeekDay(t time.Time) bool {
+	switch t.Weekday() {
+	case time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday:
+		return true
+	case time.Saturday, time.Sunday:
+		return false
+	}
+	fmt.Println("Unrecognized day of the week:", t.Weekday().String())
+	panic("Explicit Panic to avoid compiler error: missing return at end of function")
+}
+
+func nextWeekDay(loc *time.Location) time.Time {
+	now := time.Now().In(loc)
+	for !IsWeekDay(now) {
+		now = now.AddDate(0, 0, 1)
+	}
+	return now
+}
+
+//
+// Run shell
+//
 
 // RunShellCmd runs a shell command and returns output.
 func RunShellCmd(name string, args ...string) (string, error) {
@@ -33,6 +62,10 @@ func RunShellCmd(name string, args ...string) (string, error) {
 	}
 	return string(output), nil
 }
+
+//
+// Reflect
+//
 
 // GetStructFields returns struct field name and type desc.
 func GetStructFields(ele reflect.Type) (map[string]interface{}, error) {

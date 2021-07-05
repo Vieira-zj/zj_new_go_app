@@ -15,6 +15,9 @@ import (
 Refer:
 - https://github.com/baixiaoustc/go_code_analysis
 - https://github.com/ofabry/go-callvis
+
+Usage:
+diff commits -> diff files -> diff funcs -> reverse call chain
 */
 
 var (

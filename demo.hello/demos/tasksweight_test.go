@@ -10,7 +10,7 @@ import (
 )
 
 /*
-Run tasks by diff weight
+Run tasks by diff weights.
 */
 
 type task struct {

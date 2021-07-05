@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+func TestIsWeekDay(t *testing.T) {
+	now := time.Now()
+	fmt.Println("now weekday:", now.Weekday().String())
+	fmt.Println("isweekday:", IsWeekDay(now))
+}
+
 func TestScheduleTask(t *testing.T) {
 	ch := make(chan struct{})
 	timer := time.AfterFunc(time.Second, func() {
@@ -23,11 +29,13 @@ func TestScheduleTask(t *testing.T) {
 outer:
 	for {
 		select {
+		case <-c:
+			fmt.Println("wait for schedule task...")
 		case <-ch:
 			fmt.Println("schedule task done")
 			break outer
-		case <-c:
-			fmt.Println("wait for schedule task...")
+		case <-time.After(time.Duration(10) * time.Second):
+			t.Fatal("time out for schedule task")
 		}
 	}
 	fmt.Println("schedule task demo finished")

@@ -1,14 +1,15 @@
 package utils
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	neturl "net/url"
-	"strings"
 	"time"
 )
 
@@ -41,13 +42,20 @@ HTTP
 
 // HTTPUtils a http client utils.
 type HTTPUtils struct {
-	client http.Client
+	client *http.Client
 }
 
 // NewDefaultHTTPUtils creates a http util with default client.
 func NewDefaultHTTPUtils() *HTTPUtils {
+	client := &http.Client{
+		Timeout: time.Duration(10) * time.Second,
+	}
+	client.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
 	return &HTTPUtils{
-		client: http.Client{},
+		client: client,
 	}
 }
 
@@ -71,9 +79,10 @@ func NewHTTPUtils(isKeepAlives bool) *HTTPUtils {
 			DisableKeepAlives: true,
 		}
 	}
+	httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	return &HTTPUtils{
-		client: http.Client{Transport: httpTransport},
+		client: &http.Client{Transport: httpTransport},
 	}
 }
 
@@ -121,7 +130,7 @@ func (utils *HTTPUtils) createRequest(ctx context.Context, method string, url st
 		err error
 	)
 	if len(body) > 0 {
-		req, err = http.NewRequestWithContext(ctx, method, url, strings.NewReader(body))
+		req, err = http.NewRequestWithContext(ctx, method, url, bytes.NewBufferString(body))
 	} else {
 		req, err = http.NewRequestWithContext(ctx, method, url, nil)
 	}
