@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -36,8 +37,9 @@ func (issue *JiraIssue) ToText() string {
 	fixVersions := getPrintFieldFromSlice(issue.FixVersions)
 	superIssues := getPrintFieldFromSlice(issue.SuperIssues)
 	subIssues := getPrintFieldFromSlice(issue.SubIssues)
-	return fmt.Sprintf("[%s]: [type:%s],[status:%s],[labels:%s],[fixversion:%s],[relCycle:%s],[relStatus:%s],[supIssues:%s],[subIssues:%s]\n",
-		issue.Key, issue.Type, issue.Status, labels, fixVersions, issue.ReleaseCycle, issue.ReleaseStatus, superIssues, subIssues)
+	shortSummary := getShortSummary(issue.Summary)
+	return fmt.Sprintf("[%s]: [summary:%s],[type:%s],[status:%s],[labels:%s],[fixversion:%s],[relCycle:%s],[relStatus:%s],[supIssues:%s],[subIssues:%s]\n",
+		issue.Key, shortSummary, issue.Type, issue.Status, labels, fixVersions, issue.ReleaseCycle, issue.ReleaseStatus, superIssues, subIssues)
 }
 
 func getPrintFieldFromSlice(slice []string) string {
@@ -46,6 +48,12 @@ func getPrintFieldFromSlice(slice []string) string {
 		line = strings.Join(slice, ",")
 	}
 	return line
+}
+
+func getShortSummary(summary string) string {
+	re := regexp.MustCompile(`\[(.+)\]`)
+	matches := re.FindAllString(summary, -1)
+	return strings.Join(matches, " | ")
 }
 
 /*

@@ -24,7 +24,7 @@ type MergeRequest struct {
 func (mr *MergeRequest) ToText() string {
 	items := strings.Split(mr.Repo, "/")
 	repoName := items[len(items)-1]
-	return fmt.Sprintf("MR:[%s] [%s:%s->%s],[%s]\n", repoName, mr.State, mr.SourceBR, mr.TargetBR, mr.Title)
+	return fmt.Sprintf("MR:[%s],[%s:%s->%s],[%s]\n", repoName, mr.State, mr.SourceBR, mr.TargetBR, mr.Title)
 }
 
 // NewMergeRequest create a git merge request.

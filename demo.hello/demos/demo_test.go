@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -670,7 +671,15 @@ func TestDemo26(t *testing.T) {
 	fmt.Println("all tasks finished")
 }
 
-func TestDemo27(t *testing.T) {
+func TestDemo2701(t *testing.T) {
+	// sort string slice
+	input := "this is a string slice sort demo"
+	words := strings.Split(input, " ")
+	sort.Strings(words)
+	fmt.Println("sorted words:", words)
+}
+
+func TestDemo2702(t *testing.T) {
 	// sort slice
 	printChars := func(chars []rune) {
 		for _, ch := range chars {
@@ -726,4 +735,19 @@ func TestDemo28(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println("write total bytes:", n)
+}
+
+func TestDemo29(t *testing.T) {
+	// regexp
+	re, err := regexp.Compile(`\[(.+)\]`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	str := "[AS][Android][TH]Merchant portal send noti to partner app users"
+	if res := re.FindAllString(str, -1); res != nil {
+		fmt.Println("results:", res)
+	} else {
+		fmt.Println("no matched")
+	}
 }
