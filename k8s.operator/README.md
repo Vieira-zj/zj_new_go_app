@@ -37,7 +37,9 @@ $ operator-sdk create api --group proxy --version v1alpha1 --kind Nginx --resour
 
 ### Define CR and CRD
 
-1. Define CR by update `api/v1alpha1/nginx_types.go`.
+1. Define CR.
+
+`api/v1alpha1/nginx_types.go`
 
 ```golang
 type NginxSpec struct {}
@@ -58,7 +60,9 @@ $ make generate
 $ make manifests
 ```
 
-4. 实现控制器处理逻辑 `controllers/nginx_controller.go`
+4. 实现 controller 处理逻辑。
+
+`controllers/nginx_controller.go`
 
 ```golang
 func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -66,9 +70,18 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 }
 ```
 
+controller 会创建 deployment 和 service, 因此需要添加对应的 rbac 定义（参考下面创建 CRD 实例时，日志中有权限错误）：
+
+```golang
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;delete;get;list;update;patch;watch
+//+kubebuilder:rbac:groups="",resources=deployments;services,verbs="*"
+```
+
+生成对应的配置文件 `config/rbac/role.yaml`。
+
 ### Build and Deploy CRD
 
-1. Build CRD image from `Dockerfile`.
+1. Build CRD image. (from `Dockerfile`)
 
 ```text
 # connect to minikube docker socket
@@ -109,9 +122,11 @@ service/nginx-operator-controller-manager-metrics-service created
 deployment.apps/nginx-operator-controller-manager created
 ```
 
-3. Check CRD deploy.
+3. Check CRD deploy, and components in k8s.
 
 ```text
+$ kubectl get ns
+
 $ kubectl get svc,deployment,pod -n nginx-operator-system
 NAME                                                        TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
 service/nginx-operator-controller-manager-metrics-service   ClusterIP   10.106.213.52   <none>        8443/TCP   18m
@@ -144,7 +159,9 @@ Starting workers        {"reconciler group": "proxy.example.com", "reconciler ki
 
 ### Deploy a CRD instance
 
-1. Create deploy yaml `config/samples/proxy_v1alpha1_nginx.yaml`
+1. Create deploy file.
+
+`config/samples/proxy_v1alpha1_nginx.yaml`
 
 ```yaml
 apiVersion: proxy.example.com/v1alpha1
@@ -171,20 +188,20 @@ NAME        AGE
 nginx-app   24m
 ```
 
-3. Check k8s components of CRD instance.
+3. Check deploy k8s components of CRD instance.
 
 ```text
 $ kubectl get all -n default
 ```
 
-If auth error:
+If auth error in nginx-operator-controller-manager pod:
 
 ```text
 $ kubectl logs nginx-operator-controller-manager-b8f479c94-nqsv2 -c manager -n nginx-operator-system
 failed to list *v1.Deployment: deployments.apps is forbidden: User "system:serviceaccount:nginx-operator-system:nginx-operator-controller-manager" cannot list resource "deployments" in API group "apps" at the cluster scope
 ```
 
-Check clusterrole:
+Check deploy clusterrole:
 
 ```text
 $ kubectl describe clusterrolebinding/nginx-operator-manager-rolebinding -n nginx-operator-system
@@ -200,7 +217,7 @@ $ kubectl describe clusterrole/nginx-operator-manager-role
 $ kubectl edit clusterrole/nginx-operator-manager-role
 ```
 
-Add below auth to clusterrole:
+Then add below auth to clusterrole:
 
 ```text
 - apiGroups:
@@ -224,7 +241,7 @@ Add below auth to clusterrole:
   - "*"
 ```
 
-Check nginx-operator-controller-manager pod logs.
+4. Again, check nginx-operator-controller-manager pod logs.
 
 ```text
 $ kubectl logs nginx-operator-controller-manager-b8f479c94-2ttm6 -c manager -n nginx-operator-system
@@ -233,7 +250,7 @@ Create CRD Nginx {"reconciler group": "proxy.example.com", "reconciler kind": "N
 Reconciling Nginx {"reconciler group": "proxy.example.com", "reconciler kind": "Nginx", "name": "nginx-app", "namespace": "default"}
 ```
 
-4. Check created k8s components of CRD instance.
+Verify created k8s components of CRD instance.
 
 ```text
 $ kubectl get all -n default
@@ -245,7 +262,7 @@ NodePort:                 <unset>  30002/TCP
 Endpoints:                172.17.0.4:80
 ```
 
-5. Access nginx `http://192.168.99.103:30002/`
+5. Access nginx by `http://192.168.99.103:30002/`
 
 Note: here use minikube vm ip instead of `localhost`.
 
@@ -253,10 +270,16 @@ Note: here use minikube vm ip instead of `localhost`.
 
 1. Update `proxy_v1alpha1_nginx.yaml`: `size: 2`, `nodePort: 30009`
 
+2. Re-deploy CRD instance.
+
 ```text
 $ kubectl apply -f config/samples/proxy_v1alpha1_nginx.yaml
 nginx.proxy.example.com/nginx-app configured
+```
 
+3. Check newly created k8s components of CRD instance. 
+
+```text
 $ kubectl get pod -n default
 pod/nginx-app-6f8b78cb8-8jj2m   1/1     Running   0          5s
 pod/nginx-app-6f8b78cb8-tg9n4   1/1     Running   0          5s
@@ -268,10 +291,10 @@ NodePort:                 <unset>  30009/TCP
 Endpoints:                172.17.0.4:80,172.17.0.6:80
 ```
 
-2. Check logs.
+4. Check nginx-operator-controller-manager pod logs.
 
 ```text
-$ kubectl logs nginx-operator-controller-manager-b8f479c94-s7x9z -c manager -n nginx-operator-system
+$ kubectl logs nginx-operator-controller-manager-b8f479c94-fhtxv -c manager -n nginx-operator-system
 Reconciling Nginx {"reconciler group": "proxy.example.com", "reconciler kind": "Nginx", "name": "nginx-app", "namespace": "default"}
 Update CRD Nginx {"reconciler group": "proxy.example.com", "reconciler kind": "Nginx", "name": "nginx-app", "namespace": "default"}
 Reconciling Nginx {"reconciler group": "proxy.example.com", "reconciler kind": "Nginx", "name": "nginx-app", "namespace": "default"}
@@ -283,11 +306,33 @@ Reconciling Nginx {"reconciler group": "proxy.example.com", "reconciler kind": "
 
 ```text
 $ kubectl delete -f config/samples/proxy_v1alpha1_nginx.yaml
+nginx.proxy.example.com "nginx-app" deleted
 ```
 
-2. Remove CRD related k8s components.
+2. Remove CRD and related k8s components.
 
 ```text
 $ make undeploy
+namespace "nginx-operator-system" deleted
+customresourcedefinition.apiextensions.k8s.io "nginxes.proxy.example.com" deleted
+serviceaccount "nginx-operator-controller-manager" deleted
+role.rbac.authorization.k8s.io "nginx-operator-leader-election-role" deleted
+clusterrole.rbac.authorization.k8s.io "nginx-operator-manager-role" deleted
+clusterrole.rbac.authorization.k8s.io "nginx-operator-metrics-reader" deleted
+clusterrole.rbac.authorization.k8s.io "nginx-operator-proxy-role" deleted
+rolebinding.rbac.authorization.k8s.io "nginx-operator-leader-election-rolebinding" deleted
+clusterrolebinding.rbac.authorization.k8s.io "nginx-operator-manager-rolebinding" deleted
+clusterrolebinding.rbac.authorization.k8s.io "nginx-operator-proxy-rolebinding" deleted
+configmap "nginx-operator-manager-config" deleted
+service "nginx-operator-controller-manager-metrics-service" deleted
+deployment.apps "nginx-operator-controller-manager" deleted
+```
+
+3. 删除 CRD docker build 过程中的临时镜像文件。
+
+CRD docker build 使用二阶段构建，执行编译的镜像文件有 `1.84GB`。并且多次构建，会产生多个镜像文件。
+
+```text
+$ docker images | grep none | grep -v k8s | awk '{print $3}' | xargs docker rmi
 ```
 

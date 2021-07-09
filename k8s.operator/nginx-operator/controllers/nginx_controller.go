@@ -30,8 +30,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	proxyv1alpha1 "github.com/example/nginx-operator/api/v1alpha1"
 )
 
 // NginxReconciler reconciles a Nginx object
@@ -43,6 +41,8 @@ type NginxReconciler struct {
 //+kubebuilder:rbac:groups=proxy.example.com,resources=nginxes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=proxy.example.com,resources=nginxes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=proxy.example.com,resources=nginxes/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;delete;get;list;update;patch;watch
+//+kubebuilder:rbac:groups="",resources=deployments;services,verbs="*"
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -110,7 +110,7 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 
 		// 2. 更新 Service
-		// use delete and create service instead of r.Client.Update.
+		// use Delete and Create service instead of r.Client.Update.
 		// Error: spec.clusterIP: Service "nginx-app" is invalid: spec.clusterIP: Invalid value: "": field is immutable
 		oldService := &corev1.Service{}
 		if err := r.Client.Get(ctx, req.NamespacedName, oldService); err != nil {
@@ -141,7 +141,7 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 // SetupWithManager sets up the controller with the Manager.
 func (r *NginxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&proxyv1alpha1.Nginx{}).
+		For(&v1alpha1.Nginx{}).
 		Complete(r)
 }
 
