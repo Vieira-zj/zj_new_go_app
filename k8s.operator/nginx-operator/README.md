@@ -70,7 +70,7 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 }
 ```
 
-controller 会创建 deployment 和 service, 因此需要添加对应的 rbac 定义（参考下面创建 CRD 实例时，日志中有权限错误）：
+当前 controller 会创建 deployment 和 service, 因此需要添加对应的 rbac 定义（参考下面创建 CRD 实例时，日志中有权限错误）：
 
 ```golang
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;delete;get;list;update;patch;watch
@@ -88,7 +88,7 @@ controller 会创建 deployment 和 service, 因此需要添加对应的 rbac �
 $ eval $(minikube -p minikube docker-env)
 
 # build crd
-$ make docker-build
+$ make docker-build IMG=proxy.example.com/nginx-operator:v.0.1
 Step 9/14 : RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 Successfully built 32ec2c7963fc
 Successfully tagged controller:latest
@@ -100,7 +100,7 @@ controller:latest
 Custom image tag name in `Makefile`:
 
 ```text
-BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+IMG ?= proxy.example.com/nginx-operator:v.0.1
 ```
 
 2. Deploy CRD in k8s.

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 ZhengJin.
+Copyright 2021.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,53 +17,52 @@ limitations under the License.
 package v1alpha1
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// NginxSpec defines the desired state of Nginx
-type NginxSpec struct {
+// MemcachedSpec defines the desired state of Memcached
+type MemcachedSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Size      *int32                      `json:"size"`
-	Image     string                      `json:"image"`
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-	Envs      []corev1.EnvVar             `json:"envs,omitempty"`
-	Ports     []corev1.ServicePort        `json:"ports,omitempty"`
+
+	//+kubebuilder:validation:Minimum=0
+	// Size is the size of the memcached deployment
+	Size int32 `json:"size"`
 }
 
-// NginxStatus defines the observed state of Nginx
-type NginxStatus struct {
+// MemcachedStatus defines the observed state of Memcached
+type MemcachedStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	appsv1.DeploymentStatus `json:",inline"`
+
+	// Nodes are the names of the memcached pods
+	Nodes []string `json:"nodes"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Nginx is the Schema for the nginxes API
-type Nginx struct {
+// Memcached is the Schema for the memcacheds API
+type Memcached struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   NginxSpec   `json:"spec,omitempty"`
-	Status NginxStatus `json:"status,omitempty"`
+	Spec   MemcachedSpec   `json:"spec,omitempty"`
+	Status MemcachedStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// NginxList contains a list of Nginx
-type NginxList struct {
+// MemcachedList contains a list of Memcached
+type MemcachedList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Nginx `json:"items"`
+	Items           []Memcached `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Nginx{}, &NginxList{})
+	SchemeBuilder.Register(&Memcached{}, &MemcachedList{})
 }

@@ -21,12 +21,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/example/nginx-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -58,35 +60,45 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	logger.Info("Reconciling Nginx")
 
 	instance := &v1alpha1.Nginx{}
-	if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil && errors.IsNotFound(err) {
+	if err := r.Get(ctx, req.NamespacedName, instance); err != nil && errors.IsNotFound(err) {
+		logger.Info("Nginx resource not found")
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		logger.Error(err, "Failed to get Nginx")
 		return ctrl.Result{}, err
 	}
 	if instance.DeletionTimestamp != nil {
-		return ctrl.Result{}, fmt.Errorf("CRD Nginx not found")
+		return ctrl.Result{}, fmt.Errorf("CR Nginx not found")
 	}
 
 	// 如果不存在，则创建关联资源
 	deploy := &appsv1.Deployment{}
-	if err := r.Client.Get(ctx, req.NamespacedName, deploy); err != nil && errors.IsNotFound(err) {
-		logger.Info("Create CRD Nginx")
+	if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, deploy); err != nil && errors.IsNotFound(err) {
+		logger.Info("Create CR Nginx")
 		// 1. 创建 Deploy
 		deploy = NewDeploy(instance)
-		if err := r.Client.Create(ctx, deploy); err != nil {
+		if err := r.Create(ctx, deploy); err != nil {
+			logger.Error(err, "Failed to create Deployment")
 			return ctrl.Result{}, err
 		}
 		// 2. 创建 Service
 		service := NewService(instance)
-		if err := r.Client.Create(ctx, service); err != nil {
+		if err := r.Create(ctx, service); err != nil {
+			logger.Error(err, "Failed to create Service")
 			return ctrl.Result{}, err
 		}
 		// 3. 关联 Annotations
 		if err := updateNginxSpec(instance); err != nil {
 			return ctrl.Result{}, err
 		}
-		if err := r.Client.Update(ctx, instance); err != nil {
+		if err := r.Update(ctx, instance); err != nil {
+			logger.Error(err, "Failed to update Nginx instance")
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{}, nil
+	} else if err != nil {
+		logger.Error(err, "Failed to get Deployment")
+		return ctrl.Result{}, err
 	}
 
 	// 如果存在，判断是否需要更新
@@ -100,27 +112,26 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		logger.Info("Update CRD Nginx")
 		// 1. 更新 Deploy
 		newDeploy := NewDeploy(instance)
-		oldDeploy := &appsv1.Deployment{}
-		if err := r.Client.Get(ctx, req.NamespacedName, oldDeploy); err != nil {
-			return ctrl.Result{}, err
-		}
-		oldDeploy.Spec = newDeploy.Spec
-		if err := r.Client.Update(ctx, oldDeploy); err != nil {
+		deploy.Spec = newDeploy.Spec
+		if err := r.Update(ctx, deploy); err != nil {
 			return ctrl.Result{}, err
 		}
 
 		// 2. 更新 Service
-		// use Delete and Create service instead of r.Client.Update.
+		// use Delete and Create service instead of r.Update.
 		// Error: spec.clusterIP: Service "nginx-app" is invalid: spec.clusterIP: Invalid value: "": field is immutable
 		oldService := &corev1.Service{}
-		if err := r.Client.Get(ctx, req.NamespacedName, oldService); err != nil {
+		if err := r.Get(ctx, types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, oldService); err != nil {
+			logger.Error(err, "Failed to get Service")
 			return ctrl.Result{}, err
 		}
-		if err := r.Client.Delete(ctx, oldService); err != nil {
+		if err := r.Delete(ctx, oldService); err != nil {
+			logger.Error(err, "Failed to delete Service")
 			return ctrl.Result{}, err
 		}
 		newService := NewService(instance)
-		if err := r.Client.Create(ctx, newService); err != nil {
+		if err := r.Create(ctx, newService); err != nil {
+			logger.Error(err, "Failed to create Service")
 			return ctrl.Result{}, err
 		}
 
@@ -128,13 +139,18 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		if err := updateNginxSpec(instance); err != nil {
 			return ctrl.Result{}, err
 		}
-		if err := r.Client.Update(ctx, instance); err != nil {
-			return ctrl.Result{}, err
+		if err := r.Update(ctx, instance); err != nil {
+			logger.Error(err, "Failed to update Nginx instance")
+			return ctrl.Result{RequeueAfter: time.Minute}, err
 		}
-
-		return ctrl.Result{}, nil
 	}
 
+	// 更新 status
+	instance.Status.DeploymentStatus = deploy.Status
+	if err := r.Status().Update(ctx, instance); err != nil {
+		logger.Error(err, "Failed to update Nginx status")
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 
