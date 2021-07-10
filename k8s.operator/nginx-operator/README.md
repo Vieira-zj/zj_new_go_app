@@ -88,7 +88,7 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 $ eval $(minikube -p minikube docker-env)
 
 # build crd
-$ make docker-build IMG=proxy.example.com/nginx-operator:v.0.1
+$ make docker-build IMG=example.docker.io/nginx-operator:v.0.1
 Step 9/14 : RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 Successfully built 32ec2c7963fc
 Successfully tagged controller:latest
@@ -106,7 +106,7 @@ IMG ?= proxy.example.com/nginx-operator:v.0.1
 2. Deploy CRD in k8s.
 
 ```text
-$ make deploy
+$ make deploy IMG=example.docker.io/nginx-operator:v.0.1
 namespace/nginx-operator-system created
 customresourcedefinition.apiextensions.k8s.io/nginxes.proxy.example.com created
 serviceaccount/nginx-operator-controller-manager created
