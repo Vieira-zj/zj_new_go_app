@@ -43,7 +43,7 @@ var _ webhook.Defaulter = &Memcached{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *Memcached) Default() {
-	memcachedlog.Info("default", "name", r.Name)
+	memcachedlog.Info("mutating default", "name", r.Name)
 	if r.Spec.Size == 0 {
 		r.Spec.Size = 3
 	}

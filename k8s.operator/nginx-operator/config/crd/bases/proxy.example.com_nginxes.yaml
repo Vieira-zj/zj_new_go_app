@@ -225,8 +225,8 @@ spec:
                     type: object
                 type: object
               size:
-                description: Foo is an example field of Nginx. Edit nginx_types.go
-                  to remove/update
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
                 format: int32
                 type: integer
             required:

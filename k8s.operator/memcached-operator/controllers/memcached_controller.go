@@ -60,6 +60,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	logger.Info("Memcached Reconcile")
 
 	// Fetch the Memcached instance
+	// Blocked here wait for list-watch updates
 	memcached := &cachev1alpha1.Memcached{}
 	err := r.Get(ctx, req.NamespacedName, memcached)
 	if err != nil {

@@ -109,7 +109,7 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	if !reflect.DeepEqual(instance.Spec, oldspec) {
 		// 更新关联资源
-		logger.Info("Update CRD Nginx")
+		logger.Info("Update CR Nginx")
 		// 1. 更新 Deploy
 		newDeploy := NewDeploy(instance)
 		deploy.Spec = newDeploy.Spec
@@ -146,10 +146,13 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	// 更新 status
-	instance.Status.DeploymentStatus = deploy.Status
-	if err := r.Status().Update(ctx, instance); err != nil {
-		logger.Error(err, "Failed to update Nginx status")
-		return ctrl.Result{}, err
+	if instance.Status.DeploymentStatus.Replicas != deploy.Status.Replicas {
+		logger.Info("Update CR Nginx Status")
+		instance.Status.DeploymentStatus = deploy.Status
+		if err := r.Status().Update(ctx, instance); err != nil {
+			logger.Error(err, "Failed to update Nginx status")
+			return ctrl.Result{}, err
+		}
 	}
 	return ctrl.Result{}, nil
 }

@@ -66,7 +66,7 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	namespaces := []string{"memcached-operator-system", "default"}
+	namespaces := []string{"memcached-operator-system", "default", "memcached-sample"}
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,

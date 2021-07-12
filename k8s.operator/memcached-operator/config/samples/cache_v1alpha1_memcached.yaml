@@ -1,6 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: memcached-sample
+---
 apiVersion: cache.example.com/v1alpha1
 kind: Memcached
 metadata:
   name: memcached-sample
+  namespace: memcached-sample
 spec:
-  size: 2
+  size: 1
