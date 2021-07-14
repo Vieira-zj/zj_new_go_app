@@ -11,19 +11,6 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "hello world")
 }
 
-// ResponseData .
-type ResponseData struct {
-	Code    uint32          `json:"code"`
-	Results json.RawMessage `json:"results"`
-}
-
-// JobResult .
-type JobResult struct {
-	ID     uint32 `json:"id"`
-	Title  string `json:"title"`
-	Status string `json:"status"`
-}
-
 // GetAllJobsResultsHandler .
 func GetAllJobsResultsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {

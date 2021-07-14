@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -67,29 +68,30 @@ func GetDeltaJobResults(w http.ResponseWriter, r *http.Request) {
 		conn.Close()
 	}()
 
-	for {
-		msgType, msg, err := conn.ReadMessage()
-		if err != nil {
-			http.Error(w, fmt.Sprintln("receive message error:", err), http.StatusInternalServerError)
-			return
-		}
-
-		if string(msg) == "sync" {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60)*time.Second)
-			defer cancel()
-
-			for result := range getMockDeltaJobsResults(ctx) {
-				b, err := json.Marshal(result)
-				if err != nil {
-					http.Error(w, fmt.Sprintln("json marshal error:", err), http.StatusInternalServerError)
-				}
-				if err := conn.WriteMessage(msgType, b); err != nil {
-					http.Error(w, fmt.Sprintln("write message error:", err), http.StatusInternalServerError)
-					return
-				}
-			}
-			return
-		}
-		fmt.Printf("receive message: %s\n", msg)
+	msgType, msg, err := conn.ReadMessage()
+	if err != nil {
+		http.Error(w, fmt.Sprintln("receive message error:", err), http.StatusInternalServerError)
+		return
 	}
+	fmt.Printf("receive message: %s\n", msg)
+
+	onUpdateStatusCallback := func(result *JobResult) {
+		b, err := json.Marshal(result)
+		if err != nil {
+			http.Error(w, fmt.Sprintln("json marshal error:", err), http.StatusInternalServerError)
+		}
+		if err := conn.WriteMessage(msgType, b); err != nil {
+			http.Error(w, fmt.Sprintln("write message error:", err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	key := time.Now().Nanosecond()
+	jobResults.RegisterCallback(strconv.Itoa(key), onUpdateStatusCallback)
+	defer jobResults.UnRegisterCallback(strconv.Itoa(key))
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60)*time.Second)
+	defer cancel()
+	done := getMockDeltaJobsResults(ctx)
+	<-done
 }
