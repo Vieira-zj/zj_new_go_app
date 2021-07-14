@@ -146,13 +146,12 @@ func (utils *HTTPUtils) createRequest(ctx context.Context, method string, url st
 
 func (utils *HTTPUtils) send(req *http.Request) ([]byte, error) {
 	resp, err := utils.client.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if err != nil {
-		if resp != nil {
-			defer resp.Body.Close()
-		}
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	// 如果不及时从请求中获取结果，此连接会占用
 	return ioutil.ReadAll(resp.Body)

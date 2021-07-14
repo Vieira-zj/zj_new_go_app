@@ -751,3 +751,9 @@ func TestDemo29(t *testing.T) {
 		fmt.Println("no matched")
 	}
 }
+
+func TestDemo30(t *testing.T) {
+	// print bytes
+	b := []byte("world")
+	fmt.Printf("hello %s\n", b)
+}
