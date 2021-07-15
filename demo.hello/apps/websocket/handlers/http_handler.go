@@ -19,7 +19,7 @@ func GetAllJobsResultsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resultBytes, err := json.Marshal(getMockJobsResults())
+	resultBytes, err := json.Marshal(getMockJobResults())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

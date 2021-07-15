@@ -4,9 +4,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
+
+	"demo.hello/utils"
 )
+
+var (
+	// EventBus .
+	EventBus   *utils.EventBusServer
+	jobResults *JobResults
+	channel    string
+)
+
+func init() {
+	channel = "OnJobResultsUpdateStatus"
+	EventBus = utils.NewEventBusServer(10)
+	EventBus.Start()
+	buildMockJobResults(10)
+}
 
 // ResponseData .
 type ResponseData struct {
@@ -23,40 +38,19 @@ type JobResult struct {
 
 // JobResults .
 type JobResults struct {
-	items             []*JobResult
-	OnUpdateStatusCbs map[string]func(*JobResult)
-}
-
-// RegisterCallback .
-func (results *JobResults) RegisterCallback(key string, cb func(*JobResult)) {
-	results.OnUpdateStatusCbs[key] = cb
-}
-
-// UnRegisterCallback .
-func (results *JobResults) UnRegisterCallback(key string) {
-	delete(results.OnUpdateStatusCbs, key)
+	items []*JobResult
 }
 
 // UpdateStatus .
-func (results *JobResults) UpdateStatus(result *JobResult, status string) {
-	result.Status = status
-	for _, fn := range results.OnUpdateStatusCbs {
-		// fmt.Println("run OnUpdateStatusCbs:", key)
-		fn(result)
-	}
+func (results *JobResults) UpdateStatus(result *JobResult) error {
+	return EventBus.Publish(channel, result)
 }
 
 /*
 create mock data
 */
 
-var jobResults *JobResults
-
-func init() {
-	buildMockJobsResults(10)
-}
-
-func buildMockJobsResults(count int) {
+func buildMockJobResults(count int) {
 	results := make([]*JobResult, 0, count)
 	for i := 0; i < count; i++ {
 		result := &JobResult{
@@ -67,8 +61,7 @@ func buildMockJobsResults(count int) {
 		results = append(results, result)
 	}
 	jobResults = &JobResults{
-		items:             results,
-		OnUpdateStatusCbs: make(map[string]func(*JobResult), 0),
+		items: results,
 	}
 }
 
@@ -81,7 +74,7 @@ func getJobStatus(num int) string {
 	return "running"
 }
 
-func getMockJobsResults() []*JobResult {
+func getMockJobResults() []*JobResult {
 	return jobResults.items
 }
 
@@ -89,55 +82,36 @@ func getMockJobsResults() []*JobResult {
 create mock delta data
 */
 
-var locker = &sync.Mutex{}
-var isRunning bool
-var done chan struct{}
+func getMockDeltaJobResults(ctx context.Context) (err error) {
+	fmt.Println("start update job")
+	for {
+		notDoneJobResults := getNotDoneJobResults()
+		if len(notDoneJobResults) == 0 {
+			return
+		}
 
-func getMockDeltaJobsResults(ctx context.Context) chan struct{} {
-	locker.Lock()
-	defer locker.Unlock()
-
-	if isRunning {
-		return done
-	}
-
-	isRunning = true
-	done = make(chan struct{})
-	go func() {
-		fmt.Println("start update job")
-		defer func() {
-			isRunning = false
-			close(done)
-		}()
-		for {
-			notDoneJobResults := getNotDoneJobResults()
-			if len(notDoneJobResults) == 0 {
-				return
+		for _, result := range notDoneJobResults {
+			if result.Status == "running" {
+				result.Status = "done"
+			} else if result.Status == "notstart" {
+				result.Status = "running"
+			} else {
+				fmt.Println("invalid job result:", result)
+				continue
 			}
+			time.Sleep(time.Second)
 
-			for _, result := range notDoneJobResults {
-				newStatus := ""
-				if result.Status == "running" {
-					newStatus = "done"
-				} else if result.Status == "notstart" {
-					newStatus = "running"
-				} else {
-					fmt.Println("invalid job result:", result)
-					continue
-				}
-				time.Sleep(time.Second)
-
-				select {
-				case <-ctx.Done():
-					fmt.Println("timeout, and getMockDeltaJobsResults return")
+			select {
+			case <-ctx.Done():
+				fmt.Println("timeout, and getMockDeltaJobsResults return")
+				return
+			default:
+				if err = jobResults.UpdateStatus(result); err != nil {
 					return
-				default:
-					jobResults.UpdateStatus(result, newStatus)
 				}
 			}
 		}
-	}()
-	return done
+	}
 }
 
 func getNotDoneJobResults() []*JobResult {

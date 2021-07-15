@@ -756,4 +756,20 @@ func TestDemo30(t *testing.T) {
 	// print bytes
 	b := []byte("world")
 	fmt.Printf("hello %s\n", b)
+
+	sayHello := func(args ...string) {
+		fmt.Println("hello", strings.Join(args, ","))
+	}
+	sayHello("foo", "bar")
+
+	// delete item of slice
+	s := []string{"a", "b", "c"}
+	c := "a"
+	for idx, item := range s {
+		if item == c {
+			s = append(s[:idx], s[idx+1:]...)
+			break
+		}
+	}
+	fmt.Println(s)
 }

@@ -6,12 +6,17 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
+	"demo.hello/utils"
 	"github.com/gorilla/websocket"
 )
 
-var client *websocket.Upgrader
+var (
+	client *websocket.Upgrader
+	once   sync.Once
+)
 
 func init() {
 	client = &websocket.Upgrader{
@@ -68,30 +73,40 @@ func GetDeltaJobResults(w http.ResponseWriter, r *http.Request) {
 		conn.Close()
 	}()
 
-	msgType, msg, err := conn.ReadMessage()
-	if err != nil {
-		http.Error(w, fmt.Sprintln("receive message error:", err), http.StatusInternalServerError)
-		return
-	}
-	fmt.Printf("receive message: %s\n", msg)
-
-	onUpdateStatusCallback := func(result *JobResult) {
-		b, err := json.Marshal(result)
+	for {
+		msgType, msg, err := conn.ReadMessage()
 		if err != nil {
-			http.Error(w, fmt.Sprintln("json marshal error:", err), http.StatusInternalServerError)
-		}
-		if err := conn.WriteMessage(msgType, b); err != nil {
-			http.Error(w, fmt.Sprintln("write message error:", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintln("receive message error:", err), http.StatusInternalServerError)
 			return
 		}
+		if string(msg) != "sync" {
+			fmt.Printf("receive message: %s\n", msg)
+			continue
+		}
+
+		key := time.Now().Nanosecond()
+		callback := utils.Callback{
+			Name: strconv.Itoa(key),
+			Fn: func(result ...interface{}) {
+				b, err := json.Marshal(result[0])
+				if err != nil {
+					http.Error(w, fmt.Sprintln("json marshal error:", err), http.StatusInternalServerError)
+				}
+				if err := conn.WriteMessage(msgType, b); err != nil {
+					http.Error(w, fmt.Sprintln("write message error:", err), http.StatusInternalServerError)
+					return
+				}
+			},
+		}
+		EventBus.Register(channel, callback)
+		defer EventBus.Unregister(channel, callback)
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60)*time.Second)
+		defer cancel()
+		once.Do(func() {
+			if err = getMockDeltaJobResults(ctx); err != nil {
+				http.Error(w, fmt.Sprintln("get delta job results error:", err), http.StatusInternalServerError)
+			}
+		})
 	}
-
-	key := time.Now().Nanosecond()
-	jobResults.RegisterCallback(strconv.Itoa(key), onUpdateStatusCallback)
-	defer jobResults.UnRegisterCallback(strconv.Itoa(key))
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60)*time.Second)
-	defer cancel()
-	done := getMockDeltaJobsResults(ctx)
-	<-done
 }

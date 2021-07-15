@@ -32,6 +32,7 @@ func main() {
 
 	stop()
 	fmt.Println("shutting down gracefully, press Ctrl+C again to force")
+	handlers.EventBus.Stop()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {

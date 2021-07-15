@@ -6,6 +6,10 @@ import (
 	"sync"
 )
 
+/*
+ShardMap
+*/
+
 // Cache local kv cache.
 type Cache struct {
 	shard   int
