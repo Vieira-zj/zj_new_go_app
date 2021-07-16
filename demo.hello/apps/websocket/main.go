@@ -23,7 +23,7 @@ func main() {
 	http.HandleFunc("/mock/jobs", handlers.GetAllJobResultsHandler)
 	http.HandleFunc("/mock/jobs/init", handlers.InitJobResultsHandler)
 	http.HandleFunc("/ws/echo", handlers.EchoMessage)
-	http.HandleFunc("/ws/jobs/delta", handlers.GetDeltaJobResults)
+	http.HandleFunc("/ws/jobs/sync", handlers.SyncDeltaJobResults)
 
 	fmt.Println("http serve at :8080")
 	go server.ListenAndServe()

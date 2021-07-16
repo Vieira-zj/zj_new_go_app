@@ -31,15 +31,14 @@ func init() {
 		},
 	}
 
-	EventBus = utils.NewEventBusServer(10)
-	EventBus.Start()
-
 	mock = &Mock{
 		locker: &sync.RWMutex{},
 	}
-	mock.buildMockJobResults(10)
+	mock.buildJobResults(10)
 
 	channel = "OnJobResultsUpdateStatus"
+	EventBus = utils.NewEventBusServer(10)
+	EventBus.Start()
 }
 
 // ResponseData .
@@ -74,7 +73,7 @@ type Mock struct {
 	locker    *sync.RWMutex
 }
 
-func (mock *Mock) buildMockJobResults(count int) {
+func (mock *Mock) buildJobResults(count int) {
 	results := make([]*JobResult, 0, count)
 	for i := 0; i < count; i++ {
 		result := &JobResult{
@@ -100,7 +99,7 @@ func getJobStatus(num int) string {
 create mock delta data
 */
 
-func (mock *Mock) getMockDeltaJobResults(ctx context.Context) (err error) {
+func (mock *Mock) getDeltaJobResults(ctx context.Context) (err error) {
 	// 1. 防止重复执行；2. 保证并发安全
 	mock.locker.Lock()
 	if mock.isRunning {

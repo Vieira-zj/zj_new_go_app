@@ -8,7 +8,7 @@
 
 测试点：
 
-- 在数据同步过程中，同一个client又重复多次发出数据同步消息。
+- 在数据同步过程中，同一个client重复多次发送数据同步消息。
 - 并发访问：当有多个client与服务端建立websocket连接时，同时与多个client进行数据同步（使用 eventbus 完成消息发布与订阅）。
 
 ## APIs
@@ -22,5 +22,5 @@ Http:
 Websocket:
 
 - <ws://localhost:8080/ws/echo>
-- <ws://localhost:8080/ws/jobs/delta>
+- <ws://localhost:8080/ws/jobs/sync>
 

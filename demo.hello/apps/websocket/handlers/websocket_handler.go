@@ -45,8 +45,8 @@ func EchoMessage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetDeltaJobResults .
-func GetDeltaJobResults(w http.ResponseWriter, r *http.Request) {
+// SyncDeltaJobResults .
+func SyncDeltaJobResults(w http.ResponseWriter, r *http.Request) {
 	conn, err := client.Upgrade(w, r, nil)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("create websocket error: %v", err), http.StatusInternalServerError)
@@ -64,7 +64,7 @@ func GetDeltaJobResults(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				http.Error(w, fmt.Sprintln("json marshal error:", err), http.StatusInternalServerError)
 			}
-			if err := conn.WriteMessage(websocket.TextMessage, b); err != nil {
+			if err = conn.WriteMessage(websocket.TextMessage, b); err != nil {
 				http.Error(w, fmt.Sprintln("write message error:", err), http.StatusInternalServerError)
 				return
 			}
@@ -83,7 +83,7 @@ func GetDeltaJobResults(w http.ResponseWriter, r *http.Request) {
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60)*time.Second)
 		defer cancel()
-		if err = mock.getMockDeltaJobResults(ctx); err != nil {
+		if err = mock.getDeltaJobResults(ctx); err != nil {
 			http.Error(w, fmt.Sprintln("get delta job results error:", err), http.StatusInternalServerError)
 		}
 	}

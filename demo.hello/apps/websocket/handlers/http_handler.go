@@ -13,7 +13,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 // InitJobResultsHandler .
 func InitJobResultsHandler(w http.ResponseWriter, r *http.Request) {
-	mock.buildMockJobResults(10)
+	mock.buildJobResults(10)
 	fmt.Fprint(w, "job results init")
 }
 
