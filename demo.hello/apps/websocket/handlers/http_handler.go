@@ -11,15 +11,21 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "hello world")
 }
 
-// GetAllJobsResultsHandler .
-func GetAllJobsResultsHandler(w http.ResponseWriter, r *http.Request) {
+// InitJobResultsHandler .
+func InitJobResultsHandler(w http.ResponseWriter, r *http.Request) {
+	mock.buildMockJobResults(10)
+	fmt.Fprint(w, "job results init")
+}
+
+// GetAllJobResultsHandler .
+func GetAllJobResultsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		addCorsHeadersForOption(w)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	resultBytes, err := json.Marshal(getMockJobResults())
+	resultBytes, err := json.Marshal(jobResults)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

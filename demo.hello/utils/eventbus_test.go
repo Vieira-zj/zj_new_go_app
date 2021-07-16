@@ -6,7 +6,11 @@ import (
 	"time"
 )
 
-var eventbus *EventBusServer
+var (
+	eventbus       *EventBusServer
+	onAddChannel   = "onAdd"
+	onPrintChannel = "onPrint"
+)
 
 func init() {
 	eventbus = NewEventBusServer(10)
@@ -14,26 +18,32 @@ func init() {
 }
 
 type calResult struct {
-	val     int
-	channel string
+	val int
 }
 
 func (result *calResult) Add(a, b int) error {
 	result.val = a + b
-	return eventbus.Publish(result.channel, a, b)
+	return eventbus.Publish(onAddChannel, a, b)
 }
 
-func newCalResult(channel string, cbs ...Callback) *calResult {
-	for _, cb := range cbs {
-		eventbus.Register(channel, cb)
-	}
+func (result *calResult) Print() error {
+	fmt.Println("result value:", result.val)
+	return eventbus.Publish(onPrintChannel, result.val)
+}
+
+func newCalResult() *calResult {
 	return &calResult{
-		val:     -1,
-		channel: channel,
+		val: -1,
 	}
 }
 
 func TestEventBus(t *testing.T) {
+	defer func() {
+		eventbus.Stop()
+		eventbus.PrintInfo()
+	}()
+
+	// init eventbus
 	cbFoo := Callback{
 		Name: "foo",
 		Fn: func(val ...interface{}) {
@@ -46,20 +56,34 @@ func TestEventBus(t *testing.T) {
 			fmt.Println("[foo] input args:", val[0].(int), val[1].(int))
 		},
 	}
-
-	channel := "OnAdd"
-	result := newCalResult(channel, cbFoo, cbBar)
+	eventbus.Register(onAddChannel, cbFoo)
+	eventbus.Register(onAddChannel, cbBar)
 	defer func() {
-		eventbus.Unregister(channel, cbFoo)
-		eventbus.Unregister(channel, cbBar)
-		eventbus.Stop()
-		eventbus.PrintInfo()
+		eventbus.Unregister(onAddChannel, cbFoo)
+		eventbus.Unregister(onAddChannel, cbBar)
 	}()
 
+	cbTest := Callback{
+		Name: "test",
+		Fn: func(val ...interface{}) {
+			fmt.Println("[test] value:", val[0].(int))
+		},
+	}
+	if err := eventbus.Register(onPrintChannel, cbTest); err != nil {
+		t.Fatal(err)
+	}
+	defer eventbus.Unregister(onPrintChannel, cbTest)
+	eventbus.PrintInfo()
+
+	result := newCalResult()
 	if err := result.Add(1, 2); err != nil {
 		t.Fatal(err)
 	}
 	if err := result.Add(3, 4); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := result.Print(); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(time.Second)

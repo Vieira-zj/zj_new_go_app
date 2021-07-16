@@ -6,28 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
 	"demo.hello/utils"
 	"github.com/gorilla/websocket"
 )
-
-var (
-	client *websocket.Upgrader
-	once   sync.Once
-)
-
-func init() {
-	client = &websocket.Upgrader{
-		ReadBufferSize:   1024,
-		WriteBufferSize:  1024,
-		HandshakeTimeout: time.Duration(3) * time.Second,
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	}
-}
 
 // EchoMessage .
 func EchoMessage(w http.ResponseWriter, r *http.Request) {
@@ -73,40 +56,35 @@ func GetDeltaJobResults(w http.ResponseWriter, r *http.Request) {
 		conn.Close()
 	}()
 
+	connKey := strconv.Itoa(time.Now().Nanosecond())
+	callback := utils.Callback{
+		Name: connKey,
+		Fn: func(result ...interface{}) {
+			b, err := json.Marshal(result[0])
+			if err != nil {
+				http.Error(w, fmt.Sprintln("json marshal error:", err), http.StatusInternalServerError)
+			}
+			if err := conn.WriteMessage(websocket.TextMessage, b); err != nil {
+				http.Error(w, fmt.Sprintln("write message error:", err), http.StatusInternalServerError)
+				return
+			}
+		},
+	}
+	EventBus.Register(channel, callback)
+	defer EventBus.Unregister(channel, callback)
+
 	for {
-		msgType, msg, err := conn.ReadMessage()
+		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			http.Error(w, fmt.Sprintln("receive message error:", err), http.StatusInternalServerError)
 			return
 		}
-		if string(msg) != "sync" {
-			fmt.Printf("receive message: %s\n", msg)
-			continue
-		}
-
-		key := time.Now().Nanosecond()
-		callback := utils.Callback{
-			Name: strconv.Itoa(key),
-			Fn: func(result ...interface{}) {
-				b, err := json.Marshal(result[0])
-				if err != nil {
-					http.Error(w, fmt.Sprintln("json marshal error:", err), http.StatusInternalServerError)
-				}
-				if err := conn.WriteMessage(msgType, b); err != nil {
-					http.Error(w, fmt.Sprintln("write message error:", err), http.StatusInternalServerError)
-					return
-				}
-			},
-		}
-		EventBus.Register(channel, callback)
-		defer EventBus.Unregister(channel, callback)
+		fmt.Printf("receive message: %s\n", msg)
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60)*time.Second)
 		defer cancel()
-		once.Do(func() {
-			if err = getMockDeltaJobResults(ctx); err != nil {
-				http.Error(w, fmt.Sprintln("get delta job results error:", err), http.StatusInternalServerError)
-			}
-		})
+		if err = mock.getMockDeltaJobResults(ctx); err != nil {
+			http.Error(w, fmt.Sprintln("get delta job results error:", err), http.StatusInternalServerError)
+		}
 	}
 }

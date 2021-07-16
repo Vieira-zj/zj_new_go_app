@@ -94,13 +94,17 @@ func (bus *EventBusServer) Publish(channel string, message ...interface{}) (err 
 }
 
 // Register .
-func (bus *EventBusServer) Register(channel string, cb Callback) {
+func (bus *EventBusServer) Register(channel string, cb Callback) (err error) {
 	bus.locker.Lock()
 	defer bus.locker.Unlock()
 	if _, ok := bus.channels[channel]; !ok {
 		bus.channels[channel] = make([]Callback, 0)
 	}
+	if bus.isCallbackExist(channel, cb) {
+		return fmt.Errorf("callback [%s] is exist in channel [%s]", cb.Name, channel)
+	}
 	bus.channels[channel] = append(bus.channels[channel], cb)
+	return
 }
 
 // Unregister .
@@ -130,4 +134,14 @@ func (bus *EventBusServer) PrintInfo() {
 		}
 		fmt.Println()
 	}
+}
+
+func (bus *EventBusServer) isCallbackExist(channel string, callback Callback) bool {
+	callbacks := bus.channels[channel]
+	for _, cb := range callbacks {
+		if callback.Name == cb.Name {
+			return true
+		}
+	}
+	return false
 }
