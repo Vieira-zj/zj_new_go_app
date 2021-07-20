@@ -177,3 +177,20 @@ func PingTCP(host string, port string) (bool, error) {
 	}
 	return false, errors.New("tcp connection is nil")
 }
+
+/*
+CORS
+*/
+
+// AddCorsHeadersForOptions adds cors access control allow headers for options request.
+func AddCorsHeadersForOptions(w http.ResponseWriter) {
+	AddCorsHeadersForSimple(w)
+	w.Header().Add("Access-Control-Allow-Headers", "Accept,Origin,Content-Type,Authorization")
+	w.Header().Add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+}
+
+// AddCorsHeadersForSimple adds cors access control allow headers for simple request.
+func AddCorsHeadersForSimple(w http.ResponseWriter) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Credentials", "true")
+}

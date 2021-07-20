@@ -11,7 +11,7 @@ import (
 
 var ipRateLimiter = NewIPRateLimiter(1, 5)
 
-// Deco decorate echo function.
+// Deco log decorate function.
 func Deco(fn func(echo.Context) error) func(echo.Context) error {
 	return func(c echo.Context) error {
 		preHook(c)
@@ -33,7 +33,7 @@ func RateLimiterDeco(fn func(echo.Context) error) func(echo.Context) error {
 }
 
 /*
-Common
+Logs
 */
 
 func preHook(c echo.Context) {

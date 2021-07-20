@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"demo.hello/utils"
 )
 
 // IndexHandler .
@@ -20,7 +22,7 @@ func InitJobResultsHandler(w http.ResponseWriter, r *http.Request) {
 // GetAllJobResultsHandler .
 func GetAllJobResultsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
-		addCorsHeadersForOption(w)
+		utils.AddCorsHeadersForOptions(w)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -37,18 +39,7 @@ func GetAllJobResultsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	addCorsHeaders(w)
+	utils.AddCorsHeadersForSimple(w)
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, string(respBytes))
-}
-
-func addCorsHeadersForOption(w http.ResponseWriter) {
-	addCorsHeaders(w)
-	w.Header().Add("Access-Control-Allow-Headers", "Accept,Origin,Content-Type,Authorization")
-	w.Header().Add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-}
-
-func addCorsHeaders(w http.ResponseWriter) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.Header().Add("Access-Control-Allow-Credentials", "true")
 }

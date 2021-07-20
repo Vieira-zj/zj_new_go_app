@@ -1,11 +1,11 @@
 package utils
 
-// Set .
+// Set defines a set by map. Not concurrent security.
 type Set struct {
 	data map[interface{}]interface{}
 }
 
-// NewSet .
+// NewSet creates a instance of set.
 func NewSet(size int, items ...interface{}) *Set {
 	set := &Set{
 		data: make(map[interface{}]interface{}, size),

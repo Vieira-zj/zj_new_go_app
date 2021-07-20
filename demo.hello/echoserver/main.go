@@ -28,6 +28,9 @@ func main() {
 	e.GET("/users/:name", deco(handlers.UsersName))
 	e.GET("/users/1/files/*", deco(handlers.UsersFiles))
 
+	// data
+	e.GET("/data/rowspan", deco(handlers.GetTableRowSpanData))
+
 	// test
 	e.GET("/cover", deco(handlers.CoverHandler))
 	e.GET("/sample/01", deco(handlers.SampleHandler01))
