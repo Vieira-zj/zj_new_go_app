@@ -6,6 +6,10 @@ import (
 	"sync"
 )
 
+/*
+使用场景：异步写日志，允许旧的日志被覆盖。
+*/
+
 // RingBuffer .
 type RingBuffer struct {
 	data        []byte

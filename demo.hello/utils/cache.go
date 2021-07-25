@@ -10,7 +10,7 @@ import (
 ShardMap
 */
 
-// Cache local kv cache.
+// Cache local kv cache by shardmap.
 type Cache struct {
 	shard   int
 	mapSize int
