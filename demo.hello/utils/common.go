@@ -1,17 +1,21 @@
 package utils
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os/exec"
 	"reflect"
+	"syscall"
 	"time"
 	"unsafe"
 )
 
-//
-// Date time
-//
+/*
+Date time
+*/
 
 // IsWeekDay .
 func IsWeekDay(t time.Time) bool {
@@ -33,9 +37,9 @@ func nextWeekDay(loc *time.Location) time.Time {
 	return now
 }
 
-//
-// Run shell
-//
+/*
+Run shell
+*/
 
 // RunShellCmd runs a shell command and returns output.
 func RunShellCmd(name string, args ...string) (string, error) {
@@ -63,9 +67,50 @@ func RunShellCmd(name string, args ...string) (string, error) {
 	return string(output), nil
 }
 
-//
-// Reflect
-//
+// RunShellCmdInBg runs a shell command in background and prints output.
+func RunShellCmdInBg(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	defer stdout.Close()
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	fmt.Printf("cmd process started with pid: %d\n", cmd.Process.Pid)
+
+	go func() {
+		br := bufio.NewReader(stdout)
+		for {
+			b, _, err := br.ReadLine()
+			if err != nil {
+				if err == io.EOF {
+					return
+				}
+				fmt.Println("buffer read failed:", err)
+				return
+			}
+			fmt.Printf("%s\n", b)
+		}
+	}()
+
+	if err := cmd.Wait(); err != nil {
+		if err, ok := err.(*exec.ExitError); ok {
+			if status := err.Sys().(syscall.WaitStatus); status.Signaled() && status.Signal() == syscall.SIGTERM {
+				return errors.New("process stopped with SIGTERM signal")
+			}
+		}
+		return fmt.Errorf("process exited accidentally: %v", err)
+	}
+	fmt.Println("process stopped")
+	return nil
+}
+
+/*
+Reflect
+*/
 
 // GetStructFields returns struct field name and type desc.
 func GetStructFields(ele reflect.Type) (map[string]interface{}, error) {

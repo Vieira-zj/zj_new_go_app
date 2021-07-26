@@ -50,6 +50,20 @@ func TestRunShellCmd(t *testing.T) {
 }
 
 /*
+# loop.sh
+for i in {1..10}; do
+	echo "this is shell loop test ${i}."
+	sleep 1
+done
+*/
+
+func TestRunShellCmdInBg(t *testing.T) {
+	if err := RunShellCmdInBg("sh", "/tmp/test/loop.sh"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+/*
 Get struct desc by reflection.
 */
 
