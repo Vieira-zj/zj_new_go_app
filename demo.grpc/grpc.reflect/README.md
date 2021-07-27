@@ -42,7 +42,7 @@ go build .
 
 ### 模板文件
 
-使用 template 模板文件 + .pb 文件 + json数据 动态生成 mock_server.go 文件，部署后代替原grpc服务。
+使用 template 模板文件 + .pb 文件 + json数据 动态生成 `mock_server.go` 文件，部署后代替原grpc服务。
 
 问题：
 

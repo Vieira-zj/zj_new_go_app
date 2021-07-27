@@ -50,13 +50,13 @@ func RunShellCmd(name string, args ...string) (string, error) {
 	}
 	defer stdout.Close()
 
-	// run command
 	if err = cmd.Start(); err != nil {
 		return "", err
 	}
 
+	// blocked until eof
 	output, err := ioutil.ReadAll(stdout)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		return "", err
 	}
 

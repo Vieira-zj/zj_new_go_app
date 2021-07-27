@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"os/exec"
 	"reflect"
 	"testing"
 	"time"
@@ -41,12 +42,13 @@ outer:
 	fmt.Println("schedule task demo finished")
 }
 
-func TestRunShellCmd(t *testing.T) {
-	output, err := RunShellCmd("go", "version")
+func TestRunCmd(t *testing.T) {
+	cmd := exec.Command("ls", "-l", "/tmp/test")
+	b, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("output:\n" + output)
+	fmt.Printf("cmd output: %s\n", b)
 }
 
 /*
@@ -56,6 +58,14 @@ for i in {1..10}; do
 	sleep 1
 done
 */
+
+func TestRunShellCmd(t *testing.T) {
+	output, err := RunShellCmd("sh", "/tmp/test/loop.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("output:\n" + output)
+}
 
 func TestRunShellCmdInBg(t *testing.T) {
 	if err := RunShellCmdInBg("sh", "/tmp/test/loop.sh"); err != nil {
