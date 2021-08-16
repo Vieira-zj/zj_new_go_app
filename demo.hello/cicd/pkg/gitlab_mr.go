@@ -37,7 +37,8 @@ func NewMergeRequest(ctx context.Context, git *GitlabTool, mrURL string) (*Merge
 	mr := &MergeRequest{}
 	err = json.Unmarshal(resp, mr)
 	if err != nil {
-		return nil, err
+		wrapErr := fmt.Errorf("resp [length:%d, text:%s], error: %s", len(resp), string(resp), err.Error())
+		return nil, wrapErr
 	}
 	mr.Repo, err = getMRRepo(mrURL)
 	if err != nil {

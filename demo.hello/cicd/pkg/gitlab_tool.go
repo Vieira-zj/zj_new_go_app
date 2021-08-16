@@ -49,7 +49,8 @@ func (git *GitlabTool) SearchProject(ctx context.Context, name, namespace string
 	projects := make([]interface{}, 0)
 	err = json.Unmarshal(resp, &projects)
 	if err != nil {
-		return "", err
+		wrapErr := fmt.Errorf("resp: [length:%d, text:%s], error: %s", len(resp), string(resp), err.Error())
+		return "", wrapErr
 	}
 
 	if len(projects) == 1 {
