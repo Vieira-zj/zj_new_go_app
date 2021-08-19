@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"demo.hello/demos"
+	"github.com/fatih/color"
 )
 
 var (
@@ -19,6 +20,44 @@ var (
 	buildTime string
 	goVersion string
 )
+
+func colorDemo() {
+	fmt.Println("\nStandard colors")
+	color.Cyan("Prints text in cyan.")
+	color.Blue("Prints %s in blue.", "text")
+	color.Red("We have red")
+	color.Magenta("And many others ..")
+
+	fmt.Println("\nMix and reuse colors")
+	c := color.New(color.FgCyan).Add(color.Underline)
+	c.Println("Prints cyan text with an underline.")
+	d := color.New(color.FgCyan, color.Bold)
+	d.Printf("This prints bold cyan %s\n", "too!.")
+
+	red1 := color.New(color.FgRed)
+	boldRed := red1.Add(color.Bold)
+	boldRed.Println("This will print text in bold red.")
+	whiteBackground := red1.Add(color.BgWhite)
+	whiteBackground.Println("Red text with white background.")
+
+	fmt.Println("\nCustom print functions")
+	notice := color.New(color.Bold, color.FgGreen).PrintlnFunc()
+	notice("Don't forget this...")
+
+	fmt.Println("\nInsert into noncolor strings")
+	yellow := color.New(color.FgYellow).SprintFunc()
+	red2 := color.New(color.FgRed).SprintFunc()
+	fmt.Printf("This is a %s and this is %s.\n", yellow("warning"), red2("error"))
+
+	fmt.Println("This", color.RedString("warning"), "should be not neglected.")
+	fmt.Printf("%v %v\n", color.GreenString("Info:"), "an important message.")
+
+	fmt.Println("\nPlug into existing code")
+	color.Set(color.FgYellow)
+	fmt.Println("Existing text will now be in yellow")
+	fmt.Printf("This one %s\n", "too")
+	color.Unset()
+}
 
 func httpServe() {
 	server := http.Server{
@@ -46,6 +85,7 @@ func httpServe() {
 }
 
 func main() {
+	isColor := flag.Bool("c", false, "run color demo")
 	isServe := flag.Bool("s", false, "run http server")
 	help := flag.Bool("h", false, "help")
 	flag.Parse()
@@ -71,10 +111,15 @@ func main() {
 		fmt.Println("input args:", strings.Join(inputArgs, ","))
 	}
 
+	// go run main.go -c
+	if *isColor {
+		colorDemo()
+		return
+	}
+
 	if *isServe {
 		httpServe()
 	} else {
 		demos.DemoMain()
 	}
-	fmt.Println("hello golang")
 }
