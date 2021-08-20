@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -772,4 +774,31 @@ func TestDemo30(t *testing.T) {
 		}
 	}
 	fmt.Println(s)
+}
+
+func TestDemo99(t *testing.T) {
+	// equal
+	fmt.Println(strings.EqualFold("host", "host"))
+	fmt.Println(strings.EqualFold("Host", "host"))
+	fmt.Println(strings.EqualFold("host", "gost"))
+
+	// print with padding
+	fmt.Println()
+	for _, val := range []int{123, 1331, 131008} {
+		fmt.Printf("%7dms\n", val)
+	}
+
+	for _, val := range []int{123, 1331, 131008} {
+		str := strconv.Itoa(val) + "ms"
+		fmt.Printf("%-9seof\n", str)
+	}
+
+	// url parse
+	fmt.Println()
+	uri := "http://release.i.sppay.sz.shopee.io/"
+	testURL, err := url.Parse(uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("uri=%s, scheme=%s, host=%s\n", testURL.String(), testURL.Scheme, testURL.Host)
 }
