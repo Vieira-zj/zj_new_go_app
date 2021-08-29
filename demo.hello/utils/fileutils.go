@@ -10,9 +10,42 @@ import (
 	"strings"
 )
 
-/*
-Common
-*/
+// IsExist .
+func IsExist(filePath string) bool {
+	if _, err := os.Stat(filePath); err != nil {
+		return os.IsExist(err)
+	}
+	return true
+}
+
+// HasPermission .
+func HasPermission(filePath string) bool {
+	if _, err := os.Stat(filePath); err != nil {
+		return os.IsPermission(err)
+	}
+	return true
+}
+
+// MakeDir .
+func MakeDir(dirPath string) error {
+	if IsExist(dirPath) {
+		return fmt.Errorf("dir path is exist: %s", dirPath)
+	}
+	return os.MkdirAll(dirPath, os.ModePerm)
+}
+
+// CreateFile create a file with buf content.
+func CreateFile(filePath string, buf *bytes.Buffer) error {
+	newFile, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("os.Create %s error: %v", filePath, err)
+	}
+
+	if _, err = newFile.Write(buf.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
 
 // GetGoFileAbsPath returns .go file absolute path.
 func GetGoFileAbsPath(path string) (string, error) {
@@ -56,29 +89,4 @@ func WalkDir(dirPath, suffix string) (files []string, err error) {
 
 	err = filepath.Walk(dirPath, onWalk)
 	return files, err
-}
-
-/*
-File IO
-*/
-
-// IsExist .
-func IsExist(filePath string) bool {
-	if _, err := os.Stat(filePath); err != nil {
-		return os.IsExist(err)
-	}
-	return true
-}
-
-// CreateFile create a file with buf content.
-func CreateFile(filePath string, buf *bytes.Buffer) error {
-	newFile, err := os.Create(filePath)
-	if err != nil {
-		return fmt.Errorf("os.Create %s error: %v", filePath, err)
-	}
-
-	if _, err = newFile.Write(buf.Bytes()); err != nil {
-		return err
-	}
-	return nil
 }

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"demo.hello/demos"
+	"demo.hello/utils"
 	"github.com/fatih/color"
 )
 
@@ -57,6 +58,14 @@ func colorDemo() {
 	fmt.Println("Existing text will now be in yellow")
 	fmt.Printf("This one %s\n", "too")
 	color.Unset()
+
+	fmt.Println()
+	logger := utils.NewSimpleLog()
+	logger.Debug("debug test, and output to file.")
+	logger.Info("info test, and output to file.")
+	logger.Warning("warnning test.")
+	logger.Error("error test.")
+	logger.Fatal("fatal test.")
 }
 
 func httpServe() {

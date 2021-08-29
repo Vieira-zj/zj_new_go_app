@@ -6,6 +6,38 @@ import (
 	"testing"
 )
 
+func TestIsExist(t *testing.T) {
+	for _, filePath := range [2]string{"/tmp/test/results.txt", "/tmp/test/data.txt"} {
+		fmt.Println("file exist:", IsExist(filePath))
+	}
+}
+
+func TestHasPermission(t *testing.T) {
+	for _, filePath := range [2]string{"/tmp/test/results.txt", "/tmp/test/data.txt"} {
+		if IsExist(filePath) {
+			fmt.Println("has permission:", HasPermission(filePath))
+		}
+	}
+}
+
+func TestMakeDir(t *testing.T) {
+	for _, dirPath := range [2]string{"/tmp/test", "/tmp/test/foo/bar"} {
+		if err := MakeDir(dirPath); err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println("mkdir sucess:", dirPath)
+		}
+	}
+}
+
+func TestCreateFile(t *testing.T) {
+	filePath := "/tmp/test/test.txt"
+	buf := bytes.NewBuffer([]byte("Create file with content test."))
+	if err := CreateFile(filePath, buf); err != nil {
+		t.Fatal(err)
+	}
+}
+
 /*
 Get project go file abs path.
 */
@@ -48,18 +80,5 @@ func TestWalkDir(t *testing.T) {
 	fmt.Printf("go files in [%s]:\n", dirPath)
 	for _, file := range files {
 		fmt.Println("\t" + file)
-	}
-}
-
-func TestIsExist(t *testing.T) {
-	filePath := "/tmp/test/data.json"
-	fmt.Println("file exist:", IsExist(filePath))
-}
-
-func TestCreateFile(t *testing.T) {
-	filePath := "/tmp/test/test.txt"
-	buf := bytes.NewBuffer([]byte("Create file with content test."))
-	if err := CreateFile(filePath, buf); err != nil {
-		t.Fatal(err)
 	}
 }

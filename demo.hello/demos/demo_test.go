@@ -446,7 +446,7 @@ func BenchmarkSwitch(b *testing.B) {
 }
 
 /*
-switch
+switch case
 */
 
 type mockErrorType int
@@ -723,20 +723,31 @@ func TestDemo2702(t *testing.T) {
 }
 
 func TestDemo28(t *testing.T) {
-	// io, write content to file
-	str := "file write test.\n"
+	// io, multiple writer
+	// #1
 	output, err := os.OpenFile("/tmp/test/output.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer output.Close()
 
+	str := "file write test.\n"
 	writer := io.MultiWriter(output, os.Stdout)
 	n, err := io.Copy(writer, bytes.NewReader([]byte(str)))
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println("write total bytes:", n)
+
+	// #2
+	filePath := "/tmp/test/test.txt"
+	outputFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer outputFile.Close()
+	multiWriter := io.MultiWriter(os.Stdout, outputFile)
+	fmt.Fprintf(multiWriter, "multi writer test: stdout and file [%s]\n", filePath)
 }
 
 func TestDemo29(t *testing.T) {
@@ -754,11 +765,12 @@ func TestDemo29(t *testing.T) {
 	}
 }
 
-func TestDemo30(t *testing.T) {
+func TestDemo98(t *testing.T) {
 	// print bytes
 	b := []byte("world")
 	fmt.Printf("hello %s\n", b)
 
+	// 可变参数
 	sayHello := func(args ...string) {
 		fmt.Println("hello", strings.Join(args, ","))
 	}
