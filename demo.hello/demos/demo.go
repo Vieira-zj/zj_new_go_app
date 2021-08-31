@@ -3,11 +3,14 @@ package demos
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func demo01() string {
@@ -34,7 +37,10 @@ func demo02() int {
 	return ret
 }
 
-// demo03, context with timeout
+/*
+context with timeout
+*/
+
 func demo03() int {
 	var (
 		a       = 2
@@ -80,7 +86,10 @@ func myIncr(x int) int {
 	return x + 1
 }
 
-// demo04, context with value
+/*
+context with value
+*/
+
 type ctxKey int
 
 type ctxData struct {
@@ -125,7 +134,10 @@ func demo04() {
 	fmt.Println("context value test done.")
 }
 
-// demo05, time.ticker
+/*
+time.ticker
+*/
+
 func demo0501() {
 	ticker := time.NewTicker(time.Second)
 	i := 0
@@ -161,7 +173,10 @@ func demo0502() {
 	fmt.Println("Done")
 }
 
-// demo06, rpc by context
+/*
+rpc by context
+*/
+
 func demo06() {
 	start := time.Now()
 	timeout := 8
@@ -227,7 +242,16 @@ func mockRPC(ctx context.Context, url string) error {
 	}
 }
 
-// demo07, close(goroutine)
+/*
+channel close
+
+1. channel不能close两次，否则panic
+2. 读取的时候channel提前关闭了，不会panic. 返回值：string => "", bool => false
+3. 向已经关闭的channel写数据，会引起panic
+4. 判断channel是否close: if value, ok := <- ch; !ok { fmt.Println("closed") }
+5. for循环读取channel, ch关闭时，for循环会自动结束
+*/
+
 func demo0701() {
 	c := make(chan int)
 	go func(c chan<- int) {
@@ -309,7 +333,43 @@ func demo08() {
 	fmt.Println("demo 08 finished")
 }
 
-// demo10, func deco
+// demo09, error with stack
+func demo09() {
+	count := 2
+	rand.Seed(time.Now().Unix())
+	errChan := make(chan error, count)
+
+	wg := sync.WaitGroup{}
+	for i := 0; i < count; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			n := rand.Intn(3)
+			time.Sleep(time.Duration(n) * time.Second)
+			err := fmt.Errorf("mock error from: %d", idx)
+			errChan <- errors.WithStack(err)
+		}(i)
+	}
+	wg.Wait()
+	close(errChan)
+
+	for i := 0; i < count+2; i++ {
+		if err, ok := <-errChan; ok {
+			// fmt.Printf("error: %v\n", errors.Cause(err))
+			fmt.Printf("error: %v\n", err)
+			fmt.Printf("stack: %+v\n", err)
+			fmt.Println()
+		} else {
+			fmt.Println("channel closed")
+			break
+		}
+	}
+}
+
+/*
+func deco
+*/
+
 func deco(fn func(string) string) func(string) string {
 	return func(text string) string {
 		fmt.Println("pre-hook")
@@ -354,8 +414,8 @@ func demo11() {
 	}
 }
 
-// DemoMain entry of demo.
+// DemoMain .
 func DemoMain() {
 	fmt.Println("demo main")
-	demo10()
+	demo09()
 }

@@ -2,6 +2,9 @@ package utils
 
 import (
 	"bufio"
+	"crypto/md5"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -14,7 +17,7 @@ import (
 )
 
 /*
-Date time
+Datetime
 */
 
 // IsWeekDay .
@@ -38,7 +41,50 @@ func nextWeekDay(loc *time.Location) time.Time {
 }
 
 /*
-Run shell
+Encoder
+*/
+
+// GetBase64Text .
+func GetBase64Text(bytes []byte) string {
+	return base64.StdEncoding.EncodeToString(bytes)
+}
+
+// GetURLBase64Text .
+func GetURLBase64Text(bytes []byte) string {
+	return base64.URLEncoding.EncodeToString(bytes)
+}
+
+// GetMd5HexText .
+func GetMd5HexText(text string) string {
+	return getMd5EncodedText(text, "hex")
+}
+
+// GetBase64MD5Text .
+func GetBase64MD5Text(text string) string {
+	return getMd5EncodedText(text, "std64")
+}
+
+// GetURLBase64MD5Text .
+func GetURLBase64MD5Text(text string) string {
+	return getMd5EncodedText(text, "url")
+}
+
+func getMd5EncodedText(text, md5Type string) string {
+	md5hash := md5.New()
+	md5hash.Write([]byte(text))
+	b := md5hash.Sum(nil)
+
+	if md5Type == "hex" {
+		return hex.EncodeToString(b)
+	}
+	if md5Type == "std64" {
+		return base64.StdEncoding.EncodeToString(b)
+	}
+	return base64.URLEncoding.EncodeToString(b)
+}
+
+/*
+Command
 */
 
 // RunShellCmd runs a shell command and returns output.
@@ -208,7 +254,7 @@ func InitStructByReflect(data map[string]interface{}, inStructPtr interface{}) e
 	return nil
 }
 
-// StringToSliceByte 可以不拷贝数据而将 string 转换成 []byte 了，不过要注意这样生成的 []byte 不可写，否则行为未定义。
+// StringToSliceByte 可以不拷贝数据而将 string 转换成 []byte 了，不过要注意这样生成的 []byte 不可写，否则行为未定义
 func StringToSliceByte(s string) []byte {
 	l := len(s)
 	data := (*reflect.StringHeader)(unsafe.Pointer(&s)).Data
