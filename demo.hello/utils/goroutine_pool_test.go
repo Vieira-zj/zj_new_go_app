@@ -28,27 +28,27 @@ func buildFuncFromProcess(p func(context.Context, int) string) Function {
 	}
 }
 
-func TestRoutinuePoolWithSemaphore(t *testing.T) {
-	pool := NewRoutinuePoolWithSemaphore(2, 10)
-	testRoutinuePool(t, pool)
+func TestGoRoutinePoolWithSemaphore(t *testing.T) {
+	pool := NewGoRoutinePoolWithSemaphore(2, 10)
+	testGoRoutinePool(t, pool)
 }
 
-func TestRoutinuePoolWithSemaphoreByDiscard(t *testing.T) {
-	pool := NewRoutinuePoolWithSemaphore(2, 5)
-	testRoutinuePool(t, pool)
+func TestGoRoutinePoolWithSemaphoreByDiscard(t *testing.T) {
+	pool := NewGoRoutinePoolWithSemaphore(2, 5)
+	testGoRoutinePool(t, pool)
 }
 
-func TestRoutinuePoolWithFixSize(t *testing.T) {
-	pool := NewRoutinuePoolWithFixSize(2, 10)
-	testRoutinuePool(t, pool)
+func TestGoRoutinePoolWithFixSize(t *testing.T) {
+	pool := NewGoRoutinePoolWithFixSize(2, 10)
+	testGoRoutinePool(t, pool)
 }
 
-func TestRoutinuePoolWithFixSizeByDiscard(t *testing.T) {
-	pool := NewRoutinuePoolWithFixSize(2, 3)
-	testRoutinuePool(t, pool)
+func TestGoRoutinePoolWithFixSizeByDiscard(t *testing.T) {
+	pool := NewGoRoutinePoolWithFixSize(2, 3)
+	testGoRoutinePool(t, pool)
 }
 
-func testRoutinuePool(t *testing.T, pool RoutinePool) {
+func testGoRoutinePool(t *testing.T, pool GoRoutinePool) {
 	count := 6
 	rand.Seed(time.Now().Unix())
 	retChList := make([]chan interface{}, 0, count)
@@ -84,17 +84,17 @@ func testRoutinuePool(t *testing.T, pool RoutinePool) {
 	wg.Wait()
 }
 
-func TestRoutinuePoolWithSemaphoreByTimeout(t *testing.T) {
-	pool := NewRoutinuePoolWithSemaphore(2, 10)
-	testRoutinuePoolWithTimeout(t, pool)
+func TestGoRoutinePoolWithSemaphoreByTimeout(t *testing.T) {
+	pool := NewGoRoutinePoolWithSemaphore(2, 10)
+	testGoRoutinePoolWithTimeout(t, pool)
 }
 
-func TestRoutinuePoolWithFixSizeByTimeout(t *testing.T) {
-	pool := NewRoutinuePoolWithFixSize(2, 10)
-	testRoutinuePoolWithTimeout(t, pool)
+func TestGoRoutinePoolWithFixSizeByTimeout(t *testing.T) {
+	pool := NewGoRoutinePoolWithFixSize(2, 10)
+	testGoRoutinePoolWithTimeout(t, pool)
 }
 
-func testRoutinuePoolWithTimeout(t *testing.T, pool RoutinePool) {
+func testGoRoutinePoolWithTimeout(t *testing.T, pool GoRoutinePool) {
 	count := 6
 	rand.Seed(time.Now().Unix())
 	retChList := make([]chan interface{}, 0, count)
@@ -122,17 +122,17 @@ func testRoutinuePoolWithTimeout(t *testing.T, pool RoutinePool) {
 	}
 }
 
-func TestRoutinuePoolWithSemaphoreByCancel(t *testing.T) {
-	pool := NewRoutinuePoolWithSemaphore(2, 10)
-	testRoutinuePoolWithCancel(t, pool)
+func TestGoRoutinePoolWithSemaphoreByCancel(t *testing.T) {
+	pool := NewGoRoutinePoolWithSemaphore(2, 10)
+	testGoRoutinePoolWithCancel(t, pool)
 }
 
-func TestRoutinuePoolWithFixSizeByCancel(t *testing.T) {
-	pool := NewRoutinuePoolWithFixSize(2, 10)
-	testRoutinuePoolWithCancel(t, pool)
+func TestGoRoutinePoolWithFixSizeByCancel(t *testing.T) {
+	pool := NewGoRoutinePoolWithFixSize(2, 10)
+	testGoRoutinePoolWithCancel(t, pool)
 }
 
-func testRoutinuePoolWithCancel(t *testing.T, pool RoutinePool) {
+func testGoRoutinePoolWithCancel(t *testing.T, pool GoRoutinePool) {
 	count := 6
 	rand.Seed(time.Now().Unix())
 	retChList := make([]chan interface{}, 0, count)
