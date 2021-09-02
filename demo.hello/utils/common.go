@@ -20,6 +20,12 @@ import (
 Datetime
 */
 
+// GetSimpleCurrentDatetime .
+func GetSimpleCurrentDatetime() string {
+	currentTime := time.Now()
+	return currentTime.Format("2006/01/02 15:04:05")
+}
+
 // IsWeekDay .
 func IsWeekDay(t time.Time) bool {
 	switch t.Weekday() {

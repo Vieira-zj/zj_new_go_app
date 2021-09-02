@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+func TestGetSimpleCurrentDatetime(t *testing.T) {
+	fmt.Println("current datetime:", GetSimpleCurrentDatetime())
+}
+
 func TestIsWeekDay(t *testing.T) {
 	now := time.Now()
 	fmt.Println("now weekday:", now.Weekday().String())

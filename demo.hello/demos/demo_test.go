@@ -447,6 +447,9 @@ func BenchmarkSwitch(b *testing.B) {
 
 /*
 switch case
+
+1. switch每个case最后默认带有break
+2. fallthrough强制执行后面case的代码，而不考虑expr结果是否为true
 */
 
 type mockErrorType int
@@ -456,6 +459,7 @@ const (
 	NilError
 	IndexOutOfRange
 	InvalidValue
+	TestFallThrough
 	UnMatchedType
 )
 
@@ -463,6 +467,8 @@ func getErrorTypeMessage(errType mockErrorType) string {
 	switch errType {
 	case RunTimeError, NilError, IndexOutOfRange:
 		return "unexpected error"
+	case TestFallThrough:
+		fallthrough
 	case InvalidValue, UnMatchedType:
 		return "catch exception"
 	default:
@@ -471,8 +477,9 @@ func getErrorTypeMessage(errType mockErrorType) string {
 }
 
 func TestDemoSwitch(t *testing.T) {
-	for _, errType := range []mockErrorType{NilError, InvalidValue, IndexOutOfRange, UnMatchedType, 10} {
-		fmt.Println(getErrorTypeMessage(errType))
+	errTypes := [6]mockErrorType{NilError, InvalidValue, IndexOutOfRange, UnMatchedType, TestFallThrough, 10}
+	for idx, errType := range errTypes {
+		fmt.Printf("%d:%s\n", idx, getErrorTypeMessage(errType))
 	}
 }
 

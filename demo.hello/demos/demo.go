@@ -319,7 +319,7 @@ func demo08() {
 		defer func() {
 			if err := recover(); err != nil {
 				fmt.Println("catch exception:", err)
-				stackTrace := debug.Stack()
+				stackTrace := debug.Stack() // get stack
 				fmt.Fprintln(os.Stderr, string(stackTrace))
 			}
 		}()
@@ -346,7 +346,7 @@ func demo09() {
 			defer wg.Done()
 			n := rand.Intn(3)
 			time.Sleep(time.Duration(n) * time.Second)
-			err := fmt.Errorf("mock error from: %d", idx)
+			err := fmt.Errorf("mock error from: index=%d", idx)
 			errChan <- errors.WithStack(err)
 		}(i)
 	}
