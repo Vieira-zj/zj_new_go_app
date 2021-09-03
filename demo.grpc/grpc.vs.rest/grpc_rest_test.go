@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"demo.grpc/grpc.vs.rest/pb"
+	pb "demo.grpc/grpc.vs.rest/proto"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 )

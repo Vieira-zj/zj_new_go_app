@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"demo.grpc/grpc.vs.rest/pb"
+	pb "demo.grpc/grpc.vs.rest/proto"
 )
 
 var count int
