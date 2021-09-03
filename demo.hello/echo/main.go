@@ -10,8 +10,8 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/log"
 
-	"demo.hello/echoserver/handlers"
-	"demo.hello/echoserver/utils"
+	"demo.hello/echo/handlers"
+	"demo.hello/echo/utils"
 )
 
 func main() {

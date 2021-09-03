@@ -30,12 +30,12 @@ function govet_check {
 
 function build_echoserver_img {
   # run on minikube master
-  docker build -t echoserver-test:v1.0 -f echoserver/deploy/echoserver.dockerfile .
+  docker build -t echoserver-test:v1.0 -f echo/deploy/echoserver.dockerfile .
 }
 
 function build_goccenter_img {
   # run on minikube master
-  docker build -t goccenter-test:v1.0 -f echoserver/deploy/goccenter.dockerfile .
+  docker build -t goccenter-test:v1.0 -f echo/deploy/goccenter.dockerfile .
 }
 
 #
@@ -45,21 +45,21 @@ function build_goccenter_img {
 all_go_pkgs=''
 
 function get_all_go_pkgs {
-    local pkgs=''
-    for pkg in $(go list ./...); do
-        pkgs="${pkgs},${pkg}"
-    done
-    all_go_pkgs=$(echo ${pkgs} | awk -F ',' '{for(i=1; i<=NF; i++) print $i;}')
-    echo ${all_go_pkgs}
+  local pkgs=''
+  for pkg in $(go list ./...); do
+    pkgs="${pkgs},${pkg}"
+  done
+  all_go_pkgs=$(echo ${pkgs} | awk -F ',' '{for(i=1; i<=NF; i++) print $i;}')
+  echo ${all_go_pkgs}
 }
 
 report_dir="echoserver/ut_reports"
 ut_cov_xml="${report_dir}/ut_cover.xml"
 
 function run_diff_cover_deubg {
-    # local debug (pre-condition: pip uninstall diff-cover)
-    local diffcover="python ${HOME}/Workspaces/github_repos/diff_cover/diff_cover/main.py"
-    ${diffcover} ${ut_cov_xml} --compare-branch=remotes/origin/master --html-report=${report_dir}/diff_cov.html
+  # local debug (pre-condition: pip uninstall diff-cover)
+  local diffcover="python ${HOME}/Workspaces/github_repos/diff_cover/diff_cover/main.py"
+  ${diffcover} ${ut_cov_xml} --compare-branch=remotes/origin/master --html-report=${report_dir}/diff_cov.html
 }
 
 function go_test_with_diff_cover {
