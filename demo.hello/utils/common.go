@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -49,6 +50,13 @@ func nextWeekDay(loc *time.Location) time.Time {
 /*
 Encoder
 */
+
+// FprintJSONPrettyText .
+func FprintJSONPrettyText(w io.Writer, value interface{}) error {
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(value)
+}
 
 // GetBase64Text .
 func GetBase64Text(bytes []byte) string {

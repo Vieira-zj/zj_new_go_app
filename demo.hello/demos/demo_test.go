@@ -732,7 +732,7 @@ func TestDemo2702(t *testing.T) {
 func TestDemo28(t *testing.T) {
 	// io, multiple writer
 	// #1
-	output, err := os.OpenFile("/tmp/test/output.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	output, err := os.OpenFile("/tmp/test/output.txt", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -769,6 +769,92 @@ func TestDemo29(t *testing.T) {
 		fmt.Println("results:", res)
 	} else {
 		fmt.Println("no matched")
+	}
+}
+
+func TestDemo30(t *testing.T) {
+	// schedule task
+	ch := make(chan struct{})
+	timer := time.AfterFunc(time.Second, func() {
+		for i := 0; i < 3; i++ {
+			fmt.Printf("schedule task run at %d\n", i)
+			time.Sleep(time.Duration(500) * time.Millisecond)
+		}
+		ch <- struct{}{}
+	})
+	defer timer.Stop()
+
+	c := time.Tick(time.Duration(300) * time.Millisecond)
+outer:
+	for {
+		select {
+		case <-c:
+			fmt.Println("wait for schedule task ...")
+		case <-ch:
+			fmt.Println("schedule task done")
+			break outer
+		case <-time.After(time.Duration(10) * time.Second):
+			t.Fatal("time out for schedule task")
+		}
+	}
+	fmt.Println("demo done")
+}
+
+/*
+custom error, and type check
+*/
+
+type iError interface {
+	Text() string
+}
+
+type customError struct {
+	desc string
+}
+
+func (e customError) Text() string {
+	return e.desc
+}
+
+type badInputError struct {
+	customError
+}
+
+func (e badInputError) Text() string {
+	return e.customError.Text()
+}
+
+type uriNotFoundError struct {
+	customError
+}
+
+func (e uriNotFoundError) Text() string {
+	return e.desc
+}
+
+func TestDemo31(t *testing.T) {
+	errs := make([]iError, 0, 3)
+	err := customError{
+		desc: "custom error",
+	}
+	errs = append(errs, err)
+
+	errs = append(errs, badInputError{
+		customError: err,
+	})
+	errs = append(errs, uriNotFoundError{
+		customError: err,
+	})
+
+	for _, err := range errs {
+		// check error type
+		if target, ok := err.(badInputError); ok {
+			fmt.Println(target.Text(), "for bad input")
+		} else if target, ok := err.(uriNotFoundError); ok {
+			fmt.Println(target.Text(), "for uri not found")
+		} else {
+			fmt.Println(err.Text())
+		}
 	}
 }
 

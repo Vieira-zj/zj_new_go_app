@@ -40,6 +40,8 @@ func GetHostIP(url string) ([]string, error) {
 HTTP
 */
 
+var client *http.Client
+
 // HTTPUtils a http client utils.
 type HTTPUtils struct {
 	client *http.Client
@@ -47,12 +49,14 @@ type HTTPUtils struct {
 
 // NewDefaultHTTPUtils creates a http util with default client.
 func NewDefaultHTTPUtils() *HTTPUtils {
-	client := &http.Client{
-		Timeout: time.Duration(10) * time.Second,
-	}
-	client.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
+	once.Do(func() {
+		client = &http.Client{
+			Timeout: time.Duration(10) * time.Second,
+		}
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	})
 
 	return &HTTPUtils{
 		client: client,
@@ -61,28 +65,31 @@ func NewDefaultHTTPUtils() *HTTPUtils {
 
 // NewHTTPUtils creates a http util instance.
 func NewHTTPUtils(isKeepAlives bool) *HTTPUtils {
-	// http client 默认是长链接
-	var httpTransport *http.Transport
-	if isKeepAlives {
-		httpTransport = &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 60 * time.Second,
-			}).DialContext,
-			MaxIdleConns:          500,              // 最大空闲连接
-			IdleConnTimeout:       60 * time.Second, // 空闲连接的超时时间
-			ExpectContinueTimeout: 30 * time.Second, // 等待服务第一个响应的超时时间
-			MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数
+	once.Do(func() {
+		// http client 默认是长链接
+		var httpTransport *http.Transport
+		if isKeepAlives {
+			httpTransport = &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 60 * time.Second,
+				}).DialContext,
+				MaxIdleConns:          500,              // 最大空闲连接
+				IdleConnTimeout:       60 * time.Second, // 空闲连接的超时时间
+				ExpectContinueTimeout: 30 * time.Second, // 等待服务第一个响应的超时时间
+				MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数
+			}
+		} else {
+			httpTransport = &http.Transport{
+				DisableKeepAlives: true,
+			}
 		}
-	} else {
-		httpTransport = &http.Transport{
-			DisableKeepAlives: true,
-		}
-	}
-	httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		httpTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		client = &http.Client{Transport: httpTransport}
+	})
 
 	return &HTTPUtils{
-		client: &http.Client{Transport: httpTransport},
+		client: client,
 	}
 }
 

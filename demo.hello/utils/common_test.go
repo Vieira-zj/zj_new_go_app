@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"reflect"
 	"testing"
@@ -19,31 +21,24 @@ func TestIsWeekDay(t *testing.T) {
 	fmt.Println("isweekday:", IsWeekDay(now))
 }
 
-func TestScheduleTask(t *testing.T) {
-	ch := make(chan struct{})
-	timer := time.AfterFunc(time.Second, func() {
-		for i := 0; i < 3; i++ {
-			fmt.Printf("schedule task run at %d\n", i)
-			time.Sleep(time.Duration(500) * time.Millisecond)
-		}
-		ch <- struct{}{}
-	})
-	defer timer.Stop()
-
-	c := time.Tick(time.Duration(300) * time.Millisecond)
-outer:
-	for {
-		select {
-		case <-c:
-			fmt.Println("wait for schedule task...")
-		case <-ch:
-			fmt.Println("schedule task done")
-			break outer
-		case <-time.After(time.Duration(10) * time.Second):
-			t.Fatal("time out for schedule task")
-		}
+func TestGetJSONPrettyText(t *testing.T) {
+	p := struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}{
+		Name: "foo",
+		Age:  30,
 	}
-	fmt.Println("schedule task demo finished")
+
+	path := "/tmp/test/output.json"
+	outFile, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	multiWriter := io.MultiWriter(os.Stdout, outFile)
+	if err = FprintJSONPrettyText(multiWriter, p); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestRunCmd(t *testing.T) {
