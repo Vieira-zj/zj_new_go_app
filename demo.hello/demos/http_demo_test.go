@@ -47,6 +47,6 @@ func TestStartHTTPServer02(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Printf("[client] resp: %s\n", b)
+		fmt.Printf("[client] resp: %s\n\n", b)
 	}
 }

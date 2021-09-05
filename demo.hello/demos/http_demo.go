@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"net/http/httputil"
 )
 
@@ -36,11 +37,10 @@ func startHTTPServerV2() error {
 		mux := buildDefaultServeMux()
 		mux.ServeHTTP(w, r)
 	})
-	dumpHandler := buildDumpHandler(handler)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", addr, port),
-		Handler: dumpHandler,
+		Handler: buildDumpHandler(handler),
 	}
 	if err := server.ListenAndServe(); err != nil {
 		return fmt.Errorf("[svc] failed to start http: %v", err)
@@ -62,12 +62,17 @@ func buildDefaultServeMux() *http.ServeMux {
 		accessCount++
 		if r.Method == "POST" {
 			b, err := io.ReadAll(r.Body)
+			if r.Body != nil {
+				r.Body.Close()
+			}
 			if err != nil {
 				http.Error(w, "read body failed", http.StatusInternalServerError)
 			}
-			defer r.Body.Close()
 			fmt.Printf("[svc] receive body: %s\n", b)
 		}
+
+		w.Header().Add("XTag", "XServer")
+		w.WriteHeader(203)
 		w.Write([]byte(fmt.Sprintf("[svc] access count=%d", accessCount)))
 	})
 
@@ -79,8 +84,26 @@ func buildDumpHandler(src http.HandlerFunc) http.HandlerFunc {
 		if req, err := httputil.DumpRequest(r, true); err != nil {
 			fmt.Printf("[svc] could not dump request: %v\n", err)
 		} else {
-			fmt.Printf("[svc] received request:\n%s\n", string(req))
+			fmt.Printf("[svc] received request:\n%s\n", req)
 		}
-		src.ServeHTTP(w, r)
+
+		recorder := httptest.NewRecorder()
+		defer func() {
+			if resp, err := httputil.DumpResponse(recorder.Result(), true); err != nil {
+				fmt.Printf("[svc] could not dump response: %v", err)
+			} else {
+				fmt.Printf("[svc] sent response:\n%s\n", resp)
+			}
+			mirrorResponse(recorder, w)
+		}()
+
+		src.ServeHTTP(recorder, r)
 	})
+}
+
+func mirrorResponse(src *httptest.ResponseRecorder, dst http.ResponseWriter) {
+	for k, v := range src.Header() {
+		dst.Header().Add(k, v[0])
+	}
+	dst.Write(src.Body.Bytes())
 }
