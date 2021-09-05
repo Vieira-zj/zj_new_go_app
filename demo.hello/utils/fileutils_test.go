@@ -3,6 +3,10 @@ package utils
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -70,8 +74,34 @@ func TestReadFileWithExpandEnv(t *testing.T) {
 	fmt.Println("expand string:\n", res)
 }
 
+/*
+dir tools
+*/
+
+func TestListDirFile(t *testing.T) {
+	dirPath := "/tmp/test"
+	files, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, file := range files {
+		if !strings.HasSuffix(file.Name(), ".json") {
+			continue
+		}
+		filePath := filepath.Join(dirPath, file.Name())
+		fmt.Println("read file:", filePath)
+		b, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println(string(b))
+	}
+}
+
 func TestWalkDir(t *testing.T) {
-	dirPath := "/Users/jinzheng/Workspaces/zj_repos/zj_go2_project/demo.hello/apps/reversecall/pkg/test"
+	demoPath := "Workspaces/zj_repos/zj_go2_project/demo.hello/demos"
+	dirPath := filepath.Join(os.Getenv("HOME"), demoPath)
 	files, err := WalkDir(dirPath, ".go")
 	if err != nil {
 		t.Fatal(err)

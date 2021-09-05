@@ -7,7 +7,7 @@ import (
 )
 
 /*
-ShardMap
+Sharding Map
 */
 
 // Cache local kv cache by shardmap.

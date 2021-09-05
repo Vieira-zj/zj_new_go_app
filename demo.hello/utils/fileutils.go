@@ -76,7 +76,6 @@ func WalkDir(dirPath, suffix string) (files []string, err error) {
 		if err != nil {
 			return err
 		}
-
 		if fi.IsDir() {
 			return nil
 		}
