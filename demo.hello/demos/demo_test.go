@@ -22,6 +22,7 @@ import (
 	"unsafe"
 
 	"github.com/bep/debounce"
+	"golang.org/x/tools/imports"
 	"gopkg.in/yaml.v2"
 )
 
@@ -801,7 +802,7 @@ outer:
 }
 
 /*
-custom error, and type check
+custom error, and err type check
 */
 
 type iError interface {
@@ -856,6 +857,44 @@ func TestDemo31(t *testing.T) {
 			fmt.Println(err.Text())
 		}
 	}
+}
+
+func TestDemo32(t *testing.T) {
+	// imports go src code with format
+	src := `
+package main
+import "fmt"
+func main() {
+  // imports test
+  count :=0
+  fmt.Printf("hello world, %d\n",count+1)
+  fmt.Printf("add results: %d\n",add(2+3))
+}
+func add(a int /*number a*/, b int /*number b*/) int {
+return a+b
+}
+`
+
+	opt := &imports.Options{
+		Comments:  false,
+		TabIndent: true,
+		TabWidth:  2,
+	}
+	dst, err := imports.Process("", []byte(src), opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	filePath := "/tmp/test/imports_test.go"
+	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = f.Write(dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("imports with format done")
 }
 
 func TestDemo98(t *testing.T) {

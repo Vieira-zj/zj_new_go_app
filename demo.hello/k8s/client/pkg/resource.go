@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/watch"
+	"k8s.io/kubernetes/pkg/client/conditions"
 )
 
 // Resource k8s resources object like namespace, pod and deploy.
@@ -79,6 +82,30 @@ func (r *Resource) DeleteNamespace(name string) error {
 /*
 Pod
 */
+
+// StartPod starts the given pod, and wait until it's running.
+func (r *Resource) StartPod(podSpec *apiv1.Pod, timeout int) (*apiv1.Pod, error) {
+	pod, err := r.client.CoreV1().Pods(podSpec.GetNamespace()).Create(r.ctx, podSpec, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	watcher, err := r.client.CoreV1().Pods(pod.GetNamespace()).Watch(r.ctx, metav1.SingleObject(pod.ObjectMeta))
+	if err != nil {
+		return nil, err
+	}
+	ctx, cacnel := context.WithTimeout(r.ctx, time.Duration(timeout)*time.Minute)
+	defer cacnel()
+
+	fmt.Printf("Waiting for pod %s to run...\n", pod.Name)
+	event, err := watch.UntilWithoutRetry(ctx, watcher, conditions.PodRunning)
+	if err != nil {
+		err := fmt.Errorf("Error occurred while waiting for pod to run: %v", err)
+		return nil, err
+	}
+	pod = event.Object.(*apiv1.Pod)
+	return pod, nil
+}
 
 // GetAllPods returns all pods in k8s cluster.
 func (r *Resource) GetAllPods() ([]apiv1.Pod, error) {
