@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -17,8 +18,32 @@ import (
 Common
 */
 
-// GetHostIP .
-func GetHostIP(url string) ([]string, error) {
+// isNetworkError if network error, we should retry http reqeust.
+func isNetworkError(err error) bool {
+	if err == io.EOF {
+		return true
+	}
+	_, ok := err.(net.Error)
+	return ok
+}
+
+// GetLocalHostIPs gets local host ip address.
+func GetLocalHostIPs() (hosts []string, err error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return
+	}
+
+	for _, addr := range addrs {
+		if ipNet, ok := addr.(*net.IPNet); ok && ipNet.IP.To4() != nil {
+			hosts = append(hosts, ipNet.IP.String())
+		}
+	}
+	return
+}
+
+// GetRemoteHostIPs .
+func GetRemoteHostIPs(url string) ([]string, error) {
 	parsed, err := neturl.Parse(url)
 	if err != nil {
 		return nil, err
@@ -162,6 +187,23 @@ func (utils *HTTPUtils) send(req *http.Request) ([]byte, error) {
 
 	// 如果不及时从请求中获取结果，此连接会占用
 	return ioutil.ReadAll(resp.Body)
+}
+
+// sendV2 returns both response and resp body.
+func (utils *HTTPUtils) sendV2(req *http.Request) (*http.Response, []byte, error) {
+	resp, err := utils.client.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp, nil, err
+	}
+	return resp, body, nil
 }
 
 /*

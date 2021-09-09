@@ -14,10 +14,18 @@ var (
 	url = "http://127.0.0.1:8081/ping"
 )
 
-func TestGetHostIP(t *testing.T) {
+func TestGetLocalHostIPs(t *testing.T) {
+	hosts, err := GetLocalHostIPs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("local hosts:", strings.Join(hosts, ", "))
+}
+
+func TestGetRemoteHostIPs(t *testing.T) {
 	hosts := []string{"https://www.baidu.com/"}
 	for _, host := range hosts {
-		ips, err := GetHostIP(host)
+		ips, err := GetRemoteHostIPs(host)
 		if err != nil {
 			t.Fatal(err)
 		}

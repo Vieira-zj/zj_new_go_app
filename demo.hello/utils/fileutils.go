@@ -18,6 +18,15 @@ func IsExist(filePath string) bool {
 	return true
 }
 
+// IsDirExist .
+func IsDirExist(dirPath string) bool {
+	f, err := os.Stat(dirPath)
+	if err != nil {
+		return false
+	}
+	return f.IsDir()
+}
+
 // HasPermission .
 func HasPermission(filePath string) bool {
 	if _, err := os.Stat(filePath); err != nil {
