@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -99,6 +100,15 @@ func main() {
 	help := flag.Bool("h", false, "help")
 	flag.Parse()
 
+	fullPathApp := os.Args[0]
+	app := filepath.Base(fullPathApp)
+	fmt.Printf("run app (%s): %s\n", fullPathApp, app)
+
+	inputArgs := flag.Args()
+	if len(inputArgs) > 0 {
+		fmt.Println("input args:", strings.Join(inputArgs, ","))
+	}
+
 	if *help {
 		flag.Usage()
 
@@ -113,11 +123,6 @@ func main() {
 		fmt.Printf("os threads count: %d\n", runtime.GOMAXPROCS(-1))
 		fmt.Printf("goroutines count: %d\n\n", runtime.NumGoroutine())
 		return
-	}
-
-	inputArgs := flag.Args()
-	if len(inputArgs) > 0 {
-		fmt.Println("input args:", strings.Join(inputArgs, ","))
 	}
 
 	// go run main.go -c

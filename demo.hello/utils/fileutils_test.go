@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -110,5 +111,25 @@ func TestWalkDir(t *testing.T) {
 	fmt.Printf("go files in [%s]:\n", dirPath)
 	for _, file := range files {
 		fmt.Println("\t" + file)
+	}
+}
+
+func TestBufferWriter(t *testing.T) {
+	filePath := "/tmp/test/buffer_out.txt"
+	var out *bufio.Writer
+	if !IsExist(filePath) {
+		out = bufio.NewWriter(os.Stdout)
+	} else {
+		fd, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer fd.Close()
+		out = bufio.NewWriter(fd)
+	}
+	defer out.Flush()
+
+	for i := 0; i < 3; i++ {
+		fmt.Fprintf(out, "this is a buffer write test: %d\n", i)
 	}
 }
