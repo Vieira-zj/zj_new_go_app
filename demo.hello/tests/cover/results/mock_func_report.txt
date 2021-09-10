@@ -1,0 +1,3 @@
+demo.hello/tests/cover/mock.go:8:	sayHello	100.0%
+demo.hello/tests/cover/mock.go:15:	isOk		80.0%
+total:					(statements)	87.5%

@@ -1,0 +1,5 @@
+mode: count
+demo.hello/tests/cover/mock.go:8.28,13.2 3 2
+demo.hello/tests/cover/mock.go:15.29,17.10 2 1
+demo.hello/tests/cover/mock.go:22.2,22.15 1 0
+demo.hello/tests/cover/mock.go:17.10,21.3 2 1
