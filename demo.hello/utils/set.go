@@ -1,6 +1,7 @@
 package utils
 
 // Set defines a set by map. Not concurrent security.
+// TODO: 优化参考 "k8s.io/apimachinery/pkg/util/sets"
 type Set struct {
 	data map[interface{}]interface{}
 }

@@ -6,10 +6,12 @@ import (
 	"strings"
 	"time"
 
+	v1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/watch"
 	"k8s.io/kubernetes/pkg/client/conditions"
@@ -46,7 +48,7 @@ Namespace
 
 // CreateNamespace creates a namespace.
 func (r *Resource) CreateNamespace(name string) (*apiv1.Namespace, error) {
-	namespace := apiv1.Namespace{
+	namespaceSpec := &apiv1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -54,16 +56,16 @@ func (r *Resource) CreateNamespace(name string) (*apiv1.Namespace, error) {
 			Phase: apiv1.NamespaceActive,
 		},
 	}
-	return r.client.CoreV1().Namespaces().Create(r.ctx, &namespace, metav1.CreateOptions{})
+	return r.client.CoreV1().Namespaces().Create(r.ctx, namespaceSpec, metav1.CreateOptions{})
 }
 
 // GetAllNamespace returns all namespace.
 func (r *Resource) GetAllNamespace() ([]apiv1.Namespace, error) {
-	nsList, err := r.client.CoreV1().Namespaces().List(r.ctx, metav1.ListOptions{})
+	allNamesapce, err := r.client.CoreV1().Namespaces().List(r.ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	return nsList.Items, nil
+	return allNamesapce.Items, nil
 }
 
 // GetNamespace returns a namespace by name.
@@ -74,38 +76,15 @@ func (r *Resource) GetNamespace(name string) (*apiv1.Namespace, error) {
 // DeleteNamespace delete a namespace by name.
 func (r *Resource) DeleteNamespace(name string) error {
 	deletePolicy := metav1.DeletePropagationForeground
-	return r.client.CoreV1().Namespaces().Delete(r.ctx, name, metav1.DeleteOptions{
+	deleteOption := metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
-	})
+	}
+	return r.client.CoreV1().Namespaces().Delete(r.ctx, name, deleteOption)
 }
 
 /*
 Pod
 */
-
-// StartPod starts the given pod, and wait until it's running.
-func (r *Resource) StartPod(podSpec *apiv1.Pod, timeout int) (*apiv1.Pod, error) {
-	pod, err := r.client.CoreV1().Pods(podSpec.GetNamespace()).Create(r.ctx, podSpec, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	watcher, err := r.client.CoreV1().Pods(pod.GetNamespace()).Watch(r.ctx, metav1.SingleObject(pod.ObjectMeta))
-	if err != nil {
-		return nil, err
-	}
-	ctx, cacnel := context.WithTimeout(r.ctx, time.Duration(timeout)*time.Minute)
-	defer cacnel()
-
-	fmt.Printf("Waiting for pod %s to run...\n", pod.Name)
-	event, err := watch.UntilWithoutRetry(ctx, watcher, conditions.PodRunning)
-	if err != nil {
-		err := fmt.Errorf("Error occurred while waiting for pod to run: %v", err)
-		return nil, err
-	}
-	pod = event.Object.(*apiv1.Pod)
-	return pod, nil
-}
 
 // GetAllPods returns all pods in k8s cluster.
 func (r *Resource) GetAllPods() ([]apiv1.Pod, error) {
@@ -114,13 +93,13 @@ func (r *Resource) GetAllPods() ([]apiv1.Pod, error) {
 
 // GetNonSystemPods returns all non kube system pods.
 func (r *Resource) GetNonSystemPods() ([]apiv1.Pod, error) {
-	nsList, err := r.GetAllNamespace()
+	allNamesapce, err := r.GetAllNamespace()
 	if err != nil {
 		return nil, err
 	}
 
-	podsList := make([]apiv1.Pod, 0, 50)
-	for _, ns := range nsList {
+	retPods := make([]apiv1.Pod, 0, 50)
+	for _, ns := range allNamesapce {
 		if strings.HasPrefix(ns.Name, "kube") {
 			continue
 		}
@@ -128,22 +107,22 @@ func (r *Resource) GetNonSystemPods() ([]apiv1.Pod, error) {
 		if err != nil {
 			return nil, err
 		}
-		podsList = append(podsList, pods...)
+		retPods = append(retPods, pods...)
 	}
-	return podsList, nil
+	return retPods, nil
 }
 
 // GetPodsByNamespace returns pods in specified namespace.
 func (r *Resource) GetPodsByNamespace(namespace string) ([]apiv1.Pod, error) {
 	pods, err := r.client.CoreV1().Pods(namespace).List(r.ctx, metav1.ListOptions{})
 	if err != nil {
-		return make([]apiv1.Pod, 0), err
+		return nil, err
 	}
 	return pods.Items, nil
 }
 
-// GetSpecifiedPod returns a specified pod by namespace and name.
-func (r *Resource) GetSpecifiedPod(namespace string, podName string) (*apiv1.Pod, error) {
+// GetPod returns a specified pod by namespace and name.
+func (r *Resource) GetPod(namespace string, podName string) (*apiv1.Pod, error) {
 	pod, err := r.client.CoreV1().Pods(namespace).Get(r.ctx, podName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -154,65 +133,25 @@ func (r *Resource) GetSpecifiedPod(namespace string, podName string) (*apiv1.Pod
 	return pod, nil
 }
 
-// GetPodNamespace returns a specified namespace by given pod.
-func (r *Resource) GetPodNamespace(podName string) (string, error) {
-	pods, err := r.GetAllPods()
-	if err != nil {
-		return "", err
-	}
-
-	for _, pod := range pods {
-		if pod.ObjectMeta.Name == podName {
-			return pod.ObjectMeta.Namespace, nil
+// GetPodsByLabelsV2 .
+func (r *Resource) GetPodsByLabelsV2(namespace string, kvLabels map[string]string) ([]apiv1.Pod, error) {
+	labelSelector := labels.NewSelector()
+	for key, value := range kvLabels {
+		req, err := labels.NewRequirement(key, selection.Equals, []string{value})
+		if err != nil {
+			return nil, err
 		}
-	}
-	return "", fmt.Errorf("pod [%s] not found", podName)
-}
-
-/*
-Get pods of a service
-*/
-
-// GetPodsByService returns pods in a specified services.
-func (r *Resource) GetPodsByService(namespace, serviceName string) ([]apiv1.Pod, error) {
-	service, err := r.GetSpecifiedService(namespace, serviceName)
-	if err != nil {
-		return nil, err
-	}
-	podSelector := service.Spec.Selector
-	pods, err := r.GetPodsByLabels(namespace, podSelector)
-	if err != nil {
-		return nil, err
-	}
-	return pods, nil
-}
-
-// GetPodsByServiceV2 returns pods in a specified services.
-func (r *Resource) GetPodsByServiceV2(namespace, serviceName string) ([]apiv1.Pod, error) {
-	service, err := r.GetSpecifiedService(namespace, serviceName)
-	if err != nil {
-		return nil, err
+		labelSelector.Add(*req)
 	}
 
-	podSelector := labels.Set(service.Spec.Selector)
-	listOptions := metav1.ListOptions{LabelSelector: podSelector.AsSelector().String()}
+	listOptions := metav1.ListOptions{
+		LabelSelector: labelSelector.String(),
+	}
 	pods, err := r.client.CoreV1().Pods(namespace).List(r.ctx, listOptions)
 	if err != nil {
 		return nil, err
 	}
 	return pods.Items, nil
-}
-
-// GetSpecifiedService returns a specified service by namespace and name.
-func (r *Resource) GetSpecifiedService(namespace, name string) (*apiv1.Service, error) {
-	service, err := r.client.CoreV1().Services(namespace).Get(r.ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, fmt.Errorf("Service not found: namespace=%s, name=%s", namespace, name)
-		}
-		return nil, err
-	}
-	return service, nil
 }
 
 // GetPodsByLabels returns pods with specified labels.
@@ -241,6 +180,129 @@ func (r *Resource) GetPodsByLabels(namespace string, labels map[string]string) (
 		}
 	}
 	return matchedPods, nil
+}
+
+// GetPodNamespace returns a specified namespace by given pod.
+func (r *Resource) GetPodNamespace(podName string) (string, error) {
+	pods, err := r.GetAllPods()
+	if err != nil {
+		return "", err
+	}
+
+	for _, pod := range pods {
+		if pod.ObjectMeta.Name == podName {
+			return pod.ObjectMeta.Namespace, nil
+		}
+	}
+	return "", fmt.Errorf("pod [%s] not found", podName)
+}
+
+// StartPod starts the given pod, and wait until it's running.
+func (r *Resource) StartPod(podSpec *apiv1.Pod, timeout int) (*apiv1.Pod, error) {
+	pod, err := r.client.CoreV1().Pods(podSpec.GetNamespace()).Create(r.ctx, podSpec, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	watcher, err := r.client.CoreV1().Pods(pod.GetNamespace()).Watch(r.ctx, metav1.SingleObject(pod.ObjectMeta))
+	if err != nil {
+		return nil, err
+	}
+	ctx, cacnel := context.WithTimeout(r.ctx, time.Duration(timeout)*time.Minute)
+	defer cacnel()
+
+	fmt.Printf("Waiting for pod %s to run...\n", pod.Name)
+	event, err := watch.UntilWithoutRetry(ctx, watcher, conditions.PodRunning)
+	if err != nil {
+		err := fmt.Errorf("Error occurred while waiting for pod to run: %v", err)
+		return nil, err
+	}
+	pod = event.Object.(*apiv1.Pod)
+	return pod, nil
+}
+
+// DeletePod .
+func (r *Resource) DeletePod(namespace string, podName string) error {
+	defaults := int64(5)
+	gracePeriodSeconds := defaults
+	deleteOptions := metav1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriodSeconds,
+	}
+	return r.client.CoreV1().Pods(namespace).Delete(r.ctx, podName, deleteOptions)
+}
+
+/*
+Pod and Service
+*/
+
+// GetPodsByServiceV2 returns pods in a specified services.
+func (r *Resource) GetPodsByServiceV2(namespace, serviceName string) ([]apiv1.Pod, error) {
+	service, err := r.GetService(namespace, serviceName)
+	if err != nil {
+		return nil, err
+	}
+
+	podSelector := labels.Set(service.Spec.Selector)
+	listOptions := metav1.ListOptions{
+		LabelSelector: podSelector.AsSelector().String(),
+	}
+	pods, err := r.client.CoreV1().Pods(namespace).List(r.ctx, listOptions)
+	if err != nil {
+		return nil, err
+	}
+	return pods.Items, nil
+}
+
+// GetPodsByService returns pods in a specified services.
+func (r *Resource) GetPodsByService(namespace, serviceName string) ([]apiv1.Pod, error) {
+	service, err := r.GetService(namespace, serviceName)
+	if err != nil {
+		return nil, err
+	}
+
+	podSelector := service.Spec.Selector
+	pods, err := r.GetPodsByLabelsV2(namespace, podSelector)
+	if err != nil {
+		return nil, err
+	}
+	return pods, nil
+}
+
+// GetService returns a specified service by namespace and name.
+func (r *Resource) GetService(namespace, name string) (*apiv1.Service, error) {
+	service, err := r.client.CoreV1().Services(namespace).Get(r.ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil, fmt.Errorf("Service not found: namespace=%s, name=%s", namespace, name)
+		}
+		return nil, err
+	}
+	return service, nil
+}
+
+/*
+Deployment
+*/
+
+// GetDeploymentsByLabels .
+func (r *Resource) GetDeploymentsByLabels(namespace string, kvLabels map[string]string) ([]v1.Deployment, error) {
+	labelSelector := labels.NewSelector()
+	for key, value := range kvLabels {
+		req, err := labels.NewRequirement(key, selection.Equals, []string{value})
+		if err != nil {
+			return nil, err
+		}
+		labelSelector.Add(*req)
+	}
+
+	listOptions := metav1.ListOptions{
+		LabelSelector: labelSelector.String(),
+	}
+	deps, err := r.client.AppsV1().Deployments(namespace).List(r.ctx, listOptions)
+	if err != nil {
+		return nil, err
+	}
+	return deps.Items, nil
 }
 
 /*

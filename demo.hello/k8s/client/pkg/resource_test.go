@@ -5,25 +5,60 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-var k8sResource *Resource
+var (
+	isDebug     = true
+	k8sResource *Resource
+)
 
 func init() {
+	if isDebug {
+		return
+	}
 	kubeConfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
 	client, err := CreateK8sClientLocal(kubeConfig)
 	if err != nil {
 		panic("build k8s client error: " + err.Error())
 	}
-	k8sResource = NewResource(context.TODO(), client)
+	k8sResource = NewResource(context.Background(), client)
+}
+
+func TestSets(t *testing.T) {
+	// struct set test
+	words := strings.Split("this is a sets test. this is a hello world", " ")
+	s := sets.NewString(words...)
+
+	fmt.Println("sorted list:")
+	for _, w := range s.List() {
+		fmt.Printf("%s|", w)
+	}
+	fmt.Println()
+
+	fmt.Println("unsorted list:")
+	for _, w := range s.UnsortedList() {
+		fmt.Printf("%s|", w)
+	}
+	fmt.Println()
+
+	fmt.Println("intersection items:")
+	s2 := sets.NewString([]string{"hello", "world"}...)
+	ret := s.Intersection(s2)
+	for _, w := range ret.List() {
+		fmt.Printf("%s|", w)
+	}
+	fmt.Println()
 }
 
 func TestGetSpecifiedPod(t *testing.T) {
 	ns := "mini-test-ns"
 	name := "hello-minikube-865c7f68f4-dgwcx"
-	pod, err := k8sResource.GetSpecifiedPod(ns, name)
+	pod, err := k8sResource.GetPod(ns, name)
 	if err != nil {
 		t.Fatal(err)
 	}
