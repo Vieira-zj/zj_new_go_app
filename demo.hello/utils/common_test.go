@@ -11,6 +11,12 @@ import (
 	"time"
 )
 
+func TestGetRandNextInt(t *testing.T) {
+	for _, i := range [5]int{10, 30, 50, 80, 100} {
+		fmt.Printf("random int in [0-%d): %d\n", i, GetRandNextInt(i))
+	}
+}
+
 func TestGetSimpleCurrentDatetime(t *testing.T) {
 	fmt.Println("current datetime:", GetSimpleCurrentDatetime())
 }

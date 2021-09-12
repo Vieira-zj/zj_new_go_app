@@ -10,12 +10,23 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os/exec"
 	"reflect"
 	"syscall"
 	"time"
 	"unsafe"
 )
+
+/*
+Common
+*/
+
+// GetRandNextInt .
+func GetRandNextInt(number int) int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(number)
+}
 
 /*
 Datetime

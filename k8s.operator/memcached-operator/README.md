@@ -13,12 +13,12 @@ operator-sdk init --domain example.com --repo github.com/example/memcached-opera
 operator-sdk create api --group cache --version v1alpha1 --kind Memcached --resource --controller
 ```
 
-Update namespaces in `main.go` to list-watch.
+Update namespaces in `ctrl.Options{}` of `main.go` to list-watch.
 
 2. Implement API and Controller
 
-- `api/v1alpha1/memcached_types.go`
-- `controllers/memcached_controller.go`
+- crd: `api/v1alpha1/memcached_types.go`
+- controller: `controllers/memcached_controller.go`
 
 Generate code and CRD manifests.
 
@@ -131,44 +131,45 @@ make manifests
 - `config/crd/kustomization.yaml`
 
 ```yaml
-#- patches/webhook_in_memcacheds.yaml
-#- patches/cainjection_in_memcacheds.yaml
+- patches/webhook_in_memcacheds.yaml
+- patches/cainjection_in_memcacheds.yaml
 ```
 
 - `config/default/kustomization.yaml`
 
 ```yaml
-#- ../webhook
-#- ../certmanager
-#- manager_webhook_patch.yaml
-#- webhookcainjection_patch.yaml
+- ../webhook
+- ../certmanager
 
-#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
-#  objref:
-#    kind: Certificate
-#    group: cert-manager.io
-#    version: v1
-#    name: serving-cert # this name should match the one in certificate.yaml
-#  fieldref:
-#    fieldpath: metadata.namespace
-#- name: CERTIFICATE_NAME
-#  objref:
-#    kind: Certificate
-#    group: cert-manager.io
-#    version: v1
-#    name: serving-cert # this name should match the one in certificate.yaml
-#- name: SERVICE_NAMESPACE # namespace of the service
-#  objref:
-#    kind: Service
-#    version: v1
-#    name: webhook-service
-#  fieldref:
-#    fieldpath: metadata.namespace
-#- name: SERVICE_NAME
-#  objref:
-#    kind: Service
-#    version: v1
-#    name: webhook-service
+- manager_webhook_patch.yaml
+- webhookcainjection_patch.yaml
+
+- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
+  objref:
+    kind: Certificate
+    group: cert-manager.io
+    version: v1
+    name: serving-cert # this name should match the one in certificate.yaml
+  fieldref:
+    fieldpath: metadata.namespace
+- name: CERTIFICATE_NAME
+  objref:
+    kind: Certificate
+    group: cert-manager.io
+    version: v1
+    name: serving-cert # this name should match the one in certificate.yaml
+- name: SERVICE_NAMESPACE # namespace of the service
+  objref:
+    kind: Service
+    version: v1
+    name: webhook-service
+  fieldref:
+    fieldpath: metadata.namespace
+- name: SERVICE_NAME
+  objref:
+    kind: Service
+    version: v1
+    name: webhook-service
 ```
 
 - `config/default/webhookcainjection_patch.yaml`

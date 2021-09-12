@@ -91,6 +91,17 @@ func (r *Resource) GetAllPods() ([]apiv1.Pod, error) {
 	return r.GetPodsByNamespace("")
 }
 
+// GetRunningPods .
+func (r *Resource) GetRunningPods(pods []apiv1.Pod) []apiv1.Pod {
+	runningPods := make([]apiv1.Pod, 0, len(pods))
+	for _, pod := range pods {
+		if pod.Status.Phase == apiv1.PodRunning {
+			runningPods = append(runningPods, pod)
+		}
+	}
+	return runningPods
+}
+
 // GetNonSystemPods returns all non kube system pods.
 func (r *Resource) GetNonSystemPods() ([]apiv1.Pod, error) {
 	allNamesapce, err := r.GetAllNamespace()

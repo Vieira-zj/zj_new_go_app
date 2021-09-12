@@ -35,34 +35,36 @@ $ operator-sdk create api -h
 $ operator-sdk create api --group proxy --version v1alpha1 --kind Nginx --resource --controller
 ```
 
-### Define CR
+### 定义 CRD
 
-1. Implement CR.
+1. Implement API.
 
-`api/v1alpha1/nginx_types.go`
+- `api/v1alpha1/nginx_types.go`
 
 ```golang
 type NginxSpec struct {}
 type NginxStatus struct {}
 ```
 
-2. 执行下面命令生成 CR 资源相关代码 `api/v1alpha1/zz_generated.deepcopy.go`
+2. 执行下面命令生成 CRD 资源相关代码 `api/v1alpha1/zz_generated.deepcopy.go`。
 
 ```text
 $ make generate
 ```
 
-注：每次修改 CR 的定义后都需执行该命令。
+注：每次修改 CRD 的定义后都需执行该命令。
 
-3. 执行下面的命令生成 CR 定义文件 `nginx-operator/config/crd/bases/proxy.example.com_nginxes.yaml`
+3. 执行下面的命令生成 CRD manifests 定义文件 `nginx-operator/config/crd/bases/proxy.example.com_nginxes.yaml`
 
 ```text
 $ make manifests
 ```
 
-4. Implement Controller
+### 定义 Controller
 
-`controllers/nginx_controller.go`
+1. Implement Controller.
+
+- `controllers/nginx_controller.go`
 
 ```golang
 func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -70,7 +72,9 @@ func (r *NginxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 }
 ```
 
-当前 controller 会创建 deployment 和 service, 因此需要添加对应的 rbac 定义（参考下面创建 CR 实例时，日志中有权限错误）：
+2. 添加 rbac 定义。
+
+当前 controller 会创建 deployment 和 service, 因此需要添加对应的 rbac 定义（参考下面创建 CRD 实例时，日志中有权限错误）：
 
 ```golang
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;delete;get;list;update;patch;watch
@@ -90,10 +94,10 @@ $ eval $(minikube -p minikube docker-env)
 $ make docker-build IMG=example.docker.io/nginx-operator:v0.1
 Step 9/14 : RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
 Successfully built 32ec2c7963fc
-Successfully tagged controller:latest
+Successfully tagged example.docker.io/nginx-operator:v0.1
 
 $ docker images
-controller:latest
+example.docker.io/nginx-operator:v0.1
 ```
 
 Custom image tag name in `Makefile`:
@@ -139,7 +143,7 @@ pod/nginx-operator-controller-manager-b8f479c94-2ttm6   2/2     Running   0     
 If nginx-operator-controller-manager pod error `ImagePullBackOff`:
 
 ```text
-Failed to pull image "controller:latest": rpc error: code = Unknown desc = Error response from daemon: pull access denied for controller, repository does not exist or may require 'docker login': denied: requested access to the resource is denied
+Failed to pull image "example.docker.io/nginx-operator:v0.1": rpc error: code = Unknown desc = Error response from daemon: pull access denied for controller, repository does not exist or may require 'docker login': denied: requested access to the resource is denied
 ```
 
 Update deploy config `imagePullPolicy: IfNotPresent`:
@@ -157,11 +161,11 @@ Starting Controller     {"reconciler group": "proxy.example.com", "reconciler ki
 Starting workers        {"reconciler group": "proxy.example.com", "reconciler kind": "Nginx", "worker count": 1}
 ```
 
-### Deploy a CR instance
+### Deploy a CRD instance
 
-1. Create CR Nginx manifest.
+1. Create CRD Nginx manifest.
 
-`config/samples/proxy_v1alpha1_nginx.yaml`
+- `config/samples/proxy_v1alpha1_nginx.yaml`
 
 ```yaml
 apiVersion: proxy.example.com/v1alpha1
@@ -177,14 +181,14 @@ spec:
     nodePort: 30002
 ```
 
-2. Apply a CR Nginx instance.
+2. Apply a CRD Nginx instance.
 
 ```text
 $ kubectl apply -f config/samples/proxy_v1alpha1_nginx.yaml
 nginx.proxy.example.com/nginx-app created
 ```
 
-3. Check deploy CR Nginx instance, and related k8s components.
+3. Check deploy CRD Nginx instance, and related k8s components.
 
 ```text
 $ kubectl get nginx/nginx-app -o yaml
@@ -194,7 +198,7 @@ status:
 $ kubectl get all -n default
 ```
 
-If auth error in nginx-operator-controller-manager pod:
+**Note**: if auth error in nginx-operator-controller-manager pod:
 
 ```text
 $ kubectl logs nginx-operator-controller-manager-b8f479c94-nqsv2 -c manager -n nginx-operator-system
@@ -212,14 +216,14 @@ Subjects:
   Kind            Name                               Namespace
   ----            ----                               ---------
   ServiceAccount  nginx-operator-controller-manager  nginx-operator-system
-
-$ kubectl describe clusterrole/nginx-operator-manager-role
-$ kubectl edit clusterrole/nginx-operator-manager-role
 ```
 
 Then add below auth to clusterrole:
 
 ```text
+$ kubectl describe clusterrole/nginx-operator-manager-role
+$ kubectl edit clusterrole/nginx-operator-manager-role
+
 - apiGroups:
   - apps
   resources:
@@ -252,7 +256,7 @@ Update CR Nginx Status {"reconciler group": "proxy.example.com", "reconciler kin
 Reconciling Nginx {"reconciler group": "proxy.example.com", "reconciler kind": "Nginx", "name": "nginx-app", "namespace": "default"}
 ```
 
-Verify created k8s components of CR Nginx instance.
+Verify created k8s components of CRD Nginx instance.
 
 ```text
 $ kubectl get all -n default
@@ -268,14 +272,14 @@ Endpoints:                172.17.0.4:80
 
 Note: here use minikube vm ip instead of `localhost`.
 
-### Update CR Nginx manifest
+### Update CRD Nginx manifest
 
 1. Update `proxy_v1alpha1_nginx.yaml`: 
 
 - `size: 2`
 - `nodePort: 30009`
 
-2. Re-deploy CR Nginx instance.
+2. Re-deploy CRD Nginx instance.
 
 ```text
 $ kubectl apply -f config/samples/proxy_v1alpha1_nginx.yaml
@@ -306,9 +310,9 @@ Reconciling Nginx {"reconciler group": "proxy.example.com", "reconciler kind": "
 Update CR Nginx Status {"reconciler group": "proxy.example.com", "reconciler kind": "Nginx", "name": "nginx-app", "namespace": "default"}
 ```
 
-### Clear CR and CRD
+### Clearup CRD
 
-1. Delete CR Nginx instance.
+1. Delete CRD Nginx instance.
 
 ```text
 $ kubectl delete -f config/samples/proxy_v1alpha1_nginx.yaml
@@ -335,9 +339,9 @@ service "nginx-operator-controller-manager-metrics-service" deleted
 deployment.apps "nginx-operator-controller-manager" deleted
 ```
 
-3. 删除 CR docker build 过程中的临时镜像文件。
+3. 删除 CRD docker build 过程中的临时镜像文件。
 
-CR docker build 使用二阶段构建，执行编译的镜像文件有 `1.84GB`。并且多次构建，会产生多个临时镜像文件。
+CRD docker build 使用二阶段构建，执行编译的镜像文件有 `1.84GB`。并且多次构建，会产生多个临时镜像文件。
 
 ```text
 $ docker images | grep none | grep -v k8s | awk '{print $3}' | xargs docker rmi
