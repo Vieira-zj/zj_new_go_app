@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -114,14 +115,23 @@ func main() {
 
 		// go run -ldflags "-X main.version=1.0.0 -X 'main.buildTime=`date`' -X 'main.goVersion=`go version`'" main.go -h
 		if len(version) > 0 {
-			fmt.Printf("\nBuild info:\n%s\n%s\n%s\n", version, buildTime, goVersion)
+			fmt.Printf("\nBuild info:\nversion: %s\n", version)
+			fmt.Printf("build time: %s\n", buildTime)
+			fmt.Println(goVersion)
 		}
 
 		// for io process, default GOMAXPROCS is min, and prefer to set as "5 * NumCPU"
 		fmt.Println("\nApp info:")
 		fmt.Printf("cpu threads count: %d\n", runtime.NumCPU())
 		fmt.Printf("os threads count: %d\n", runtime.GOMAXPROCS(-1))
-		fmt.Printf("goroutines count: %d\n\n", runtime.NumGoroutine())
+		fmt.Printf("goroutines count: %d\n", runtime.NumGoroutine())
+
+		fmt.Println("\nDeps info:")
+		if info, ok := debug.ReadBuildInfo(); ok {
+			for _, dep := range info.Deps {
+				fmt.Printf("%s=%s\n", dep.Path, dep.Version)
+			}
+		}
 		return
 	}
 

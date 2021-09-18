@@ -847,15 +847,34 @@ func TestDemo31(t *testing.T) {
 		customError: err,
 	})
 
-	for _, err := range errs {
-		// check error type
+	errTypeCheckV1 := func(err iError) {
 		if target, ok := err.(badInputError); ok {
-			fmt.Println(target.Text(), "for bad input")
+			fmt.Println(target.Text(), "for bad input (v1)")
 		} else if target, ok := err.(uriNotFoundError); ok {
-			fmt.Println(target.Text(), "for uri not found")
+			fmt.Println(target.Text(), "for uri not found (v1)")
 		} else {
-			fmt.Println(err.Text())
+			fmt.Println(err.Text(), "(v1)")
 		}
+	}
+
+	errTypeCheckV2 := func(err iError) {
+		switch err.(type) {
+		case badInputError:
+			fmt.Println(err.Text(), "for bad input (v2)")
+		case uriNotFoundError:
+			fmt.Println(err.Text(), "for uri not found (v2)")
+		default:
+			fmt.Println(err.Text(), "(v2)")
+		}
+	}
+
+	for _, err := range errs {
+		errTypeCheckV1(err)
+	}
+	fmt.Println()
+
+	for _, err := range errs {
+		errTypeCheckV2(err)
 	}
 }
 
