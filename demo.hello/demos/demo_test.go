@@ -916,6 +916,31 @@ return a+b
 	fmt.Println("imports with format done")
 }
 
+func TestDemo33(t *testing.T) {
+	// code block
+	codeBlock01 := func() {
+		fmt.Println("code block01 start")
+		defer func() {
+			fmt.Println("code block01 defer func")
+		}()
+		time.Sleep(time.Second)
+		fmt.Println("code block01 end")
+	}
+
+	fmt.Println("code block test setup")
+	{
+		defer func() {
+			fmt.Println("code block02 defer func")
+		}()
+		fmt.Println("code block02 start")
+		time.Sleep(time.Second)
+		fmt.Println("code block02 end")
+	}
+
+	codeBlock01()
+	fmt.Println("code block test clearup")
+}
+
 func TestDemo98(t *testing.T) {
 	// print bytes
 	b := []byte("world")
