@@ -55,7 +55,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">demo.hello/tests/cover/mock.go (87.5%)</option>
+				<option value="file0">demo.hello/tests/cover/mock.go (93.8%)</option>
 				
 				</select>
 			</div>
@@ -85,7 +85,7 @@ import (
         "strings"
 )
 
-func sayHello(name string) <span class="cov10" title="2">{
+func sayHello(name string) <span class="cov6" title="2">{
         // mock comments1
         fmt.Print("hello ")
         fmt.Println("world")
@@ -102,11 +102,31 @@ func isOk(flag bool) string <span class="cov1" title="1">{
         <span class="cov0" title="0">return "fail"</span>
 }
 
+// lineCoverage returns "ax", "ay", "bx", "by"
+func lineCoverage(flagA bool, flagX bool) string <span class="cov10" title="3">{
+        ret := ""
+        if flagA </span><span class="cov6" title="2">{
+                ret += "a"
+        }</span> else<span class="cov1" title="1"> {
+                ret += "b"
+        }</span>
+
+        <span class="cov10" title="3">if flagX </span><span class="cov1" title="1">{
+                ret += "x"
+        }</span> else<span class="cov6" title="2"> {
+                ret += "y"
+        }</span>
+        <span class="cov10" title="3">return ret</span>
+}
+
 // StartLine,StartCol,EndLine,EndCol,NumStmt,Count
 // block1: 8.28,13.2 3 2
 // block2: 15.29,17.10 2 1
 // block3: 22.2,22.15 1 0
 // block4: 17.10,21.3 2 1
+//
+// block5: 26.50,28.11 2 2
+// block6: 34.2,34.11 1 2
 //
 // 以 block 为单位来统计
 // tab =&gt; 2 spaces

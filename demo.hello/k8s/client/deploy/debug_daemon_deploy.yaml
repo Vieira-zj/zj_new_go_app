@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  namespace: k8s-test
+  name: debug-daemon
+  labels:
+    app.kubernetes.io/component: debug-daemon
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: debug-daemon
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: debug-daemon
+    spec:
+      # if k8s-client in cluster, it needs auth to list/watch pod
+      # serviceAccountName: sa-debug-daemon
+      hostNetwork: true
+      hostIPC: true
+      hostPID: true
+      containers:
+        - name: debug-daemon
+          image: zhengjin/debug-daemon:v1.0
+          imagePullPolicy: IfNotPresent
+          command:
+           - "sh"
+           - "-c"
+           - "while true; do echo 'hello'; sleep 10; done;"
+          env:
+            - name: TZ
+              value: UTC
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: socket-path
+              mountPath: /var/run/docker.sock
+      volumes:
+        - name: socket-path
+          hostPath:
+            path: "/var/run/docker.sock"
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule

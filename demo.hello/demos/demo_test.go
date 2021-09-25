@@ -575,7 +575,7 @@ func TestDemo24(t *testing.T) {
 }
 
 /*
-status by binary
+status by bit
 refer: github.com/fsnotify/fsnotify
 */
 

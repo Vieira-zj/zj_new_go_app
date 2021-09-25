@@ -197,3 +197,56 @@ root# wget "http://172.17.0.5:8088/" -S -O -
 root# wget "http://172.17.0.5:8080/" -S -O -
 ```
 
+## Remote exec debug
+
+### 方案一
+
+原理：
+
+1. 获取目标pod所包含container的pid, 通过 pid 构建 nsexec 命令
+  - k8s-client -> target pod -> node ip + container id -> docker-client -> pid -> command: nsexec -p /proc/{pid}/ns/pid -- {cmd}
+
+2. 部署拥有特权的 deamonset pod, 通过该pod执行 nsexec 命令
+  - k8s-client -> daemonset pod (with privilege) -> spdy executor -> run cmd within pid ns (by "nsexec")
+
+步骤：
+
+1. Build debug-daemon image
+
+```sh
+docker build -t zhengjin/debug-daemon:v1.0 -f images/Dockerfile .
+```
+
+2. Create debug DaemonSet with privileged
+
+```sh
+# deploy
+kubectl apply -f deploy/debug_daemon_deploy.yaml
+# check deploy
+kubectl get daemonset/debug-daemon -n k8s-test
+```
+
+Note: since Kubernetes 1.6, DaemonSets do not schedule on master nodes by default. In order to schedule it on master, you have to add a toleration into the Pod spec section:
+
+```sh
+tolerations:
+- key: node-role.kubernetes.io/master
+  effect: NoSchedule
+```
+
+3. Start a pod for test
+
+```sh
+kubectl run test-pod -it --rm --restart=Never -n k8s-test --image=busybox:1.30 sh
+```
+
+4. Run remote exec debug test
+
+```sh
+go test -timeout 10s -run ^TestExecCmdBypass$ demo.hello/k8s/client/pkg -v -count=1
+```
+
+### 方案二
+
+TODO:
+

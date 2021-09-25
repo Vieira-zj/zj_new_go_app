@@ -6,6 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/aws/aws-sdk-go v1.38.51
 	github.com/bep/debounce v1.2.0
+	github.com/docker/docker v20.10.2+incompatible
 	github.com/emicklei/proto v1.9.0
 	github.com/evanphx/json-patch v4.11.0+incompatible
 	github.com/fatih/color v1.7.0
@@ -15,7 +16,6 @@ require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/mock v1.5.0
 	github.com/gorilla/websocket v1.4.2
-	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jmoiron/sqlx v1.3.3
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
@@ -37,10 +37,12 @@ require (
 	golang.org/x/tools v0.1.2
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.22.1
-	k8s.io/apimachinery v0.22.1
-	k8s.io/client-go v0.22.1
+	k8s.io/api v0.22.2
+	k8s.io/apimachinery v0.22.2
+	k8s.io/client-go v0.22.2
+	k8s.io/kubectl v0.0.0
 	k8s.io/kubernetes v1.22.1
+	sigs.k8s.io/controller-runtime v0.10.1
 )
 
 replace (
