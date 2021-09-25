@@ -17,10 +17,6 @@ function list_namespace_pods() {
     ${client_cli} -listnspods -n mini-test-ns
 }
 
-function monitor_pods() {
-    ${client_cli} -monitorpods -n mini-test-ns
-}
-
 function list_service_pods() {
     ${client_cli} -getservicepods -n mini-test-ns -s hello-minikube
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -29,7 +28,6 @@ func main() {
 
 	isListNamespacePods := flag.Bool("listnspods", false, "get pods in a namespace.")
 	isGetServicePods := flag.Bool("getservicepods", false, "get pods in a service.")
-	isMonitorPods := flag.Bool("monitorpods", false, "monitor all pods status.")
 	flag.Parse()
 
 	if *help {
@@ -79,19 +77,6 @@ func main() {
 			k8spkg.PrintPodStatus(&pod)
 			fmt.Println()
 		}
-	}
-
-	if *isMonitorPods {
-		podInfos, err := k8spkg.GetAllPodInfos(resource, *namespace)
-		if err != nil {
-			panic(err.Error())
-		}
-
-		b, err := json.Marshal(podInfos)
-		if err != nil {
-			panic(err.Error())
-		}
-		fmt.Println(string(b))
 	}
 
 	if len(*inject) > 0 {

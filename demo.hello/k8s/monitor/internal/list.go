@@ -1,4 +1,4 @@
-package pkg
+package internal
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	k8spkg "demo.hello/k8s/client/pkg"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -18,7 +19,7 @@ type PodStatus struct {
 }
 
 // GetAllPodInfos returns all pod status.
-func GetAllPodInfos(resource *Resource, namespace string) ([]*PodStatus, error) {
+func GetAllPodInfos(resource *k8spkg.Resource, namespace string) ([]*PodStatus, error) {
 	var (
 		pods []v1.Pod
 		err  error

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	k8spkg "demo.hello/k8s/client/pkg"
+	internalpkg "demo.hello/k8s/monitor/internal"
 	"github.com/labstack/echo"
 )
 
@@ -26,7 +27,7 @@ func GetPodsStatus(c echo.Context) error {
 	}
 
 	resource.SetContext(c.Request().Context())
-	podInfos, err := k8spkg.GetAllPodInfos(resource, namespace)
+	podInfos, err := internalpkg.GetAllPodInfos(resource, namespace)
 	if err != nil {
 		c.Logger().Error(err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())

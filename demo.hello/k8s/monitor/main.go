@@ -1,7 +1,7 @@
 package main
 
 import (
-	"demo.hello/k8s/server/handlers"
+	"demo.hello/k8s/monitor/handlers"
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/log"
 )

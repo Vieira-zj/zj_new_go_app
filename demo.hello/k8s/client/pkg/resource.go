@@ -246,6 +246,18 @@ func (r *Resource) DeletePod(namespace string, podName string) error {
 Pod and Service
 */
 
+// GetService returns a specified service by namespace and name.
+func (r *Resource) GetService(namespace, name string) (*apiv1.Service, error) {
+	service, err := r.client.CoreV1().Services(namespace).Get(r.ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil, fmt.Errorf("Service not found: namespace=%s, name=%s", namespace, name)
+		}
+		return nil, err
+	}
+	return service, nil
+}
+
 // GetPodsByServiceV2 returns pods in a specified services.
 func (r *Resource) GetPodsByServiceV2(namespace, serviceName string) ([]apiv1.Pod, error) {
 	service, err := r.GetService(namespace, serviceName)
@@ -277,18 +289,6 @@ func (r *Resource) GetPodsByService(namespace, serviceName string) ([]apiv1.Pod,
 		return nil, err
 	}
 	return pods, nil
-}
-
-// GetService returns a specified service by namespace and name.
-func (r *Resource) GetService(namespace, name string) (*apiv1.Service, error) {
-	service, err := r.client.CoreV1().Services(namespace).Get(r.ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, fmt.Errorf("Service not found: namespace=%s, name=%s", namespace, name)
-		}
-		return nil, err
-	}
-	return service, nil
 }
 
 /*
