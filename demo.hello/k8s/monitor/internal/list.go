@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -19,18 +20,18 @@ type PodStatus struct {
 }
 
 // GetAllPodInfos returns all pod status.
-func GetAllPodInfos(resource *k8spkg.Resource, namespace string) ([]*PodStatus, error) {
+func GetAllPodInfos(ctx context.Context, resource *k8spkg.Resource, namespace string) ([]*PodStatus, error) {
 	var (
 		pods []v1.Pod
 		err  error
 	)
 	if len(namespace) == 0 {
-		pods, err = resource.GetAllPods()
+		pods, err = resource.GetAllPods(ctx)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		pods, err = resource.GetPodsByNamespace(namespace)
+		pods, err = resource.GetPodsByNamespace(ctx, namespace)
 		if err != nil {
 			return nil, err
 		}

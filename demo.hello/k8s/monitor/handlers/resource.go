@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 
 	k8spkg "demo.hello/k8s/client/pkg"
@@ -16,7 +15,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	resource = k8spkg.NewResource(context.TODO(), clientset)
+	resource = k8spkg.NewResource(clientset)
 }
 
 // GetPodsStatus returns pods status: pod name, status, readiness and message.
@@ -26,8 +25,7 @@ func GetPodsStatus(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "namespace cannot be empty.")
 	}
 
-	resource.SetContext(c.Request().Context())
-	podInfos, err := internalpkg.GetAllPodInfos(resource, namespace)
+	podInfos, err := internalpkg.GetAllPodInfos(c.Request().Context(), resource, namespace)
 	if err != nil {
 		c.Logger().Error(err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())

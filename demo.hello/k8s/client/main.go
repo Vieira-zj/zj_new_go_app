@@ -44,16 +44,16 @@ func main() {
 		}
 	}
 
-	context, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
 	defer cancel()
-	resource := k8spkg.NewResource(context, clientset)
+	resource := k8spkg.NewResource(clientset)
 
 	if *isListNamespacePods {
 		if len(*namespace) == 0 {
 			panic(errors.New("namepsace name is empty"))
 		}
 
-		pods, err := resource.GetPodsByNamespace(*namespace)
+		pods, err := resource.GetPodsByNamespace(ctx, *namespace)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -68,7 +68,7 @@ func main() {
 			panic(errors.New("namespace or service name is empty"))
 		}
 
-		pods, err := resource.GetPodsByServiceV2(*namespace, *service)
+		pods, err := resource.GetPodsByServiceV2(ctx, *namespace, *service)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -80,7 +80,7 @@ func main() {
 	}
 
 	if len(*inject) > 0 {
-		injector := k8spkg.NewInjector(context, clientset)
+		injector := k8spkg.NewInjector(ctx, clientset)
 		if *inject == "sidecar" {
 			if err := injector.InjectBusyboxSidecar(*namespace, *deploy); err != nil {
 				panic(err.Error())

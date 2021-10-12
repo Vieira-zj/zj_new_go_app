@@ -13,20 +13,18 @@ import (
 )
 
 var (
-	isDebug     = true
+	ctx         context.Context
 	k8sResource *Resource
 )
 
 func init() {
-	if isDebug {
-		return
-	}
 	kubeConfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
 	client, err := CreateK8sClientLocal(kubeConfig)
 	if err != nil {
 		panic("build k8s client error: " + err.Error())
 	}
-	k8sResource = NewResource(context.Background(), client)
+	ctx = context.Background()
+	k8sResource = NewResource(client)
 }
 
 func TestSets(t *testing.T) {
@@ -58,7 +56,7 @@ func TestSets(t *testing.T) {
 func TestGetSpecifiedPod(t *testing.T) {
 	ns := "mini-test-ns"
 	name := "hello-minikube-865c7f68f4-dgwcx"
-	pod, err := k8sResource.GetPod(ns, name)
+	pod, err := k8sResource.GetPod(ctx, ns, name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +65,7 @@ func TestGetSpecifiedPod(t *testing.T) {
 
 func TestGetPodsByNamespace(t *testing.T) {
 	ns := "mini-test-ns"
-	pods, err := k8sResource.GetPodsByNamespace(ns)
+	pods, err := k8sResource.GetPodsByNamespace(ctx, ns)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +78,7 @@ func TestGetPodsByNamespace(t *testing.T) {
 
 func TestGetNamespace(t *testing.T) {
 	ns := "k8s-test-ns"
-	namespace, err := k8sResource.GetNamespace(ns)
+	namespace, err := k8sResource.GetNamespace(ctx, ns)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,14 +87,14 @@ func TestGetNamespace(t *testing.T) {
 
 func TestGetPodNamespace(t *testing.T) {
 	name := "hello-minikube-865c7f68f4-dgwcx"
-	namespace, err := k8sResource.GetPodNamespace(name)
+	namespace, err := k8sResource.GetPodNamespace(ctx, name)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("Pod [%s] in namespace: [%s]\n", name, namespace)
 
 	name = "pod-not-exist"
-	namespace, err = resource.GetPodNamespace(name)
+	namespace, err = resource.GetPodNamespace(ctx, name)
 	if err == nil {
 		t.Fatal("want pod NotFoundError, got specified pod")
 	}
@@ -106,7 +104,7 @@ func TestGetPodNamespace(t *testing.T) {
 func TestGetPodsByService(t *testing.T) {
 	namespace := "mini-test-ns"
 	service := "hello-minikube"
-	pods, err := k8sResource.GetPodsByService(namespace, service)
+	pods, err := k8sResource.GetPodsByService(ctx, namespace, service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +119,7 @@ func TestGetPodsByService(t *testing.T) {
 func TestGetPodsByServiceV2(t *testing.T) {
 	namespace := "mini-test-ns"
 	service := "hello-minikube"
-	pods, err := k8sResource.GetPodsByServiceV2(namespace, service)
+	pods, err := k8sResource.GetPodsByServiceV2(ctx, namespace, service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,11 +132,10 @@ func TestGetPodsByServiceV2(t *testing.T) {
 }
 
 func TestGetNonSystemPods(t *testing.T) {
-	context, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(3)*time.Second)
 	defer cancel()
-	k8sResource.SetContext(context)
 
-	pods, err := k8sResource.GetNonSystemPods()
+	pods, err := k8sResource.GetNonSystemPods(timeoutCtx)
 	if err != nil {
 		panic(err.Error())
 	}

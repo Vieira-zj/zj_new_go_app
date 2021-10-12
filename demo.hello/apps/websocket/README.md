@@ -1,4 +1,4 @@
-# WebSocket Demo
+# WebSocket App
 
 描述：使用 websocket 实时同步后端任务执行状态。
 
