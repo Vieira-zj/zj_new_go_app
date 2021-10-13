@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>webshell xterm demo</title>
+    <link rel="stylesheet" type="text/css" href="./dist/xterm.css" />
+    <style>
+      body {
+        border-width: 0;
+        margin: 0;
+      }
+      .content {
+        font-family: 'Avenir', Helvetica, Arial, sans-serif;
+        color: #2c3e50;
+      }
+      h1 {
+        text-align: center;
+      }
+      #app {
+        padding: 10px;
+        border: 1px solid #ccc;
+        margin: 10px, 10px;
+      }
+      select, button {
+        margin: 3px;
+      }
+      button {
+        padding: 6px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        background: #f0f0f0;
+      }
+      button:hover {
+        background: #e0e0e0;
+      }
+      #terminal .terminal.xterm {
+        height: 100%;
+      }
+      #terminal .xterm-viewport {
+        height: 100%;
+      }
+      #terminal {
+        height: 100%;
+        width: 100%;
+        padding: 0%;
+        padding-bottom: 5%;
+        margin: 0%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="content">K8S Web Shell Demo</h1>
+    <div id="app" class="content">
+      <label>Namespace:</label>
+      <select v-model="nsSelected">
+          <option v-for="option in nsOptions" v-bind:value="option.value">
+            {{ option.value }}
+          </option>
+      </select>
+      <label>Pod:</label>
+      <select v-model="podSelected">
+          <option v-for="option in podOptions" v-bind:value="option.value">
+            {{ option.value }}
+          </option>
+      </select>
+      <label>Container:</label>
+      <select v-model="containerSelected">
+          <option v-for="option in containerOptions" v-bind:value="option.value">
+            {{ option.value }}
+          </option>
+      </select>
+      <p>Selected: Namespace [ {{ nsSelected }} ] Pod [ {{ podSelected }} ] Container [ {{ containerSelected }} ]</p>
+      <button v-on:click="connect">Connect</button>
+      <button v-on:click="closeWs">Close</button>
+    </div>
+    <p><div id="terminal"></div>
+    <script src="./dist/vue.js"></script>
+    <script src="./dist/axios.min.js"></script>
+    <script src="./dist/xterm.js"></script>
+    <script src="./dist/addons/fit/fit.js"></script>
+    <!-- <script src="./dist/addons/fullscreen/fullscreen.js"></script> -->
+    <!-- <script src="./dist/addons/fullscreen/fullscreen.css"></script> -->
+    <script src="./terminal.js"></script>
+    <script>
+      window.onload = function() {
+        Terminal.applyAddon(fit)
+      }
+
+      const defaultValue = 'None'
+      const host = ws_host
+
+      let app = new Vue({
+        el: '#app',
+        data () {
+          return {
+            nsSelected: defaultValue,
+            podSelected: defaultValue,
+            containerSelected: defaultValue,
+            nsOptions: [{value: defaultValue}],
+            podOptions: [{value: defaultValue}],
+            containerOptions: [{value: defaultValue}]
+          }
+        },
+        mounted () {
+          let vm = this
+          axios
+            .get(`http://${host}/query/ns`)
+            .then(function(response) {
+              let namespaces = response.data.data.namespaces
+              if (!Boolean(namespaces)) {
+                return
+              }
+              for (let ns of namespaces) {
+                vm.nsOptions.push({value: ns})
+              }
+            })
+            .catch(function(err) {
+              console.warn('Get cluster namespaces failed:', err)
+            })
+        },
+        methods: {
+          connect () {
+            console.log('Connect to websocket server')
+            // Terminal.applyAddon(fullscreen)
+            if (this.nsSelected === defaultValue) {
+              alert('Namespace is not set!')
+              return
+            }
+            if (this.podSelected === defaultValue) {
+              alert('Pod is not set!')
+              return
+            }
+            if (this.containerSelected === defaultValue) {
+              connectWS(this.nsSelected, this.podSelected, false)
+              return
+            }
+            connectWS(this.nsSelected, this.podSelected, this.containerSelected)
+          },
+          closeWs () {
+            console.log('Close websocket session')
+            disconnectWS()
+          }
+        },
+        watch: {
+          nsSelected: function (newValue, oldValue) {
+            let options = [{value: defaultValue}]
+            if (newValue === defaultValue) {
+              this.podOptions = options
+              this.podSelected = defaultValue
+              return
+            }
+            let vm = this
+            axios
+              .get(`http://${host}/query/pods?ns=${newValue}`)
+              .then(function(response) {
+                let pods = response.data.data.pods
+                if (!Boolean(pods)) {
+                  pods = []
+                }
+                for (let pod of pods) {
+                  options.push({value: pod})
+                }
+                vm.podOptions = options
+                vm.podSelected = defaultValue
+              })
+              .catch(function(err) {
+                console.warn(`Get namespace [${newValue}] pods failed:`, err)
+              })
+          },
+          podSelected: function (newValue, oldValue) {
+            let options = [{value: defaultValue}]
+            if (newValue === defaultValue) {
+              this.containerOptions = options
+              this.containerSelected = defaultValue
+              return
+            }
+            let vm = this
+            axios
+              .get(`http://${host}/query/containers?ns=${vm.nsSelected}&pod=${newValue}`)
+              .then(function(response) {
+                let containers = response.data.data.containers
+                if (!Boolean(containers)) {
+                  containers = []
+                }
+                for (let container of containers) {
+                  options.push({value: container})
+                }
+                vm.containerOptions = options
+                vm.containerSelected = defaultValue
+              })
+              .catch(function(err) {
+                console.warn(`Get namespace [${vm.nsSelected}] pod [${newValue}] containers failed:`, err)
+              })
+          }
+        }
+      })
+    </script>
+  </body>
+</html>

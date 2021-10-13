@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	v1 "k8s.io/api/apps/v1"
@@ -17,22 +18,29 @@ import (
 	"k8s.io/kubernetes/pkg/client/conditions"
 )
 
+var (
+	resource *Resource
+	once     = sync.Once{}
+)
+
 // Resource operator for k8s objects like namespace, pod and deploy.
 type Resource struct {
 	client *kubernetes.Clientset
 }
 
-var resource *Resource
-
 // NewResource creates an instance of resource.
 func NewResource(client *kubernetes.Clientset) *Resource {
-	if resource != nil {
-		return resource
-	}
-	resource = &Resource{
-		client: client,
-	}
+	once.Do(func() {
+		resource = &Resource{
+			client: client,
+		}
+	})
 	return resource
+}
+
+// GetClient returns k8s client.
+func (r *Resource) GetClient() *kubernetes.Clientset {
+	return r.client
 }
 
 /*
@@ -79,6 +87,18 @@ func (r *Resource) DeleteNamespace(ctx context.Context, name string) error {
 Pod
 */
 
+// GetPod returns a specified pod by namespace and name.
+func (r *Resource) GetPod(ctx context.Context, namespace string, podName string) (*apiv1.Pod, error) {
+	pod, err := r.client.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil, fmt.Errorf("Pod not found: namespace=%s, name=%s", namespace, podName)
+		}
+		return nil, err
+	}
+	return pod, nil
+}
+
 // GetAllPods returns all pods in k8s cluster.
 func (r *Resource) GetAllPods(ctx context.Context) ([]apiv1.Pod, error) {
 	return r.GetPodsByNamespace(ctx, "")
@@ -123,18 +143,6 @@ func (r *Resource) GetPodsByNamespace(ctx context.Context, namespace string) ([]
 		return nil, err
 	}
 	return pods.Items, nil
-}
-
-// GetPod returns a specified pod by namespace and name.
-func (r *Resource) GetPod(ctx context.Context, namespace string, podName string) (*apiv1.Pod, error) {
-	pod, err := r.client.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, fmt.Errorf("Pod not found: namespace=%s, name=%s", namespace, podName)
-		}
-		return nil, err
-	}
-	return pod, nil
 }
 
 // GetPodsByLabelsV2 .
@@ -199,6 +207,25 @@ func (r *Resource) GetPodNamespace(ctx context.Context, podName string) (string,
 		}
 	}
 	return "", fmt.Errorf("pod [%s] not found", podName)
+}
+
+// IsPodExec checks the given pod is validate for exec command.
+func (r *Resource) IsPodExec(ctx context.Context, namespace, podName, containerName string) (bool, error) {
+	pod, err := r.GetPod(ctx, namespace, podName)
+	if err != nil {
+		return false, err
+	}
+
+	if pod.Status.Phase == apiv1.PodSucceeded || pod.Status.Phase == apiv1.PodFailed {
+		return false, fmt.Errorf("Cannot exec in a container of [%s] pod [%s/%s]", pod.Status.Phase, namespace, podName)
+	}
+
+	for _, c := range pod.Spec.Containers {
+		if c.Name == containerName {
+			return true, nil
+		}
+	}
+	return false, fmt.Errorf("No container [%s] found in pod [%s/%s]", containerName, namespace, podName)
 }
 
 // StartPod starts a given pod, and wait until it's running.

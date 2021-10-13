@@ -53,6 +53,28 @@ func TestSets(t *testing.T) {
 	fmt.Println()
 }
 
+func TestGetAllNamespace(t *testing.T) {
+	namespaces, err := k8sResource.GetAllNamespace(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	names := make([]string, 0, len(namespaces))
+	for _, ns := range namespaces {
+		names = append(names, ns.GetName())
+	}
+	fmt.Println("all namespaces:\n", strings.Join(names, " | "))
+}
+
+func TestGetNamespace(t *testing.T) {
+	ns := "k8s-test-ns"
+	namespace, err := k8sResource.GetNamespace(ctx, ns)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("Namespace:", namespace.ObjectMeta.Name)
+}
+
 func TestGetSpecifiedPod(t *testing.T) {
 	ns := "mini-test-ns"
 	name := "hello-minikube-865c7f68f4-dgwcx"
@@ -74,15 +96,6 @@ func TestGetPodsByNamespace(t *testing.T) {
 	for _, pod := range pods {
 		PrintPodInfo(&pod)
 	}
-}
-
-func TestGetNamespace(t *testing.T) {
-	ns := "k8s-test-ns"
-	namespace, err := k8sResource.GetNamespace(ctx, ns)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println("Namespace:", namespace.ObjectMeta.Name)
 }
 
 func TestGetPodNamespace(t *testing.T) {

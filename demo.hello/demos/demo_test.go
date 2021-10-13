@@ -61,13 +61,19 @@ type person struct {
 }
 
 func TestDemo06(t *testing.T) {
+	// bytes copy
+	text := "hello world"
+	b := make([]byte, 128)
+	count := copy(b, text)
+	fmt.Printf("copy %d bytes: %s\n", count, b[:count])
+
 	// slice copy
 	src := make([]*person, 0)
 	src = append(src, &person{ID: 1, Name: "foo"})
 	src = append(src, &person{ID: 2, Name: "bar"})
 
 	dst := make([]*person, len(src))
-	fmt.Println("total copied:", copy(dst, src))
+	fmt.Println("\ntotal copied:", copy(dst, src))
 	for _, p := range dst {
 		fmt.Printf("%+v\n", *p)
 	}
@@ -276,12 +282,16 @@ func TestDemo15(t *testing.T) {
 	onceFn := func() {
 		fmt.Println("run once.")
 	}
+	anotherFn := func() {
+		fmt.Println("run another.")
+	}
 
 	var once sync.Once
 	for i := 0; i < 3; i++ {
 		fmt.Println("main...")
 		once.Do(onceFn)
 	}
+	once.Do(anotherFn)
 	fmt.Println()
 
 	once = sync.Once{}
