@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	isDebug = true
+	isDebug = false
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
 	// Maximum message size allowed from peer.
@@ -52,15 +52,6 @@ type TerminalSession struct {
 	doneChan chan struct{}
 }
 
-// NewTerminalSessionWS creates TerminalSession.
-func NewTerminalSessionWS(conn *websocket.Conn) *TerminalSession {
-	return &TerminalSession{
-		wsConn:   conn,
-		sizeChan: make(chan remotecommand.TerminalSize),
-		doneChan: make(chan struct{}),
-	}
-}
-
 // NewTerminalSession creates TerminalSession.
 func NewTerminalSession(w http.ResponseWriter, r *http.Request, responseHeader http.Header) (*TerminalSession, error) {
 	conn, err := upgrader.Upgrade(w, r, responseHeader)
@@ -68,6 +59,15 @@ func NewTerminalSession(w http.ResponseWriter, r *http.Request, responseHeader h
 		return nil, err
 	}
 	return NewTerminalSessionWS(conn), nil
+}
+
+// NewTerminalSessionWS creates TerminalSession.
+func NewTerminalSessionWS(conn *websocket.Conn) *TerminalSession {
+	return &TerminalSession{
+		wsConn:   conn,
+		sizeChan: make(chan remotecommand.TerminalSize),
+		doneChan: make(chan struct{}),
+	}
 }
 
 // Done .

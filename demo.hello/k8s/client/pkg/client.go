@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	"sync"
 
 	"k8s.io/client-go/kubernetes"
@@ -12,49 +13,57 @@ var (
 	clientOnce    sync.Once
 	localClient   *kubernetes.Clientset
 	clusterClient *kubernetes.Clientset
+	k8sConfig     *rest.Config
 )
 
 // CreateK8sClientLocal 在 k8s 集群外（master上）执行 client.
 func CreateK8sClientLocal(kubeConfig string) (*kubernetes.Clientset, error) {
-	var clientErr error
+	var err error
 	clientOnce.Do(func() {
-		config, err := clientcmd.BuildConfigFromFlags("", kubeConfig)
+		k8sConfig, err = clientcmd.BuildConfigFromFlags("", kubeConfig)
 		if err != nil {
-			clientErr = err
 			return
 		}
 
-		clientset, err := kubernetes.NewForConfig(config)
+		clientset, err := kubernetes.NewForConfig(k8sConfig)
 		if err != nil {
-			clientErr = err
+			return
 		}
 		localClient = clientset
 	})
 
-	if clientErr != nil {
-		return nil, clientErr
+	if err != nil {
+		return nil, err
 	}
 	return localClient, nil
 }
 
 // CreateK8sClient 在集群内部（pod中）执行 client.
 func CreateK8sClient() (*kubernetes.Clientset, error) {
-	var clientErr error
+	var err error
 	clientOnce.Do(func() {
-		config, err := rest.InClusterConfig()
+		k8sConfig, err = rest.InClusterConfig()
 		if err != nil {
-			clientErr = err
+			return
 		}
 
-		clientset, err := kubernetes.NewForConfig(config)
+		clientset, err := kubernetes.NewForConfig(k8sConfig)
 		if err != nil {
-			clientErr = err
+			return
 		}
 		clusterClient = clientset
 	})
 
-	if clientErr != nil {
-		return nil, clientErr
+	if err != nil {
+		return nil, err
 	}
 	return clusterClient, nil
+}
+
+// GetK8sConfig returns k8s config.
+func GetK8sConfig() (*rest.Config, error) {
+	if k8sConfig == nil {
+		return nil, fmt.Errorf("k8s config does not init")
+	}
+	return k8sConfig, nil
 }

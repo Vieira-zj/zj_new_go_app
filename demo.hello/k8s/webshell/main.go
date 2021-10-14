@@ -15,19 +15,17 @@ import (
 	"demo.hello/utils"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
 	defaultPath = filepath.Join(os.Getenv("HOME"), ".kube", "config")
 	kubeConfig  = flag.String("wskubeconfig", defaultPath, "abs path to the kubeconfig file")
 	addr        = flag.String("addr", ":8090", "http service address")
-	cmd         = []string{"/bin/sh"}
 )
 
 func main() {
 	go func() {
-		// should use "/" for file server
+		// here, should use "/" for file server
 		http.Handle("/", http.FileServer(http.Dir("/tmp/test")))
 		http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "ok")
@@ -206,7 +204,7 @@ func createK8sResourceClient(w http.ResponseWriter) (*k8sutils.Resource, error) 
 }
 
 //
-// K8s terminal session
+// K8s terminal session by websocket
 //
 
 func serveTerminal(w http.ResponseWriter, r *http.Request) {
@@ -260,13 +258,13 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		containerName = pod.Spec.Containers[0].Name
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeConfig)
+	config, err := k8sutils.GetK8sConfig()
 	if err != nil {
-		msg := fmt.Sprintf("build k8s config failed: %v\n", err)
+		msg := fmt.Sprintf("get k8s config failed: %v\n", err)
 		writeErrorRespToTerminal(term, msg)
 		return
 	}
-	if err := webshell.ExecPod(resource.GetClient(), config, cmd, term, namespace, pod, containerName); err != nil {
+	if err := webshell.ExecPod(resource.GetClient(), config, term, namespace, pod, containerName); err != nil {
 		msg := fmt.Sprintf("exec pod error: %v\n", err)
 		writeErrorRespToTerminal(term, msg)
 	}
@@ -279,7 +277,7 @@ func writeErrorRespToTerminal(term *webshell.TerminalSession, msg string) {
 
 }
 
-func internalError(conn *websocket.Conn, msg string, err error) {
+func writeInternalError(conn *websocket.Conn, msg string, err error) {
 	err = fmt.Errorf("Internal server error.\nmessage: %s, error: %v", msg, err)
 	conn.WriteMessage(websocket.TextMessage, []byte(err.Error()))
 }

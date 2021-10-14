@@ -19,9 +19,10 @@ type PtyHandler interface {
 	Done() chan struct{}
 }
 
-// ExecPod execs command in given pod.
+// ExecPod run commands in given pod with terminal session.
 func ExecPod(kubeClient kubernetes.Interface, cfg *restclient.Config,
-	cmd []string, ptyHandler PtyHandler, namespace, podName, containerName string) error {
+	ptyHandler PtyHandler, namespace, podName, containerName string) error {
+	cmd := []string{"/bin/sh"}
 	log.Println("init pod executor with sh session:", cmd)
 
 	req := kubeClient.CoreV1().RESTClient().Post().
