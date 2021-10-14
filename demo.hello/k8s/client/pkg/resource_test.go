@@ -54,7 +54,7 @@ func TestSets(t *testing.T) {
 }
 
 func TestGetAllNamespace(t *testing.T) {
-	namespaces, err := k8sResource.GetAllNamespace(ctx)
+	namespaces, err := k8sResource.GetAllNamespaces(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

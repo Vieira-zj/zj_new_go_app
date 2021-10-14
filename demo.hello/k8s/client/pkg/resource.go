@@ -60,13 +60,27 @@ func (r *Resource) CreateNamespace(ctx context.Context, name string) (*apiv1.Nam
 	return r.client.CoreV1().Namespaces().Create(ctx, namespaceSpec, metav1.CreateOptions{})
 }
 
-// GetAllNamespace returns all namespace.
-func (r *Resource) GetAllNamespace(ctx context.Context) ([]apiv1.Namespace, error) {
-	allNamesapce, err := r.client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+// GetAllNamespaces returns all namespaces.
+func (r *Resource) GetAllNamespaces(ctx context.Context) ([]apiv1.Namespace, error) {
+	namesapces, err := r.client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	return allNamesapce.Items, nil
+	return namesapces.Items, nil
+}
+
+// GetAllNamespacesName returns all namespaces name.
+func (r *Resource) GetAllNamespacesName(ctx context.Context) ([]string, error) {
+	namespaces, err := r.GetAllNamespaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0, len(namespaces))
+	for _, ns := range namespaces {
+		names = append(names, ns.GetName())
+	}
+	return names, nil
 }
 
 // GetNamespace returns a namespace by name.
@@ -117,7 +131,7 @@ func (r *Resource) GetRunningPods(pods []apiv1.Pod) []apiv1.Pod {
 
 // GetNonSystemPods returns all non kube system pods.
 func (r *Resource) GetNonSystemPods(ctx context.Context) ([]apiv1.Pod, error) {
-	allNamesapce, err := r.GetAllNamespace(ctx)
+	allNamesapce, err := r.GetAllNamespaces(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -136,13 +150,27 @@ func (r *Resource) GetNonSystemPods(ctx context.Context) ([]apiv1.Pod, error) {
 	return retPods, nil
 }
 
-// GetPodsByNamespace returns pods in specified namespace.
+// GetPodsByNamespace returns all pods in given namespace.
 func (r *Resource) GetPodsByNamespace(ctx context.Context, namespace string) ([]apiv1.Pod, error) {
 	pods, err := r.client.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 	return pods.Items, nil
+}
+
+// GetPodsNameByNamespace returns all pods name in given namespace.
+func (r *Resource) GetPodsNameByNamespace(ctx context.Context, namespace string) ([]string, error) {
+	pods, err := r.GetPodsByNamespace(ctx, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	podNames := make([]string, 0, len(pods))
+	for _, pod := range pods {
+		podNames = append(podNames, pod.GetName())
+	}
+	return podNames, nil
 }
 
 // GetPodsByLabelsV2 .
@@ -194,7 +222,22 @@ func (r *Resource) GetPodsByLabels(ctx context.Context, namespace string, labels
 	return matchedPods, nil
 }
 
-// GetPodNamespace returns a specified namespace by given pod.
+// GetPodCotainersName returns all containers name in given pod.
+func (r *Resource) GetPodCotainersName(ctx context.Context, namespace, podName string) ([]string, error) {
+	pod, err := r.GetPod(ctx, namespace, podName)
+	if err != nil {
+		return nil, err
+	}
+
+	containers := pod.Spec.Containers
+	names := make([]string, 0, len(containers))
+	for _, container := range containers {
+		names = append(names, container.Name)
+	}
+	return names, nil
+}
+
+// GetPodNamespace returns namespace of given pod.
 func (r *Resource) GetPodNamespace(ctx context.Context, podName string) (string, error) {
 	pods, err := r.GetAllPods(ctx)
 	if err != nil {
@@ -209,23 +252,23 @@ func (r *Resource) GetPodNamespace(ctx context.Context, podName string) (string,
 	return "", fmt.Errorf("pod [%s] not found", podName)
 }
 
-// IsPodExec checks the given pod is validate for exec command.
-func (r *Resource) IsPodExec(ctx context.Context, namespace, podName, containerName string) (bool, error) {
+// CheckPodExec checks the given pod is validate for exec command.
+func (r *Resource) CheckPodExec(ctx context.Context, namespace, podName, containerName string) error {
 	pod, err := r.GetPod(ctx, namespace, podName)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if pod.Status.Phase == apiv1.PodSucceeded || pod.Status.Phase == apiv1.PodFailed {
-		return false, fmt.Errorf("Cannot exec in a container of [%s] pod [%s/%s]", pod.Status.Phase, namespace, podName)
+		return fmt.Errorf("cannot exec in a container of [%s] pod [%s/%s]", pod.Status.Phase, namespace, podName)
 	}
 
 	for _, c := range pod.Spec.Containers {
 		if c.Name == containerName {
-			return true, nil
+			return nil
 		}
 	}
-	return false, fmt.Errorf("No container [%s] found in pod [%s/%s]", containerName, namespace, podName)
+	return fmt.Errorf("no container [%s] found in pod [%s/%s]", containerName, namespace, podName)
 }
 
 // StartPod starts a given pod, and wait until it's running.

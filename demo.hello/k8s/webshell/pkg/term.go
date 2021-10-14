@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	isDebug = false
+	isDebug = true
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
 	// Maximum message size allowed from peer.
@@ -29,8 +29,8 @@ const (
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		if r.Method == "GET" {
-			log.Println("websocket not support GET")
+		if r.Method != "GET" {
+			log.Printf("websocket not support %s\n", r.Method)
 			return false
 		}
 		return true
@@ -39,8 +39,7 @@ var upgrader = websocket.Upgrader{
 
 // TerminalMessage is the messaging protocol between ShellController and TerminalSession.
 type TerminalMessage struct {
-	// stdin: term to pod; resize: term to pod; stdout: pod to term;
-	Operation string `json:"operation"`
+	Operation string `json:"operation"` /* operation: 1.stdin, 2.stdout, 3.resize */
 	Data      string `json:"data"`
 	Rows      uint16 `json:"rows"`
 	Cols      uint16 `json:"cols"`
@@ -119,7 +118,7 @@ func (term *TerminalSession) Read(p []byte) (int, error) {
 		return 0, nil
 	default:
 		log.Printf("unknown message type '%s'\n", msg.Operation)
-		return copy(p, EndOfTransmission), fmt.Errorf("unknown message type '%s'", msg.Operation)
+		return copy(p, EndOfTransmission), fmt.Errorf("unknown message type [%s]", msg.Operation)
 	}
 }
 

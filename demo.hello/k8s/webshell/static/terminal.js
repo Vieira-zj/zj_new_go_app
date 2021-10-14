@@ -2,7 +2,7 @@
 const ws_host = 'localhost:8090'
 let term, ws_conn
 
-function connectWS (namespace, pod, container_name) {
+function connectWS(namespace, pod, container_name) {
   // for debug: file:///local_path/to/terminal.html?namespace=mini-test-ns&pod=hello-minikube-59ddd8676b-vkl26
   // let namespace = getQueryVariable('namespace')
   // let pod = getQueryVariable('pod')
@@ -41,12 +41,12 @@ function initTerminal() {
   // term.toggleFullScreen(true)
 
   // send req data to backend websocket
-  term.on('data', function (data) {
+  term.on('data', function(data) {
     msg = { operation: 'stdin', data: data }
     ws_conn.send(JSON.stringify(msg))
   })
 
-  term.on('resize', function (size) {
+  term.on('resize', function(size) {
     console.log('Term resize:', size)
     msg = { operation: 'resize', cols: size.cols, rows: rows }
     ws_conn.send(JSON.stringify(msg))
@@ -62,7 +62,7 @@ function initWebsocket(namespace, pod, container) {
   console.log(`Connect to ws url: ${url}`)
   ws_conn = new WebSocket(url)
 
-  ws_conn.onopen = function (e) {
+  ws_conn.onopen = function(e) {
     term.writeln(`Connecting to pod [ ${pod} ] container [ ${container} ]...`)
     term.write('\r')
     msg = { operation: 'stdin', data: 'export TERM=xterm\r' }
@@ -71,7 +71,7 @@ function initWebsocket(namespace, pod, container) {
   }
 
   // write resp data to term
-  ws_conn.onmessage = function (event) {
+  ws_conn.onmessage = function(event) {
     msg = JSON.parse(event.data)
     if (msg.operation === 'stdout') {
       term.write(msg.data)
@@ -80,7 +80,7 @@ function initWebsocket(namespace, pod, container) {
     }
   }
 
-  ws_conn.onclose = function (event) {
+  ws_conn.onclose = function(event) {
     if (event.wasClean) {
       console.log(`[Close] Connection closed cleanly, code=${event.code} reason=${event.reason}`)
     } else {
@@ -90,7 +90,7 @@ function initWebsocket(namespace, pod, container) {
     term.writeln('Connection Reset By Peer! Try Refresh.')
   }
 
-  ws_conn.onerror = function (error) {
+  ws_conn.onerror = function(error) {
     console.error('[Error] Connection error')
     term.write("Error: " + error.message)
     term.destroy()
@@ -106,7 +106,7 @@ function disconnectWS() {
   }
 }
 
-function getQueryVariable (variable) {
+function getQueryVariable(variable) {
   let query = window.location.search.substring(1)
   let vars = query.split('&')
 
