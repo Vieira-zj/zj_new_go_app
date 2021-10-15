@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
+	github.com/avast/retry-go/v3 v3.1.1
 	github.com/aws/aws-sdk-go v1.38.51
 	github.com/bep/debounce v1.2.0
 	github.com/docker/docker v20.10.2+incompatible
