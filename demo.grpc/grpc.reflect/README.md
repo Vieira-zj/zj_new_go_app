@@ -4,9 +4,13 @@
 
 功能：
 
-1. 获取 proto 文件信息。
-2. 获取 grpc 服务信息（用来构造 grpc 服务请求数据），包括 service, rpc method, message 元数据。
-3. 通过 grpc 服务名 + 构造的json数据（不依赖pb文件），请求 grpc 服务。
+1. 获取 proto 文件信息；
+2. 获取 grpc 服务信息（用来构造 grpc 服务请求数据），包括 service, rpc method, message 元数据；
+3. 通过 grpc 服务名 + 构造的 json body 数据（不依赖pb文件），完成 grpc 服务请求。
+
+原理：
+
+通过 grpc reflection 接口获取 grpc meta 信息 `descSource`，基于 `descSource + method + body` 通过 `grpcurl` 完成 grpc 接口调用。
 
 ## 测试
 

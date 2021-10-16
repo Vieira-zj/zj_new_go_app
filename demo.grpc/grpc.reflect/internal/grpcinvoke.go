@@ -51,7 +51,7 @@ func (r *rpcResult) OnReceiveTrailers(stat *status.Status, md metadata.MD) {
 	fmt.Println("OnReceiveTrailers:", stat.Code(), stat.Message())
 }
 
-// CallGrpc invokes rpc api.
+// CallGrpc invokes rpc api by grpcurl with descSource, method and body provided.
 func CallGrpc(ctx context.Context, descSource grpcurl.DescriptorSource, cc *grpc.ClientConn, method string, body string) error {
 	var input rpcInput
 	if err := json.Unmarshal([]byte(body), &input); err != nil {

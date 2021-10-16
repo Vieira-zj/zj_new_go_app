@@ -27,6 +27,7 @@ func runGrpcApp(target, method, body string) error {
 		return err
 	}
 
+	// get src grpc api meta desc info by reflection
 	md := grpcurl.MetadataFromHeaders(nil)
 	refCtx := metadata.NewOutgoingContext(ctx, md)
 	refClient := grpcreflect.NewClient(refCtx, reflectpb.NewServerReflectionClient(cc))
