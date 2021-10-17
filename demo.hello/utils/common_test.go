@@ -17,6 +17,16 @@ func TestGetRandNextInt(t *testing.T) {
 	}
 }
 
+func TestGetRandString(t *testing.T) {
+	for _, i := range [2]uint{8, 16} {
+		res, err := GetRandString(i)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("random string (%d): %s\n", i, res)
+	}
+}
+
 func TestGetSimpleCurrentDatetime(t *testing.T) {
 	fmt.Println("current datetime:", GetSimpleCurrentDatetime())
 }
@@ -45,6 +55,10 @@ func TestGetJSONPrettyText(t *testing.T) {
 	if err = FprintJSONPrettyText(multiWriter, p); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestGetShellPath(t *testing.T) {
+	fmt.Println("sh path:", GetShellPath())
 }
 
 func TestRunCmd(t *testing.T) {

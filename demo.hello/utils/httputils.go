@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -204,6 +205,16 @@ func (utils *HTTPUtils) sendV2(req *http.Request) (*http.Response, []byte, error
 		return resp, nil, err
 	}
 	return resp, body, nil
+}
+
+// GetHTTPConn returns http conntion by hijack.
+func GetHTTPConn(w http.ResponseWriter) (net.Conn, *bufio.ReadWriter, error) {
+	hj, ok := w.(http.Hijacker)
+	if !ok {
+		err := errors.New("http server don't support hijacking")
+		return nil, nil, err
+	}
+	return hj.Hijack()
 }
 
 /*

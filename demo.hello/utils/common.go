@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math/rand"
+	"os"
 	"os/exec"
 	"reflect"
 	"syscall"
@@ -26,6 +27,19 @@ Common
 func GetRandNextInt(number int) int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(number)
+}
+
+// GetRandString returns rand string by specified length.
+func GetRandString(length uint) (string, error) {
+	// one byte converts to 2 hex char
+	length = length / 2
+	rand.Seed(time.Now().UnixNano())
+	randBytes := make([]byte, length)
+	if _, err := rand.Read(randBytes); err != nil {
+		return "", err
+	}
+	// TODO: use base64 instead of hex
+	return hex.EncodeToString(randBytes), nil
 }
 
 /*
@@ -111,6 +125,17 @@ func getMd5EncodedText(text, md5Type string) string {
 /*
 Command
 */
+
+// GetShellPath returns sh abs path.
+func GetShellPath() string {
+	path := os.Getenv("SHELL")
+	if len(path) == 0 {
+		if path, err := exec.LookPath("sh"); err == nil {
+			return path
+		}
+	}
+	return "/bin/sh"
+}
 
 // RunShellCmd runs a shell command and returns output.
 func RunShellCmd(name string, args ...string) (string, error) {
