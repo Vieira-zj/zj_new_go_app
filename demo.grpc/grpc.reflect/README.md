@@ -1,37 +1,46 @@
-# Grpc Reflect Demo
+# Grpc Reflection Demo
 
-> A grpc reflect demo refer to grpcui and grpcurl.
+> A grpc reflection demo refer to grpcui and grpcurl.
+>
 
-功能：
+不依赖pb文件，通过grpc反射接口实现：
 
-1. 获取 proto 文件信息；
-2. 获取 grpc 服务信息（用来构造 grpc 服务请求数据），包括 service, rpc method, message 元数据；
-3. 通过 grpc 服务名 + 构造的 json body 数据（不依赖pb文件），完成 grpc 服务请求。
+- 获取 proto 文件信息；
+- 获取 grpc 服务信息（用来构造 grpc 服务请求数据），包括 service, rpc method, message 元数据；
+- 使用 grpc 服务名 + json body 数据（不依赖struct），完成 grpc 服务请求。
 
 原理：
 
-通过 grpc reflection 接口获取 grpc meta 信息 `descSource`，基于 `descSource + method + body` 通过 `grpcurl` 完成 grpc 接口调用。
+通过 grpc reflection 接口获取 grpc meta 信息 `descSource`，基于 `descSource + method + req body` 通过 `grpcurl` 完成 grpc 接口调用。
 
-## 测试
+## Grpc reflection 测试
+
+> 测试脚本参考 `./run.sh`。
+>
 
 1. 启动 grpc 服务
 
 ```sh
-./bin/grpc_hello
+./svc_bin/grpc_hello
 ```
 
 2. 调用 grpc 服务
 
-```sh
-go build .
+打印 grpc 服务 meta 信息：
 
-# 打印 grpc 服务 meta 信息
-./grpc.reflect -addr=127.0.0.1:50051 -debug
-# 调用 grpc 服务
-./grpc.reflect -addr=127.0.0.1:50051 -method=proto.Greeter.SayHello -body='{"metadata":[],"data":[{"name":"grpc"}]}'
+```sh
+go run main.go -addr=127.0.0.1:50051 -debug
 ```
 
-> 参考 `run.sh`。
+使用 json body 作为参数调用 grpc 服务：
+
+```sh
+go run main.go -addr=127.0.0.1:50051 -method=proto.Greeter.SayHello -body='{"metadata":[],"data":[{"name":"grpc"}]}'
+# OnReceiveHeaders:
+# content-type=[application/grpc]
+# OnReceiveResponse: message:"Hello grpc"
+# OnReceiveTrailers: OK 
+```
 
 ## Grpc Mock 服务
 

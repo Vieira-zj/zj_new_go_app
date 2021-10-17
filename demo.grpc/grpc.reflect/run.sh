@@ -1,8 +1,8 @@
 #!/bin/bash
 set -eu
 
-# run_cmd="go run main.go"
-run_cmd="./grpc.reflect"
+run_cmd="go run main.go"
+# run_cmd="./grpc.reflect"
 
 function run_help() {
     ${run_cmd} -help
@@ -42,10 +42,10 @@ function invoke_grpc_deposit() {
 
 # main
 
-# if reflection is disabled, then
+# if reflection is disabled, then get:
 # panic: server does not support the reflection API
 
-# run_help
+run_help
 
 # get_grpc_hello_meta
 # invoke_grpc_hello
@@ -55,6 +55,6 @@ function invoke_grpc_deposit() {
 # invoke_grpc_echo_hello
 
 # get_grpc_deposit_meta
-invoke_grpc_deposit
+# invoke_grpc_deposit
 
 echo "grpc reflect demo done."
