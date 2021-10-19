@@ -195,11 +195,11 @@ curl -v -XPOST http://127.0.0.1:57688/invoke/demo.hello.Service1.Echo \
 ```sh
 cd [grpc_project]/gateway
 go run server/grpc_server/main.go
-2020/09/14 11:42:23 grpc listen at: :9090
-2020/09/14 11:42:23 start pprof server at: :8024
+# 2020/09/14 11:42:23 grpc listen at: :9090
+# 2020/09/14 11:42:23 start pprof server at: :8024
 
 go run server/http_server/main.go
-HTTP server (proxy to localhost:9090) start at :8081
+# HTTP server (proxy to localhost:9090) start at :8081
 ```
 
 访问 pprof 页面：<http://localhost:8024/debug/pprof/>

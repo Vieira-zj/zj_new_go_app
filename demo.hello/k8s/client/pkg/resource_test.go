@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -85,6 +86,46 @@ func TestGetSpecifiedPod(t *testing.T) {
 	PrintPodInfo(pod)
 }
 
+func TestGetPodState(t *testing.T) {
+	ns := "k8s-test"
+	names := [2]string{"test-pod", "error-exit-test-55d594b94b-kspp5"}
+	for _, name := range names {
+		state, err := k8sResource.GetPodState(ctx, ns, name, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := prettyPrintPodState(state); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestCheckPodExec(t *testing.T) {
+	ns := "k8s-test"
+	names := [2]string{"test-pod", "error-exit-test-55d594b94b-kspp5"}
+	for _, name := range names {
+		if err := k8sResource.CheckPodExec(ctx, ns, name, ""); err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println("check pass:", name)
+		}
+	}
+}
+
+func TestGetPodLogs(t *testing.T) {
+	ns := "kube-system"
+	name := "etcd-minikube"
+	if err := k8sResource.CheckPodExec(ctx, ns, name, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	logs, err := k8sResource.GetPodLogsByTailLines(ctx, ns, name, int64(10))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("pod [%s/%s] logs:\n%s", ns, name, logs)
+}
+
 func TestGetPodsByNamespace(t *testing.T) {
 	ns := "mini-test-ns"
 	pods, err := k8sResource.GetPodsByNamespace(ctx, ns)
@@ -156,4 +197,13 @@ func TestGetNonSystemPods(t *testing.T) {
 	for _, pod := range pods {
 		fmt.Println(pod.ObjectMeta.Name)
 	}
+}
+
+func prettyPrintPodState(state *PodState) error {
+	b, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Printf("pods state info:\n%s\n", b)
+	return nil
 }

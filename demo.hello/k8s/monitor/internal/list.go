@@ -2,27 +2,24 @@ package internal
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net"
-	"time"
 
 	k8spkg "demo.hello/k8s/client/pkg"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
-// PodStatus contains pod name, status, readiness and message.
+// PodStatus .
 type PodStatus struct {
-	PodName   string          `json:"name"`
-	Status    string          `json:"status"`
-	Readiness bool            `json:"readiness"`
-	Message   json.RawMessage `json:"message"`
+	Name    string `json:"name"`
+	Status  string `json:"status"`
+	Message string `json:"message,omitempty"`
+	Log     string `json:"log,omitempty"`
 }
 
-// GetAllPodInfos returns all pod status.
+// GetAllPodInfos returns all pods status info.
 func GetAllPodInfos(ctx context.Context, resource *k8spkg.Resource, namespace string) ([]*PodStatus, error) {
 	var (
-		pods []v1.Pod
+		pods []corev1.Pod
 		err  error
 	)
 	if len(namespace) == 0 {
@@ -39,59 +36,30 @@ func GetAllPodInfos(ctx context.Context, resource *k8spkg.Resource, namespace st
 
 	podInfos := make([]*PodStatus, 0, len(pods))
 	for _, pod := range pods {
+		podName := pod.GetObjectMeta().GetName()
 		podInfo := &PodStatus{
-			PodName: pod.ObjectMeta.Name,
+			Name: podName,
+		}
+		state, err := resource.GetPodState(ctx, namespace, podName, "")
+		if err != nil {
+			podInfo.Message = fmt.Sprintf("get pod [%s/%s] state failed: %s\n", namespace, podName, err.Error())
+			podInfos = append(podInfos, podInfo)
+			continue
 		}
 
-		var b []byte
-		containerStatus := pod.Status.ContainerStatuses[0]
-		if containerStatus.State.Running != nil {
-			podInfo.Status = "Running"
-			b, err = json.Marshal(containerStatus.State.Running)
-			if err != nil {
-				return nil, err
-			}
-		} else if containerStatus.State.Terminated != nil {
-			podInfo.Status = "Terminated"
-			b, err = json.Marshal(containerStatus.State.Terminated)
-			if err != nil {
-				return nil, err
-			}
-		} else if containerStatus.State.Waiting != nil {
-			podInfo.Status = "Waiting"
-			b, err = json.Marshal(containerStatus.State.Waiting)
-			if err != nil {
-				return nil, err
-			}
+		podInfo.Status = state.Value
+		if len(state.Message) > 0 {
+			podInfo.Message = state.Message
 		}
-		podInfo.Message = b
 
-		if pod.Spec.Containers[0].ReadinessProbe != nil {
-			podIP := pod.Status.PodIP
-			podPort := pod.Spec.Containers[0].ReadinessProbe.TCPSocket.Port.String()
-			result, err := pingSocket(podIP, podPort)
-			if err != nil {
-				fmt.Println(err.Error())
+		if state.Value != "Running" {
+			if log, err := resource.GetPodLogs(ctx, namespace, podName); err != nil {
+				fmt.Printf("get pod [%s/%s] state failed: %s\n", namespace, podName, err.Error())
+			} else {
+				podInfo.Log = log
 			}
-			podInfo.Readiness = result
 		}
 		podInfos = append(podInfos, podInfo)
 	}
-
 	return podInfos, nil
-}
-
-func pingSocket(host string, port string) (bool, error) {
-	addr := net.JoinHostPort(host, port)
-	timeout := time.Duration(3) * time.Second
-	conn, err := net.DialTimeout("tcp", addr, timeout)
-	if err != nil {
-		return false, err
-	}
-
-	if conn != nil {
-		defer conn.Close()
-		return true, nil
-	}
-	return false, fmt.Errorf("open tcp connection failed: %s:%s", host, port)
 }

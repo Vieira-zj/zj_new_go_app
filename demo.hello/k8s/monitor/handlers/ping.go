@@ -9,13 +9,13 @@ import (
 
 var count int
 
-// Home / handler.
+// Home .
 func Home(c echo.Context) error {
-	return c.String(http.StatusOK, "k8s monitor tool.")
-}
-
-// Ping /ping handler.
-func Ping(c echo.Context) error {
 	count++
 	return c.String(http.StatusOK, fmt.Sprintf("Access Count: %d", count))
+}
+
+// Ping .
+func Ping(c echo.Context) error {
+	return c.String(http.StatusOK, "ok")
 }

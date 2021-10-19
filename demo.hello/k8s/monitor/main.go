@@ -1,9 +1,17 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+
 	"demo.hello/k8s/monitor/handlers"
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/log"
+)
+
+var (
+	addr string
+	help bool
 )
 
 func deco(fn func(echo.Context) error) func(echo.Context) error {
@@ -23,10 +31,18 @@ func preHook(c echo.Context) {
 }
 
 func afterHook(c echo.Context) {
-	// TODO:
 }
 
 func main() {
+	flag.StringVar(&addr, "addr", "8081", "server listen port.")
+	flag.BoolVar(&help, "h", false, "help.")
+	flag.Parse()
+
+	if help {
+		flag.Usage()
+		return
+	}
+
 	e := echo.New()
 	e.Logger.SetLevel(log.INFO)
 
@@ -35,6 +51,7 @@ func main() {
 
 	e.GET("/monitor/pods", deco(handlers.GetPodsStatus))
 
-	e.Logger.Info("Start cluster monitor at 8081.")
-	e.Logger.Fatal(e.Start(":8081"))
+	addr = fmt.Sprintf(":%s" + addr)
+	e.Logger.Info("Start cluster monitor at " + addr)
+	e.Logger.Fatal(e.Start(addr))
 }

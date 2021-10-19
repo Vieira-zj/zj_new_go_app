@@ -1,8 +1,10 @@
 package pkg
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 	"time"
@@ -66,7 +68,15 @@ func (r *Resource) GetAllNamespaces(ctx context.Context) ([]apiv1.Namespace, err
 	if err != nil {
 		return nil, err
 	}
-	return namesapces.Items, nil
+
+	retNamespaces := make([]apiv1.Namespace, 0, len(namesapces.Items))
+	for _, ns := range namesapces.Items {
+		if ns.Name == "kube-public" || ns.Name == "kube-system" {
+			continue
+		}
+		retNamespaces = append(retNamespaces, ns)
+	}
+	return retNamespaces, nil
 }
 
 // GetAllNamespacesName returns all namespaces name.
@@ -100,6 +110,13 @@ func (r *Resource) DeleteNamespace(ctx context.Context, name string) error {
 /*
 Pod
 */
+
+// PodState .
+type PodState struct {
+	Value    string `json:"value"`
+	ExitCode int32  `json:"exitcode,omitempty"`
+	Message  string `json:"message,omitempty"`
+}
 
 // GetPod returns a specified pod by namespace and name.
 func (r *Resource) GetPod(ctx context.Context, namespace string, podName string) (*apiv1.Pod, error) {
@@ -259,16 +276,86 @@ func (r *Resource) CheckPodExec(ctx context.Context, namespace, podName, contain
 		return err
 	}
 
-	if pod.Status.Phase == apiv1.PodSucceeded || pod.Status.Phase == apiv1.PodFailed {
+	// pod phase check
+	if pod.Status.Phase != apiv1.PodRunning {
 		return fmt.Errorf("cannot exec in a container of [%s] pod [%s/%s]", pod.Status.Phase, namespace, podName)
 	}
 
-	for _, c := range pod.Spec.Containers {
-		if c.Name == containerName {
-			return nil
+	// pod state check
+	state, err := r.GetPodState(ctx, namespace, podName, containerName)
+	if err != nil {
+		return err
+	}
+	if state.Value == "Running" {
+		return nil
+	}
+	return fmt.Errorf("validate pod failed: status=[%s], message=[%s]", state.Value, state.Message)
+}
+
+// GetPodState returns the given pod state.
+func (r *Resource) GetPodState(ctx context.Context, namespace, podName, containerName string) (*PodState, error) {
+	pod, err := r.GetPod(ctx, namespace, podName)
+	if err != nil {
+		return nil, err
+	}
+
+	if containerName == "" {
+		containerName = pod.Spec.Containers[0].Name
+	}
+
+	for _, container := range pod.Status.ContainerStatuses {
+		if container.Name == containerName {
+			if container.State.Running != nil {
+				return &PodState{
+					Value: "Running",
+				}, nil
+			}
+			if container.State.Waiting != nil {
+				stateWait := container.State.Waiting
+				return &PodState{
+					Value:   stateWait.Reason,
+					Message: stateWait.Message,
+				}, nil
+			}
+			if container.State.Terminated != nil {
+				stateTerminated := container.State.Terminated
+				return &PodState{
+					Value:    stateTerminated.Reason,
+					ExitCode: stateTerminated.ExitCode,
+					Message:  stateTerminated.Message,
+				}, nil
+			}
 		}
 	}
-	return fmt.Errorf("no container [%s] found in pod [%s/%s]", containerName, namespace, podName)
+	return nil, fmt.Errorf("no container [%s] found in pod [%s/%s]", containerName, namespace, podName)
+}
+
+// GetPodLogs returns the given pod logs by default limited tail lines 100.
+func (r *Resource) GetPodLogs(ctx context.Context, namespace, podName string) (string, error) {
+	defaultTailLines := int64(100)
+	return r.GetPodLogsByTailLines(ctx, namespace, podName, defaultTailLines)
+}
+
+// GetPodLogsByTailLines returns the given pod logs by limited tail lines.
+func (r *Resource) GetPodLogsByTailLines(ctx context.Context, namespace, podName string, tailLines int64) (string, error) {
+	req := r.client.CoreV1().Pods(namespace).GetLogs(podName, &apiv1.PodLogOptions{
+		TailLines: &tailLines,
+	})
+	podLogs, err := req.Stream(ctx)
+	if podLogs != nil {
+		defer func() {
+			podLogs.Close()
+		}()
+	}
+	if err != nil {
+		return "", err
+	}
+
+	buf := new(bytes.Buffer)
+	if _, err = io.Copy(buf, podLogs); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 // StartPod starts a given pod, and wait until it's running.

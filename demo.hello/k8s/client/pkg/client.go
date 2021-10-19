@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"k8s.io/client-go/kubernetes"
@@ -15,6 +17,12 @@ var (
 	clusterClient *kubernetes.Clientset
 	k8sConfig     *rest.Config
 )
+
+// CreateK8sClientLocalDefault .
+func CreateK8sClientLocalDefault() (*kubernetes.Clientset, error) {
+	kubeConfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
+	return CreateK8sClientLocal(kubeConfig)
+}
 
 // CreateK8sClientLocal 在 k8s 集群外（master上）执行 client.
 func CreateK8sClientLocal(kubeConfig string) (*kubernetes.Clientset, error) {

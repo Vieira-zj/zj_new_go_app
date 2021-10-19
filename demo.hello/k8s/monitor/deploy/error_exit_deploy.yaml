@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: error-exit-test
+  namespace: k8s-test
+  labels:
+    app: error-exit-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: error-exit-test
+  template:
+    metadata:
+      labels:
+        app: error-exit-test
+    spec:
+      containers:
+      - name: error-exit-test
+        image: zhengjin/error-exit:v1.0
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 10m
+            memory: 20Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
