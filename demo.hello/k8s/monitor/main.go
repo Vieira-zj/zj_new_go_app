@@ -25,8 +25,8 @@ var (
 
 func main() {
 	flag.StringVar(&addr, "addr", "8081", "server listen port.")
-	flag.StringVar(&namespace, "ns", "k8s-test", "monitor namespace.")
-	flag.UintVar(&interval, "interval", 15, "interval (seconds) between send notify message.")
+	flag.StringVar(&namespace, "ns", "k8s-test", "target namespace to monitor.")
+	flag.UintVar(&interval, "interval", 30, "interval (seconds) between send notify message.")
 	flag.BoolVar(&help, "h", false, "help.")
 	flag.Parse()
 
@@ -67,22 +67,31 @@ func main() {
 	}()
 
 	// send notify
+	mm, err := internal.NewMatterMost()
+	if err != nil {
+		panic(err)
+	}
 	go func() {
 		tick := time.Tick(time.Duration(interval) * time.Second)
 		for {
 			select {
 			case <-tick:
+				states := make(map[string]*k8spkg.PodState, interval)
 				for {
 					if len(watcher.ErrorPodStateCh) == 0 {
 						break
 					}
 					state := <-watcher.ErrorPodStateCh
+					states[state.Name] = state
+				}
+				for _, state := range states {
 					b, err := json.MarshalIndent(state, "", "  ")
 					if err != nil {
 						e.Logger.Errorf("json marshal error: %v\n", err)
 					}
-					e.Logger.Info("[Notification] pod not running:")
-					e.Logger.Info(string(b))
+					e.Logger.Info("send notification")
+					msg := fmt.Sprintf("`Notification` pods not running:\n%s", markdownJSON(string(b)))
+					mm.SendMessageToUser(ctx, "jin.zheng", msg)
 				}
 			case <-ctx.Done():
 				return
@@ -117,4 +126,8 @@ func preHook(c echo.Context) {
 }
 
 func afterHook(c echo.Context) {
+}
+
+func markdownJSON(text string) string {
+	return fmt.Sprintf("```json\n%s\n```", text)
 }

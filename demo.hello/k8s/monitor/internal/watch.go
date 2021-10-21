@@ -38,9 +38,8 @@ func NewWatcher(client *kubernetes.Clientset, namespace string, interval uint) *
 
 // Run exec watcher informer.
 func (w *Watcher) Run(ctx context.Context, isWatchDeploy bool) {
-	log.Println("watcher started")
+	log.Println("start watcher")
 	go w.podInformer().Run(ctx.Done())
-
 	if isWatchDeploy {
 		go w.deploymentInformer().Run(ctx.Done())
 	}
@@ -63,7 +62,7 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 				k8spkg.PrintPodInfo(pod)
 				return
 			}
-			if state.Value != "Running" {
+			if state.Value != "Running" && state.Value != "ContainerCreating" {
 				w.ErrorPodStateCh <- state
 			}
 		}

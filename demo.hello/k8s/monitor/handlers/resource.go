@@ -17,7 +17,7 @@ func GetPodsStatus(c echo.Context, lister *internal.Lister) error {
 	return c.JSON(http.StatusOK, podInfos)
 }
 
-// GetPodsStatusByList .
+// GetPodsStatusByList returns pods status by list watcher.
 func GetPodsStatusByList(c echo.Context, lister *internal.Lister) error {
 	podInfos, err := lister.GetAllPodInfosByListWatch(c.Request().Context())
 	if err != nil {

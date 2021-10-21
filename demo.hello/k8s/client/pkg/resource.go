@@ -113,6 +113,7 @@ Pod
 
 // PodState .
 type PodState struct {
+	Name     string `json:"name"`
 	Value    string `json:"value"`
 	ExitCode int32  `json:"exitcode,omitempty"`
 	Message  string `json:"message,omitempty"`
@@ -308,31 +309,36 @@ func (r *Resource) GetPodState(ctx context.Context, namespace, podName, containe
 
 // GetPodStateRaw returns the given pod state.
 func (r *Resource) GetPodStateRaw(pod *apiv1.Pod, containerName string) (*PodState, error) {
+	if len(pod.Spec.Containers) == 0 {
+		return nil, fmt.Errorf("container is not init in pod [%s/%s]",
+			pod.GetObjectMeta().GetNamespace(), pod.GetObjectMeta().GetName())
+	}
+
 	if containerName == "" {
 		containerName = pod.Spec.Containers[0].Name
 	}
 
+	state := &PodState{
+		Name: pod.GetObjectMeta().GetName(),
+	}
 	for _, container := range pod.Status.ContainerStatuses {
 		if container.Name == containerName {
 			if container.State.Running != nil {
-				return &PodState{
-					Value: "Running",
-				}, nil
+				state.Value = "Running"
+				return state, nil
 			}
 			if container.State.Waiting != nil {
 				stateWait := container.State.Waiting
-				return &PodState{
-					Value:   stateWait.Reason,
-					Message: stateWait.Message,
-				}, nil
+				state.Value = stateWait.Reason
+				state.Message = stateWait.Message
+				return state, nil
 			}
 			if container.State.Terminated != nil {
 				stateTerminated := container.State.Terminated
-				return &PodState{
-					Value:    stateTerminated.Reason,
-					ExitCode: stateTerminated.ExitCode,
-					Message:  stateTerminated.Message,
-				}, nil
+				state.Value = stateTerminated.Reason
+				state.ExitCode = stateTerminated.ExitCode
+				state.Message = stateTerminated.Message
+				return state, nil
 			}
 		}
 	}

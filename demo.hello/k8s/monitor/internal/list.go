@@ -37,15 +37,6 @@ func NewLister(client *kubernetes.Clientset, watcher *Watcher, namespace string)
 	}
 }
 
-// GetAllPodInfosByListWatch returns all pods status info by watcher.
-func (lister *Lister) GetAllPodInfosByListWatch(ctx context.Context) ([]*PodStatus, error) {
-	pods, err := lister.watcher.ListAllPods()
-	if err != nil {
-		return nil, err
-	}
-	return lister.GetAllPodInfos(ctx, pods)
-}
-
 // GetAllPodInfosByRaw returns all pods status info by raw api.
 func (lister *Lister) GetAllPodInfosByRaw(ctx context.Context) ([]*PodStatus, error) {
 	pods, err := lister.resource.GetPodsByNamespace(ctx, lister.namespace)
@@ -53,6 +44,15 @@ func (lister *Lister) GetAllPodInfosByRaw(ctx context.Context) ([]*PodStatus, er
 		return nil, err
 	}
 	return lister.GetAllPodInfos(ctx, getPodRefs(pods))
+}
+
+// GetAllPodInfosByListWatch returns all pods status info by watcher.
+func (lister *Lister) GetAllPodInfosByListWatch(ctx context.Context) ([]*PodStatus, error) {
+	pods, err := lister.watcher.ListAllPods()
+	if err != nil {
+		return nil, err
+	}
+	return lister.GetAllPodInfos(ctx, pods)
 }
 
 // GetAllPodInfos returns all pods status info.
@@ -92,7 +92,7 @@ func (lister *Lister) GetAllPodInfos(ctx context.Context, pods []*corev1.Pod) ([
 func getPodRefs(pods []corev1.Pod) []*corev1.Pod {
 	podRefs := make([]*corev1.Pod, 0, len(pods))
 	for _, pod := range pods {
-		localpod := pod
+		localpod := pod // save to local
 		podRefs = append(podRefs, &localpod)
 	}
 	return podRefs
