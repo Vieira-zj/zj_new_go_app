@@ -569,17 +569,21 @@ func TestDemo24(t *testing.T) {
 	// Debouncing（防抖动） 是一种避免事件重复的方法，我们设置一个小的延迟，如果在达到延迟之前发生了其他事件，则重启计时器
 	var count uint32
 
-	addFunc := func() {
-		atomic.AddUint32(&count, 1)
+	addFunc := func(value uint32) {
+		fmt.Println("input:", value)
+		atomic.AddUint32(&count, value)
 	}
 
+	// 取消之前的事件，返回最新的结果
 	debounce := debounce.New(time.Duration(200) * time.Millisecond)
 	for i := 0; i < 3; i++ {
 		for j := 0; j < 10; j++ {
-			debounce(addFunc)
+			debounce(func() {
+				addFunc(uint32(j))
+			})
 			time.Sleep(time.Duration(50) * time.Millisecond)
 		}
-		time.Sleep(time.Duration(200) * time.Millisecond)
+		time.Sleep(time.Duration(300) * time.Millisecond)
 	}
 	fmt.Println("count:", count)
 }
@@ -949,6 +953,45 @@ func TestDemo33(t *testing.T) {
 
 	codeBlock01()
 	fmt.Println("code block test clearup")
+}
+
+func TestDemo34(t *testing.T) {
+	// iterator for channel
+	ch := make(chan string, 3)
+
+	go func() {
+		for i := 0; i < 6; i++ {
+			ch <- strconv.Itoa(i)
+		}
+	}()
+
+	go func() {
+		time.Sleep(time.Duration(3) * time.Second)
+		for i := 10; i < 16; i++ {
+			ch <- strconv.Itoa(i)
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(8)*time.Second)
+	defer cancel()
+
+	c := time.Tick(time.Second)
+	for {
+		select {
+		case <-c:
+			for {
+				if len(ch) == 0 {
+					fmt.Println("channel empty, and exit")
+					break
+				}
+				val := <-ch
+				fmt.Println("get value:", val)
+			}
+		case <-ctx.Done():
+			fmt.Println("timeout and exit")
+			return
+		}
+	}
 }
 
 func TestDemo98(t *testing.T) {

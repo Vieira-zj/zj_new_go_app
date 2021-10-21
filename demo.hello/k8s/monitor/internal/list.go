@@ -3,9 +3,11 @@ package internal
 import (
 	"context"
 	"fmt"
+	"log"
 
 	k8spkg "demo.hello/k8s/client/pkg"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // PodStatus .
@@ -16,31 +18,54 @@ type PodStatus struct {
 	Log     string `json:"log,omitempty"`
 }
 
-// GetAllPodInfos returns all pods status info.
-func GetAllPodInfos(ctx context.Context, resource *k8spkg.Resource, namespace string) ([]*PodStatus, error) {
-	var (
-		pods []corev1.Pod
-		err  error
-	)
-	if len(namespace) == 0 {
-		pods, err = resource.GetAllPods(ctx)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		pods, err = resource.GetPodsByNamespace(ctx, namespace)
-		if err != nil {
-			return nil, err
-		}
-	}
+// Lister .
+type Lister struct {
+	namespace string
+	resource  *k8spkg.Resource
+	watcher   *Watcher
+}
 
+// NewLister creates a Lister by given namespace.
+func NewLister(client *kubernetes.Clientset, watcher *Watcher, namespace string) *Lister {
+	if len(namespace) == 0 {
+		panic("init lister, namespace cannot be empty")
+	}
+	return &Lister{
+		namespace: namespace,
+		resource:  k8spkg.NewResource(client),
+		watcher:   watcher,
+	}
+}
+
+// GetAllPodInfosByListWatch returns all pods status info by watcher.
+func (lister *Lister) GetAllPodInfosByListWatch(ctx context.Context) ([]*PodStatus, error) {
+	pods, err := lister.watcher.ListAllPods()
+	if err != nil {
+		return nil, err
+	}
+	return lister.GetAllPodInfos(ctx, pods)
+}
+
+// GetAllPodInfosByRaw returns all pods status info by raw api.
+func (lister *Lister) GetAllPodInfosByRaw(ctx context.Context) ([]*PodStatus, error) {
+	pods, err := lister.resource.GetPodsByNamespace(ctx, lister.namespace)
+	if err != nil {
+		return nil, err
+	}
+	return lister.GetAllPodInfos(ctx, getPodRefs(pods))
+}
+
+// GetAllPodInfos returns all pods status info.
+func (lister *Lister) GetAllPodInfos(ctx context.Context, pods []*corev1.Pod) ([]*PodStatus, error) {
 	podInfos := make([]*PodStatus, 0, len(pods))
 	for _, pod := range pods {
 		podName := pod.GetObjectMeta().GetName()
+		namespace := pod.GetObjectMeta().GetName()
+
 		podInfo := &PodStatus{
 			Name: podName,
 		}
-		state, err := resource.GetPodState(ctx, namespace, podName, "")
+		state, err := lister.resource.GetPodStateRaw(pod, "")
 		if err != nil {
 			podInfo.Message = fmt.Sprintf("get pod [%s/%s] state failed: %s\n", namespace, podName, err.Error())
 			podInfos = append(podInfos, podInfo)
@@ -53,13 +78,22 @@ func GetAllPodInfos(ctx context.Context, resource *k8spkg.Resource, namespace st
 		}
 
 		if state.Value != "Running" {
-			if log, err := resource.GetPodLogs(ctx, namespace, podName); err != nil {
-				fmt.Printf("get pod [%s/%s] state failed: %s\n", namespace, podName, err.Error())
+			if podLog, err := lister.resource.GetPodLogs(ctx, namespace, podName); err != nil {
+				log.Printf("get pod [%s/%s] state failed: %s\n", namespace, podName, err.Error())
 			} else {
-				podInfo.Log = log
+				podInfo.Log = podLog
 			}
 		}
 		podInfos = append(podInfos, podInfo)
 	}
 	return podInfos, nil
+}
+
+func getPodRefs(pods []corev1.Pod) []*corev1.Pod {
+	podRefs := make([]*corev1.Pod, 0, len(pods))
+	for _, pod := range pods {
+		localpod := pod
+		podRefs = append(podRefs, &localpod)
+	}
+	return podRefs
 }

@@ -3,29 +3,23 @@ package handlers
 import (
 	"net/http"
 
-	k8spkg "demo.hello/k8s/client/pkg"
-	internalpkg "demo.hello/k8s/monitor/internal"
+	"demo.hello/k8s/monitor/internal"
 	"github.com/labstack/echo"
 )
 
-var resource *k8spkg.Resource
-
-func init() {
-	clientset, err := k8spkg.CreateK8sClient()
+// GetPodsStatus returns pods status: pod name, status, message and log.
+func GetPodsStatus(c echo.Context, lister *internal.Lister) error {
+	podInfos, err := lister.GetAllPodInfosByRaw(c.Request().Context())
 	if err != nil {
-		panic(err)
+		c.Logger().Error(err.Error())
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	resource = k8spkg.NewResource(clientset)
+	return c.JSON(http.StatusOK, podInfos)
 }
 
-// GetPodsStatus returns pods status: pod name, status, readiness and message.
-func GetPodsStatus(c echo.Context) error {
-	namespace := c.QueryParam("namespace")
-	if len(namespace) == 0 {
-		return c.String(http.StatusBadRequest, "namespace cannot be empty.")
-	}
-
-	podInfos, err := internalpkg.GetAllPodInfos(c.Request().Context(), resource, namespace)
+// GetPodsStatusByList .
+func GetPodsStatusByList(c echo.Context, lister *internal.Lister) error {
+	podInfos, err := lister.GetAllPodInfosByListWatch(c.Request().Context())
 	if err != nil {
 		c.Logger().Error(err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())

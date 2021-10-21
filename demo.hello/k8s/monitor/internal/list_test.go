@@ -9,19 +9,22 @@ import (
 	k8spkg "demo.hello/k8s/client/pkg"
 )
 
-var listTestResource *k8spkg.Resource
+var (
+	listerTest *Lister
+)
 
 func init() {
+	ns := "k8s-test"
 	client, err := k8spkg.CreateK8sClientLocalDefault()
 	if err != nil {
 		panic(err)
 	}
-	listTestResource = k8spkg.NewResource(client)
+	watcher := NewWatcher(client, ns, 15)
+	listerTest = NewLister(client, watcher, ns)
 }
 
 func TestGetAllPodInfos(t *testing.T) {
-	ns := "k8s-test"
-	infos, err := GetAllPodInfos(context.Background(), listTestResource, ns)
+	infos, err := listerTest.GetAllPodInfosByRaw(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

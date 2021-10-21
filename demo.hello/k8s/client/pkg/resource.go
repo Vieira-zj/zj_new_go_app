@@ -269,20 +269,25 @@ func (r *Resource) GetPodNamespace(ctx context.Context, podName string) (string,
 	return "", fmt.Errorf("pod [%s] not found", podName)
 }
 
-// CheckPodExec checks the given pod is validate for exec command.
+// CheckPodExec .
 func (r *Resource) CheckPodExec(ctx context.Context, namespace, podName, containerName string) error {
 	pod, err := r.GetPod(ctx, namespace, podName)
 	if err != nil {
 		return err
 	}
+	return r.CheckPodExecRaw(pod, containerName)
+}
 
+// CheckPodExecRaw checks the given pod is validate for exec command.
+func (r *Resource) CheckPodExecRaw(pod *apiv1.Pod, containerName string) error {
 	// pod phase check
 	if pod.Status.Phase != apiv1.PodRunning {
-		return fmt.Errorf("cannot exec in a container of [%s] pod [%s/%s]", pod.Status.Phase, namespace, podName)
+		return fmt.Errorf("cannot exec in a container of [%s] pod [%s/%s]",
+			pod.Status.Phase, pod.GetObjectMeta().GetNamespace(), pod.GetObjectMeta().GetName())
 	}
 
 	// pod state check
-	state, err := r.GetPodState(ctx, namespace, podName, containerName)
+	state, err := r.GetPodStateRaw(pod, containerName)
 	if err != nil {
 		return err
 	}
@@ -292,13 +297,17 @@ func (r *Resource) CheckPodExec(ctx context.Context, namespace, podName, contain
 	return fmt.Errorf("validate pod failed: status=[%s], message=[%s]", state.Value, state.Message)
 }
 
-// GetPodState returns the given pod state.
+// GetPodState .
 func (r *Resource) GetPodState(ctx context.Context, namespace, podName, containerName string) (*PodState, error) {
 	pod, err := r.GetPod(ctx, namespace, podName)
 	if err != nil {
 		return nil, err
 	}
+	return r.GetPodStateRaw(pod, containerName)
+}
 
+// GetPodStateRaw returns the given pod state.
+func (r *Resource) GetPodStateRaw(pod *apiv1.Pod, containerName string) (*PodState, error) {
 	if containerName == "" {
 		containerName = pod.Spec.Containers[0].Name
 	}
@@ -327,7 +336,8 @@ func (r *Resource) GetPodState(ctx context.Context, namespace, podName, containe
 			}
 		}
 	}
-	return nil, fmt.Errorf("no container [%s] found in pod [%s/%s]", containerName, namespace, podName)
+	return nil, fmt.Errorf("no container [%s] found in pod [%s/%s]",
+		containerName, pod.GetObjectMeta().GetNamespace(), pod.GetObjectMeta().GetName())
 }
 
 // GetPodLogs returns the given pod logs by default limited tail lines 100.

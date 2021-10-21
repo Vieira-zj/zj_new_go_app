@@ -2,7 +2,7 @@
 set -eu
 
 function build_error_exit_image() {
-    docker build -t zhengjin/error-exit:v1.0 -f image/ErrorExit.DockerFile .
+    docker build -t zhengjin/error-exit:v1.1 -f image/ErrorExit.DockerFile .
 }
 
 function run_debug_pod() {

@@ -77,8 +77,8 @@ func TestGetNamespace(t *testing.T) {
 }
 
 func TestGetSpecifiedPod(t *testing.T) {
-	ns := "mini-test-ns"
-	name := "hello-minikube-865c7f68f4-dgwcx"
+	ns := "k8s-test"
+	name := "error-exit-test-584c9756b9-kcz7c"
 	pod, err := k8sResource.GetPod(ctx, ns, name)
 	if err != nil {
 		t.Fatal(err)
@@ -88,7 +88,7 @@ func TestGetSpecifiedPod(t *testing.T) {
 
 func TestGetPodState(t *testing.T) {
 	ns := "k8s-test"
-	names := [2]string{"test-pod", "error-exit-test-55d594b94b-kspp5"}
+	names := [2]string{"test-pod", "error-exit-test-584c9756b9-kcz7c"}
 	for _, name := range names {
 		state, err := k8sResource.GetPodState(ctx, ns, name, "")
 		if err != nil {
