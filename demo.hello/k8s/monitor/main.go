@@ -8,6 +8,7 @@ import (
 	logs "log"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	k8spkg "demo.hello/k8s/client/pkg"
@@ -18,15 +19,15 @@ import (
 )
 
 var (
-	addr      string
-	namespace string
-	interval  uint
-	help      bool
+	addr     string
+	ns       string
+	interval uint
+	help     bool
 )
 
 func main() {
-	flag.StringVar(&addr, "addr", "8081", "server listen port.")
-	flag.StringVar(&namespace, "ns", "k8s-test", "target namespace to monitor.")
+	flag.StringVar(&addr, "addr", "8081", "http server listen port.")
+	flag.StringVar(&ns, "ns", "k8s-test,default", "target namespaces to be monitor, split by ','.")
 	flag.UintVar(&interval, "interval", 15, "interval (seconds) for list watcher to sync data.")
 	flag.BoolVar(&help, "h", false, "help.")
 	flag.Parse()
@@ -43,8 +44,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	watcher := internal.NewWatcher(client, namespace, interval)
-	lister := internal.NewLister(client, watcher, namespace)
+	namespaces := strings.Split(ns, ",")
+	watcher := internal.NewWatcher(client, namespaces, interval)
+	lister := internal.NewLister(client, watcher, namespaces)
 	watcher.Run(ctx, false)
 
 	// run server

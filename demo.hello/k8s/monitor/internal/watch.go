@@ -17,20 +17,28 @@ import (
 
 // Watcher .
 type Watcher struct {
-	namespace        string
+	namespaces       []string
 	resource         *k8spkg.Resource
 	factory          informers.SharedInformerFactory
 	ErrorPodStatusCh chan *PodStatus
 }
 
 // NewWatcher creates a list watcher instance.
-func NewWatcher(client *kubernetes.Clientset, namespace string, interval uint) *Watcher {
-	factory := informers.NewSharedInformerFactoryWithOptions(
-		client, time.Duration(interval)*time.Second, informers.WithNamespace(namespace))
-	resource := k8spkg.NewResource(client)
+func NewWatcher(client *kubernetes.Clientset, namespaces []string, interval uint) *Watcher {
+	if len(namespaces) == 0 {
+		panic("init watcher, namespace cannot be empty")
+	}
+
+	var factory informers.SharedInformerFactory
+	if len(namespaces) == 1 {
+		factory = informers.NewSharedInformerFactoryWithOptions(
+			client, time.Duration(interval)*time.Second, informers.WithNamespace(namespaces[0]))
+	} else {
+		factory = informers.NewSharedInformerFactoryWithOptions(client, time.Duration(interval)*time.Second)
+	}
 	return &Watcher{
-		namespace:        namespace,
-		resource:         resource,
+		namespaces:       namespaces,
+		resource:         k8spkg.NewResource(client),
 		factory:          factory,
 		ErrorPodStatusCh: make(chan *PodStatus, interval),
 	}
@@ -48,12 +56,23 @@ func (w *Watcher) Run(ctx context.Context, isWatchDeploy bool) {
 func (w *Watcher) podInformer() cache.SharedIndexInformer {
 	onAdd := func(obj interface{}) {
 		if pod, ok := obj.(*corev1.Pod); ok {
+			if len(w.namespaces) > 0 {
+				if !isInSlice(pod.GetObjectMeta().GetNamespace(), w.namespaces) {
+					return
+				}
+			}
 			log.Println("onAdd pod:", pod.ObjectMeta.GetName())
 		}
 	}
 
 	onUpdate := func(oldObj, newObj interface{}) {
 		if pod, ok := newObj.(*corev1.Pod); ok {
+			if len(w.namespaces) > 0 {
+				if !isInSlice(pod.GetObjectMeta().GetNamespace(), w.namespaces) {
+					return
+				}
+			}
+
 			log.Println("onUpdate pod:", pod.ObjectMeta.GetName())
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
 			defer cancel()
@@ -66,6 +85,11 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 
 	onDelete := func(obj interface{}) {
 		if pod, ok := obj.(*corev1.Pod); ok {
+			if len(w.namespaces) > 0 {
+				if !isInSlice(pod.GetObjectMeta().GetNamespace(), w.namespaces) {
+					return
+				}
+			}
 			log.Println("onDelete pod:", pod.ObjectMeta.GetName())
 		}
 	}
@@ -91,16 +115,31 @@ func (w *Watcher) deploymentInformer() cache.SharedIndexInformer {
 	handler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			if deploy, ok := obj.(*appsv1.Deployment); ok {
+				if len(w.namespaces) > 0 {
+					if !isInSlice(deploy.GetObjectMeta().GetNamespace(), w.namespaces) {
+						return
+					}
+				}
 				log.Println("onAdd deployment:", deploy.ObjectMeta.GetName())
 			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			if deploy, ok := newObj.(*appsv1.Deployment); ok {
+				if len(w.namespaces) > 0 {
+					if !isInSlice(deploy.GetObjectMeta().GetNamespace(), w.namespaces) {
+						return
+					}
+				}
 				log.Println("onUpdate deployment:", deploy.ObjectMeta.GetName())
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
 			if deploy, ok := obj.(*appsv1.Deployment); ok {
+				if len(w.namespaces) > 0 {
+					if !isInSlice(deploy.GetObjectMeta().GetNamespace(), w.namespaces) {
+						return
+					}
+				}
 				log.Println("onDelete deployment:", deploy.ObjectMeta.GetName())
 			}
 		},
@@ -114,7 +153,15 @@ func (w *Watcher) deploymentInformer() cache.SharedIndexInformer {
 // ListAllPods returns all pods in watcher namespace.
 func (w *Watcher) ListAllPods() ([]*corev1.Pod, error) {
 	podLister := w.factory.Core().V1().Pods().Lister()
-	return podLister.List(labels.Everything())
+	retPods, err := podLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(w.namespaces) > 1 {
+		retPods = filterPodByNamespaces(retPods, w.namespaces)
+	}
+	return retPods, nil
 }
 
 // ListAllDeployments returns all deployments in watcher namespace.

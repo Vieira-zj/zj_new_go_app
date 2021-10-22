@@ -21,30 +21,41 @@ type PodStatus struct {
 
 // Lister .
 type Lister struct {
-	namespace string
-	resource  *k8spkg.Resource
-	watcher   *Watcher
+	namespaces []string
+	resource   *k8spkg.Resource
+	watcher    *Watcher
 }
 
 // NewLister creates a Lister by given namespace.
-func NewLister(client *kubernetes.Clientset, watcher *Watcher, namespace string) *Lister {
-	if len(namespace) == 0 {
+func NewLister(client *kubernetes.Clientset, watcher *Watcher, namespaces []string) *Lister {
+	if len(namespaces) == 0 {
 		panic("init lister, namespace cannot be empty")
 	}
 	return &Lister{
-		namespace: namespace,
-		resource:  k8spkg.NewResource(client),
-		watcher:   watcher,
+		namespaces: namespaces,
+		resource:   k8spkg.NewResource(client),
+		watcher:    watcher,
 	}
 }
 
 // GetAllPodInfosByRaw returns all pods status info by raw api.
 func (lister *Lister) GetAllPodInfosByRaw(ctx context.Context) ([]*PodStatus, error) {
-	pods, err := lister.resource.GetPodsByNamespace(ctx, lister.namespace)
-	if err != nil {
-		return nil, err
+	var pods []*corev1.Pod
+	if len(lister.namespaces) == 1 {
+		localPods, err := lister.resource.GetPodsByNamespace(ctx, lister.namespaces[0])
+		if err != nil {
+			return nil, err
+		}
+		pods = getPodRefs(localPods)
+	} else {
+		allPods, err := lister.resource.GetAllPods(ctx)
+		log.Printf("all pods count: %d\n", len(allPods))
+		if err != nil {
+			return nil, err
+		}
+		pods = filterPodByNamespaces(getPodRefs(allPods), lister.namespaces)
 	}
-	return lister.GetAllPodInfos(ctx, getPodRefs(pods))
+	return lister.GetAllPodInfos(ctx, pods)
 }
 
 // GetAllPodInfosByListWatch returns all pods status info by watcher.
@@ -94,6 +105,25 @@ func GetPodStatus(ctx context.Context, resource *k8spkg.Resource, pod *corev1.Po
 		}
 	}
 	return podInfo
+}
+
+func filterPodByNamespaces(pods []*corev1.Pod, namespaces []string) []*corev1.Pod {
+	retPods := make([]*corev1.Pod, 0, len(pods))
+	for _, pod := range pods {
+		if isInSlice(pod.GetObjectMeta().GetNamespace(), namespaces) {
+			retPods = append(retPods, pod)
+		}
+	}
+	return retPods
+}
+
+func isInSlice(value string, values []string) bool {
+	for _, val := range values {
+		if val == value {
+			return true
+		}
+	}
+	return false
 }
 
 func getPodRefs(pods []corev1.Pod) []*corev1.Pod {

@@ -4,23 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	k8spkg "demo.hello/k8s/client/pkg"
+	"k8s.io/client-go/kubernetes"
 )
 
 var (
-	listerTest *Lister
+	err    error
+	client *kubernetes.Clientset
 )
 
 func init() {
-	ns := "k8s-test"
-	client, err := k8spkg.CreateK8sClientLocalDefault()
+	client, err = k8spkg.CreateK8sClientLocalDefault()
 	if err != nil {
 		panic(err)
 	}
-	watcher := NewWatcher(client, ns, 15)
-	listerTest = NewLister(client, watcher, ns)
 }
 
 func TestJSONMarshal(t *testing.T) {
@@ -39,8 +39,27 @@ func TestJSONMarshal(t *testing.T) {
 	fmt.Printf("json:\n%s", b)
 }
 
-func TestGetAllPodInfos(t *testing.T) {
-	infos, err := listerTest.GetAllPodInfosByRaw(context.Background())
+func TestGetAllPodInfosByGivenNamespace(t *testing.T) {
+	ns := "k8s-test"
+	watcher := NewWatcher(client, []string{ns}, 15)
+	lister := NewLister(client, watcher, []string{ns})
+
+	infos, err := lister.GetAllPodInfosByRaw(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := prettyPrintJSON(infos); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGetAllPodInfosByMultiNamespaces(t *testing.T) {
+	ns := "k8s-test,default"
+	namespaces := strings.Split(ns, ",")
+	watcher := NewWatcher(client, namespaces, 15)
+	lister := NewLister(client, watcher, namespaces)
+
+	infos, err := lister.GetAllPodInfosByRaw(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
