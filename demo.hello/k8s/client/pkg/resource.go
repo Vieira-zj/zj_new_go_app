@@ -310,7 +310,7 @@ func (r *Resource) GetPodState(ctx context.Context, namespace, podName, containe
 // GetPodStateRaw returns the given pod state.
 func (r *Resource) GetPodStateRaw(pod *apiv1.Pod, containerName string) (*PodState, error) {
 	if len(pod.Spec.Containers) == 0 {
-		return nil, fmt.Errorf("container is not init in pod [%s/%s]",
+		return nil, fmt.Errorf("container does not init in pod [%s/%s]",
 			pod.GetObjectMeta().GetNamespace(), pod.GetObjectMeta().GetName())
 	}
 

@@ -17,10 +17,10 @@ import (
 
 // Watcher .
 type Watcher struct {
-	namespace       string
-	resource        *k8spkg.Resource
-	factory         informers.SharedInformerFactory
-	ErrorPodStateCh chan *k8spkg.PodState
+	namespace        string
+	resource         *k8spkg.Resource
+	factory          informers.SharedInformerFactory
+	ErrorPodStatusCh chan *PodStatus
 }
 
 // NewWatcher creates a list watcher instance.
@@ -29,10 +29,10 @@ func NewWatcher(client *kubernetes.Clientset, namespace string, interval uint) *
 		client, time.Duration(interval)*time.Second, informers.WithNamespace(namespace))
 	resource := k8spkg.NewResource(client)
 	return &Watcher{
-		namespace:       namespace,
-		resource:        resource,
-		factory:         factory,
-		ErrorPodStateCh: make(chan *k8spkg.PodState, interval),
+		namespace:        namespace,
+		resource:         resource,
+		factory:          factory,
+		ErrorPodStatusCh: make(chan *PodStatus, interval),
 	}
 }
 
@@ -55,15 +55,11 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 	onUpdate := func(oldObj, newObj interface{}) {
 		if pod, ok := newObj.(*corev1.Pod); ok {
 			log.Println("onUpdate pod:", pod.ObjectMeta.GetName())
-			state, err := w.resource.GetPodStateRaw(pod, "")
-			if err != nil {
-				log.Printf("get pod [%s/%s] state error: %v\n",
-					pod.GetObjectMeta().GetNamespace(), pod.GetObjectMeta().GetName(), err)
-				k8spkg.PrintPodInfo(pod)
-				return
-			}
-			if state.Value != "Running" && state.Value != "ContainerCreating" {
-				w.ErrorPodStateCh <- state
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
+			defer cancel()
+			status := GetPodStatus(ctx, w.resource, pod, "")
+			if status.Value != "Running" && status.Value != "ContainerCreating" {
+				w.ErrorPodStatusCh <- status
 			}
 		}
 	}

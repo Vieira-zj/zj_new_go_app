@@ -12,10 +12,11 @@ import (
 
 // PodStatus .
 type PodStatus struct {
-	Name    string `json:"name"`
-	Status  string `json:"status"`
-	Message string `json:"message,omitempty"`
-	Log     string `json:"log,omitempty"`
+	Namespace string `json:"namespace"`
+	Name      string `json:"name"`
+	Value     string `json:"value"`
+	Message   string `json:"message,omitempty"`
+	Log       string `json:"log,omitempty"`
 }
 
 // Lister .
@@ -59,34 +60,40 @@ func (lister *Lister) GetAllPodInfosByListWatch(ctx context.Context) ([]*PodStat
 func (lister *Lister) GetAllPodInfos(ctx context.Context, pods []*corev1.Pod) ([]*PodStatus, error) {
 	podInfos := make([]*PodStatus, 0, len(pods))
 	for _, pod := range pods {
-		podName := pod.GetObjectMeta().GetName()
-		namespace := pod.GetObjectMeta().GetName()
-
-		podInfo := &PodStatus{
-			Name: podName,
-		}
-		state, err := lister.resource.GetPodStateRaw(pod, "")
-		if err != nil {
-			podInfo.Message = fmt.Sprintf("get pod [%s/%s] state failed: %s\n", namespace, podName, err.Error())
-			podInfos = append(podInfos, podInfo)
-			continue
-		}
-
-		podInfo.Status = state.Value
-		if len(state.Message) > 0 {
-			podInfo.Message = state.Message
-		}
-
-		if state.Value != "Running" {
-			if podLog, err := lister.resource.GetPodLogs(ctx, namespace, podName); err != nil {
-				log.Printf("get pod [%s/%s] state failed: %s\n", namespace, podName, err.Error())
-			} else {
-				podInfo.Log = podLog
-			}
-		}
+		podInfo := GetPodStatus(ctx, lister.resource, pod, "")
 		podInfos = append(podInfos, podInfo)
 	}
 	return podInfos, nil
+}
+
+// GetPodStatus returns the given pod status.
+func GetPodStatus(ctx context.Context, resource *k8spkg.Resource, pod *corev1.Pod, containerName string) *PodStatus {
+	podName := pod.GetObjectMeta().GetName()
+	namespace := pod.GetObjectMeta().GetNamespace()
+	podInfo := &PodStatus{
+		Namespace: namespace,
+		Name:      podName,
+	}
+
+	state, err := resource.GetPodStateRaw(pod, containerName)
+	if err != nil {
+		podInfo.Message = fmt.Sprintf("get pod [%s/%s] state failed: %s\n", namespace, podName, err.Error())
+		return podInfo
+	}
+
+	podInfo.Value = state.Value
+	if len(state.Message) > 0 {
+		podInfo.Message = state.Message
+	}
+
+	if state.Value != "Running" {
+		if podLog, err := resource.GetPodLogs(ctx, namespace, podName); err != nil {
+			log.Printf("get pod [%s/%s] log failed: %s\n", namespace, podName, err.Error())
+		} else {
+			podInfo.Log = podLog
+		}
+	}
+	return podInfo
 }
 
 func getPodRefs(pods []corev1.Pod) []*corev1.Pod {

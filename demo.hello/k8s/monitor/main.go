@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	logs "log"
 	"os"
 	"os/signal"
 	"time"
@@ -26,7 +27,7 @@ var (
 func main() {
 	flag.StringVar(&addr, "addr", "8081", "server listen port.")
 	flag.StringVar(&namespace, "ns", "k8s-test", "target namespace to monitor.")
-	flag.UintVar(&interval, "interval", 30, "interval (seconds) between send notify message.")
+	flag.UintVar(&interval, "interval", 15, "interval (seconds) for list watcher to sync data.")
 	flag.BoolVar(&help, "h", false, "help.")
 	flag.Parse()
 
@@ -62,8 +63,8 @@ func main() {
 
 	go func() {
 		addr = fmt.Sprintf(":%s", addr)
-		e.Logger.Info("Start cluster monitor at " + addr)
-		e.Logger.Fatal(e.Start(addr))
+		logs.Println("Start cluster monitor at " + addr)
+		logs.Fatalln(e.Start(addr))
 	}()
 
 	// send notify
@@ -72,26 +73,20 @@ func main() {
 		panic(err)
 	}
 	go func() {
-		tick := time.Tick(time.Duration(interval) * time.Second)
+		tick := time.Tick(time.Duration(interval*3) * time.Second)
 		for {
 			select {
 			case <-tick:
-				states := make(map[string]*k8spkg.PodState, interval)
+				statusMap := make(map[string]*internal.PodStatus, interval)
 				for {
-					if len(watcher.ErrorPodStateCh) == 0 {
+					if len(watcher.ErrorPodStatusCh) == 0 {
 						break
 					}
-					state := <-watcher.ErrorPodStateCh
-					states[state.Name] = state
+					status := <-watcher.ErrorPodStatusCh
+					statusMap[status.Name] = status // distinct
 				}
-				for _, state := range states {
-					b, err := json.MarshalIndent(state, "", "  ")
-					if err != nil {
-						e.Logger.Errorf("json marshal error: %v\n", err)
-					}
-					e.Logger.Info("send notification")
-					msg := fmt.Sprintf("`Notification` pods not running:\n%s", markdownJSON(string(b)))
-					mm.SendMessageToUser(ctx, "jin.zheng", msg)
+				for _, status := range statusMap {
+					notify(ctx, mm, status)
 				}
 			case <-ctx.Done():
 				return
@@ -106,7 +101,27 @@ func main() {
 	if err := e.Close(); err != nil {
 		panic(err)
 	}
-	e.Logger.Info("k8s monitor done")
+	logs.Println("k8s monitor done")
+}
+
+func notify(ctx context.Context, mm *internal.MatterMost, status *internal.PodStatus) {
+	podLog := status.Log
+	status.Log = ""
+	b, err := json.MarshalIndent(status, "", "  ")
+	if err != nil {
+		logs.Printf("json marshal error: %v\n", err)
+	}
+
+	logs.Println("send notification")
+	defaultUser := "jin.zheng"
+	msg := fmt.Sprintf("`Notification` pods not running:\n%s", markdownBlockText("json", string(b)))
+	mm.SendMessageToUser(ctx, defaultUser, msg)
+	msg = fmt.Sprintf("Pod `%s` Log:\n%s", status.Name, markdownBlockText("text", podLog))
+	mm.SendMessageToUser(ctx, defaultUser, msg)
+}
+
+func markdownBlockText(mdType, text string) string {
+	return fmt.Sprintf("```%s\n%s\n```", mdType, text)
 }
 
 func deco(fn func(echo.Context) error) func(echo.Context) error {
@@ -126,8 +141,4 @@ func preHook(c echo.Context) {
 }
 
 func afterHook(c echo.Context) {
-}
-
-func markdownJSON(text string) string {
-	return fmt.Sprintf("```json\n%s\n```", text)
 }

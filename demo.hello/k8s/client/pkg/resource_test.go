@@ -113,10 +113,10 @@ func TestCheckPodExec(t *testing.T) {
 }
 
 func TestGetPodLogs(t *testing.T) {
-	ns := "kube-system"
-	name := "etcd-minikube"
+	ns := "k8s-test"
+	name := "error-exit-test-584c9756b9-k7pf8"
 	if err := k8sResource.CheckPodExec(ctx, ns, name, ""); err != nil {
-		t.Fatal(err)
+		fmt.Println("check pod results:\n" + err.Error())
 	}
 
 	logs, err := k8sResource.GetPodLogsByTailLines(ctx, ns, name, int64(10))
