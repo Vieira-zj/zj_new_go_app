@@ -39,6 +39,12 @@ func TestJSONMarshal(t *testing.T) {
 	fmt.Printf("json:\n%s", b)
 }
 
+func TestIsPodOK(t *testing.T) {
+	for _, status := range []string{"Running", "Error"} {
+		fmt.Printf("status [%s]: %v\n", status, isPodOK(status))
+	}
+}
+
 func TestGetAllPodInfosByGivenNamespace(t *testing.T) {
 	ns := "k8s-test"
 	watcher := NewWatcher(client, []string{ns}, 15)

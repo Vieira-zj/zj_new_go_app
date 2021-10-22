@@ -118,8 +118,10 @@ func notify(ctx context.Context, mm *internal.MatterMost, status *internal.PodSt
 	defaultUser := "jin.zheng"
 	msg := fmt.Sprintf("`Notification` pods not running:\n%s", markdownBlockText("json", string(b)))
 	mm.SendMessageToUser(ctx, defaultUser, msg)
-	msg = fmt.Sprintf("Pod `%s` Log:\n%s", status.Name, markdownBlockText("text", podLog))
-	mm.SendMessageToUser(ctx, defaultUser, msg)
+	if len(podLog) > 0 {
+		msg = fmt.Sprintf("Pod `%s` Log:\n%s", status.Name, markdownBlockText("text", podLog))
+		mm.SendMessageToUser(ctx, defaultUser, msg)
+	}
 }
 
 func markdownBlockText(mdType, text string) string {

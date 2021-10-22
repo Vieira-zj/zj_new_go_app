@@ -17,7 +17,7 @@ import (
 
 // Watcher .
 type Watcher struct {
-	namespaces       []string
+	namespaces       map[string]struct{}
 	resource         *k8spkg.Resource
 	factory          informers.SharedInformerFactory
 	ErrorPodStatusCh chan *PodStatus
@@ -29,15 +29,22 @@ func NewWatcher(client *kubernetes.Clientset, namespaces []string, interval uint
 		panic("init watcher, namespace cannot be empty")
 	}
 
+	namespacesMap := make(map[string]struct{}, len(namespaces))
+	for _, ns := range namespaces {
+		namespacesMap[ns] = struct{}{}
+	}
+
 	var factory informers.SharedInformerFactory
 	if len(namespaces) == 1 {
+		// monitor given namespaces
 		factory = informers.NewSharedInformerFactoryWithOptions(
 			client, time.Duration(interval)*time.Second, informers.WithNamespace(namespaces[0]))
 	} else {
+		// monitor all namespaces
 		factory = informers.NewSharedInformerFactoryWithOptions(client, time.Duration(interval)*time.Second)
 	}
 	return &Watcher{
-		namespaces:       namespaces,
+		namespaces:       namespacesMap,
 		resource:         k8spkg.NewResource(client),
 		factory:          factory,
 		ErrorPodStatusCh: make(chan *PodStatus, interval),
@@ -56,8 +63,8 @@ func (w *Watcher) Run(ctx context.Context, isWatchDeploy bool) {
 func (w *Watcher) podInformer() cache.SharedIndexInformer {
 	onAdd := func(obj interface{}) {
 		if pod, ok := obj.(*corev1.Pod); ok {
-			if len(w.namespaces) > 0 {
-				if !isInSlice(pod.GetObjectMeta().GetNamespace(), w.namespaces) {
+			if len(w.namespaces) > 1 {
+				if _, ok := w.namespaces[pod.GetObjectMeta().GetNamespace()]; !ok {
 					return
 				}
 			}
@@ -67,8 +74,8 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 
 	onUpdate := func(oldObj, newObj interface{}) {
 		if pod, ok := newObj.(*corev1.Pod); ok {
-			if len(w.namespaces) > 0 {
-				if !isInSlice(pod.GetObjectMeta().GetNamespace(), w.namespaces) {
+			if len(w.namespaces) > 1 {
+				if _, ok := w.namespaces[pod.GetObjectMeta().GetNamespace()]; !ok {
 					return
 				}
 			}
@@ -77,7 +84,7 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
 			defer cancel()
 			status := GetPodStatus(ctx, w.resource, pod, "")
-			if status.Value != "Running" && status.Value != "ContainerCreating" {
+			if !isPodOK(status.Value) {
 				w.ErrorPodStatusCh <- status
 			}
 		}
@@ -85,8 +92,8 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 
 	onDelete := func(obj interface{}) {
 		if pod, ok := obj.(*corev1.Pod); ok {
-			if len(w.namespaces) > 0 {
-				if !isInSlice(pod.GetObjectMeta().GetNamespace(), w.namespaces) {
+			if len(w.namespaces) > 1 {
+				if _, ok := w.namespaces[pod.GetObjectMeta().GetNamespace()]; !ok {
 					return
 				}
 			}
@@ -115,8 +122,8 @@ func (w *Watcher) deploymentInformer() cache.SharedIndexInformer {
 	handler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			if deploy, ok := obj.(*appsv1.Deployment); ok {
-				if len(w.namespaces) > 0 {
-					if !isInSlice(deploy.GetObjectMeta().GetNamespace(), w.namespaces) {
+				if len(w.namespaces) > 1 {
+					if _, ok := w.namespaces[deploy.GetObjectMeta().GetNamespace()]; !ok {
 						return
 					}
 				}
@@ -125,8 +132,8 @@ func (w *Watcher) deploymentInformer() cache.SharedIndexInformer {
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			if deploy, ok := newObj.(*appsv1.Deployment); ok {
-				if len(w.namespaces) > 0 {
-					if !isInSlice(deploy.GetObjectMeta().GetNamespace(), w.namespaces) {
+				if len(w.namespaces) > 1 {
+					if _, ok := w.namespaces[deploy.GetObjectMeta().GetNamespace()]; !ok {
 						return
 					}
 				}
@@ -135,8 +142,8 @@ func (w *Watcher) deploymentInformer() cache.SharedIndexInformer {
 		},
 		DeleteFunc: func(obj interface{}) {
 			if deploy, ok := obj.(*appsv1.Deployment); ok {
-				if len(w.namespaces) > 0 {
-					if !isInSlice(deploy.GetObjectMeta().GetNamespace(), w.namespaces) {
+				if len(w.namespaces) > 1 {
+					if _, ok := w.namespaces[deploy.GetObjectMeta().GetNamespace()]; !ok {
 						return
 					}
 				}

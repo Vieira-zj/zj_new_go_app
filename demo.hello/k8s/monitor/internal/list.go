@@ -10,6 +10,16 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// ValidStatus valid status of pod.
+var ValidStatus map[string]struct{}
+
+func init() {
+	ValidStatus = make(map[string]struct{}, 4)
+	for _, status := range [4]string{"", "Running", "ContainerCreating", "Completed"} {
+		ValidStatus[status] = struct{}{}
+	}
+}
+
 // PodStatus .
 type PodStatus struct {
 	Namespace string `json:"namespace"`
@@ -21,7 +31,7 @@ type PodStatus struct {
 
 // Lister .
 type Lister struct {
-	namespaces []string
+	namespaces map[string]struct{}
 	resource   *k8spkg.Resource
 	watcher    *Watcher
 }
@@ -31,8 +41,13 @@ func NewLister(client *kubernetes.Clientset, watcher *Watcher, namespaces []stri
 	if len(namespaces) == 0 {
 		panic("init lister, namespace cannot be empty")
 	}
+
+	namespacesMap := make(map[string]struct{}, len(namespaces))
+	for _, ns := range namespaces {
+		namespacesMap[ns] = struct{}{}
+	}
 	return &Lister{
-		namespaces: namespaces,
+		namespaces: namespacesMap,
 		resource:   k8spkg.NewResource(client),
 		watcher:    watcher,
 	}
@@ -42,7 +57,11 @@ func NewLister(client *kubernetes.Clientset, watcher *Watcher, namespaces []stri
 func (lister *Lister) GetAllPodInfosByRaw(ctx context.Context) ([]*PodStatus, error) {
 	var pods []*corev1.Pod
 	if len(lister.namespaces) == 1 {
-		localPods, err := lister.resource.GetPodsByNamespace(ctx, lister.namespaces[0])
+		var namespace string
+		for ns := range lister.namespaces {
+			namespace = ns
+		}
+		localPods, err := lister.resource.GetPodsByNamespace(ctx, namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -97,7 +116,7 @@ func GetPodStatus(ctx context.Context, resource *k8spkg.Resource, pod *corev1.Po
 		podInfo.Message = state.Message
 	}
 
-	if state.Value != "Running" {
+	if !isPodOK(state.Value) {
 		if podLog, err := resource.GetPodLogs(ctx, namespace, podName); err != nil {
 			log.Printf("get pod [%s/%s] log failed: %s\n", namespace, podName, err.Error())
 		} else {
@@ -107,23 +126,19 @@ func GetPodStatus(ctx context.Context, resource *k8spkg.Resource, pod *corev1.Po
 	return podInfo
 }
 
-func filterPodByNamespaces(pods []*corev1.Pod, namespaces []string) []*corev1.Pod {
+func isPodOK(status string) bool {
+	_, ok := ValidStatus[status]
+	return ok
+}
+
+func filterPodByNamespaces(pods []*corev1.Pod, namespaces map[string]struct{}) []*corev1.Pod {
 	retPods := make([]*corev1.Pod, 0, len(pods))
 	for _, pod := range pods {
-		if isInSlice(pod.GetObjectMeta().GetNamespace(), namespaces) {
+		if _, ok := namespaces[pod.GetObjectMeta().GetNamespace()]; ok {
 			retPods = append(retPods, pod)
 		}
 	}
 	return retPods
-}
-
-func isInSlice(value string, values []string) bool {
-	for _, val := range values {
-		if val == value {
-			return true
-		}
-	}
-	return false
 }
 
 func getPodRefs(pods []corev1.Pod) []*corev1.Pod {
