@@ -71,7 +71,7 @@ func (w *Watcher) Run(ctx context.Context) error {
 
 	// 检测到 k8s 变更时，从头开始重新构建所有的数据
 	onChange := func() {
-		// 获得所有的 Ingress
+		// 获得所有的 ingresses
 		ingresses, err := ingressLister.List(labels.Everything())
 		if err != nil {
 			fmt.Println("failed to list ingresses")
@@ -121,7 +121,8 @@ func (w *Watcher) Run(ctx context.Context) error {
 			}
 		}
 
-		// payload includes all ingressres and certs => server.Update(payload) => sync route
+		// payload includes all ingressres and certs
+		// onChange(payload) => server.Update(payload) => sync route table
 		w.onChange(payload)
 	}
 

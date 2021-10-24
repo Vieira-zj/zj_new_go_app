@@ -45,6 +45,7 @@ func main() {
 		s.Update(payload)
 	})
 
+	// run
 	var eg errgroup.Group
 	eg.Go(func() error {
 		return s.Run(context.TODO())

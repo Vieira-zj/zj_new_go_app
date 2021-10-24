@@ -17,14 +17,15 @@ import (
 
 // Watcher .
 type Watcher struct {
+	isDebug          bool
 	namespaces       map[string]struct{}
 	resource         *k8spkg.Resource
 	factory          informers.SharedInformerFactory
 	ErrorPodStatusCh chan *PodStatus
 }
 
-// NewWatcher creates a list watcher instance.
-func NewWatcher(client *kubernetes.Clientset, namespaces []string, interval uint) *Watcher {
+// NewWatcher creates a list watcher instance for given namespaces.
+func NewWatcher(client *kubernetes.Clientset, namespaces []string, interval uint, isDebug bool) *Watcher {
 	if len(namespaces) == 0 {
 		panic("init watcher, namespace cannot be empty")
 	}
@@ -44,6 +45,7 @@ func NewWatcher(client *kubernetes.Clientset, namespaces []string, interval uint
 		factory = informers.NewSharedInformerFactoryWithOptions(client, time.Duration(interval)*time.Second)
 	}
 	return &Watcher{
+		isDebug:          isDebug,
 		namespaces:       namespacesMap,
 		resource:         k8spkg.NewResource(client),
 		factory:          factory,
@@ -51,9 +53,9 @@ func NewWatcher(client *kubernetes.Clientset, namespaces []string, interval uint
 	}
 }
 
-// Run exec watcher informer.
+// Run starts watcher informer.
 func (w *Watcher) Run(ctx context.Context, isWatchDeploy bool) {
-	log.Println("start watcher")
+	w.logPrintln("start watcher")
 	go w.podInformer().Run(ctx.Done())
 	if isWatchDeploy {
 		go w.deploymentInformer().Run(ctx.Done())
@@ -68,7 +70,7 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 					return
 				}
 			}
-			log.Println("onAdd pod:", pod.ObjectMeta.GetName())
+			w.logPrintln("onAdd pod:", pod.ObjectMeta.GetName())
 		}
 	}
 
@@ -80,11 +82,14 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 				}
 			}
 
-			log.Println("onUpdate pod:", pod.ObjectMeta.GetName())
+			w.logPrintln("onUpdate pod:", pod.ObjectMeta.GetName())
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
 			defer cancel()
 			status := GetPodStatus(ctx, w.resource, pod, "")
 			if !isPodOK(status.Value) {
+				if len(w.ErrorPodStatusCh) == cap(w.ErrorPodStatusCh) {
+					w.logPrintf("error pod status channel is full (size=%d)", len(w.ErrorPodStatusCh))
+				}
 				w.ErrorPodStatusCh <- status
 			}
 		}
@@ -97,7 +102,7 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 					return
 				}
 			}
-			log.Println("onDelete pod:", pod.ObjectMeta.GetName())
+			w.logPrintln("onDelete pod:", pod.ObjectMeta.GetName())
 		}
 	}
 
@@ -127,7 +132,7 @@ func (w *Watcher) deploymentInformer() cache.SharedIndexInformer {
 						return
 					}
 				}
-				log.Println("onAdd deployment:", deploy.ObjectMeta.GetName())
+				w.logPrintln("onAdd deployment:", deploy.ObjectMeta.GetName())
 			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
@@ -137,7 +142,7 @@ func (w *Watcher) deploymentInformer() cache.SharedIndexInformer {
 						return
 					}
 				}
-				log.Println("onUpdate deployment:", deploy.ObjectMeta.GetName())
+				w.logPrintln("onUpdate deployment:", deploy.ObjectMeta.GetName())
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -147,7 +152,7 @@ func (w *Watcher) deploymentInformer() cache.SharedIndexInformer {
 						return
 					}
 				}
-				log.Println("onDelete deployment:", deploy.ObjectMeta.GetName())
+				w.logPrintln("onDelete deployment:", deploy.ObjectMeta.GetName())
 			}
 		},
 	}
@@ -157,7 +162,7 @@ func (w *Watcher) deploymentInformer() cache.SharedIndexInformer {
 	return informers
 }
 
-// ListAllPods returns all pods in watcher namespace.
+// ListAllPods returns all pods in watcher namespaces.
 func (w *Watcher) ListAllPods() ([]*corev1.Pod, error) {
 	podLister := w.factory.Core().V1().Pods().Lister()
 	retPods, err := podLister.List(labels.Everything())
@@ -171,20 +176,32 @@ func (w *Watcher) ListAllPods() ([]*corev1.Pod, error) {
 	return retPods, nil
 }
 
-// ListAllDeployments returns all deployments in watcher namespace.
+// ListAllDeployments returns all deployments in watcher namespaces.
 func (w *Watcher) ListAllDeployments() ([]*appsv1.Deployment, error) {
 	deploymentLister := w.factory.Apps().V1().Deployments().Lister()
 	return deploymentLister.List(labels.Everything())
 }
 
-// ListAllService returns all services in watcher namespace.
+// ListAllService returns all services in watcher namespaces.
 func (w *Watcher) ListAllService() ([]*corev1.Service, error) {
 	serviceLister := w.factory.Core().V1().Services().Lister()
 	return serviceLister.List(labels.Everything())
 }
 
-// ListAllIngresses returns all ingresses in watcher namespace.
+// ListAllIngresses returns all ingresses in watcher namespaces.
 func (w *Watcher) ListAllIngresses() ([]*v1beta1.Ingress, error) {
 	ingressLister := w.factory.Extensions().V1beta1().Ingresses().Lister()
 	return ingressLister.List(labels.Everything())
+}
+
+func (w *Watcher) logPrintln(v ...interface{}) {
+	if w.isDebug {
+		log.Println(v...)
+	}
+}
+
+func (w *Watcher) logPrintf(foramt string, v ...interface{}) {
+	if w.isDebug {
+		log.Printf(foramt, v...)
+	}
 }

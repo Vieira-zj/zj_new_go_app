@@ -39,6 +39,13 @@ func TestJSONMarshal(t *testing.T) {
 	fmt.Printf("json:\n%s", b)
 }
 
+func TestChannelCap(t *testing.T) {
+	ch := make(chan string, 10)
+	ch <- "hello"
+	fmt.Printf("channel: len=%d, cap=%d\n", len(ch), cap(ch))
+	close(ch)
+}
+
 func TestIsPodOK(t *testing.T) {
 	for _, status := range []string{"Running", "Error"} {
 		fmt.Printf("status [%s]: %v\n", status, isPodOK(status))
@@ -47,7 +54,7 @@ func TestIsPodOK(t *testing.T) {
 
 func TestGetAllPodInfosByGivenNamespace(t *testing.T) {
 	ns := "k8s-test"
-	watcher := NewWatcher(client, []string{ns}, 15)
+	watcher := NewWatcher(client, []string{ns}, 15, true)
 	lister := NewLister(client, watcher, []string{ns})
 
 	infos, err := lister.GetAllPodInfosByRaw(context.Background())
@@ -62,7 +69,7 @@ func TestGetAllPodInfosByGivenNamespace(t *testing.T) {
 func TestGetAllPodInfosByMultiNamespaces(t *testing.T) {
 	ns := "k8s-test,default"
 	namespaces := strings.Split(ns, ",")
-	watcher := NewWatcher(client, namespaces, 15)
+	watcher := NewWatcher(client, namespaces, 15, true)
 	lister := NewLister(client, watcher, namespaces)
 
 	infos, err := lister.GetAllPodInfosByRaw(context.Background())

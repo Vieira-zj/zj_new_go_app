@@ -3,7 +3,6 @@ package internal
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -25,27 +24,14 @@ type MatterMost struct {
 }
 
 // NewMatterMost create an instance of MatterMost.
-func NewMatterMost() (*MatterMost, error) {
-	url := os.Getenv("MM_URL")
-	if len(url) == 0 {
-		return nil, errors.New("env var [MM_URL] is empty")
-	}
-	token := os.Getenv("MM_TOKEN")
-	if len(token) == 0 {
-		return nil, errors.New("env var [MM_TOKEN] is empty")
-	}
-	channel := os.Getenv("MM_CHANNEL")
-	if len(channel) == 0 {
-		return nil, errors.New("env var [MM_CHANNEL] is empty")
-	}
-
+func NewMatterMost() *MatterMost {
 	client := utils.NewDefaultHTTPUtils()
 	return &MatterMost{
-		baseURL: url,
-		token:   token,
-		channel: channel,
+		baseURL: getParamFromEnv("MM_URL"),
+		token:   getParamFromEnv("MM_TOKEN"),
+		channel: getParamFromEnv("MM_CHANNEL"),
 		client:  client,
-	}, nil
+	}
 }
 
 // SendMessageToUser send message to given channel and At specified user.
@@ -67,8 +53,16 @@ func (mm *MatterMost) SendMessage(ctx context.Context, text string) error {
 		return err
 	}
 
-	if _, err = mm.client.Post(ctx, mm.baseURL+"posts", headers, string(b)); err != nil {
+	if _, err = mm.client.Post(ctx, mm.baseURL+"/posts", headers, string(b)); err != nil {
 		return err
 	}
 	return nil
+}
+
+func getParamFromEnv(param string) string {
+	value := os.Getenv(param)
+	if len(value) == 0 {
+		panic(fmt.Sprintf("env var [%s] is empty", param))
+	}
+	return value
 }

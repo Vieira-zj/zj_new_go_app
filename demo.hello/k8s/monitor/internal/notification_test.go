@@ -9,10 +9,7 @@ import (
 var mm *MatterMost
 
 func init() {
-	var err error
-	if mm, err = NewMatterMost(); err != nil {
-		panic(err)
-	}
+	mm = NewMatterMost()
 }
 
 func TestSendMessage(t *testing.T) {

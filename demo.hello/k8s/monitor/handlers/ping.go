@@ -9,8 +9,8 @@ import (
 
 var count int
 
-// Home .
-func Home(c echo.Context) error {
+// Index .
+func Index(c echo.Context) error {
 	count++
 	return c.String(http.StatusOK, fmt.Sprintf("Access Count: %d", count))
 }

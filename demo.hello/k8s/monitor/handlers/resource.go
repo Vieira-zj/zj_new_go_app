@@ -7,6 +7,12 @@ import (
 	"github.com/labstack/echo"
 )
 
+// ResponsePodInfo .
+type ResponsePodInfo struct {
+	Total int `json:"total"`
+	Data  []*internal.PodStatus
+}
+
 // GetPodsStatus returns pods status: pod name, status, message and log.
 func GetPodsStatus(c echo.Context, lister *internal.Lister) error {
 	podInfos, err := lister.GetAllPodInfosByRaw(c.Request().Context())
@@ -14,7 +20,11 @@ func GetPodsStatus(c echo.Context, lister *internal.Lister) error {
 		c.Logger().Error(err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	return c.JSON(http.StatusOK, podInfos)
+
+	return c.JSON(http.StatusOK, ResponsePodInfo{
+		Total: len(podInfos),
+		Data:  podInfos,
+	})
 }
 
 // GetPodsStatusByList returns pods status by list watcher.
@@ -24,5 +34,9 @@ func GetPodsStatusByList(c echo.Context, lister *internal.Lister) error {
 		c.Logger().Error(err.Error())
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	return c.JSON(http.StatusOK, podInfos)
+
+	return c.JSON(http.StatusOK, ResponsePodInfo{
+		Total: len(podInfos),
+		Data:  podInfos,
+	})
 }

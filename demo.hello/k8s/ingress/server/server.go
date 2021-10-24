@@ -45,7 +45,7 @@ func (s *Server) Run(ctx context.Context) error {
 	eg.Go(func() error {
 		srv := http.Server{
 			Addr:    fmt.Sprintf("%s:%d", s.cfg.host, s.cfg.tlsPort),
-			Handler: s, // 代理逻辑
+			Handler: s, // 代理逻辑 => ServeHTTP()
 		}
 		srv.TLSConfig = &tls.Config{
 			GetCertificate: func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
@@ -63,7 +63,7 @@ func (s *Server) Run(ctx context.Context) error {
 	eg.Go(func() error {
 		srv := http.Server{
 			Addr:    fmt.Sprintf("%s:%d", s.cfg.host, s.cfg.port),
-			Handler: s, // 代理逻辑
+			Handler: s, // 代理逻辑 => ServeHTTP()
 		}
 		fmt.Println("starting insecure HTTP server", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil {
@@ -84,7 +84,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Printf("proxying request: [%s:/%s] to backend: %s\n", r.Host, r.URL.Path, backendURL.String())
 
-	// 使用 NewSingleHostReverseProxy 进行代理请求
+	// 使用 NewSingleHostReverseProxy 代理请求到 backend service
 	p := httputil.NewSingleHostReverseProxy(backendURL)
 	p.ErrorLog = log.New(os.Stdout, "[proxy]", 0)
 	p.ServeHTTP(w, r)

@@ -1,6 +1,7 @@
 # 自定义 Kubernetes Ingress Controller
 
 > Refer: <https://github.com/cnych/simple-ingress/>
+>
 
 ## Kubernetes Ingress
 
@@ -64,20 +65,30 @@ spec:
           servicePort: 80
 ```
 
+------
+
 ## 自定义 Ingress Controller
 
 自定义的控制器主要需要实现以下几个功能：
 
 1. 通过 Kubernetes API 查询和监听 Service、Ingress 以及 Secret 这些对象；
-2. 加载 TLS 证书用于 HTTPS 请求；
-3. 根据加载的 Kubernetes 数据构造一个用于 HTTP 服务的路由，当然该路由需要非常高效，因为所有传入的流量都将通过该路由；
+2. 根据加载的 Kubernetes 数据构造一个用于 HTTP 服务的路由，当然该路由需要非常高效，因为所有传入的流量都将通过该路由；
+3. 加载 TLS 证书用于 HTTPS 请求；
 4. 在 80 和 443 端口上监听传入的 HTTP 请求，根据路由查找对应的后端服务，然后代理请求和响应。443 端口将使用 TLS 证书进行安全连接。
 
 ### 项目结构
 
-- `server.go`: 代理 ingress 请求到后端 service 服务
-- `watcher.go`: 监听 ingress, service, secret 组件变化，更新路由表
-- `route.go`: 路由表 `host + path => service_name:service_port`
+- `server/server.go`: 代理 ingress 请求到后端 service 服务
+- `server/route.go`: 路由表 `host + path => service_name:service_port`
+- `watcher/watcher.go`: 监听 ingress, service, secret 组件变化，更新路由表
+
+### 执行过程
+
+1. 启动 http/https 服务来代理请求到 backend service
+2. 启动 watcher informer 监听k8s资源 secret,ingress,service 的变化
+3. 当有变化时，通过 watcher lister 遍历所有的 ingresses, 构建 ingressPayload (ingress+service+ports)
+4. 通过执行回调函数 `onChange(payload)` 更新代理 server 的路由表（routingTable）
+5. 路由表结构 `pathRE:url (url=>scheme:host, host=>serviceName:servicePort)`
 
 ### 部署和 http 测试
 
@@ -127,8 +138,10 @@ TODO:
 
 Ingress yaml 部署使用 api 版本为 `networking.k8s.io/v1`，在 client-go 中：
 
-- 使用 k8s.io 版本为 `k8s.io/api/networking/v1`时，`Ingresses().Lister()` 查询结果为0；
+- 使用 k8s.io 版本为 `k8s.io/api/networking/v1` 时，`Ingresses().Lister()` 查询结果为0；
 - 使用 `k8s.io/api/extensions/v1beta1` 查询结果正常。
+
+------
 
 ## 补充 - K8s
 

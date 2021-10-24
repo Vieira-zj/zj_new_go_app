@@ -36,7 +36,7 @@ type Lister struct {
 	watcher    *Watcher
 }
 
-// NewLister creates a Lister by given namespace.
+// NewLister creates a Lister by given namespaces.
 func NewLister(client *kubernetes.Clientset, watcher *Watcher, namespaces []string) *Lister {
 	if len(namespaces) == 0 {
 		panic("init lister, namespace cannot be empty")
@@ -126,11 +126,6 @@ func GetPodStatus(ctx context.Context, resource *k8spkg.Resource, pod *corev1.Po
 	return podInfo
 }
 
-func isPodOK(status string) bool {
-	_, ok := ValidStatus[status]
-	return ok
-}
-
 func filterPodByNamespaces(pods []*corev1.Pod, namespaces map[string]struct{}) []*corev1.Pod {
 	retPods := make([]*corev1.Pod, 0, len(pods))
 	for _, pod := range pods {
@@ -148,4 +143,9 @@ func getPodRefs(pods []corev1.Pod) []*corev1.Pod {
 		podRefs = append(podRefs, &localpod)
 	}
 	return podRefs
+}
+
+func isPodOK(status string) bool {
+	_, ok := ValidStatus[status]
+	return ok
 }
