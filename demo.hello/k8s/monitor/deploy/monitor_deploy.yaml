@@ -1,0 +1,78 @@
+#
+# monitor deploy
+#
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-monitor
+  namespace: k8s-test
+  labels:
+    app: pod-monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-monitor
+  template:
+    metadata:
+      labels:
+        app: pod-monitor
+    spec:
+      serviceAccountName: pod-monitor-controller
+      containers:
+      - name: pod-monitor
+        image: zhengjin/pod-monitor:v1.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: MM_URL
+          value: ${MM_URL}
+        - name: MM_TOKEN
+          value: ${MM_TOKEN}
+        - name: MM_CHANNEL
+          value: ${MM_CHANNEL}
+        ports:
+        - name: http
+          containerPort: 8081
+        resources:
+          limits:
+            cpu: 100m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: pod-monitor-svc
+  namespace: k8s-test
+spec:
+  selector:
+    app: pod-monitor
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8081
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pod-monitor-ing
+  namespace: k8s-test
+spec:
+  rules:
+  - host: test.monitor.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pod-monitor-svc
+            port:
+              number: 80

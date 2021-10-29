@@ -3,20 +3,26 @@ set -eu
 
 function build_for_linux() {
     local bin_name="pod_monitor"
-    GOOS=linux GOARCH=amd64 go build -o ${bin_name}
-    mv ${bin_name} /tmp/test/pod_monitor_linux
+    GOOS=linux GOARCH=amd64 go build -o bin/${bin_name}
 }
 
 function build_error_exit_image() {
-    docker build -t zhengjin/error-exit:v1.1 -f image/ErrorExit.DockerFile .
+    docker build -t zhengjin/error-exit:v1.1 -f image/ErrorExit.dockerfile .
 }
 
 function build_pod_monitor_image() {
-    docker build -t zhengjin/pod-monitor:v1.0 -f image/PodMonitor.DockerFile .
+    docker build -t zhengjin/pod-monitor:v1.0 -f image/Monitor.dockerfile .
 }
 
 function run_debug_pod() {
     kubectl run test-pod -it --rm --restart=Never -n k8s-test --image=busybox:1.30 sh
+}
+
+function deploy_pod_monitor() {
+    local output="deploy/monitor_deploy_tmp.yaml"
+    ./bin/envexpand -i deploy/monitor_deploy.yaml -o ${output}
+    kubectl create -f ${output}
+    rm ${output}
 }
 
 function run_gotest() {
@@ -24,8 +30,10 @@ function run_gotest() {
     go test -timeout 10s -run ^${case}$ demo.hello/k8s/monitor/internal -v -count=1
 }
 
-# build_error_exit_image
 # build_for_linux
 # build_pod_monitor_image
+# build_error_exit_image
 # run_gotest
+
+# deploy_pod_monitor
 echo "done"

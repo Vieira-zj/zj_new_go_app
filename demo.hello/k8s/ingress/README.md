@@ -88,7 +88,7 @@ spec:
 2. 启动 watcher informer 监听k8s资源 secret,ingress,service 的变化
 3. 当有变化时，通过 watcher lister 遍历所有的 ingresses, 构建 ingressPayload (ingress+service+ports)
 4. 通过执行回调函数 `onChange(payload)` 更新代理 server 的路由表（routingTable）
-5. 路由表结构 `pathRE:url (url=>scheme:host, host=>serviceName:servicePort)`
+5. 路由表记录结构 `pathRE:url (url=>scheme:host, host=>serviceName:servicePort)`
 
 ### 部署和 http 测试
 
@@ -132,7 +132,7 @@ kubectl logs -f k8s-simple-ingress-controller-wk7h8 -n k8s-test
 
 ### https 测试
 
-TODO:
+*TODO:*
 
 ### k8s.io api 版本问题
 
