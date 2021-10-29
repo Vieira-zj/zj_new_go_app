@@ -36,7 +36,7 @@ curl http://localhost:8081/list/pods | jq .
 ```sh
 curl http://test.monitor.com/ping
 
-curl http://localhost:8081/resource/pods | jq .
+curl http://test.monitor.com/resource/pods | jq .
 curl http://test.monitor.com/list/pods | jq .
 ```
 

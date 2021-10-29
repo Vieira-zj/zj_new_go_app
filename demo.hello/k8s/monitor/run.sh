@@ -19,10 +19,7 @@ function run_debug_pod() {
 }
 
 function deploy_pod_monitor() {
-    local output="deploy/monitor_deploy_tmp.yaml"
-    ./bin/envexpand -i deploy/monitor_deploy.yaml -o ${output}
-    kubectl create -f ${output}
-    rm ${output}
+    ./bin/envexpand -i deploy/monitor_deploy.yaml -p | kubectl create -f -
 }
 
 function run_gotest() {
