@@ -23,14 +23,14 @@ function deploy_pod_monitor() {
 }
 
 function run_gotest() {
-    local case="TestChannelCap"
-    go test -timeout 10s -run ^${case}$ demo.hello/k8s/monitor/internal -v -count=1
+    local case="TestRateLimiter"
+    go test -timeout 60s -run ^${case}$ demo.hello/k8s/monitor/internal -v -count=1
 }
 
 # build_for_linux
 # build_pod_monitor_image
 # build_error_exit_image
-# run_gotest
 
 # deploy_pod_monitor
+run_gotest
 echo "done"

@@ -27,6 +27,30 @@ func TestGetRandString(t *testing.T) {
 	}
 }
 
+func TestRunFuncWithTimeout(t *testing.T) {
+	timeout := 2
+	addFunc := func(a int, b int) int {
+		time.Sleep(time.Duration(timeout) * time.Second)
+		return a + b
+	}
+
+	a := 1
+	b := 2
+	runFunc := func() interface{} {
+		return addFunc(a, b)
+	}
+
+	res, err := RunFuncWithTimeout(runFunc, time.Duration(timeout+1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if val, ok := res.(int); !ok {
+		t.Fatal("results type error.")
+	} else {
+		fmt.Println("results:", val)
+	}
+}
+
 func TestGetSimpleCurrentDatetime(t *testing.T) {
 	fmt.Println("current datetime:", GetSimpleCurrentDatetime())
 }

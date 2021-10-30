@@ -19,7 +19,7 @@ var (
 func init() {
 	client, err = k8spkg.CreateK8sClientLocalDefault()
 	if err != nil {
-		panic(err)
+		fmt.Println("create k8s client failed:", err)
 	}
 }
 

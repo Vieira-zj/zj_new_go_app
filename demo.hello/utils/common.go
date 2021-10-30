@@ -42,6 +42,27 @@ func GetRandString(length uint) (string, error) {
 	return hex.EncodeToString(randBytes), nil
 }
 
+// RunFunc .
+type RunFunc func() interface{}
+
+// RunFuncWithTimeout runs function, if timeout, return nil.
+func RunFuncWithTimeout(fn RunFunc, timeout time.Duration) (interface{}, error) {
+	ch := make(chan interface{}, 1)
+	defer close(ch)
+
+	go func() {
+		res := fn()
+		ch <- res
+	}()
+
+	select {
+	case res := <-ch:
+		return res, nil
+	case <-time.After(timeout * time.Second):
+		return nil, fmt.Errorf("timeout, exceed %d seconds", timeout)
+	}
+}
+
 /*
 Datetime
 */
