@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	k8spkg "demo.hello/k8s/client/pkg"
 	corev1 "k8s.io/api/core/v1"
@@ -116,7 +117,7 @@ func GetPodStatus(ctx context.Context, resource *k8spkg.Resource, pod *corev1.Po
 		podInfo.Message = state.Message
 	}
 
-	if !isPodOK(state.Value) {
+	if !isPodOK(podInfo.Value) {
 		if podLog, err := resource.GetPodLogs(ctx, namespace, podName); err != nil {
 			log.Printf("get pod [%s/%s] log failed: %s\n", namespace, podName, err.Error())
 		} else {
@@ -146,6 +147,10 @@ func getPodRefs(pods []corev1.Pod) []*corev1.Pod {
 }
 
 func isPodOK(status string) bool {
-	_, ok := ValidStatus[status]
+	reason := status
+	if strings.Index(status, "/") != -1 {
+		reason = strings.Split(status, "/")[1]
+	}
+	_, ok := ValidStatus[reason]
 	return ok
 }

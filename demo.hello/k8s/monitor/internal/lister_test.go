@@ -47,8 +47,38 @@ func TestChannelCap(t *testing.T) {
 }
 
 func TestIsPodOK(t *testing.T) {
-	for _, status := range []string{"Running", "Error"} {
-		fmt.Printf("status [%s]: %v\n", status, isPodOK(status))
+	testData := []struct {
+		status string
+		expect bool
+	}{
+		{
+			status: "Running",
+			expect: true,
+		},
+		{
+			status: "Waiting/ContainerCreating",
+			expect: true,
+		},
+		{
+			status: "Waiting/PullImage",
+			expect: false,
+		},
+		{
+			status: "Terminated/CrashOff",
+			expect: false,
+		},
+		{
+			status: "Terminated/Completed",
+			expect: true,
+		},
+	}
+
+	for _, item := range testData {
+		actual := isPodOK(item.status)
+		fmt.Printf("status [%s]: %v\n", item.status, actual)
+		if actual != item.expect {
+			t.Fatalf("get %v, want %v\n", actual, item.expect)
+		}
 	}
 }
 

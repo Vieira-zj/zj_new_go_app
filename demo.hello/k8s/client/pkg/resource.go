@@ -281,7 +281,8 @@ func (r *Resource) CheckPodExec(ctx context.Context, namespace, podName, contain
 
 // CheckPodExecRaw checks the given pod is validate for exec command.
 func (r *Resource) CheckPodExecRaw(pod *apiv1.Pod, containerName string) error {
-	// pod phase check
+	// pod phase
+	// refer: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase
 	if pod.Status.Phase != apiv1.PodRunning {
 		return fmt.Errorf("cannot exec in a container of [%s] pod [%s/%s]",
 			pod.Status.Phase, pod.GetObjectMeta().GetNamespace(), pod.GetObjectMeta().GetName())
@@ -321,6 +322,8 @@ func (r *Resource) GetPodStateRaw(pod *apiv1.Pod, containerName string) (*PodSta
 	state := &PodState{
 		Name: pod.GetObjectMeta().GetName(),
 	}
+	// container states
+	// refer: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-states
 	for _, container := range pod.Status.ContainerStatuses {
 		if container.Name == containerName {
 			if container.State.Running != nil {
@@ -329,15 +332,16 @@ func (r *Resource) GetPodStateRaw(pod *apiv1.Pod, containerName string) (*PodSta
 			}
 			if container.State.Waiting != nil {
 				stateWait := container.State.Waiting
-				state.Value = stateWait.Reason
+				// value: container state + reason
+				state.Value = fmt.Sprintf("Waiting/%s", stateWait.Reason)
 				state.Message = stateWait.Message
 				return state, nil
 			}
 			if container.State.Terminated != nil {
 				stateTerminated := container.State.Terminated
-				state.Value = stateTerminated.Reason
-				state.ExitCode = stateTerminated.ExitCode
+				state.Value = fmt.Sprintf("Terminated/%s", stateTerminated.Reason)
 				state.Message = stateTerminated.Message
+				state.ExitCode = stateTerminated.ExitCode
 				return state, nil
 			}
 		}
