@@ -57,4 +57,6 @@ func main() {
 	fmt.Println("Delete")
 	var product Product
 	db.Delete(&product, 1)
+
+	fmt.Println("gorm done")
 }
