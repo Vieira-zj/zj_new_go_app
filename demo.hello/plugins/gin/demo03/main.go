@@ -55,6 +55,7 @@ var bookableDate validator.Func = func(fl validator.FieldLevel) bool {
 }
 
 func main() {
+	// Model binding and validation
 	router := gin.Default()
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -65,7 +66,7 @@ func main() {
 	// curl "http://localhost:8081/person?name=foo&address=bar&birthday=1992-03-15&createTime=1562400033000000123&unixTime=1562400033"
 	router.Any("/person", func(c *gin.Context) {
 		var person Person
-		if err := c.ShouldBindQuery(&person); err == nil {
+		if err := c.ShouldBind(&person); err == nil {
 			log.Println("====== Only Bind By Query String ======")
 			log.Println("name:", person.Name)
 			log.Println("address:", person.Address)
@@ -73,7 +74,7 @@ func main() {
 			log.Println("createTime:", person.CreateTime)
 			log.Println("unixTime:", person.UnixTime)
 		}
-		c.String(200, "Success")
+		c.String(http.StatusOK, "Success")
 	})
 
 	// Bind Uri
@@ -85,7 +86,7 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 			return
 		}
-		c.JSON(200, gin.H{"name": student.Name, "uuid": student.ID})
+		c.JSON(http.StatusOK, gin.H{"name": student.Name, "uuid": student.ID})
 	})
 
 	// Bind Header
@@ -99,7 +100,7 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"Rate": h.Rate, "Domain": h.Domain})
 	})
 
-	// Model binding and validation
+	// Bind JSON
 	// curl -XPOST http://localhost:8081/loginJSON -H 'content-type: application/json' \
 	//   -d '{"user": "manu", "password": "123"}'
 	//   -d '{"user": "manu"}'

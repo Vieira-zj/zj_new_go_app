@@ -19,6 +19,8 @@ type Product struct {
 }
 
 func main() {
+	// Quick Start
+	//
 	// test:
 	// sqlite3 test.db
 	// > .tables

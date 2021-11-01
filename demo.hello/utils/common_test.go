@@ -51,6 +51,10 @@ func TestRunFuncWithTimeout(t *testing.T) {
 	}
 }
 
+func TestFormatDateTimeAsDate(t *testing.T) {
+	fmt.Println("current date:", FormatDateTimeAsDate(time.Now()))
+}
+
 func TestGetSimpleCurrentDatetime(t *testing.T) {
 	fmt.Println("current datetime:", GetSimpleCurrentDatetime())
 }

@@ -67,6 +67,12 @@ func RunFuncWithTimeout(fn RunFunc, timeout time.Duration) (interface{}, error) 
 Datetime
 */
 
+// FormatDateTimeAsDate .
+func FormatDateTimeAsDate(t time.Time) string {
+	year, month, day := t.Date()
+	return fmt.Sprintf("%d-%02d-%02d", year, month, day)
+}
+
 // GetSimpleCurrentDatetime .
 func GetSimpleCurrentDatetime() string {
 	currentTime := time.Now()

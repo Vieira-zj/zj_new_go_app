@@ -11,6 +11,8 @@ import (
 )
 
 func main() {
+	// Using middleware
+	// Creates a router without any middleware by default
 	r := gin.New()
 
 	// Write log file
@@ -18,7 +20,7 @@ func main() {
 	f, _ := os.Create("/tmp/test/gin.log")
 	gin.DefaultWriter = io.MultiWriter(os.Stdout, f)
 
-	// Using middleware
+	// Logger middleware
 	r.Use(gin.Logger())
 
 	// Custom Log Format
@@ -56,7 +58,7 @@ func main() {
 
 	// curl http://localhost:8081/ping
 	r.GET("/ping", func(c *gin.Context) {
-		c.String(200, "pong")
+		c.String(http.StatusOK, "pong")
 	})
 
 	r.Run(":8081")
