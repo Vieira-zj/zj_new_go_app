@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strings"
+	"syscall"
 	"time"
 
 	"demo.hello/demos"
@@ -71,8 +73,9 @@ func colorDemo() {
 }
 
 func httpServe() {
-	server := http.Server{
-		Addr: ":8080",
+	addr := ":8080"
+	server := &http.Server{
+		Addr: addr,
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -80,10 +83,17 @@ func httpServe() {
 		fmt.Fprint(w, "hello world")
 	})
 
-	fmt.Println("http serve at :8080")
-	go server.ListenAndServe()
+	fmt.Printf("http serve at %s\n", addr)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+			fmt.Printf("listen: %s\n", err)
+		}
+	}()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	// kill (no param) default send syscall.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall.SIGKILL but can't be caught, so don't need to add it
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	<-ctx.Done()
 
 	stop() // 重置 os.Interrupt 的默认行为

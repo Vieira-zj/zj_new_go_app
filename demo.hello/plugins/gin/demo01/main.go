@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
+func setupRouter() *gin.Engine {
 	r := gin.Default()
 
 	// curl http://localhost:8081/ping | jq .
@@ -17,6 +17,11 @@ func main() {
 			"message": "pong",
 		})
 	})
+	return r
+}
+
+func main() {
+	r := setupRouter()
 
 	// Parameters in path
 	// curl http://localhost:8081/user/foo
