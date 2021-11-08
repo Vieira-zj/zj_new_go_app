@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -160,5 +161,166 @@ func TestDeclaringModels(t *testing.T) {
 
 //
 // Example
-// TODO:
 //
+
+type NewCompany struct {
+	ID        string        `gorm:"primary_key;column:ID"`
+	Name      string        `gorm:"column:Name"`
+	Address   NewAddress    `gorm:"foreignkey:CompanyID"` // one-to-one
+	Employees []NewEmployee `gorm:"foreignkey:CompanyID"` // one-to-many
+}
+
+func (NewCompany) TableName() string {
+	return "new_company"
+}
+
+func (c NewCompany) String() string {
+	return fmt.Sprintf("ID: %s | Name: %s | Address: %v | Employees:\n%v\n", c.ID, c.Name, c.Address, c.Employees)
+}
+
+func (c *NewCompany) BeforeCreate(tx *gorm.DB) (err error) {
+	c.ID = uuid.New().String()
+	return
+}
+
+func (c *NewCompany) AfterDelete(tx *gorm.DB) (err error) {
+	fmt.Println("AfterDelete:", c.ID)
+	return
+}
+
+type NewEmployee struct {
+	ID               string    `gorm:"primary_key;column:ID"`
+	FirstName        string    `gorm:"column:FirstName"`
+	LastName         string    `gorm:"column:LastName"`
+	SocialSecurityNo string    `gorm:"column:SocialSecurityNo"`
+	DateOfBirth      time.Time `gorm:"column:DateOfBirth"`
+	Deleted          bool      `gorm:"column:Deleted;default:false"`
+	CompanyID        string    `gorm:"column:Company_ID"`
+}
+
+func (NewEmployee) TableName() string {
+	return "new_employee"
+}
+
+func (e NewEmployee) String() string {
+	return fmt.Sprintf("ID: %s | FirstName: %s\n", e.ID, e.FirstName)
+}
+
+func (e *NewEmployee) BeforeCreate(tx *gorm.DB) (err error) {
+	e.ID = uuid.New().String()
+	return
+}
+
+type NewAddress struct {
+	ID        uint
+	Country   string `gorm:"column:Country"`
+	City      string `gorm:"column:City"`
+	PostCode  string `gorm:"column:PostCode"`
+	Line1     string `gorm:"column:Line1"`
+	Line2     string `gorm:"column:Line2"`
+	CompanyID string `gorm:"column:Company_ID"`
+}
+
+func (NewAddress) TableName() string {
+	return "new_address"
+}
+
+func TestExampleCreateTables(t *testing.T) {
+	db := mysqlDB
+	fmt.Println("Create Tables")
+	if err := db.AutoMigrate(&NewEmployee{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&NewAddress{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&NewCompany{}); err != nil {
+		t.Fatal(err)
+	}
+
+	// TOFIX: add Foreign Key Constraint
+}
+
+func TestExampleInitCompany(t *testing.T) {
+	company := NewCompany{
+		Name: "Google",
+		Address: NewAddress{
+			Country:  "USA",
+			City:     "Moutain View",
+			PostCode: "1600",
+			Line1:    "Cloverfield Lane, 32",
+			Line2:    "Apt 64",
+		},
+		Employees: []NewEmployee{
+			{
+				FirstName:        "John",
+				LastName:         "Doe",
+				SocialSecurityNo: "00-000-0000",
+				DateOfBirth:      time.Now(),
+			},
+			{
+				FirstName:        "James",
+				LastName:         "Dean",
+				SocialSecurityNo: "00-000-0001",
+				DateOfBirth:      time.Now().AddDate(1, 0, 0),
+			},
+			{
+				FirstName:        "Joan",
+				LastName:         "Dutsch",
+				SocialSecurityNo: "00-000-0002",
+				DateOfBirth:      time.Now().AddDate(2, 0, 0),
+			},
+		},
+	}
+
+	fmt.Println("Create Company, Address and Employees")
+	if result := mysqlDB.Create(&company); result.Error != nil {
+		t.Fatal(result.Error)
+	}
+}
+
+func TestExampleRetrieveCompany(t *testing.T) {
+	db := mysqlDB
+	company := NewCompany{}
+	db.First(&company)
+
+	fmt.Println("Find Only Company (Lazy load)...")
+	var firstComp NewCompany
+	db.Where("ID = ?", company.ID).First(&firstComp)
+	fmt.Println("First Company:", firstComp)
+	fmt.Println()
+
+	fmt.Println("Find Only Company (Eager load)...")
+	var fullComp NewCompany
+	db.Preload("Employees").Joins("Address").First(&fullComp)
+	fmt.Println("Full Company: ", fullComp)
+}
+
+func TestExampleUpdateCompany(t *testing.T) {
+	db := mysqlDB
+	company := NewCompany{}
+	db.Joins("Address").First(&company)
+
+	fmt.Println("Update Company and Address")
+	company.Name = "Google Plus"
+	if len(company.Address.Country) > 0 {
+		company.Address.Country = "France"
+	}
+	db.Save(&company)
+	db.Save(&company.Address)
+}
+
+func TestExampleDeleteCompany(t *testing.T) {
+	db := mysqlDB
+	company := NewCompany{}
+	db.First(&company)
+
+	fmt.Println("Delete Company")
+	transaction := db.Begin()
+	if result := transaction.Delete(&company); result.Error != nil {
+		transaction.Rollback()
+		t.Fatal(result.Error)
+	}
+	transaction.Commit()
+	fmt.Println("Delete Company Done")
+}
