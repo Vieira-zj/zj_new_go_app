@@ -1,6 +1,10 @@
 #!/bin/bash
 set -eu
 
+function run_monitor_with_local_debug() {
+    ./bin/monitor -debug -mode=local -ns="kube-system,default"
+}
+
 function build_for_linux() {
     local bin_name="pod_monitor"
     GOOS=linux GOARCH=amd64 go build -o bin/${bin_name}
@@ -28,9 +32,11 @@ function run_gotest() {
 }
 
 # build_for_linux
+# run_monitor_with_local_debug
+run_gotest
+
 # build_pod_monitor_image
 # build_error_exit_image
 
 # deploy_pod_monitor
-run_gotest
 echo "done"

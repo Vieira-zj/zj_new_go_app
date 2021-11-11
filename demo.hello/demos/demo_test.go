@@ -998,44 +998,51 @@ func TestDemo98(t *testing.T) {
 	// print bytes
 	b := []byte("world")
 	fmt.Printf("hello %s\n", b)
+	fmt.Println()
+
+	// 泰文 bytes 转 str
+	s := "\340\271\204\340\270\241\340\271\210\340\270\252\340\270\262\340\270\241\340\270\262\340\270\243\340\270\226\340\271\203\340\270\212\340\271\211\340\270\204\340\270\271\340\270\233\340\270\255\340\270\207\340\270\231\340\270\265\340\271\211"
+	b = []byte(s)
+	fmt.Println(string(b))
+	fmt.Println()
 
 	// 可变参数
 	sayHello := func(args ...string) {
 		fmt.Println("hello", strings.Join(args, ","))
 	}
 	sayHello("foo", "bar")
+	fmt.Println()
 
 	// delete item of slice
-	s := []string{"a", "b", "c"}
-	c := "a"
-	for idx, item := range s {
-		if item == c {
-			s = append(s[:idx], s[idx+1:]...)
+	sl := []string{"one", "two", "three"}
+	word := "one"
+	for idx, item := range sl {
+		if item == word {
+			sl = append(sl[:idx], sl[idx+1:]...)
 			break
 		}
 	}
-	fmt.Println(s)
+	fmt.Println(sl)
 }
 
 func TestDemo99(t *testing.T) {
-	// equal
+	// string equal
 	fmt.Println(strings.EqualFold("host", "host"))
 	fmt.Println(strings.EqualFold("Host", "host"))
 	fmt.Println(strings.EqualFold("host", "gost"))
+	fmt.Println()
 
 	// print with padding
-	fmt.Println()
 	for _, val := range []int{123, 1331, 131008} {
 		fmt.Printf("%7dms\n", val)
 	}
-
 	for _, val := range []int{123, 1331, 131008} {
 		str := strconv.Itoa(val) + "ms"
 		fmt.Printf("%-9seof\n", str)
 	}
+	fmt.Println()
 
 	// url parse
-	fmt.Println()
 	uri := "http://release.i.sppay.sz.shopee.io/"
 	testURL, err := url.Parse(uri)
 	if err != nil {

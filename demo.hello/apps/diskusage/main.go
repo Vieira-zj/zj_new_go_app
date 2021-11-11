@@ -10,52 +10,38 @@ import (
 	"time"
 )
 
-var done = make(chan struct{})
+var (
+	cancelCh    chan struct{}
+	semaphoreCh chan struct{}
+	// flags
+	help     bool
+	verbose  bool
+	parallel int
+)
 
 func cancelled() bool {
-	select {
 	// 一个已经被关闭的channel不会阻塞，会立即返回，可检查返回值 ok
 	// case _, ok <-done:
-	case <-done:
+	select {
+	case <-cancelCh:
 		return true
 	default:
 		return false
 	}
 }
 
-// 获取目录dir下的文件大小
-func walkDir(dir string, wg *sync.WaitGroup, fileSizes chan<- int64) {
-	defer wg.Done()
-	if cancelled() {
-		return
-	}
-
-	for _, entry := range dirents(dir) {
-		if entry.IsDir() {
-			wg.Add(1)
-			subDir := filepath.Join(dir, entry.Name())
-			go walkDir(subDir, wg, fileSizes)
-		} else {
-			fileSizes <- entry.Size()
-		}
-	}
-}
-
-// 信号量
-var sema = make(chan struct{}, 3)
-
-// 读取目录dir下的文件信息
+// 读取目录下的文件信息
 func dirents(dir string) []os.FileInfo {
 	select {
-	case <-done:
+	case <-cancelCh:
 		return nil
 	// acquire token
-	case sema <- struct{}{}:
+	case semaphoreCh <- struct{}{}:
 	}
 
 	// release token
 	defer func() {
-		<-sema
+		<-semaphoreCh
 	}()
 
 	entries, err := ioutil.ReadDir(dir)
@@ -66,55 +52,83 @@ func dirents(dir string) []os.FileInfo {
 	return entries
 }
 
-// 提供 -v 参数会显示程序进度信息
-var help = flag.Bool("h", false, "help.")
-var verbose = flag.Bool("v", false, "show verbose progress messages.")
+func walkDir(wg *sync.WaitGroup, dir string, fileSizes chan<- int64) {
+	defer wg.Done()
+	if cancelled() {
+		return
+	}
 
-func startDiskUsage() {
+	for _, entry := range dirents(dir) {
+		if entry.IsDir() {
+			wg.Add(1)
+			subDir := filepath.Join(dir, entry.Name())
+			go walkDir(wg, subDir, fileSizes)
+		} else {
+			fileSizes <- entry.Size()
+		}
+	}
+}
+
+func printDiskUsage(nfiles, nbytes int64) {
+	fmt.Printf("scan: %d files %.3f GB\n", nfiles, float64(nbytes)/1e9)
+}
+
+func main() {
+	flag.BoolVar(&help, "h", false, "help.")
+	flag.BoolVar(&verbose, "v", false, "show verbose scan progress messages.")
+	flag.IntVar(&parallel, "p", 3, "number of parallel to scan dir.")
 	flag.Parse()
-	if *help {
+	if help {
 		flag.Usage()
 		return
 	}
 
+	cancelCh = make(chan struct{})
+	semaphoreCh = make(chan struct{}, parallel)
+	fileSizesCh := make(chan int64, parallel)
+
 	roots := flag.Args()
 	if len(roots) == 0 {
-		roots = []string{"."}
+		roots = []string{"./"}
 	}
 
-	var tick <-chan time.Time
-	if *verbose {
-		tick = time.Tick(100 * time.Millisecond)
-	}
-
+	// scan target dir
 	var wg sync.WaitGroup
-	fileSizes := make(chan int64, 3)
 	for _, dir := range roots {
 		wg.Add(1)
-		go walkDir(dir, &wg, fileSizes)
+		go walkDir(&wg, dir, fileSizesCh)
 	}
 
+	// read a byte and exit
 	go func() {
-		// 从标准输入读取一个字符，执行goroutine退出
 		os.Stdin.Read(make([]byte, 1))
-		close(done)
+		close(cancelCh)
 	}()
 
 	go func() {
 		wg.Wait()
-		close(fileSizes)
+		close(fileSizesCh)
 	}()
 
-	var nfiles, nbytes int64
+	var (
+		nfiles int64
+		nbytes int64
+		tick   <-chan time.Time
+	)
+	if verbose {
+		tick = time.Tick(100 * time.Millisecond)
+	}
+
 loop:
 	for {
 		select {
-		case <-done:
-			for range fileSizes {
+		case <-cancelCh:
+			for range fileSizesCh {
 			}
+			fmt.Println("cancelled")
 			return
-		case size, ok := <-fileSizes:
-			if !ok {
+		case size, ok := <-fileSizesCh:
+			if !ok { // scan done
 				break loop
 			}
 			nfiles++
@@ -124,28 +138,5 @@ loop:
 		}
 	}
 	printDiskUsage(nfiles, nbytes)
-}
-
-func testCloseCh() {
-	go func() {
-		for !cancelled() {
-			fmt.Println("running...")
-			time.Sleep(time.Second)
-		}
-		fmt.Println("exit")
-	}()
-
-	time.Sleep(time.Duration(3) * time.Second)
-	close(done)
-	time.Sleep(time.Duration(2) * time.Second)
-}
-
-func printDiskUsage(nfiles, nbytes int64) {
-	fmt.Printf("%d files %.3f GB\n", nfiles, float64(nbytes)/1e9)
-}
-
-func main() {
-	// testCloseCh()
-	startDiskUsage()
-	fmt.Println("diskusage Done.")
+	fmt.Println("finished")
 }
