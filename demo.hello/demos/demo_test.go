@@ -994,10 +994,17 @@ func TestDemo34(t *testing.T) {
 	}
 }
 
-func TestDemo98(t *testing.T) {
+func TestDemo97(t *testing.T) {
 	// print bytes
 	b := []byte("world")
 	fmt.Printf("hello %s\n", b)
+	fmt.Println()
+
+	// print char
+	fmt.Println("chars:")
+	for _, c := range []byte("bar") {
+		fmt.Printf("%c, %d\n", c, c)
+	}
 	fmt.Println()
 
 	// 泰文 bytes 转 str
@@ -1006,15 +1013,25 @@ func TestDemo98(t *testing.T) {
 	fmt.Println(string(b))
 	fmt.Println()
 
-	// 可变参数
-	sayHello := func(args ...string) {
-		fmt.Println("hello", strings.Join(args, ","))
+	// byte => 2 hex => 8 bit
+	// en char => 1 byte, cn word => 3 byte
+	for _, str := range [2]string{"foo", "中文"} {
+		b := []byte(str)
+		bStr := fmt.Sprintf("%x", b)
+		fmt.Printf("hex (%d): %s\n", len(bStr), bStr)
+		fmt.Printf("byte (%d): %s\n", len(b), b)
 	}
-	sayHello("foo", "bar")
+}
+
+func TestDemo98(t *testing.T) {
+	// iterator slice in order
+	sl := []string{"one", "two", "three", "five", "four"}
+	for _, value := range sl {
+		fmt.Println(value)
+	}
 	fmt.Println()
 
-	// delete item of slice
-	sl := []string{"one", "two", "three"}
+	// delete a item of slice
 	word := "one"
 	for idx, item := range sl {
 		if item == word {
@@ -1023,6 +1040,13 @@ func TestDemo98(t *testing.T) {
 		}
 	}
 	fmt.Println(sl)
+	fmt.Println()
+
+	// 可变参数
+	sayHello := func(args ...string) {
+		fmt.Println("get:", strings.Join(args, "|"))
+	}
+	sayHello("foo", "bar", "jin")
 }
 
 func TestDemo99(t *testing.T) {

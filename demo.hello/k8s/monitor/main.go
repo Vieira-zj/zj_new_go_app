@@ -27,7 +27,7 @@ var (
 )
 
 func main() {
-	// time:
+	// interval time:
 	// 1. watcher sync data by "interval"
 	// 2. message queue size is set to "interval"
 	// 3. get message from queue and send notification with "3*interval"
