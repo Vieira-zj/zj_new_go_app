@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"go/build"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -41,19 +43,6 @@ func MakeDir(dirPath string) error {
 		return fmt.Errorf("dir path is exist: %s", dirPath)
 	}
 	return os.MkdirAll(dirPath, os.ModePerm)
-}
-
-// CreateFile create a file with buf content.
-func CreateFile(filePath string, buf *bytes.Buffer) error {
-	newFile, err := os.Create(filePath)
-	if err != nil {
-		return fmt.Errorf("os.Create %s error: %v", filePath, err)
-	}
-
-	if _, err = newFile.Write(buf.Bytes()); err != nil {
-		return err
-	}
-	return nil
 }
 
 // GetGoFileAbsPath returns .go file absolute path.
@@ -97,4 +86,102 @@ func WalkDir(dirPath, suffix string) (files []string, err error) {
 
 	err = filepath.Walk(dirPath, onWalk)
 	return files, err
+}
+
+/*
+Common IO
+*/
+
+// ReadLines reads file and returns content lines.
+func ReadLines(filePath string) ([]string, error) {
+	if !IsExist(filePath) {
+		return nil, fmt.Errorf("file [%s] not found", filePath)
+	}
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("open file [%s] error: %v", filePath, err)
+	}
+	defer f.Close()
+
+	br := bufio.NewReader(f)
+	retLines := make([]string, 0, 16)
+	for {
+		line, isPrefix, err := br.ReadLine()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return retLines, err
+		}
+		if isPrefix {
+			return retLines, fmt.Errorf("A too long line, seems unexpected")
+		}
+		retLines = append(retLines, string(line))
+	}
+	return retLines, nil
+}
+
+// WriteLinesToFile .
+func WriteLinesToFile(filePath string, outLines []string) error {
+	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("open file [%s] error: %v", filePath, err)
+	}
+	defer f.Close()
+
+	for _, line := range outLines {
+		if _, err := f.WriteString(line + "\n"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CreateFile creates a file by bytes content.
+func CreateFile(filePath string, b []byte) error {
+	if IsExist(filePath) {
+		return fmt.Errorf("file [%s] is exist", filePath)
+	}
+
+	buf := bytes.NewBuffer(b)
+	newFile, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("os.Create [%s] error: %v", filePath, err)
+	}
+	defer newFile.Close()
+
+	if _, err = newFile.Write(buf.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
+// FileWordsCount gets file words count. (for test)
+func FileWordsCount(filePath string) (map[string]int, error) {
+	if !IsExist(filePath) {
+		return nil, fmt.Errorf("file [%s] not found", filePath)
+	}
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("open file [%s] error: %v", filePath, err)
+	}
+	defer f.Close()
+
+	counts := make(map[string]int, 16)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		words := strings.Split(scanner.Text(), " ")
+		trimWords := make([]string, 0, len(words))
+		for _, word := range words {
+			word = strings.Trim(word, ",")
+			word = strings.Trim(word, ".")
+			trimWords = append(trimWords, word)
+		}
+		for _, word := range trimWords {
+			counts[word]++
+		}
+	}
+	return counts, nil
 }

@@ -63,7 +63,7 @@ func TestIsWeekDay(t *testing.T) {
 	fmt.Println("isweekday:", IsWeekDay(now))
 }
 
-func TestGetJSONPrettyText(t *testing.T) {
+func TestFprintJSONPrettyText(t *testing.T) {
 	p := struct {
 		Name string `json:"name"`
 		Age  int    `json:"age"`
@@ -77,8 +77,16 @@ func TestGetJSONPrettyText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer outFile.Close()
+
 	multiWriter := io.MultiWriter(os.Stdout, outFile)
 	if err = FprintJSONPrettyText(multiWriter, p); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFprintBase64Text(t *testing.T) {
+	if _, err := FprintBase64Text(os.Stdout, "foo and bar"); err != nil {
 		t.Fatal(err)
 	}
 }

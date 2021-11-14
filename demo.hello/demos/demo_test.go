@@ -63,34 +63,45 @@ type person struct {
 func TestDemo06(t *testing.T) {
 	// bytes copy
 	text := "hello world"
-	b := make([]byte, 128)
-	count := copy(b, text)
-	fmt.Printf("copy %d bytes: %s\n", count, b[:count])
+	b := make([]byte, 16)
+	n := copy(b, text)
+	fmt.Printf("%d copy bytes: %s\n", n, b[:n])
+	fmt.Println()
 
-	// slice copy
-	src := make([]*person, 0)
-	src = append(src, &person{ID: 1, Name: "foo"})
-	src = append(src, &person{ID: 2, Name: "bar"})
-
-	dst := make([]*person, len(src))
-	fmt.Println("\ntotal copied:", copy(dst, src))
-	for _, p := range dst {
-		fmt.Printf("%+v\n", *p)
+	// 字符串较长，多次 copy 的情况
+	text = "abcdefgh"
+	b = make([]byte, 4)
+	res := ""
+	for {
+		if len(text) < len(b) {
+			n = copy(b, text)
+			res += string(b[:n])
+			text = text[n:]
+			break
+		}
+		n = copy(b, text)
+		res += string(b[:n])
+		text = text[n:]
 	}
+	fmt.Println("text size:", len(text))
+	fmt.Printf("%d copy bytes: %s\n", len(res), res)
+	fmt.Println()
 }
 
 func TestDemo07(t *testing.T) {
-	// slice deep copy
-	src := make([]person, 0)
+	// slice copy
+	var src []person // size = 0
 	src = append(src, person{ID: 1, Name: "foo"})
 	src = append(src, person{ID: 2, Name: "bar"})
 
 	dst := make([]person, len(src))
-	fmt.Println("total copied:", copy(dst, src))
-	src[0].Name = "fooNew"
+	n := copy(dst, src)
+	fmt.Printf("%d copied\n", n)
 
-	fmt.Println("src:", src)
-	fmt.Println("dst:", dst)
+	src[0].Name = "Foo"
+	src[1].ID = 12
+	fmt.Printf("src: %+v\n", src)
+	fmt.Printf("dst: %+v\n", dst)
 }
 
 func TestDemo08(t *testing.T) {
@@ -992,6 +1003,50 @@ func TestDemo34(t *testing.T) {
 			return
 		}
 	}
+}
+
+/*
+struct method
+*/
+
+type myText struct {
+	text string
+}
+
+func (t myText) Next() {
+	// NOTE: here pass a new copy of myText "t"
+	fmt.Printf("%p %p\n", &t, &t.text)
+	t.text = t.text[1:]
+}
+
+func (t *myText) NewNext() {
+	t.text = t.text[1:]
+}
+
+func (t myText) String() string {
+	return t.text
+}
+
+func TestDemo35(t *testing.T) {
+	t.Run("By Struct", func(t *testing.T) {
+		text := &myText{
+			text: "this is a test",
+		}
+		for i := 0; i < 3; i++ {
+			text.Next()
+			fmt.Println(text.String())
+		}
+	})
+
+	t.Run("By Pointer", func(t *testing.T) {
+		text := &myText{
+			text: "hello world",
+		}
+		for i := 0; i < 3; i++ {
+			text.NewNext()
+			fmt.Println(text.String())
+		}
+	})
 }
 
 func TestDemo97(t *testing.T) {

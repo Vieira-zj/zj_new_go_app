@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -106,6 +107,14 @@ func FprintJSONPrettyText(w io.Writer, value interface{}) error {
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(value)
+}
+
+// FprintBase64Text .
+func FprintBase64Text(w io.Writer, value string) (int64, error) {
+	encoder := base64.NewEncoder(base64.StdEncoding, w)
+	defer encoder.Close()
+	r := strings.NewReader(value)
+	return io.Copy(encoder, r)
 }
 
 // GetBase64Text .
