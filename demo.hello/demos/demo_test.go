@@ -27,6 +27,7 @@ import (
 )
 
 func TestDemo01(t *testing.T) {
+	t.Skip("it's a test, and skipped")
 	want := "demo01"
 	if got := demo01(); got != want {
 		t.Errorf("demo01() = %q, want %q", got, want)
@@ -1128,4 +1129,24 @@ func TestDemo99(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Printf("uri=%s, scheme=%s, host=%s\n", testURL.String(), testURL.Scheme, testURL.Host)
+}
+
+func TestDemo100(t *testing.T) {
+	// regexp
+	testStr := "test1, hello, 11, test2,test3, 99,test4"
+	r, err := regexp.Compile("hello|world")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("string matched:", r.MatchString(testStr))
+
+	r, err = regexp.Compile(`(\d\d)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("1st find string:", r.FindString(testStr))
+
+	testStr = "randint(10,20)"
+	r, err = regexp.Compile(`\d+`)
+	fmt.Println("find all string:", r.FindAllString(testStr, -1))
 }

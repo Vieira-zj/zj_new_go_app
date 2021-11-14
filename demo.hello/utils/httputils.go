@@ -19,8 +19,23 @@ import (
 Common
 */
 
-// isNetworkError if network error, we should retry http reqeust.
-func isNetworkError(err error) bool {
+// BuildURL .
+func BuildURL(host string, query map[string]string) (string, error) {
+	u, err := neturl.Parse(host)
+	if err != nil {
+		return "", nil
+	}
+
+	q := u.Query()
+	for k, v := range query {
+		q.Set(k, v)
+	}
+	u.RawQuery = q.Encode()
+	return u.String(), nil
+}
+
+// IsNetworkError if network error, we should retry http reqeust.
+func IsNetworkError(err error) bool {
 	if err == io.EOF {
 		return true
 	}

@@ -24,7 +24,7 @@ func TestAdd01(t *testing.T) {
 		}
 	})
 
-	t.Run("", func(t *testing.T) {
+	t.Run("testadd_02", func(t *testing.T) {
 		res := Add(1, 0)
 		if res != 1 {
 			t.Errorf("the result is %d instead of 1", res)

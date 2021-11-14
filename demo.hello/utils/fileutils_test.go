@@ -281,6 +281,15 @@ func TestMyReader(t *testing.T) {
 	fmt.Println("read string:", res)
 }
 
+func TestMyReaderCopy(t *testing.T) {
+	reader := NewMyReader("this is a my reader copy test.")
+	b, err := ioutil.ReadAll(reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("read string:", string(b))
+}
+
 func TestSliceCopy(t *testing.T) {
 	sl := "abcdef"
 	b := make([]byte, 2)

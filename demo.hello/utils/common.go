@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -154,6 +155,15 @@ func getMd5EncodedText(text, md5Type string) string {
 		return base64.StdEncoding.EncodeToString(b)
 	}
 	return base64.URLEncoding.EncodeToString(b)
+}
+
+// GetHashFnv32 .
+func GetHashFnv32(text string) (uint32, error) {
+	f := fnv.New32()
+	if _, err := f.Write([]byte(text)); err != nil {
+		return 0, err
+	}
+	return f.Sum32(), nil
 }
 
 /*

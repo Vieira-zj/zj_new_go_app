@@ -14,6 +14,19 @@ var (
 	url = "http://127.0.0.1:8081/ping"
 )
 
+func TestBuildURL(t *testing.T) {
+	host := "http://127.0.0.1:17891/test"
+	query := map[string]string{
+		"id":   "1011",
+		"name": "foo",
+	}
+	res, err := BuildURL(host, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("encoded url:", res)
+}
+
 func TestGetLocalHostIPs(t *testing.T) {
 	hosts, err := GetLocalHostIPs()
 	if err != nil {
