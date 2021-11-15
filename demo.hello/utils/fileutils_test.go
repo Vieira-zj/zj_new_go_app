@@ -192,9 +192,18 @@ func TestIOWriterReader(t *testing.T) {
 	fmt.Printf("write string:\n%s", string(res))
 }
 
-func TestReadLines(t *testing.T) {
-	filePath := "/tmp/test/output.json"
-	lines, err := ReadLines(filePath)
+func TestReadFileContent(t *testing.T) {
+	filePath := "/tmp/test/output.txt"
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("read content:\n%s\n", b)
+}
+
+func TestReadFileLines(t *testing.T) {
+	filePath := "/tmp/test/output.txt"
+	lines, err := ReadFileLines(filePath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,6 +212,31 @@ func TestReadLines(t *testing.T) {
 	for _, line := range lines {
 		fmt.Println(line)
 	}
+}
+
+func TestWriteContentToFile(t *testing.T) {
+	filePath := "/tmp/test/output.txt"
+	content := `one, this is a test.
+two, this is a hello world.`
+
+	t.Run("create and write to file", func(t *testing.T) {
+		if IsExist(filePath) {
+			if err := os.Remove(filePath); err != nil {
+				t.Error(err)
+			}
+		}
+		if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+			t.Error(err)
+		}
+	})
+
+	t.Run("overwrite file", func(t *testing.T) {
+		append := `overwrite content.
+three, this is a write lines test.`
+		if err := os.WriteFile(filePath, []byte(append), 0644); err != nil {
+			t.Error(err)
+		}
+	})
 }
 
 func TestWriteLinesToFile(t *testing.T) {
@@ -290,7 +324,7 @@ func TestMyReaderCopy(t *testing.T) {
 	fmt.Println("read string:", string(b))
 }
 
-func TestSliceCopy(t *testing.T) {
+func TestStringSliceCopy(t *testing.T) {
 	sl := "abcdef"
 	b := make([]byte, 2)
 	res := ""

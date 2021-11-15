@@ -14,6 +14,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -40,6 +41,12 @@ func GetRandString(length uint) (string, error) {
 	}
 	// TODO: use base64 instead of hex
 	return hex.EncodeToString(randBytes), nil
+}
+
+// GetCurRunPath returns the current run abs path.
+func GetCurRunPath() string {
+	dir, _ := filepath.Split(os.Args[0])
+	return dir
 }
 
 // RunFunc .

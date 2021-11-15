@@ -25,6 +25,10 @@ func TestGetRandString(t *testing.T) {
 	}
 }
 
+func TestGetCurRunPath(t *testing.T) {
+	fmt.Println("run path:", GetCurRunPath())
+}
+
 func TestRunFuncWithTimeout(t *testing.T) {
 	timeout := 2
 	addFunc := func(a int, b int) int {

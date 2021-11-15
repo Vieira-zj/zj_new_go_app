@@ -92,8 +92,8 @@ func WalkDir(dirPath, suffix string) (files []string, err error) {
 Common IO
 */
 
-// ReadLines reads file and returns content lines.
-func ReadLines(filePath string) ([]string, error) {
+// ReadFileLines read and return file content lines.
+func ReadFileLines(filePath string) ([]string, error) {
 	if !IsExist(filePath) {
 		return nil, fmt.Errorf("file [%s] not found", filePath)
 	}
@@ -107,6 +107,7 @@ func ReadLines(filePath string) ([]string, error) {
 	br := bufio.NewReader(f)
 	retLines := make([]string, 0, 16)
 	for {
+		// line, err := br.ReadString('\n')
 		line, isPrefix, err := br.ReadLine()
 		if err != nil {
 			if err == io.EOF {
