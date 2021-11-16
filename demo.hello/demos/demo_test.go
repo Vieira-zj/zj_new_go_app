@@ -1007,7 +1007,7 @@ func TestDemo34(t *testing.T) {
 }
 
 /*
-struct method
+method with struct or pointer
 */
 
 type myText struct {
@@ -1096,6 +1096,18 @@ func TestDemo98(t *testing.T) {
 		}
 	}
 	fmt.Println(sl)
+	fmt.Println()
+
+	// map marshal to json
+	data := map[string]interface{}{
+		"name": "foo",
+		"age":  32,
+	}
+	b, err := json.Marshal(&data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("json map:", string(b))
 	fmt.Println()
 
 	// 可变参数

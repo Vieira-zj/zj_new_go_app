@@ -26,6 +26,7 @@ type PodStatus struct {
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
 	Value     string `json:"value"`
+	ExitCode  int32  `json:"exitcode,omitempty"`
 	Message   string `json:"message,omitempty"`
 	Log       string `json:"log,omitempty"`
 }
@@ -113,6 +114,9 @@ func GetPodStatus(ctx context.Context, resource *k8spkg.Resource, pod *corev1.Po
 	}
 
 	podInfo.Value = state.Value
+	if state.ExitCode != 0 {
+		podInfo.ExitCode = state.ExitCode
+	}
 	if len(state.Message) > 0 {
 		podInfo.Message = state.Message
 	}
