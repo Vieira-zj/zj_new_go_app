@@ -4,9 +4,12 @@ go 1.16
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
+	github.com/allegro/bigcache/v2 v2.2.5
 	github.com/avast/retry-go/v3 v3.1.1
 	github.com/aws/aws-sdk-go v1.38.51
 	github.com/bep/debounce v1.2.0
+	github.com/casbin/casbin v1.9.1
+	github.com/casbin/gorm-adapter v1.0.0
 	github.com/docker/docker v20.10.2+incompatible
 	github.com/emicklei/proto v1.9.0
 	github.com/evanphx/json-patch v4.11.0+incompatible
@@ -21,6 +24,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
+	github.com/jinzhu/gorm v1.9.16
 	github.com/jmoiron/sqlx v1.3.3
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
