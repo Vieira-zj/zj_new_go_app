@@ -1,6 +1,7 @@
 # K8S Admission Webhook
 
-> k8s admission webhook demo for sidecar injector.
+> k8s admission webhook demo for init container and sidecar injector.
+> 
 
 Refer:
 
@@ -152,6 +153,7 @@ kubectl get deployment/sleep -n k8s-test -o yaml
 ```
 
 > Note: k8s apply mutate webhook first, and then exec validate webhook, so we success create deployment without labels.
+>
 
 3. Check logs of admission webhook server.
 

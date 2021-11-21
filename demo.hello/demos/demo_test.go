@@ -1050,6 +1050,71 @@ func TestDemo35(t *testing.T) {
 	})
 }
 
+func TestDemo36(t *testing.T) {
+	// select for chan when chan close
+	ch := make(chan string)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	go func() {
+		for {
+			select {
+			case val, ok := <-ch:
+				if !ok {
+					// handle for chan close
+					fmt.Println("channel close")
+					return
+				}
+				fmt.Println("get", val)
+			case <-ctx.Done():
+				fmt.Println("cancel")
+			}
+		}
+	}()
+
+	for i := 0; i < 3; i++ {
+		ch <- strconv.Itoa(i)
+		time.Sleep(200 * time.Millisecond)
+	}
+	close(ch)
+	time.Sleep(3 * time.Second)
+	fmt.Println("done")
+}
+
+func TestDemo37(t *testing.T) {
+	// select for chan when chan close
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	ch := make(chan string)
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println("err:", err)
+			}
+		}()
+
+		for i := 0; i < 10; i++ {
+			select {
+			// if ch is closed, will be panic here
+			case ch <- strconv.Itoa(i):
+				fmt.Println("put")
+				time.Sleep(100 * time.Millisecond)
+			case <-ctx.Done():
+				fmt.Println("cancel")
+			}
+		}
+	}()
+
+	for i := 0; i < 3; i++ {
+		res := <-ch
+		fmt.Println("get", res)
+	}
+	close(ch)
+	time.Sleep(time.Second)
+	fmt.Println("done")
+}
+
 func TestDemo97(t *testing.T) {
 	// print bytes
 	b := []byte("world")
@@ -1144,6 +1209,38 @@ func TestDemo99(t *testing.T) {
 }
 
 func TestDemo100(t *testing.T) {
+	// fetch map first k,v
+	m := map[int]string{
+		1: "one",
+		2: "two",
+		3: "three",
+	}
+
+	var (
+		k int
+		v string
+	)
+	for k, v = range m {
+		break
+	}
+	delete(m, k)
+	fmt.Printf("get map 1st item: k=%d, v=%s\n", k, v)
+	fmt.Printf("map: %v\n", m)
+	fmt.Println()
+
+	// fetch slice 1st item
+	s := []string{"one", "two", "foo", "bar"}
+	value := s[0]
+	copy(s, s[1:])
+	s = s[:len(s)-1]
+	fmt.Println("fetch 1st value:", value)
+	fmt.Println(len(s), s)
+
+	s = s[1:]
+	fmt.Println(len(s), s)
+}
+
+func TestDemo101(t *testing.T) {
 	// regexp
 	testStr := "test1, hello, 11, test2,test3, 99,test4"
 	r, err := regexp.Compile("hello|world")

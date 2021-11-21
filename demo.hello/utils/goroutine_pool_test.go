@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -157,4 +158,44 @@ func testGoRoutinePoolWithCancel(t *testing.T, pool GoRoutinePool) {
 	for _, ch := range retChList {
 		fmt.Println("results:", <-ch)
 	}
+}
+
+/*
+GoPool
+*/
+
+func TestGoPool(t *testing.T) {
+	fn := func(text string) {
+		time.Sleep(time.Second)
+		fmt.Println("hello", text)
+	}
+
+	pool := NewGoPool(3, 6)
+	ch := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ch:
+				return
+			default:
+				fmt.Println("pool usage:", pool.Usage())
+				time.Sleep(200 * time.Millisecond)
+			}
+		}
+	}()
+
+	for i := 0; i < 10; i++ {
+		tmp := i
+		if err := pool.Submit(func() {
+			fn(strconv.Itoa(tmp))
+		}); err != nil {
+			fmt.Printf("submit [%d] error: %v\n", i, err)
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	pool.Stop(10)
+	time.Sleep(time.Second)
+	close(ch)
+	fmt.Println("done")
 }

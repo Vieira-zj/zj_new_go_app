@@ -225,3 +225,130 @@ func (pool *GoRoutinePoolWithFixSize) wait() {
 		time.Sleep(time.Second)
 	}
 }
+
+/*
+Go Pool:
+1. when submit a task
+  - if no running worker, start a new goroutine
+  - if there are running workers, reuse them
+2. number of goroutines is controlled by semaphore
+3. if no more tasks, goroutines will be exit (to fix)
+*/
+
+// Worker .
+type Worker struct {
+	work      chan func()
+	semaphore chan struct{}
+}
+
+// GoPool .
+type GoPool struct {
+	isRunning bool
+	queue     chan func()
+	hasTask   bool
+	Worker
+}
+
+// NewGoPool .
+func NewGoPool(coreSize, maxSize int) *GoPool {
+	pool := &GoPool{
+		queue: make(chan func(), maxSize-coreSize),
+		Worker: Worker{
+			work:      make(chan func()),
+			semaphore: make(chan struct{}, coreSize),
+		},
+	}
+	pool.Start()
+	return pool
+}
+
+// Submit .
+func (pool *GoPool) Submit(task func()) error {
+	if !pool.isRunning {
+		return fmt.Errorf("pool is not running")
+	}
+	if len(pool.queue) == cap(pool.queue) {
+		return fmt.Errorf("exceed max size %d, and discard", cap(pool.semaphore)+cap(pool.queue))
+	}
+
+	pool.queue <- task
+	return nil
+}
+
+// Start .
+func (pool *GoPool) Start() {
+	pool.isRunning = true
+	go pool.run()
+}
+
+func (pool *GoPool) run() {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("run error:", err)
+		}
+	}()
+
+	for task := range pool.queue {
+		pool.hasTask = true
+		select {
+		// if ch "work" or "semaphore" is closed, panic here
+		case pool.work <- task:
+		case pool.semaphore <- struct{}{}:
+			go pool.worker(task)
+		}
+		pool.hasTask = false
+	}
+}
+
+func (pool *GoPool) worker(task func()) {
+	fmt.Println("[worker]: init")
+	defer func() {
+		<-pool.semaphore
+	}()
+
+	for {
+		task()
+		if pool.isExit() {
+			fmt.Println("[worker]: exit")
+			return
+		}
+		// TODO Fix: task is handled by another worker, and current worker will be blocked here
+		fmt.Println("[worker]: fetch and run task")
+		task = <-pool.work
+	}
+}
+
+func (pool *GoPool) isExit() bool {
+	// if there is no more tasks for 3 sec, then worker exit
+	for i := 0; i < 3; i++ {
+		if pool.hasTask {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	return !pool.hasTask
+}
+
+// Stop .
+func (pool *GoPool) Stop(waitSec int) {
+	pool.isRunning = false
+	for i := 0; i < waitSec; i++ {
+		if len(pool.semaphore) == 0 {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	close(pool.queue)
+	close(pool.work)
+	close(pool.semaphore)
+}
+
+// Cancel .
+func (pool *GoPool) Cancel() {
+	pool.Stop(3)
+}
+
+// Usage .
+func (pool *GoPool) Usage() string {
+	return fmt.Sprintf("wait/run/idle:%d/%d/0", len(pool.queue), len(pool.semaphore))
+}

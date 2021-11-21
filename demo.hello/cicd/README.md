@@ -35,7 +35,7 @@ Cache使用 sharding map + RW locker, 通过设置合理的并发数和分片数
 
 ## Rest APIs
 
-查询过程加锁，保证数据一致性。
+可以使用 jql 做为查询的key. 查询过程加锁，保证数据一致性。
 
 - Test
 

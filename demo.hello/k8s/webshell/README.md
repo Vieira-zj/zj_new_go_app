@@ -7,7 +7,7 @@
 
 原理：
 
-1. 通过实现`io.Reader`和`io.Writer`接口与 pod executor 交互。
+1. 通过实现 `io.Reader` 和 `io.Writer` 接口与 pod executor 交互。
 2. 前端与服务端通过 `websocket` 交互。
 
 数据流：

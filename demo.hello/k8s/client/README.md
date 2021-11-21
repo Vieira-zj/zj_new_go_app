@@ -181,6 +181,7 @@ root# curl -v http://127.0.0.1:8088/test
 ```
 
 > Note: it does not go iptable forward chain when access port 8080 from localhost.
+>
 
 - Remote: start a debug pod and test echoserver
 
@@ -193,9 +194,11 @@ echoserver-test-6667f8d8cf-wzcqw   2/2     Running   0          43m   172.17.0.5
 kubectl run debug-pod -it --rm --restart=Never -n=k8s-test --image=busybox:1.30 sh
 # 直接通过代理访问服务 proxy 8088 -> echoserver 8080
 root# wget "http://172.17.0.5:8088/" -S -O -
-# 转发到代理访问服务 origin addr 8080 -> forword proxy 8088 -> echoserver 8080
+# 通过 iptables 规则走代理访问服务 origin addr 8080 -> forword proxy 8088 -> echoserver 8080
 root# wget "http://172.17.0.5:8080/" -S -O -
 ```
+
+------
 
 ## Remote exec debug
 
