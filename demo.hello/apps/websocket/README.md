@@ -14,6 +14,7 @@
 Http:
 
 - <http://localhost:8080/>
+- <http://localhost:8080/ping>
 - <http://localhost:8080/mock/jobs>
 - <http://localhost:8080/mock/jobs/init>
 
@@ -23,4 +24,4 @@ Websocket:
 - <ws://localhost:8080/ws/jobs/sync>
 
 > frontend: `{js-project}/vue_pages/vue_apps/vue_websocket.html`
-
+>

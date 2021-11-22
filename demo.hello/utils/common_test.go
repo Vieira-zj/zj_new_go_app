@@ -25,6 +25,21 @@ func TestGetRandString(t *testing.T) {
 	}
 }
 
+func TestGobDeepCopy(t *testing.T) {
+	f := fruit{
+		ID:    1,
+		Name:  "apple",
+		Price: 32,
+	}
+
+	var f2 fruit
+	GobDeepCopy(&f2, &f)
+
+	f.Price = 40
+	fmt.Printf("src fruit: %+v\n", f)
+	fmt.Printf("dst fruit: %+v\n", f2)
+}
+
 func TestGetCurRunPath(t *testing.T) {
 	fmt.Println("run path:", GetCurRunPath())
 }

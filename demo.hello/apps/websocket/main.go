@@ -20,6 +20,8 @@ func main() {
 	}
 
 	http.HandleFunc("/", handlers.IndexHandler)
+	http.HandleFunc("/ping", handlers.PingHandler)
+
 	http.HandleFunc("/mock/jobs", handlers.GetAllJobResultsHandler)
 	http.HandleFunc("/mock/jobs/init", handlers.InitJobResultsHandler)
 	http.HandleFunc("/ws/echo", handlers.EchoMessage)

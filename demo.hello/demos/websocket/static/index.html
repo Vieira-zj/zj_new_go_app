@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>websocket demo</title>
+  </head>
+  <body>
+    <h1>Websocket Demo</h1>
+    <div style="margin-bottom: 10px">
+      <label for="output">Output:</label>
+      <span id="output">null</span>
+    </div>
+    <div>
+      <button id="connect">Connect</button>
+      <button id="close">Close</button>
+    </div>
+  </body>
+  <script>
+    let ws = null;
+
+    let connect = document.querySelector("#connect");
+    connect.onclick = function () {
+      ws = new WebSocket("ws://localhost:8080/ws/echo");
+
+      ws.onopen = function (evt) {
+        console.log("Connection open ...");
+        ws.send("hello ws");
+      };
+
+      let output = document.querySelector("#output");
+      ws.onmessage = function (evt) {
+        console.log("Received message: " + evt.data);
+        output.innerHTML = evt.data;
+      };
+
+      ws.onclose = function (evt) {
+        console.log("Connection closed.");
+      };
+
+      ws.onerror = function (evt) {
+        console.error("WebSocket error observed:", evt);
+      };
+    };
+
+    let submit = document.querySelector("#close");
+    submit.onclick = function () {
+      if (!Boolean(ws)) {
+        return;
+      }
+      console.log("Close ws conntion");
+      ws.send("exit");
+      ws.close();
+    };
+  </script>
+</html>

@@ -171,15 +171,15 @@ func TestGoPool(t *testing.T) {
 	}
 
 	pool := NewGoPool(3, 6)
-	ch := make(chan struct{})
+	done := make(chan struct{})
 	go func() {
+		tick := time.Tick(200 * time.Millisecond)
 		for {
 			select {
-			case <-ch:
+			case <-done:
 				return
-			default:
+			case <-tick:
 				fmt.Println("pool usage:", pool.Usage())
-				time.Sleep(200 * time.Millisecond)
 			}
 		}
 	}()
@@ -196,6 +196,6 @@ func TestGoPool(t *testing.T) {
 
 	pool.Stop(10)
 	time.Sleep(time.Second)
-	close(ch)
+	close(done)
 	fmt.Println("done")
 }

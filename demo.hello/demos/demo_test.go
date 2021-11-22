@@ -1115,6 +1115,92 @@ func TestDemo37(t *testing.T) {
 	fmt.Println("done")
 }
 
+func TestDemo38(t *testing.T) {
+	// reset tick
+	ch := make(chan struct{})
+
+	go func() {
+		for i := 0; i < 10; i++ {
+			ch <- struct{}{}
+			time.Sleep(200 * time.Millisecond)
+		}
+	}()
+
+	i := 0
+	tick := time.NewTicker(500 * time.Millisecond)
+outer:
+	for {
+		select {
+		case <-tick.C:
+			fmt.Println("exit")
+			break outer
+		case <-ch:
+			i++
+			fmt.Println("get value", i)
+			tick.Reset(500 * time.Millisecond)
+		}
+	}
+	fmt.Println("done")
+}
+
+func TestDemo39(t *testing.T) {
+	// struct copy
+	type fruit struct {
+		ID    int
+		Name  string
+		Price int
+	}
+
+	f := &fruit{
+		ID:    1,
+		Name:  "apple",
+		Price: 32,
+	}
+
+	dstFruit := *f
+	f.Price = 45
+	fmt.Printf("src fruit: %p, %v\n", f, *f)
+	fmt.Printf("dst fruit: %p, %v\n", &dstFruit, dstFruit)
+}
+
+func TestDemo40(t *testing.T) {
+	// closure
+	type fruit struct {
+		Name  string
+		Price int
+	}
+
+	cb := func(fn func()) {
+		fmt.Print("[run cb]: ")
+		go fn()
+	}
+
+	ch := make(chan *fruit)
+	go func() {
+		for i := 0; i < 10; i++ {
+			f := &fruit{
+				Name:  "apple",
+				Price: i,
+			}
+			ch <- f
+			time.Sleep(200 * time.Millisecond)
+		}
+		close(ch)
+	}()
+
+	for f := range ch {
+		local := f
+		cb(func() {
+			// when wait, the "f" value will be changed, should use "local" here
+			time.Sleep(200 * time.Millisecond)
+			fmt.Printf("fruit: %+v\n", *local)
+		})
+	}
+
+	time.Sleep(time.Second)
+	fmt.Println("done")
+}
+
 func TestDemo97(t *testing.T) {
 	// print bytes
 	b := []byte("world")

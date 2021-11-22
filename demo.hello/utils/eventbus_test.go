@@ -13,8 +13,7 @@ var (
 )
 
 func init() {
-	eventbus = NewEventBusServer(10)
-	eventbus.Start()
+	eventbus = NewEventBusServer(10, 3)
 }
 
 type calResult struct {

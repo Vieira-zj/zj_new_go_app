@@ -26,6 +26,7 @@ type EventBusServer struct {
 	queue    chan *Event
 	channels map[string][]Callback
 	locker   *sync.Mutex
+	goPool   *GoPool
 }
 
 var (
@@ -34,23 +35,27 @@ var (
 )
 
 // NewEventBusServer .
-func NewEventBusServer(size int) *EventBusServer {
+// if poolSize = 0, then create new goroutine for each callback instread of using go pool.
+func NewEventBusServer(size, poolSize int) *EventBusServer {
 	once.Do(func() {
+		var goPool *GoPool
+		if poolSize > 0 {
+			goPool = NewGoPool(poolSize, poolSize)
+		}
 		_eventbus = &EventBusServer{
 			running:  false,
 			queue:    make(chan *Event, size),
-			channels: make(map[string][]Callback, 0),
+			channels: make(map[string][]Callback, 4),
 			locker:   &sync.Mutex{},
+			goPool:   goPool,
 		}
+		_eventbus.Start()
 	})
 	return _eventbus
 }
 
 // Start .
 func (bus *EventBusServer) Start() {
-	bus.locker.Lock()
-	defer bus.locker.Unlock()
-
 	if bus.running {
 		return
 	}
@@ -60,17 +65,32 @@ func (bus *EventBusServer) Start() {
 
 // Stop .
 func (bus *EventBusServer) Stop() {
-	bus.locker.Lock()
-	defer bus.locker.Unlock()
+	if !bus.running {
+		return
+	}
 	bus.running = false
 	close(bus.queue)
+
+	if bus.goPool != nil {
+		bus.goPool.Stop(8)
+	}
 }
 
 func (bus *EventBusServer) run() {
 	for event := range bus.queue {
+		local := event
 		callbacks := bus.channels[event.Channel]
 		for _, cb := range callbacks {
-			go cb.Fn(event.Message...)
+			if bus.goPool != nil {
+				if err := bus.goPool.Submit(func() {
+					// Note: use "local" in closure
+					cb.Fn(local.Message...)
+				}); err != nil {
+					fmt.Println("[EventBusServer]: submit callback error:", err)
+				}
+			} else {
+				go cb.Fn(local.Message...)
+			}
 		}
 	}
 }
@@ -78,18 +98,20 @@ func (bus *EventBusServer) run() {
 // Publish .
 func (bus *EventBusServer) Publish(channel string, message ...interface{}) (err error) {
 	if !bus.running {
-		err = fmt.Errorf("eventbus is not running")
+		err = fmt.Errorf("[EventBusServer]: eventbus is not running")
+		return
+	}
+	if len(bus.queue) != 0 && len(bus.queue) == cap(bus.queue) {
+		err = fmt.Errorf("[EventBusServer]: execeed max queue size: %d", cap(bus.queue))
 		return
 	}
 
-	go func() {
-		event := &Event{
-			ID:      strconv.Itoa(time.Now().Nanosecond()),
-			Channel: channel,
-			Message: message,
-		}
-		bus.queue <- event
-	}()
+	event := &Event{
+		ID:      strconv.Itoa(time.Now().Nanosecond()),
+		Channel: channel,
+		Message: message,
+	}
+	bus.queue <- event
 	return
 }
 
@@ -97,11 +119,12 @@ func (bus *EventBusServer) Publish(channel string, message ...interface{}) (err 
 func (bus *EventBusServer) Register(channel string, cb Callback) (err error) {
 	bus.locker.Lock()
 	defer bus.locker.Unlock()
+
 	if _, ok := bus.channels[channel]; !ok {
 		bus.channels[channel] = make([]Callback, 0)
 	}
 	if bus.isCallbackExist(channel, cb) {
-		return fmt.Errorf("callback [%s] is exist in channel [%s]", cb.Name, channel)
+		return fmt.Errorf("[EventBusServer]: callback [%s] is exist in channel [%s]", cb.Name, channel)
 	}
 	bus.channels[channel] = append(bus.channels[channel], cb)
 	return
@@ -111,6 +134,7 @@ func (bus *EventBusServer) Register(channel string, cb Callback) (err error) {
 func (bus *EventBusServer) Unregister(channel string, callback Callback) {
 	bus.locker.Lock()
 	defer bus.locker.Unlock()
+
 	callbacks, ok := bus.channels[channel]
 	if !ok {
 		return

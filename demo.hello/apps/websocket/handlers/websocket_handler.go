@@ -16,7 +16,8 @@ import (
 func EchoMessage(w http.ResponseWriter, r *http.Request) {
 	conn, err := client.Upgrade(w, r, nil)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("create websocket error: %v", err), http.StatusInternalServerError)
+		fmt.Printf("create websocket error: %v", err)
+		return
 	}
 	defer func() {
 		fmt.Println("close websocket connection")
@@ -27,19 +28,19 @@ func EchoMessage(w http.ResponseWriter, r *http.Request) {
 		// if no message, blocked here
 		msgType, msg, err := conn.ReadMessage()
 		if err != nil {
-			http.Error(w, fmt.Sprintln("receive message error:", err), http.StatusInternalServerError)
+			fmt.Println("receive message error:", err)
 			return
 		}
 		fmt.Printf("receive message [%s] from [%s]\n", msg, conn.RemoteAddr().String())
 
 		retMsg := fmt.Sprintf("hello %s", msg)
 		if string(msg) == "exit" {
-			retMsg = "bye"
-		}
-		if err := conn.WriteMessage(msgType, []byte(retMsg)); err != nil {
-			http.Error(w, fmt.Sprintln("write message error:", err), http.StatusInternalServerError)
+			fmt.Println("ws echo exit")
 			return
-		} else if err == nil && string(msg) == "exit" {
+		}
+		err = conn.WriteMessage(msgType, []byte(retMsg))
+		if err != nil {
+			fmt.Println("write message error:", err)
 			return
 		}
 	}
@@ -49,7 +50,8 @@ func EchoMessage(w http.ResponseWriter, r *http.Request) {
 func SyncDeltaJobResults(w http.ResponseWriter, r *http.Request) {
 	conn, err := client.Upgrade(w, r, nil)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("create websocket error: %v", err), http.StatusInternalServerError)
+		fmt.Printf("create websocket error: %v", err)
+		return
 	}
 	defer func() {
 		fmt.Println("close websocket connection")
@@ -62,21 +64,22 @@ func SyncDeltaJobResults(w http.ResponseWriter, r *http.Request) {
 		Fn: func(result ...interface{}) {
 			b, err := json.Marshal(result[0])
 			if err != nil {
-				http.Error(w, fmt.Sprintln("json marshal error:", err), http.StatusInternalServerError)
+				b = []byte(fmt.Sprintln("json marshal error:", err))
 			}
 			if err = conn.WriteMessage(websocket.TextMessage, b); err != nil {
-				http.Error(w, fmt.Sprintln("write message error:", err), http.StatusInternalServerError)
+				fmt.Println("write message error:", err)
 				return
 			}
 		},
 	}
+
 	EventBus.Register(channel, callback)
 	defer EventBus.Unregister(channel, callback)
 
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			http.Error(w, fmt.Sprintln("receive message error:", err), http.StatusInternalServerError)
+			fmt.Println("receive message error:", err)
 			return
 		}
 		fmt.Printf("receive message: %s\n", msg)
@@ -84,7 +87,7 @@ func SyncDeltaJobResults(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(60)*time.Second)
 		defer cancel()
 		if err = mock.getDeltaJobResults(ctx); err != nil {
-			http.Error(w, fmt.Sprintln("get delta job results error:", err), http.StatusInternalServerError)
+			fmt.Println("get delta job results error:", err)
 		}
 	}
 }

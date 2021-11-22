@@ -10,7 +10,12 @@ import (
 
 // IndexHandler .
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "hello world")
+	fmt.Fprint(w, "ws app")
+}
+
+// PingHandler .
+func PingHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "pong")
 }
 
 // InitJobResultsHandler .

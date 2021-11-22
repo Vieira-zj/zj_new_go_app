@@ -232,7 +232,7 @@ Go Pool:
   - if no running worker, start a new goroutine
   - if there are running workers, reuse them
 2. number of goroutines is controlled by semaphore
-3. if no more tasks, goroutines will be exit (to fix)
+3. if no more tasks, goroutines will be exit
 */
 
 // Worker .
@@ -245,7 +245,6 @@ type Worker struct {
 type GoPool struct {
 	isRunning bool
 	queue     chan func()
-	hasTask   bool
 	Worker
 }
 
@@ -267,7 +266,7 @@ func (pool *GoPool) Submit(task func()) error {
 	if !pool.isRunning {
 		return fmt.Errorf("pool is not running")
 	}
-	if len(pool.queue) == cap(pool.queue) {
+	if len(pool.queue) != 0 && len(pool.queue) == cap(pool.queue) {
 		return fmt.Errorf("exceed max size %d, and discard", cap(pool.semaphore)+cap(pool.queue))
 	}
 
@@ -284,52 +283,48 @@ func (pool *GoPool) Start() {
 func (pool *GoPool) run() {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("run error:", err)
+			fmt.Println("[GoPool]: run error:", err)
 		}
 	}()
 
 	for task := range pool.queue {
-		pool.hasTask = true
 		select {
-		// if ch "work" or "semaphore" is closed, panic here
+		// if ch "work" or "semaphore" is closed when get task, panic here
 		case pool.work <- task:
 		case pool.semaphore <- struct{}{}:
 			go pool.worker(task)
 		}
-		pool.hasTask = false
 	}
 }
 
 func (pool *GoPool) worker(task func()) {
-	fmt.Println("[worker]: init")
+	workerID := time.Now().Nanosecond()
+	fmt.Printf("[worker %d]: init\n", workerID)
 	defer func() {
 		<-pool.semaphore
 	}()
 
+	duration := 3 * time.Second
+	tick := time.NewTicker(duration)
 	for {
 		task()
-		if pool.isExit() {
-			fmt.Println("[worker]: exit")
+		select {
+		case <-tick.C:
+			// if there is no more tasks for 3 sec, then worker exit
+			fmt.Printf("[worker %d]: exit\n", workerID)
 			return
+		case task = <-pool.work:
+			fmt.Printf("[worker %d]: fetch task\n", workerID)
+			tick.Reset(duration)
 		}
-		// TODO Fix: task is handled by another worker, and current worker will be blocked here
-		fmt.Println("[worker]: fetch and run task")
-		task = <-pool.work
 	}
 }
 
-func (pool *GoPool) isExit() bool {
-	// if there is no more tasks for 3 sec, then worker exit
-	for i := 0; i < 3; i++ {
-		if pool.hasTask {
-			break
-		}
-		time.Sleep(time.Second)
-	}
-	return !pool.hasTask
-}
-
-// Stop .
+// Stop waits for seconds and stops go pool.
+// 1. not allow submit more tasks
+// 2. wait seconds for exitsing tasks done
+// 3. close chan and exit
+// Note: task itself should make sure it can be cancelled by "ctx", or it will be leak after GoPool stop.
 func (pool *GoPool) Stop(waitSec int) {
 	pool.isRunning = false
 	for i := 0; i < waitSec; i++ {

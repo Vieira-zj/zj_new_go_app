@@ -2,8 +2,10 @@ package utils
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/md5"
 	"encoding/base64"
+	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -41,6 +43,16 @@ func GetRandString(length uint) (string, error) {
 	}
 	// TODO: use base64 instead of hex
 	return hex.EncodeToString(randBytes), nil
+}
+
+// GobDeepCopy .
+func GobDeepCopy(dst, src interface{}) error {
+	// src and dst are pointer
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(src); err != nil {
+		return err
+	}
+	return gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(dst)
 }
 
 // GetCurRunPath returns the current run abs path.
