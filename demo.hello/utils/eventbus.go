@@ -36,7 +36,7 @@ var (
 
 // NewEventBusServer .
 // if poolSize = 0, then create new goroutine for each callback instread of using go pool.
-func NewEventBusServer(size, poolSize int) *EventBusServer {
+func NewEventBusServer(poolSize, queueSize int) *EventBusServer {
 	once.Do(func() {
 		var goPool *GoPool
 		if poolSize > 0 {
@@ -44,7 +44,7 @@ func NewEventBusServer(size, poolSize int) *EventBusServer {
 		}
 		_eventbus = &EventBusServer{
 			running:  false,
-			queue:    make(chan *Event, size),
+			queue:    make(chan *Event, queueSize),
 			channels: make(map[string][]Callback, 4),
 			locker:   &sync.Mutex{},
 			goPool:   goPool,
@@ -78,18 +78,19 @@ func (bus *EventBusServer) Stop() {
 
 func (bus *EventBusServer) run() {
 	for event := range bus.queue {
-		local := event
+		localEvt := event
 		callbacks := bus.channels[event.Channel]
 		for _, cb := range callbacks {
+			localCb := cb
 			if bus.goPool != nil {
 				if err := bus.goPool.Submit(func() {
 					// Note: use "local" in closure
-					cb.Fn(local.Message...)
+					localCb.Fn(localEvt.Message...)
 				}); err != nil {
 					fmt.Println("[EventBusServer]: submit callback error:", err)
 				}
 			} else {
-				go cb.Fn(local.Message...)
+				go localCb.Fn(localEvt.Message...)
 			}
 		}
 	}

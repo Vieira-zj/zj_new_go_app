@@ -1201,6 +1201,38 @@ func TestDemo40(t *testing.T) {
 	fmt.Println("done")
 }
 
+type ClosurePerson struct {
+	ID   int
+	Name string
+}
+
+func (p *ClosurePerson) sayHello() {
+	fmt.Printf("[%d]: %s say: Hello\n", p.ID, p.Name)
+}
+
+func TestDemo41(t *testing.T) {
+	// closure
+	type callBack func()
+
+	callBacks := make([]callBack, 0, 10)
+	for i := 0; i < 10; i++ {
+		p := &ClosurePerson{
+			ID:   i,
+			Name: fmt.Sprintf("Tester_%d", i),
+		}
+		callBacks = append(callBacks, callBack(func() {
+			time.Sleep(200 * time.Millisecond)
+			p.sayHello()
+		}))
+	}
+
+	for _, cb := range callBacks {
+		// no closure issue here
+		cb()
+	}
+	fmt.Println("done")
+}
+
 func TestDemo97(t *testing.T) {
 	// print bytes
 	b := []byte("world")

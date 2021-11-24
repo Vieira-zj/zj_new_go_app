@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -13,7 +14,7 @@ var (
 )
 
 func init() {
-	eventbus = NewEventBusServer(10, 3)
+	eventbus = NewEventBusServer(2, 2)
 }
 
 type calResult struct {
@@ -36,7 +37,7 @@ func newCalResult() *calResult {
 	}
 }
 
-func TestEventBus(t *testing.T) {
+func TestEventBus01(t *testing.T) {
 	defer func() {
 		eventbus.Stop()
 		eventbus.PrintInfo()
@@ -86,4 +87,45 @@ func TestEventBus(t *testing.T) {
 		t.Fatal(err)
 	}
 	time.Sleep(time.Second)
+}
+
+type ClosurePerson struct {
+	ID   int
+	Name string
+}
+
+func (p *ClosurePerson) sayHello() {
+	time.Sleep(200 * time.Millisecond)
+	fmt.Printf("[%d] %s say: Hello\n", p.ID, p.Name)
+}
+
+func TestEventBus02(t *testing.T) {
+	defer eventbus.Stop()
+
+	const channelKey = "TestEventBus02"
+	for i := 0; i < 2; i++ {
+		p := &ClosurePerson{
+			ID:   i,
+			Name: fmt.Sprintf("Tester_%d", i),
+		}
+
+		cb := Callback{
+			Name: strconv.Itoa(i),
+			Fn: func(args ...interface{}) {
+				fmt.Println(args[0])
+				p.sayHello()
+			},
+		}
+		if err := eventbus.Register(channelKey, cb); err != nil {
+			t.Fatal(err)
+		}
+		defer eventbus.Unregister(channelKey, cb)
+	}
+
+	for i := 0; i < 5; i++ {
+		eventbus.Publish(channelKey, fmt.Sprintf("trigger: event %d", i))
+		time.Sleep(200 * time.Millisecond)
+	}
+	time.Sleep(5 * time.Second)
+	fmt.Println("done")
 }

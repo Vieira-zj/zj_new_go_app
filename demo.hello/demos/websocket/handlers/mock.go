@@ -15,7 +15,7 @@ var (
 
 // CreateEventBusServer .
 func CreateEventBusServer() *utils.EventBusServer {
-	eventBusSvr = utils.NewEventBusServer(16, 0)
+	eventBusSvr = utils.NewEventBusServer(2, 16)
 	return eventBusSvr
 }
 

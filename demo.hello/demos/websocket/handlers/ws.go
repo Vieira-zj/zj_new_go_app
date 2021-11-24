@@ -54,6 +54,7 @@ func Echo(w http.ResponseWriter, r *http.Request) {
 		Name: cbName,
 		Fn: func(args ...interface{}) {
 			msg := args[0].(string)
+			// TODO fix: var "conn" in closure when cb func run in fixed goroutine. currently create a new goroutine for each cb.
 			if err = conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
 				fmt.Printf("[callback:%s]: write message error: %v\n", cbName, err)
 			}

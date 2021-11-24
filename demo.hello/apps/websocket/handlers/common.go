@@ -37,7 +37,7 @@ func init() {
 	mock.buildJobResults(10)
 
 	channel = "OnJobResultsUpdateStatus"
-	EventBus = utils.NewEventBusServer(16, 0)
+	EventBus = utils.NewEventBusServer(0, 16)
 }
 
 // ResponseData .
