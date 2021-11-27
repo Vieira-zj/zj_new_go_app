@@ -18,8 +18,8 @@
   <script>
     let ws = null;
 
-    let connect = document.querySelector("#connect");
-    connect.onclick = function () {
+    let connBtn = document.querySelector("#connect");
+    connBtn.onclick = function () {
       ws = new WebSocket("ws://localhost:8080/ws/echo");
 
       ws.onopen = function (evt) {
@@ -42,8 +42,8 @@
       };
     };
 
-    let submit = document.querySelector("#close");
-    submit.onclick = function () {
+    let closeBtn = document.querySelector("#close");
+    closeBtn.onclick = function () {
       if (!Boolean(ws)) {
         return;
       }

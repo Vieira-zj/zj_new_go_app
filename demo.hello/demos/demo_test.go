@@ -1061,7 +1061,7 @@ func TestDemo36(t *testing.T) {
 			select {
 			case val, ok := <-ch:
 				if !ok {
-					// handle for chan close
+					// handle when chan close
 					fmt.Println("channel close")
 					return
 				}
@@ -1116,7 +1116,7 @@ func TestDemo37(t *testing.T) {
 }
 
 func TestDemo38(t *testing.T) {
-	// reset tick
+	// time tick reset
 	ch := make(chan struct{})
 
 	go func() {
