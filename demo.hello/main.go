@@ -78,15 +78,17 @@ func httpServe() {
 		Addr: addr,
 	}
 
+	// curl http://localhost:8080/
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(time.Second)
+		time.Sleep(200 * time.Millisecond)
 		fmt.Fprint(w, "hello world")
 	})
 
 	fmt.Printf("http serve at %s\n", addr)
 	go func() {
-		if err := server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
-			fmt.Printf("listen: %s\n", err)
+		runtime.LockOSThread()
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			fmt.Println("serve error:", err)
 		}
 	}()
 
@@ -106,9 +108,9 @@ func httpServe() {
 }
 
 func main() {
+	help := flag.Bool("h", false, "help")
 	isColor := flag.Bool("c", false, "run color demo")
 	isServe := flag.Bool("s", false, "run http server")
-	help := flag.Bool("h", false, "help")
 	flag.Parse()
 
 	fullPathApp := os.Args[0]
@@ -123,6 +125,9 @@ func main() {
 	if *help {
 		flag.Usage()
 
+		// build:
+		// go build -ldflags "-X main.version=1.0.0 -X 'main.buildTime=`date`' -X 'main.goVersion=`go version`'" main.go
+		// build and run:
 		// go run -ldflags "-X main.version=1.0.0 -X 'main.buildTime=`date`' -X 'main.goVersion=`go version`'" main.go -h
 		if len(version) > 0 {
 			fmt.Printf("\nBuild info:\nversion: %s\n", version)
@@ -130,7 +135,7 @@ func main() {
 			fmt.Println(goVersion)
 		}
 
-		// for io process, default GOMAXPROCS is min, and prefer to set as "5 * NumCPU"
+		// for io process, default GOMAXPROCS is min, and prefer to set as "N * NumCPU"
 		fmt.Println("\nApp info:")
 		fmt.Printf("cpu threads count: %d\n", runtime.NumCPU())
 		fmt.Printf("os threads count: %d\n", runtime.GOMAXPROCS(-1))
@@ -145,7 +150,6 @@ func main() {
 		return
 	}
 
-	// go run main.go -c
 	if *isColor {
 		colorDemo()
 		return
@@ -153,7 +157,9 @@ func main() {
 
 	if *isServe {
 		httpServe()
-	} else {
-		demos.DemoMain()
+		return
 	}
+
+	demos.Main()
+	os.Exit(0)
 }

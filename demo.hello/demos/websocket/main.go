@@ -11,6 +11,12 @@ import (
 	"demo.hello/demos/websocket/handlers"
 )
 
+/*
+api test:
+curl http://localhost:8080/
+curl http://localhost:8080/ping
+*/
+
 func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("/", handlers.Index)
@@ -29,7 +35,11 @@ func main() {
 	}
 
 	fmt.Println("[main]: http serve at :8080")
-	go server.ListenAndServe()
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			panic(fmt.Errorf("server error: %v", err))
+		}
+	}()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	go handlers.MockMessage(ctx)
@@ -41,7 +51,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		fmt.Println(err)
+		fmt.Println("[main]: server shutdown error:", err)
 	}
 	time.Sleep(time.Second)
 }

@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"expvar"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/url"
 	"os"
 	"reflect"
@@ -1233,6 +1235,69 @@ func TestDemo41(t *testing.T) {
 	fmt.Println("done")
 }
 
+func TestDemo42(t *testing.T) {
+	// time.AfterFunc
+	done := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-done:
+				fmt.Println("cancelled")
+				return
+			default:
+				fmt.Println("running...")
+				time.Sleep(300 * time.Millisecond)
+			}
+		}
+	}()
+
+	time.AfterFunc(2*time.Second, func() {
+		fmt.Println("close chan")
+		close(done)
+	})
+
+	<-done
+	time.Sleep(time.Second)
+	fmt.Println("done")
+}
+
+func TestDemo43(t *testing.T) {
+	// expvar
+	// 1. 公共变量
+	// 2. 操作都是协程安全的
+	// 3. 通过HTTP在 /debug/vars 位置以JSON格式导出这些变量（cmdline, memstats）
+	kvFunc := func(kv expvar.KeyValue) {
+		fmt.Println(kv.Key, kv.Value)
+	}
+
+	pubInt := expvar.NewInt("Int")
+	pubInt.Set(10)
+	pubInt.Add(2)
+
+	pubFloat := expvar.NewFloat("Float")
+	pubFloat.Set(1.2)
+	pubFloat.Add(0.1)
+
+	pubString := expvar.NewString("String")
+	pubString.Set("hello")
+
+	pubMap := expvar.NewMap("Map").Init()
+	pubMap.Set("Int", pubInt)
+	pubMap.Set("Float", pubFloat)
+	pubMap.Set("String", pubString)
+	pubMap.Do(kvFunc)
+	fmt.Println()
+
+	pubMap.Add("Int", 1)
+	pubMap.Add("NewInt", 100)
+	pubMap.AddFloat("Float", 0.5)
+	pubMap.AddFloat("NewFloat", 0.9)
+	pubMap.Do(kvFunc)
+	fmt.Println()
+
+	expvar.Do(kvFunc)
+}
+
 func TestDemo97(t *testing.T) {
 	// print bytes
 	b := []byte("world")
@@ -1317,13 +1382,15 @@ func TestDemo99(t *testing.T) {
 	}
 	fmt.Println()
 
-	// url parse
-	uri := "http://release.i.sppay.sz.shopee.io/"
-	testURL, err := url.Parse(uri)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Printf("uri=%s, scheme=%s, host=%s\n", testURL.String(), testURL.Scheme, testURL.Host)
+	// iota
+	type langType int
+	const (
+		Python langType = 1 << iota
+		Java
+		Golang
+		JavaScript
+	)
+	fmt.Println("const:", Python, Java, Golang, JavaScript)
 }
 
 func TestDemo100(t *testing.T) {
@@ -1359,6 +1426,43 @@ func TestDemo100(t *testing.T) {
 }
 
 func TestDemo101(t *testing.T) {
+	// common lib
+	// os func
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("Getwd:", dir)
+	fmt.Println()
+
+	fmt.Printf("ppid:%d, pid=%d\n", os.Getppid(), os.Getpid())
+	fmt.Println()
+
+	if _, err := os.Stdout.WriteString("write stdout test\n"); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println()
+
+	// net func
+	uri := "127.0.0.1:8080"
+	host, port, err := net.SplitHostPort(uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("host:%s, port:%s\n", host, port)
+	fmt.Println()
+
+	// url func
+	uri = "http://release.sz.test.io:8080/"
+	testURL, err := url.Parse(uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("uri=%s, scheme=%s, host=%s, port=%s\n",
+		testURL.String(), testURL.Scheme, testURL.Host, testURL.Port())
+}
+
+func TestDemo102(t *testing.T) {
 	// regexp
 	testStr := "test1, hello, 11, test2,test3, 99,test4"
 	r, err := regexp.Compile("hello|world")

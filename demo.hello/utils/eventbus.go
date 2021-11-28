@@ -35,7 +35,7 @@ var (
 )
 
 // NewEventBusServer .
-// if poolSize = 0, then create new goroutine for each callback instread of using go pool.
+// if poolSize = 0, it creates new goroutine for each callback instread of using go pool.
 func NewEventBusServer(poolSize, queueSize int) *EventBusServer {
 	once.Do(func() {
 		var goPool *GoPool

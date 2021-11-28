@@ -414,8 +414,8 @@ func demo11() {
 	}
 }
 
-// DemoMain .
-func DemoMain() {
+// Main .
+func Main() {
 	fmt.Println("demo main")
 	demo09()
 }

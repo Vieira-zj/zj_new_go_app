@@ -1,4 +1,4 @@
-package demos
+package main
 
 import (
 	"context"
@@ -17,7 +17,6 @@ func TestStartHTTPServer01(t *testing.T) {
 	}()
 
 	time.Sleep(time.Second)
-
 	client := utils.NewDefaultHTTPUtils()
 	host := fmt.Sprintf("http://%s:%d", addr, port)
 	for _, path := range [3]string{"/", "/ping", "/ping"} {
@@ -37,7 +36,6 @@ func TestStartHTTPServer02(t *testing.T) {
 	}()
 
 	time.Sleep(time.Second)
-
 	client := utils.NewDefaultHTTPUtils()
 	host := fmt.Sprintf("http://%s:%d", addr, port)
 	headers := map[string]string{"XTag": "XTest"}
