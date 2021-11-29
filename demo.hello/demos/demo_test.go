@@ -1298,6 +1298,14 @@ func TestDemo43(t *testing.T) {
 	expvar.Do(kvFunc)
 }
 
+func TestDemo96(t *testing.T) {
+	// 可变参数
+	myPrint := func(args ...string) {
+		fmt.Println("args:", strings.Join(args, ","))
+	}
+	myPrint("foo", "bar", "jim")
+}
+
 func TestDemo97(t *testing.T) {
 	// print bytes
 	b := []byte("world")

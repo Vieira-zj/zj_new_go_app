@@ -1,4 +1,4 @@
-package demos
+package pipeline
 
 import (
 	"fmt"
@@ -57,13 +57,5 @@ func TestRunSimplePipeline05(t *testing.T) {
 		fmt.Println(err)
 	} else {
 		t.Fatal("want error, and got nil")
-	}
-}
-
-func TestRunComplexPipeline(t *testing.T) {
-	base := 10
-	strings := []string{"5", "4", "3"}
-	if err := RunComplexPipeline(base, strings); err != nil {
-		t.Fatal(err)
 	}
 }

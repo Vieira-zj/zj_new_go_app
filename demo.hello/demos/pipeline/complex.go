@@ -1,4 +1,4 @@
-package demos
+package pipeline
 
 import (
 	"context"
