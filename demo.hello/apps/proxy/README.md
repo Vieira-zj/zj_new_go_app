@@ -2,7 +2,8 @@
 
 代理 http 和 https 请求。
 
-> Refer: https://github.com/lyyyuna/xiaolongbaoproxy
+> Refer: <https://github.com/lyyyuna/xiaolongbaoproxy>
+> 
 
 ## Test
 
