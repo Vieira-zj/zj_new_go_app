@@ -43,6 +43,17 @@ func IsNetworkError(err error) bool {
 	return ok
 }
 
+// IsTemporaryNetworkError .
+func IsTemporaryNetworkError(err error) bool {
+	if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+		return true
+	}
+	if operr, ok := err.(*net.OpError); ok && operr.Temporary() {
+		return true
+	}
+	return false
+}
+
 // GetLocalHostIPs gets local host ip address.
 func GetLocalHostIPs() (hosts []string, err error) {
 	addrs, err := net.InterfaceAddrs()

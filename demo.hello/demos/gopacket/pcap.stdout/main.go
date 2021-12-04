@@ -39,7 +39,9 @@ func main() {
 	}
 
 	// Use the handle as a packet source to process all packets
-	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
+	linkType := handle.LinkType()
+	fmt.Println("Create packet source by link type:", linkType)
+	packetSource := gopacket.NewPacketSource(handle, linkType)
 	fmt.Println("Pcap packet:")
 	for packet := range packetSource.Packets() {
 		printPacketInfo(packet)

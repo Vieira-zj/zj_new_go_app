@@ -1,6 +1,7 @@
 package demos
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -1299,14 +1300,6 @@ func TestDemo43(t *testing.T) {
 }
 
 func TestDemo96(t *testing.T) {
-	// 可变参数
-	myPrint := func(args ...string) {
-		fmt.Println("args:", strings.Join(args, ","))
-	}
-	myPrint("foo", "bar", "jim")
-}
-
-func TestDemo97(t *testing.T) {
 	// print bytes
 	b := []byte("world")
 	fmt.Printf("hello %s\n", b)
@@ -1335,7 +1328,81 @@ func TestDemo97(t *testing.T) {
 	}
 }
 
+func TestDemo97(t *testing.T) {
+	// bytes equal
+	fmt.Println(bytes.Equal([]byte("foo"), []byte("foo")))
+	fmt.Println(bytes.Equal([]byte("foo"), []byte("bar")))
+	fmt.Println()
+
+	// bytes reader
+	readBytesString := func(t *testing.T, buf *bufio.Reader) []string {
+		ret := make([]string, 0, 4)
+		for {
+			res, err := buf.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					ret = append(ret, res)
+					return ret
+				}
+				t.Fatal(err)
+			}
+			ret = append(ret, res)
+		}
+	}
+
+	r := bytes.NewReader([]byte("this is bytes test\nfoo,bar\nbuffer reader test"))
+	buf := bufio.NewReader(r)
+	fmt.Println(readBytesString(t, buf))
+	fmt.Println()
+
+	// bytes ReadByte and UnreadByte
+	r = bytes.NewReader([]byte("hello"))
+	buf = bufio.NewReader(r)
+	b, err := buf.ReadByte()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("read byte: %c\n", b)
+
+	fmt.Println("unread byte")
+	if err := buf.UnreadByte(); err != nil {
+		t.Fatal(err)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(readBytesString(t, buf))
+}
+
 func TestDemo98(t *testing.T) {
+	// string equal
+	fmt.Println(strings.EqualFold("host", "host"))
+	fmt.Println(strings.EqualFold("Host", "host"))
+	fmt.Println(strings.EqualFold("host", "gost"))
+	fmt.Println()
+
+	// print with padding
+	for _, val := range []int{123, 1331, 131008} {
+		fmt.Printf("%7dms\n", val)
+	}
+	for _, val := range []int{123, 1331, 131008} {
+		str := strconv.Itoa(val) + "ms"
+		fmt.Printf("%-9seof\n", str)
+	}
+	fmt.Println()
+
+	// iota
+	type langType int
+	const (
+		Python langType = 1 << iota
+		Java
+		Golang
+		JavaScript
+	)
+	fmt.Println("const:", Python, Java, Golang, JavaScript)
+}
+
+func TestDemo99(t *testing.T) {
 	// iterator slice in order
 	sl := []string{"one", "two", "three", "five", "four"}
 	for _, value := range sl {
@@ -1365,43 +1432,20 @@ func TestDemo98(t *testing.T) {
 	}
 	fmt.Println("json map:", string(b))
 	fmt.Println()
-
-	// 可变参数
-	sayHello := func(args ...string) {
-		fmt.Println("get:", strings.Join(args, "|"))
-	}
-	sayHello("foo", "bar", "jin")
-}
-
-func TestDemo99(t *testing.T) {
-	// string equal
-	fmt.Println(strings.EqualFold("host", "host"))
-	fmt.Println(strings.EqualFold("Host", "host"))
-	fmt.Println(strings.EqualFold("host", "gost"))
-	fmt.Println()
-
-	// print with padding
-	for _, val := range []int{123, 1331, 131008} {
-		fmt.Printf("%7dms\n", val)
-	}
-	for _, val := range []int{123, 1331, 131008} {
-		str := strconv.Itoa(val) + "ms"
-		fmt.Printf("%-9seof\n", str)
-	}
-	fmt.Println()
-
-	// iota
-	type langType int
-	const (
-		Python langType = 1 << iota
-		Java
-		Golang
-		JavaScript
-	)
-	fmt.Println("const:", Python, Java, Golang, JavaScript)
 }
 
 func TestDemo100(t *testing.T) {
+	// fetch slice 1st item
+	s := []string{"one", "two", "foo", "bar"}
+	value := s[0]
+	copy(s, s[1:])
+	s = s[:len(s)-1]
+	fmt.Println("fetch 1st value:", value)
+	fmt.Println(len(s), s)
+
+	s = s[1:]
+	fmt.Println(len(s), s)
+
 	// fetch map first k,v
 	m := map[int]string{
 		1: "one",
@@ -1417,23 +1461,20 @@ func TestDemo100(t *testing.T) {
 		break
 	}
 	delete(m, k)
+
 	fmt.Printf("get map 1st item: k=%d, v=%s\n", k, v)
 	fmt.Printf("map: %v\n", m)
 	fmt.Println()
-
-	// fetch slice 1st item
-	s := []string{"one", "two", "foo", "bar"}
-	value := s[0]
-	copy(s, s[1:])
-	s = s[:len(s)-1]
-	fmt.Println("fetch 1st value:", value)
-	fmt.Println(len(s), s)
-
-	s = s[1:]
-	fmt.Println(len(s), s)
 }
 
 func TestDemo101(t *testing.T) {
+	// 可变参数
+	myPrint := func(args ...string) {
+		fmt.Println("args:", strings.Join(args, ","))
+	}
+	myPrint("foo", "bar", "jim")
+	fmt.Println()
+
 	// common lib
 	// os func
 	dir, err := os.Getwd()
