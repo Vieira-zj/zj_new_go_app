@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"expvar"
 	"fmt"
 	"io"
@@ -1299,6 +1300,48 @@ func TestDemo43(t *testing.T) {
 	expvar.Do(kvFunc)
 }
 
+func TestDemo44(t *testing.T) {
+	// context err()
+	sleep := 3
+	future := time.Now().Add(time.Duration(sleep) * time.Second)
+	ctx, cancel := context.WithDeadline(context.Background(), future)
+	defer cancel()
+
+	go func() {
+		select {
+		case <-time.After(5 * time.Second):
+			fmt.Println("over sleep")
+		case <-ctx.Done():
+			fmt.Println(ctx.Err())
+		}
+	}()
+
+	time.Sleep(time.Duration(sleep+1) * time.Second)
+	cancel()
+	fmt.Println("done")
+}
+
+func TestDemo95(t *testing.T) {
+	// 可变参数
+	myPrint := func(args ...string) {
+		fmt.Println("args:", strings.Join(args, ","))
+	}
+	myPrint("foo", "bar", "jim")
+	fmt.Println()
+
+	// error compare
+	err1 := errors.New("feof")
+	err2 := errors.New("feof")
+	if err1 == io.EOF {
+	}
+	if err1 == err2 {
+		fmt.Println("equal")
+	} else {
+		fmt.Println("not equal")
+	}
+	fmt.Println(errors.Is(err1, err2))
+}
+
 func TestDemo96(t *testing.T) {
 	// print bytes
 	b := []byte("world")
@@ -1468,13 +1511,6 @@ func TestDemo100(t *testing.T) {
 }
 
 func TestDemo101(t *testing.T) {
-	// 可变参数
-	myPrint := func(args ...string) {
-		fmt.Println("args:", strings.Join(args, ","))
-	}
-	myPrint("foo", "bar", "jim")
-	fmt.Println()
-
 	// common lib
 	// os func
 	dir, err := os.Getwd()
