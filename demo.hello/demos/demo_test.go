@@ -1321,6 +1321,97 @@ func TestDemo44(t *testing.T) {
 	fmt.Println("done")
 }
 
+func TestDemo45(t *testing.T) {
+	// selece case priority
+	// 先处理 high channel, 再处理 mid channel
+	const size = 5
+	chHigh := make(chan int, size)
+	chMid := make(chan int, size)
+	for i := 0; i < size; i++ {
+		chHigh <- i
+		chMid <- 10 + i
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	go func() {
+		for {
+			select {
+			case num := <-chHigh:
+				fmt.Println("from high channel, get:", num)
+			case <-ctx.Done():
+				fmt.Println("cancelled")
+				return
+			default:
+				select {
+				case num := <-chMid:
+					fmt.Println("from mid channel, get:", num)
+				default:
+					fmt.Println("no task get")
+				}
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}()
+
+	chMid <- 18
+	chMid <- 19
+	// 等待处理 mid channel 中的任务，再添加任务到 high channel 中
+	for i := 0; i < size; i++ {
+		chHigh <- i
+	}
+
+	time.Sleep(3 * time.Second)
+	cancel()
+}
+
+func TestDemo46(t *testing.T) {
+	// 优先级队列
+	const size = 5
+	chHigh := make(chan int, size)
+	chMid := make(chan int, size)
+	chLow := make(chan int, size)
+
+	for i := 0; i < size; i++ {
+		chHigh <- i
+		chMid <- 10 + i
+		chLow <- 100 + i
+	}
+
+	worker := func(ctx context.Context) {
+		chs := []chan int{chHigh, chMid, chLow}
+		for {
+		outer:
+			for _, ch := range chs {
+				select {
+				case num := <-ch:
+					fmt.Println("get:", num)
+					break outer
+				case <-ctx.Done():
+					fmt.Println("cancelled")
+					return
+				default:
+				}
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	go worker(ctx)
+
+	chMid <- 19
+	fmt.Println("mid channel, put 19")
+	chLow <- 110
+	fmt.Println("low channel, put 110")
+	for i := 0; i < size; i++ {
+		chHigh <- i
+	}
+	time.Sleep(4 * time.Second)
+	cancel()
+}
+
 func TestDemo95(t *testing.T) {
 	// 可变参数
 	myPrint := func(args ...string) {
