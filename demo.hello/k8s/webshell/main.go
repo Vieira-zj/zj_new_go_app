@@ -73,7 +73,7 @@ type respK8SResources struct {
 }
 
 func getAllNamespaces(w http.ResponseWriter, r *http.Request) {
-	resource, err := createK8sResourceClient(w)
+	resource, err := createK8sResourceClient()
 	if err != nil {
 		err = fmt.Errorf("init k8s client error: %v", err)
 		writeJSONRespWithStatus(w, http.StatusInternalServerError, []byte(err.Error()))
@@ -99,7 +99,7 @@ func getAllNamespaces(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAllPodsByNamespace(w http.ResponseWriter, r *http.Request) {
-	resource, err := createK8sResourceClient(w)
+	resource, err := createK8sResourceClient()
 	if err != nil {
 		err = fmt.Errorf("init k8s client error: %v", err)
 		writeJSONRespWithStatus(w, http.StatusInternalServerError, []byte(err.Error()))
@@ -168,7 +168,7 @@ func getAllContainersByPod(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resource, err := createK8sResourceClient(w)
+	resource, err := createK8sResourceClient()
 	if err != nil {
 		err = fmt.Errorf("init k8s client error: %v", err)
 		writeJSONRespWithStatus(w, http.StatusInternalServerError, []byte(err.Error()))
@@ -193,12 +193,11 @@ func getAllContainersByPod(w http.ResponseWriter, r *http.Request) {
 	writeOkJSONResp(w, b)
 }
 
-func createK8sResourceClient(w http.ResponseWriter) (*k8sutils.Resource, error) {
+func createK8sResourceClient() (*k8sutils.Resource, error) {
 	client, err := k8sutils.CreateK8sClientLocal(*kubeConfig)
 	if err != nil {
 		err = fmt.Errorf("Init k8s client error: %v", err)
 		return nil, err
-
 	}
 	return k8sutils.NewResource(client), nil
 }
@@ -234,7 +233,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resource, err := createK8sResourceClient(w)
+	resource, err := createK8sResourceClient()
 	if err != nil {
 		msg := fmt.Sprintf("init k8s client error: %v\n", err)
 		writeErrorRespToTerminal(term, msg)

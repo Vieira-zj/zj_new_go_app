@@ -97,7 +97,8 @@ func (term *TerminalSession) Next() *remotecommand.TerminalSize {
 // exec cmd in pod <= pod executor stdin <= TerminalSession read() <= via websocket ReadMessage() <= webshell term
 func (term *TerminalSession) Read(p []byte) (int, error) {
 	myLogPrintln("[Read] terminal session")
-	myLogPrintln(fmt.Sprintf("bytes buffer size: %d\n", len(p)))
+	// fix bytes size of p: 32768
+	myLogPrintln(fmt.Sprintf("[Read Webshell->Pod] bytes size: %d\n", len(p)))
 	_, message, err := term.wsConn.ReadMessage()
 	myLogPrintln("[ReadEnd] read message from ws, and copy to stdin")
 	if err != nil {
@@ -128,7 +129,7 @@ func (term *TerminalSession) Read(p []byte) (int, error) {
 // pod cmd output => pod executor stdout => TerminalSession write() => via websocket WriteMessage() => webshell term
 func (term *TerminalSession) Write(p []byte) (int, error) {
 	myLogPrintln("[Write] terminal session")
-	myLogPrintln(fmt.Sprintf("bytes buffer size: %d\n", len(p)))
+	myLogPrintln(fmt.Sprintf("[Write Pod->Webshell] bytes size: %d\n", len(p)))
 	msg, err := json.Marshal(TerminalMessage{
 		Operation: "stdout",
 		Data:      string(p),

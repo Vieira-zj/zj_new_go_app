@@ -44,6 +44,7 @@ func ExecPod(kubeClient kubernetes.Interface, cfg *restclient.Config,
 		return err
 	}
 
+	// PtyHandler is implied by TerminalSession
 	return executor.Stream(remotecommand.StreamOptions{
 		Stdin:             ptyHandler,
 		Stdout:            ptyHandler,
