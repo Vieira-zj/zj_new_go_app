@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: busybox-test
+  namespace: k8s-test
+  labels:
+    app: busybox-test
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: busybox-test
+  template:
+    metadata:
+      labels:
+        app: busybox-test
+    spec:
+      containers:
+      - name: busybox-errexit
+        image: busybox:1.30
+        imagePullPolicy: IfNotPresent
+        command: ["sh", "-c", "for i in $(seq 20); do echo 'hello'; sleep 1; done; echo 'exit'; exit 99"]
+        resources:
+          limits:
+            cpu: 10m
+            memory: 20Mi
+          requests:
+            cpu: 10m
+            memory: 20Mi
