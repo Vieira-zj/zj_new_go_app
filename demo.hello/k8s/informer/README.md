@@ -8,6 +8,8 @@ Refer:
 ## Test
 
 ```sh
-kubectl get deploy,pod -n k8s-test
+kubectl create -f deploy/busybox_errexit_deploy.yaml
+kubectl get all -n k8s-test
+kubectl delete -f deploy/busybox_errexit_deploy.yaml
 ```
 
