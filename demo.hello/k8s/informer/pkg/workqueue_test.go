@@ -162,6 +162,7 @@ func TestWorkqueueRatelimiter02(t *testing.T) {
 			}
 			fmt.Println("error:", err)
 			fmt.Println("forget key:", key)
+			// Forget() -> Done()
 			queue.Forget(key)
 			return false
 		}

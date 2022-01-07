@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -54,15 +55,23 @@ func NewWatcher(client *kubernetes.Clientset, namespaces []string, interval uint
 }
 
 // Run starts watcher informer.
-func (w *Watcher) Run(ctx context.Context, isWatchDeploy bool) {
+func (w *Watcher) Run(ctx context.Context, isWatchDeploy bool) error {
 	w.logPrintln("start watcher")
-	go w.podInformer().Run(ctx.Done())
+	informer := w.podInformer(ctx)
 	if isWatchDeploy {
-		go w.deploymentInformer().Run(ctx.Done())
+		informer = w.deploymentInformer(ctx)
 	}
+
+	w.factory.Start(ctx.Done())
+	if !cache.WaitForNamedCacheSync("pod-monitor-app", ctx.Done(), informer.HasSynced) {
+		return errors.New("informer cache sync failed")
+	}
+	// use factory.Start() instead of informer.Run()
+	// go informer.Run(ctx.Done())
+	return nil
 }
 
-func (w *Watcher) podInformer() cache.SharedIndexInformer {
+func (w *Watcher) podInformer(ctx context.Context) cache.SharedIndexInformer {
 	onAdd := func(obj interface{}) {
 		if pod, ok := obj.(*corev1.Pod); ok {
 			if len(w.namespaces) > 1 {
@@ -83,9 +92,9 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 			}
 
 			w.logPrintln("onUpdate pod:", pod.ObjectMeta.GetName())
-			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3)*time.Second)
+			localCtx, cancel := context.WithTimeout(ctx, time.Duration(3)*time.Second)
 			defer cancel()
-			status := GetPodStatus(ctx, w.resource, pod, "")
+			status := GetPodStatus(localCtx, w.resource, pod, "")
 			if !isPodOK(status.Value) {
 				if len(w.ErrorPodStatusCh) == cap(w.ErrorPodStatusCh) {
 					w.logPrintf("error pod status channel is full (size=%d)", len(w.ErrorPodStatusCh))
@@ -123,7 +132,7 @@ func (w *Watcher) podInformer() cache.SharedIndexInformer {
 	return informer
 }
 
-func (w *Watcher) deploymentInformer() cache.SharedIndexInformer {
+func (w *Watcher) deploymentInformer(ctx context.Context) cache.SharedIndexInformer {
 	handler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			if deploy, ok := obj.(*appsv1.Deployment); ok {

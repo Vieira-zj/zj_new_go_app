@@ -36,7 +36,10 @@ func NewMatterMost() *MatterMost {
 
 // SendMessageToUser send message to given channel and At specified user.
 func (mm *MatterMost) SendMessageToUser(ctx context.Context, user, text string) error {
-	return mm.SendMessage(ctx, fmt.Sprintf("@%s %s", user, text))
+	if len(user) > 0 {
+		return mm.SendMessage(ctx, fmt.Sprintf("@%s %s", user, text))
+	}
+	return mm.SendMessage(ctx, text)
 }
 
 // SendMessage send message to given channel.
