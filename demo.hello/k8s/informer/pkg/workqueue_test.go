@@ -75,7 +75,7 @@ func TestWorkqueue(t *testing.T) {
 	fmt.Println("done")
 }
 
-func TestWorkqueueRatelimiter(t *testing.T) {
+func TestWorkqueueRatelimiter01(t *testing.T) {
 	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "queue-ratelimit-test")
 	defer queue.ShutDown()
 
@@ -124,6 +124,55 @@ func TestWorkqueueRatelimiter(t *testing.T) {
 	queue.ShutDown()
 	time.Sleep(200 * time.Millisecond)
 	fmt.Println("done")
+}
+
+func TestWorkqueueRatelimiter02(t *testing.T) {
+	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "queue-ratelimit-test")
+	defer queue.ShutDown()
+
+	const maxRetries = 3
+	handler := func(key string) error {
+		retries := queue.NumRequeues(key)
+		if retries > maxRetries {
+			fmt.Println("number of requeue:", retries)
+			return fmt.Errorf("exceed max retries: %d", maxRetries)
+		}
+		fmt.Println("get value:", key)
+		return fmt.Errorf("mock")
+	}
+
+	const key = "1"
+	queue.Add(key)
+	run := func(key string) bool {
+		retKey, quit := queue.Get()
+		if quit {
+			return false
+		}
+		defer func() {
+			// fmt.Println("done for key:", retKey)
+			queue.Done(retKey)
+		}()
+
+		if err := handler(retKey.(string)); err != nil {
+			if err.Error() == "mock" {
+				fmt.Println("mock error, and re-queue:", key)
+				// AddRateLimited() -> Done()
+				queue.AddRateLimited(key)
+				return true
+			}
+			fmt.Println("error:", err)
+			fmt.Println("forget key:", key)
+			queue.Forget(key)
+			return false
+		}
+		return true
+	}
+
+	for run(key) {
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	fmt.Println("done, number of requeue:", queue.NumRequeues(key))
 }
 
 func TestWorkqueueDelay(t *testing.T) {

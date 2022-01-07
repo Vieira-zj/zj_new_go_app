@@ -8,8 +8,13 @@ Refer:
 ## Test
 
 ```sh
+# start informer
+go run main.go -t rs
+
+# create resource
 kubectl create -f deploy/busybox_errexit_deploy.yaml
 kubectl get all -n k8s-test
+# clear
 kubectl delete -f deploy/busybox_errexit_deploy.yaml
 ```
 

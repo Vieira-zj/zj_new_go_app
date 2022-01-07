@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -29,7 +30,7 @@ var (
 func init() {
 	flag.IntVar(&interval, "i", 15, "watch interval")
 	flag.StringVar(&namespace, "n", "k8s-test", "watch namespace")
-	flag.StringVar(&wType, "m", typeReplicaSet, "k8s resource watch type: pod, rs. default: pod")
+	flag.StringVar(&wType, "t", typePod, "k8s resource informer type: pod, rs. default: pod")
 	flag.BoolVar(&help, "h", false, "help")
 }
 
@@ -40,7 +41,6 @@ func main() {
 		return
 	}
 
-	// init
 	client, err := k8spkg.CreateK8sClientLocalDefault()
 	if err != nil {
 		panic(fmt.Sprintf("init k8s client error: %v\n", err))
@@ -57,15 +57,15 @@ func main() {
 		rsInformer := localpkg.NewMyReplicaSetInformer(factory)
 		dInformer := localpkg.NewMyDeploymentInformer(factory)
 		watcher = localpkg.NewReplicaSetWatcher(client, rsInformer, dInformer)
+	default:
+		panic("invalid informer type: " + wType)
 	}
 
-	// run
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGTERM)
 	factory.Start(ctx.Done())
 	watcher.Run(ctx)
 
-	// exit
 	<-ctx.Done()
 	stop()
-	fmt.Println("k8s informer exit")
+	log.Println("k8s informer exit")
 }
