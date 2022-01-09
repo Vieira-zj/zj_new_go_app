@@ -414,6 +414,17 @@ func demo11() {
 	}
 }
 
+// demo12, struct func split in 2 files
+type myPerson struct {
+	Name  string
+	Age   int
+	Skill []string
+}
+
+func (p myPerson) SayHello() {
+	fmt.Println("hello, my name is:", p.Name)
+}
+
 // Main .
 func Main() {
 	fmt.Println("demo main")

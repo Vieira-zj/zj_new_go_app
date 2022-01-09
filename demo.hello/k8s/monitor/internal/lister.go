@@ -100,8 +100,8 @@ func (lister *Lister) GetAllPodInfos(ctx context.Context, pods []*corev1.Pod) ([
 
 // GetPodStatus returns the given pod status.
 func GetPodStatus(ctx context.Context, resource *k8spkg.Resource, pod *corev1.Pod, containerName string) *PodStatus {
-	podName := pod.GetObjectMeta().GetName()
 	namespace := pod.GetObjectMeta().GetNamespace()
+	podName := pod.GetObjectMeta().GetName()
 	podInfo := &PodStatus{
 		Namespace: namespace,
 		Name:      podName,
@@ -122,10 +122,12 @@ func GetPodStatus(ctx context.Context, resource *k8spkg.Resource, pod *corev1.Po
 	}
 
 	if !isPodOK(podInfo.Value) {
-		if podLog, err := resource.GetPodLogs(ctx, namespace, podName); err != nil {
-			log.Printf("get pod [%s/%s] log failed: %s\n", namespace, podName, err.Error())
-		} else {
-			podInfo.Log = podLog
+		if _, err = resource.GetPod(ctx, namespace, podName); err == nil {
+			if podLog, err := resource.GetPodLogs(ctx, namespace, podName); err != nil {
+				log.Printf("get pod [%s/%s] log failed: %s\n", namespace, podName, err.Error())
+			} else {
+				podInfo.Log = podLog
+			}
 		}
 	}
 	return podInfo

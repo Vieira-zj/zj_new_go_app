@@ -38,8 +38,7 @@ func TestWorkqueue(t *testing.T) {
 	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "queue-test")
 	defer queue.ShutDown()
 
-	timeout := 3
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	go func(ctx context.Context) {
@@ -53,43 +52,69 @@ func TestWorkqueue(t *testing.T) {
 			default:
 				i++
 				queue.Add(i)
-				time.Sleep(300 * time.Millisecond)
 			}
+			time.Sleep(300 * time.Millisecond)
 		}
 	}(ctx)
 
 	go func() {
 		for {
-			val, quit := queue.Get()
-			if quit {
-				fmt.Println("consumer exit")
+			exit := func() bool {
+				val, quit := queue.Get()
+				if quit {
+					fmt.Println("consumer exit")
+					return true
+				}
+				defer queue.Done(val)
+				fmt.Printf("get value: %v\n", val)
+				return false
+			}()
+			if exit {
 				return
 			}
-			fmt.Printf("get value: %v\n", val)
-			queue.Done(val)
 		}
 	}()
 
 	<-ctx.Done()
-	time.Sleep(time.Second)
+	time.Sleep(200 * time.Millisecond)
 	fmt.Println("done")
 }
 
 func TestWorkqueueRatelimiter01(t *testing.T) {
-	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "queue-ratelimit-test")
+	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ratelimit-queue-test")
+	defer queue.ShutDown()
+
+	const key = "test_key"
+	for i := 0; i < 3; i++ {
+		queue.AddRateLimited(key)
+		time.Sleep(100 * time.Millisecond)
+		retKey, _ := queue.Get()
+		fmt.Println("get key:", retKey)
+		queue.Done(key) // finish handle key
+		time.Sleep(100 * time.Millisecond)
+	}
+	fmt.Printf("length: %d, requeue: %d\n", queue.Len(), queue.NumRequeues(key))
+	queue.Forget(key)
+	fmt.Printf("length: %d, requeue: %d\n", queue.Len(), queue.NumRequeues(key))
+
+	// add key but not get
+	for i := 0; i < 3; i++ {
+		queue.AddRateLimited(key)
+		time.Sleep(100 * time.Millisecond)
+	}
+	fmt.Printf("length: %d, requeue: %d\n", queue.Len(), queue.NumRequeues(key))
+}
+
+func TestWorkqueueRatelimiter02(t *testing.T) {
+	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ratelimit-queue-test")
 	defer queue.ShutDown()
 
 	key := "re_enqueue"
 	closeCh := make(chan struct{})
 	go func() {
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 6; i++ {
 			queue.AddRateLimited(key)
-			time.Sleep(300 * time.Millisecond)
-		}
-		// add more items
-		for i := 0; i < 3; i++ {
-			queue.Add(i)
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(200 * time.Millisecond)
 		}
 		fmt.Println("length of queue:", queue.Len())
 		closeCh <- struct{}{}
@@ -108,16 +133,15 @@ func TestWorkqueueRatelimiter01(t *testing.T) {
 			if queue.NumRequeues(key) > retries {
 				fmt.Println("exceed max retries:", retries)
 				queue.Forget(key)
-				return false
+			} else {
+				fmt.Println("get value:", key)
 			}
-
-			fmt.Println("get value:", key)
 			return true
 		}
 
 		for run() {
+			fmt.Println("number of requeue:", queue.NumRequeues(key))
 		}
-		fmt.Println("after forget, number of requeue:", queue.NumRequeues(key))
 	}()
 
 	<-closeCh
@@ -126,8 +150,8 @@ func TestWorkqueueRatelimiter01(t *testing.T) {
 	fmt.Println("done")
 }
 
-func TestWorkqueueRatelimiter02(t *testing.T) {
-	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "queue-ratelimit-test")
+func TestWorkqueueRatelimiter03(t *testing.T) {
+	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ratelimit-queue-test")
 	defer queue.ShutDown()
 
 	const maxRetries = 3
@@ -166,18 +190,20 @@ func TestWorkqueueRatelimiter02(t *testing.T) {
 			queue.Forget(key)
 			return false
 		}
+
+		// does not go here
+		queue.Forget(key)
 		return true
 	}
 
 	for run(key) {
 		time.Sleep(100 * time.Millisecond)
 	}
-
 	fmt.Println("done, number of requeue:", queue.NumRequeues(key))
 }
 
 func TestWorkqueueDelay(t *testing.T) {
-	queue := workqueue.NewNamedDelayingQueue("queue-delay-test")
+	queue := workqueue.NewNamedDelayingQueue("delay-queue-test")
 	defer queue.ShutDown()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

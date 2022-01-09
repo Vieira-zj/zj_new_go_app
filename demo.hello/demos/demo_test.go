@@ -1412,6 +1412,36 @@ func TestDemo46(t *testing.T) {
 	cancel()
 }
 
+// demo47, struct func split into 2 files
+func (p myPerson) String() string {
+	skills := strings.Join(p.Skill, "|")
+	return fmt.Sprintf("name:%s, age:%d, skills:%s", p.Name, p.Age, skills)
+}
+
+func TestDemo47(t *testing.T) {
+	p := myPerson{
+		Name:  "foo",
+		Age:   31,
+		Skill: []string{"java", "golang", "javascript"},
+	}
+	p.SayHello()
+	fmt.Println(p.String())
+}
+
+func TestDemo48(t *testing.T) {
+	// wrap code block in a self-run func so we can defer for catch error
+	func() {
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println("catch:", err)
+			}
+		}()
+
+		fmt.Println("do mock a error")
+		panic(fmt.Errorf("mock error"))
+	}()
+}
+
 func TestDemo95(t *testing.T) {
 	// 可变参数
 	myPrint := func(args ...string) {

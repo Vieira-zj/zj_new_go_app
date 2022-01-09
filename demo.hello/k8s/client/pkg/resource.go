@@ -124,7 +124,7 @@ func (r *Resource) GetPod(ctx context.Context, namespace string, podName string)
 	pod, err := r.client.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return nil, fmt.Errorf("Pod not found: namespace=%s, name=%s", namespace, podName)
+			return nil, fmt.Errorf("pod [%s/%s] not found", namespace, podName)
 		}
 		return nil, err
 	}
@@ -395,7 +395,7 @@ func (r *Resource) StartPod(ctx context.Context, podSpec *apiv1.Pod, timeout int
 	fmt.Printf("Waiting for pod %s to run...\n", pod.Name)
 	event, err := watch.UntilWithoutRetry(ctx, watcher, conditions.PodRunning)
 	if err != nil {
-		err := fmt.Errorf("Error occurred while waiting for pod to run: %v", err)
+		err := fmt.Errorf("error occurred while waiting for pod to run: %v", err)
 		return nil, err
 	}
 	pod = event.Object.(*apiv1.Pod)
@@ -421,7 +421,7 @@ func (r *Resource) GetService(ctx context.Context, namespace, name string) (*api
 	service, err := r.client.CoreV1().Services(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return nil, fmt.Errorf("Service not found: namespace=%s, name=%s", namespace, name)
+			return nil, fmt.Errorf("service [%s/%s] not found", namespace, name)
 		}
 		return nil, err
 	}

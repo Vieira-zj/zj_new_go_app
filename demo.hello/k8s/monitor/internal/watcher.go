@@ -62,12 +62,13 @@ func (w *Watcher) Run(ctx context.Context, isWatchDeploy bool) error {
 		informer = w.deploymentInformer(ctx)
 	}
 
-	w.factory.Start(ctx.Done())
+	// use informer.Run() instead of factory.Start()
+	// Start() init all requested informers, and here we only run specified informer
+	// w.factory.Start(ctx.Done())
+	go informer.Run(ctx.Done())
 	if !cache.WaitForNamedCacheSync("pod-monitor-app", ctx.Done(), informer.HasSynced) {
 		return errors.New("informer cache sync failed")
 	}
-	// use factory.Start() instead of informer.Run()
-	// go informer.Run(ctx.Done())
 	return nil
 }
 

@@ -49,14 +49,14 @@ func main() {
 	var watcher localpkg.Watcher
 	factory := informers.NewSharedInformerFactoryWithOptions(
 		client, time.Duration(interval)*time.Second, informers.WithNamespace(namespace))
+	podInformer := localpkg.NewMyPodInformer(factory)
 	switch wType {
 	case typePod:
-		podInformer := localpkg.NewMyPodInformer(factory)
 		watcher = localpkg.NewPodWatcher(client, podInformer)
 	case typeReplicaSet:
 		rsInformer := localpkg.NewMyReplicaSetInformer(factory)
 		dInformer := localpkg.NewMyDeploymentInformer(factory)
-		watcher = localpkg.NewReplicaSetWatcher(client, rsInformer, dInformer)
+		watcher = localpkg.NewReplicaSetWatcher(client, rsInformer, dInformer, podInformer)
 	default:
 		panic("invalid informer type: " + wType)
 	}
