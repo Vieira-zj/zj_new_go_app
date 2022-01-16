@@ -8,6 +8,30 @@ import (
 	"time"
 )
 
+func TestMutexLock(t *testing.T) {
+	var (
+		wg      sync.WaitGroup
+		lockers [2]sync.Mutex
+		count   int
+	)
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, locker *sync.Mutex) {
+			locker.Lock()
+			defer func() {
+				wg.Done()
+				locker.Unlock()
+			}()
+			for i := 0; i < 100; i++ {
+				count++
+			}
+		}(&wg, &lockers[0])
+	}
+	wg.Wait()
+	fmt.Println("count:", count)
+}
+
 func TestCachePut(t *testing.T) {
 	shardNumber := 3
 	cache := NewCache(shardNumber, 10)
