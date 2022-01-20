@@ -1442,6 +1442,59 @@ func TestDemo48(t *testing.T) {
 	}()
 }
 
+// demo49, Functional Options Pattern
+// 当需要修改已有的函数时，为了不破坏原有的签名和行为，可以使用 Functional Options Pattern 的形式增加可变参数，即可以增加设置项，又能兼容已有的代码
+type UserForOptionTest struct {
+	Name      string
+	Role      string
+	MinSalary int
+	MaxSalary int
+}
+
+type UserOption func(*UserForOptionTest) error
+
+func NewUserForOptionTest(options ...UserOption) (*UserForOptionTest, error) {
+	user := new(UserForOptionTest)
+	for _, option := range options {
+		if err := option(user); err != nil {
+			return nil, err
+		}
+	}
+	return user, nil
+}
+
+func withName(name string) UserOption {
+	return func(user *UserForOptionTest) error {
+		user.Name = name
+		return nil
+	}
+}
+
+func withRole(role string) UserOption {
+	return func(user *UserForOptionTest) error {
+		if role != "manager" && role != "sales" {
+			return errors.New("Invalid role")
+		}
+		if role == "manager" {
+			user.MinSalary = 20000
+			user.MaxSalary = 40000
+		}
+		user.Role = role
+		return nil
+	}
+}
+
+func TestDemo49(t *testing.T) {
+	user, err := NewUserForOptionTest(
+		withName("foo"),
+		withRole("manager"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("user: %+v\n", *user)
+}
+
 func TestDemo95(t *testing.T) {
 	// 可变参数
 	myPrint := func(args ...string) {
