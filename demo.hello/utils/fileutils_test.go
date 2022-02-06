@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestIsExist(t *testing.T) {
@@ -341,4 +342,39 @@ func TestStringSliceCopy(t *testing.T) {
 		sl = sl[n:]
 	}
 	fmt.Println("result:", res)
+}
+
+/*
+io.Pipe / io.TeeReader
+
+Copy 操作将持续地将数据复制到 Writer, 直到 Reader 读完数据。但这是一个无法控制的过程，如果你处理 writer 中数据的速度不能与复制操作一样快，那么它将很快耗尽你的缓冲区资源。
+Pipe 提供一对 writer 和 reader, 并且读写操作都是同步的。利用内部缓冲机制，直到之前写入的数据被完全消耗掉才能写到一个新的 writer 数据块。
+*/
+
+func TestIoPipe(t *testing.T) {
+	r, w := io.Pipe()
+
+	go func() {
+		defer w.Close()
+		for i := 0; i < 10; i++ {
+			fmt.Fprintf(w, "[%d]: some io.Reader stream to be read\n", i)
+			time.Sleep(10 * time.Millisecond)
+		}
+	}()
+
+	if _, err := io.Copy(os.Stdout, r); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("done")
+}
+
+func TestTeeReader(t *testing.T) {
+	var r io.Reader = strings.NewReader("some io.Reader stream to be read\n")
+	buf := bytes.NewBufferString("")
+	r = io.TeeReader(r, buf)
+
+	if _, err := io.Copy(io.Discard, r); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("buf value:", buf.String())
 }

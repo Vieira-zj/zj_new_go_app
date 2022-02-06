@@ -9,6 +9,18 @@ Casbin 不能做身份验证，最佳的实践是只负责访问控制。
 
 Casbin 中，访问控制模型被抽象为基于 PERM (Policy, Effect, Request, Matcher) 的一个文件，这个文件的具体呈现是一个以 `.conf` 作为后缀的文件。
 
+访问流程：
+
+1. 身份验证（如 google login）
+
+2. casbin 访问控制
+  - 设置访问控制规则，保存到数据库
+  - 基于角色的权限控制
+  - 加载访问控制规则，根据 userName + path + method 匹配规则，检查是否有权限访问
+
+3. 缓存鉴权结果
+  - 设置过期时间
+
 ## Test APIs
 
 1. 测试 `api/routers` 接口：
