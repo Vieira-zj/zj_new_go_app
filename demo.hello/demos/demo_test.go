@@ -1205,6 +1205,7 @@ func TestDemo40(t *testing.T) {
 	fmt.Println("done")
 }
 
+// demo41, closure
 type ClosurePerson struct {
 	ID   int
 	Name string
@@ -1215,7 +1216,6 @@ func (p *ClosurePerson) sayHello() {
 }
 
 func TestDemo41(t *testing.T) {
-	// closure
 	type callBack func()
 
 	callBacks := make([]callBack, 0, 10)
@@ -1238,7 +1238,7 @@ func TestDemo41(t *testing.T) {
 }
 
 func TestDemo42(t *testing.T) {
-	// time.AfterFunc
+	// sync time.AfterFunc
 	done := make(chan struct{})
 	go func() {
 		for {
@@ -1493,6 +1493,24 @@ func TestDemo49(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Printf("user: %+v\n", *user)
+}
+
+// defer
+type testSlice []int
+
+func (s *testSlice) add(i int) *testSlice {
+	fmt.Println(i)
+	*s = append(*s, i)
+	return s
+}
+
+func TestDemo50(t *testing.T) {
+	s := make(testSlice, 0)
+	func() {
+		defer s.add(1).add(2).add(3)
+		s.add(4)
+	}()
+	fmt.Println("slice:", s) // 1 2 4 3
 }
 
 func TestDemo95(t *testing.T) {
