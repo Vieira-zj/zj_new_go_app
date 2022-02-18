@@ -29,6 +29,10 @@ curl http://localhost:8081/ping
 
 curl http://localhost:8081/resource/pods | jq .
 curl http://localhost:8081/list/pods | jq .
+
+# list by filter
+curl -XPOST http://localhost:8081/list/pods/filter \
+  -d '{"names":["etcd","ingress-nginx"], "ips":["172.17.0.7"]}' | jq .
 ```
 
 - cluster

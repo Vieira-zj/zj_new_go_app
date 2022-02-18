@@ -127,6 +127,9 @@ func initServerRouter(e *echo.Echo, lister *internal.Lister) {
 	e.GET("/list/pods", deco(func(c echo.Context) error {
 		return handlers.GetPodsStatusByList(c, lister)
 	}))
+	e.POST("/list/pods/filter", deco(func(c echo.Context) error {
+		return handlers.GetPodsStatusByFilter(c, lister)
+	}))
 }
 
 func handler(ctx context.Context, watcher *internal.Watcher, limiter *internal.RateLimiter, mm *internal.MatterMost) {

@@ -113,10 +113,11 @@ Pod
 
 // PodState .
 type PodState struct {
-	Name     string `json:"name"`
-	Value    string `json:"value"`
-	ExitCode int32  `json:"exitcode,omitempty"`
-	Message  string `json:"message,omitempty"`
+	Name      string `json:"name"`
+	IPAddress string `json:"ip"`
+	Value     string `json:"value"`
+	ExitCode  int32  `json:"exitcode,omitempty"`
+	Message   string `json:"message,omitempty"`
 }
 
 // GetPod returns a specified pod by namespace and name.
@@ -324,8 +325,9 @@ func (r *Resource) GetPodStateRaw(pod *apiv1.Pod, containerName string) (*PodSta
 	}
 	// container states
 	// refer: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-states
-	for _, container := range pod.Status.ContainerStatuses {
+	for idx, container := range pod.Status.ContainerStatuses {
 		if container.Name == containerName {
+			state.IPAddress = pod.Status.PodIPs[idx].IP
 			if container.State.Running != nil {
 				state.Value = "Running"
 				return state, nil

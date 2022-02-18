@@ -52,7 +52,9 @@ func printRequestInfo(c echo.Context) {
 	c.Logger().Info("| Method: ", request.Method)
 	printHeaders(c, request.Header)
 
-	content, err := ioutil.ReadAll(request.Body)
+	body := request.Body
+	defer body.Close()
+	content, err := ioutil.ReadAll(body)
 	if err != nil {
 		c.Logger().Error(err)
 	}

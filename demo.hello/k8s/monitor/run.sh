@@ -1,7 +1,12 @@
 #!/bin/bash
 set -eu
 
-function run_monitor_with_local_debug() {
+function run_pod_monitor() {
+    # go run main.go -ns k8s-test -debug
+    go run . -mode=local -ns="kube-system,default"
+}
+
+function run_bin_with_local_debug() {
     ./bin/monitor -debug -mode=local -ns="kube-system,default"
 }
 
@@ -31,15 +36,13 @@ function run_gotest() {
     go test -timeout 60s -run ^${case}$ demo.hello/k8s/monitor/internal -v -count=1
 }
 
-# debug
-# go run main.go -ns k8s-test -debug
-
-# build_for_linux
-# run_monitor_with_local_debug
+run_pod_monitor
+# run_bin_with_local_debug
 # run_gotest
 
 # build_pod_monitor_image
 # build_error_exit_image
 
+# build_for_linux
 # deploy_pod_monitor
 echo "done"
