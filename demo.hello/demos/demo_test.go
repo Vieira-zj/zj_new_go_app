@@ -1521,7 +1521,7 @@ func TestDemo95(t *testing.T) {
 	myPrint("foo", "bar", "jim")
 	fmt.Println()
 
-	// error compare
+	// error check
 	err1 := errors.New("feof")
 	err2 := errors.New("feof")
 	if err1 == io.EOF {

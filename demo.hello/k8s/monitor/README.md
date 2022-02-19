@@ -1,7 +1,9 @@
 # K8S Pod Monitor
 
-> Monitor pod status by k8s client-go `Informer`. If any invalid pod exist, it will send notification to mm channel by interval.
->
+## Overview
+
+1. Monitor pod status by k8s client-go `Informer`. If any invalid pod exist, it will send notification to mm channel by interval.
+2. Get specified pod status by name or ip address.
 
 ## Deploy in K8s
 
