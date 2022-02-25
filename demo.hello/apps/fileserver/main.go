@@ -1,0 +1,151 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"flag"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"time"
+
+	"demo.hello/utils"
+	"github.com/gin-gonic/gin"
+)
+
+const (
+	publicLintDir = "./public/lint"
+)
+
+var (
+	port string
+	help bool
+)
+
+func init() {
+	flag.StringVar(&port, "p", ":8081", "Server listen port.")
+	flag.BoolVar(&help, "h", false, "Help.")
+}
+
+func main() {
+	if help {
+		flag.Usage()
+		return
+	}
+
+	r := setupRouter()
+	srv := &http.Server{
+		Addr:    port,
+		Handler: r,
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+			log.Println("Server closed")
+		}
+	}()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGTERM)
+	<-ctx.Done()
+	stop()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Println("Server forced to shutdown:", err)
+	}
+}
+
+//
+// Router
+//
+
+func setupRouter() *gin.Engine {
+	r := gin.Default()
+
+	r.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, "Hello Gin")
+	})
+
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "pong",
+		})
+	})
+
+	r.POST("/upload", fileUploadHandler)
+
+	registerStaticDir(r)
+	return r
+}
+
+func registerStaticDir(r *gin.Engine) {
+	components := []string{"spba"}
+	for _, component := range components {
+		path := fmt.Sprintf("%s/%s", publicLintDir, component)
+		r.Static(path, path)
+	}
+}
+
+func fileUploadHandler(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Read file error:", err)
+		return
+	}
+
+	component := strings.ToLower(c.GetHeader("X-Component"))
+	fileSavePath, err := getFileSavePath(component, file.Filename)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Get file save path error:", err)
+		return
+	}
+
+	if err := c.SaveUploadedFile(file, fileSavePath); err != nil {
+		c.String(http.StatusInternalServerError, "Save file error:", err)
+		return
+	}
+	c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded", file.Filename))
+}
+
+func getFileSavePath(component, fileName string) (string, error) {
+	saveDir := filepath.Join(publicLintDir, component)
+	if !utils.IsDirExist(saveDir) {
+		if err := utils.MakeDir(saveDir); err != nil {
+			return "", nil
+		}
+	} else {
+		// 删除过期文件
+		if err := clearExpiredFiles(saveDir); err != nil {
+			return "", nil
+		}
+	}
+	return filepath.Join(saveDir, fileName), nil
+}
+
+func clearExpiredFiles(dirPath string) error {
+	if _, err := utils.RemoveExpiredFile(dirPath, 36.0, utils.Hour); err != nil {
+		return err
+	}
+	return nil
+}
+
+//
+// Middleware
+//
+
+func setupMiddleware(r *gin.Engine) {
+	r.Use(gin.Logger())
+
+	r.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+		if err, ok := recovered.(string); ok {
+			c.String(http.StatusInternalServerError, fmt.Sprintln("Internal error:", err))
+		}
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}))
+}

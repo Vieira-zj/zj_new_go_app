@@ -378,3 +378,14 @@ func TestTeeReader(t *testing.T) {
 	}
 	fmt.Println("buf value:", buf.String())
 }
+
+func TestRemoveExpiredFile(t *testing.T) {
+	dir := "/tmp/test"
+	files, err := RemoveExpiredFile(dir, 10.0, Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) > 0 {
+		fmt.Println("removed files:", files)
+	}
+}

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // IsExist .
@@ -88,9 +89,53 @@ func WalkDir(dirPath, suffix string) (files []string, err error) {
 	return files, err
 }
 
-/*
-Common IO
-*/
+const (
+	// Hour time unit hour.
+	Hour = iota
+	// Minute .
+	Minute
+	// Second .
+	Second
+)
+
+// RemoveExpiredFile removes files in spec dir by expired time.
+func RemoveExpiredFile(dir string, expired float64, unit int) ([]string, error) {
+	items, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	removedFiles := make([]string, 0, len(items))
+	for _, item := range items {
+		if item.IsDir() {
+			continue
+		}
+
+		since := time.Since(item.ModTime())
+		var duration float64
+		switch unit {
+		case Hour:
+			duration = since.Hours()
+		case Minute:
+			duration = since.Minutes()
+		case Second:
+			duration = since.Seconds()
+		}
+
+		if duration >= expired {
+			absPath := filepath.Join(dir, item.Name())
+			if err := os.Remove(absPath); err != nil {
+				return nil, err
+			}
+			removedFiles = append(removedFiles, item.Name())
+		}
+	}
+	return removedFiles, nil
+}
+
+//
+// Common IO
+//
 
 // ReadFileLines read and return file content lines.
 func ReadFileLines(filePath string) ([]string, error) {
