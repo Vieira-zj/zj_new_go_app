@@ -1,15 +1,18 @@
 # File Server
 
+1. Upload and download files.
+2. Clear expired history files.
+
 ## APIs
 
-- API test:
+- Test API:
 
 ```sh
 curl http://localhost:8081/
 curl http://localhost:8081/ping | jq .
 ```
 
-- File server test:
+- File server API:
 
 ```sh
 # uplaod file

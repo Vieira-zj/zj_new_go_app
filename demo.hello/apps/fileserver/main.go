@@ -23,12 +23,14 @@ const (
 )
 
 var (
-	port string
-	help bool
+	port    string
+	expired float64
+	help    bool
 )
 
 func init() {
 	flag.StringVar(&port, "p", ":8081", "Server listen port.")
+	flag.Float64Var(&expired, "e", 24, "Clear history files whose mod time gt expired time.")
 	flag.BoolVar(&help, "h", false, "Help.")
 }
 
@@ -62,7 +64,7 @@ func main() {
 }
 
 //
-// Router
+// Gin Router
 //
 
 func setupRouter() *gin.Engine {
@@ -129,14 +131,14 @@ func getFileSavePath(component, fileName string) (string, error) {
 }
 
 func clearExpiredFiles(dirPath string) error {
-	if _, err := utils.RemoveExpiredFile(dirPath, 36.0, utils.Hour); err != nil {
+	if _, err := utils.RemoveExpiredFile(dirPath, expired, utils.Hour); err != nil {
 		return err
 	}
 	return nil
 }
 
 //
-// Middleware
+// Gin Middleware
 //
 
 func setupMiddleware(r *gin.Engine) {
