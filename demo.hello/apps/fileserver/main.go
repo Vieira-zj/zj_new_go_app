@@ -123,16 +123,22 @@ func getFileSavePath(component, fileName string) (string, error) {
 		}
 	} else {
 		// 删除过期文件
-		if err := clearExpiredFiles(saveDir); err != nil {
-			return "", nil
-		}
+		go func() {
+			if err := clearExpiredFiles(saveDir); err != nil {
+				log.Println("Clear expired files error:", err)
+			}
+		}()
 	}
 	return filepath.Join(saveDir, fileName), nil
 }
 
 func clearExpiredFiles(dirPath string) error {
-	if _, err := utils.RemoveExpiredFile(dirPath, expired, utils.Hour); err != nil {
+	files, err := utils.RemoveExpiredFiles(dirPath, expired, utils.Hour)
+	if err != nil {
 		return err
+	}
+	if len(files) > 0 {
+		log.Printf("Clear expired files from dir [%s]: %s\n", dirPath, strings.Join(files, ","))
 	}
 	return nil
 }

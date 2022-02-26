@@ -98,8 +98,8 @@ const (
 	Second
 )
 
-// RemoveExpiredFile removes files in spec dir by expired time.
-func RemoveExpiredFile(dir string, expired float64, unit int) ([]string, error) {
+// RemoveExpiredFiles removes files in spec dir by expired time.
+func RemoveExpiredFiles(dir string, expired float64, unit int) ([]string, error) {
 	items, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
