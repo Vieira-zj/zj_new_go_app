@@ -26,7 +26,7 @@ var (
 	goVersion string
 )
 
-func colorDemo() {
+func colorPrint() {
 	fmt.Println("\nStandard colors")
 	color.Cyan("Prints text in cyan.")
 	color.Blue("Prints %s in blue.", "text")
@@ -107,10 +107,24 @@ func httpServe() {
 	}
 }
 
+func goRoutinesRunOrder() {
+	runtime.GOMAXPROCS(1)
+	for i := 0; i < 6; i++ {
+		go func(i int) {
+			fmt.Println(i)
+		}(i)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	<-ctx.Done()
+}
+
 func main() {
 	help := flag.Bool("h", false, "help")
-	isColor := flag.Bool("c", false, "run color demo")
-	isServe := flag.Bool("s", false, "run http server")
+	isColor := flag.Bool("c", false, "run color print demo.")
+	isServe := flag.Bool("s", false, "run http server.")
+	isGpm := flag.Bool("g", false, "run goroutines with GOMAXPROCS=1.")
 	flag.Parse()
 
 	fullPathApp := os.Args[0]
@@ -151,12 +165,15 @@ func main() {
 	}
 
 	if *isColor {
-		colorDemo()
+		colorPrint()
 		return
 	}
-
 	if *isServe {
 		httpServe()
+		return
+	}
+	if *isGpm {
+		goRoutinesRunOrder()
 		return
 	}
 
