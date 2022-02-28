@@ -25,16 +25,19 @@ const (
 var (
 	port    string
 	expired float64
+	modules string
 	help    bool
 )
 
 func init() {
 	flag.StringVar(&port, "p", ":8081", "Server listen port.")
 	flag.Float64Var(&expired, "e", 24, "Clear history files whose mod time gt expired time.")
+	flag.StringVar(&modules, "m", "goc", "Modules to be register in static router.")
 	flag.BoolVar(&help, "h", false, "Help.")
 }
 
 func main() {
+	flag.Parse()
 	if help {
 		flag.Usage()
 		return
@@ -87,9 +90,9 @@ func setupRouter() *gin.Engine {
 }
 
 func registerStaticDir(r *gin.Engine) {
-	components := []string{"spba"}
-	for _, component := range components {
-		path := fmt.Sprintf("%s/%s", publicLintDir, component)
+	mods := strings.Split(modules, ",")
+	for _, mod := range mods {
+		path := fmt.Sprintf("%s/%s", publicLintDir, mod)
 		r.Static(path, path)
 	}
 }
