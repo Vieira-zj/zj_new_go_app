@@ -32,7 +32,7 @@ var (
 func init() {
 	flag.StringVar(&port, "p", ":8081", "Server listen port.")
 	flag.Float64Var(&expired, "e", 24, "Clear history files whose mod time gt expired time.")
-	flag.StringVar(&modules, "m", "goc", "Modules to be register in static router.")
+	flag.StringVar(&modules, "m", "spba", "Modules to be register in static router.")
 	flag.BoolVar(&help, "h", false, "Help.")
 }
 
@@ -72,6 +72,7 @@ func main() {
 
 func setupRouter() *gin.Engine {
 	r := gin.Default()
+	registerStaticRouter(r)
 
 	r.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Hello Gin")
@@ -85,16 +86,30 @@ func setupRouter() *gin.Engine {
 
 	r.POST("/upload", fileUploadHandler)
 
-	registerStaticDir(r)
+	// register static router
+	r.GET("/register", func(c *gin.Context) {
+		module := c.Query("module")
+		if len(module) == 0 {
+			c.String(http.StatusBadRequest, "Param [module] is not set")
+			return
+		}
+		registerStaticDir(r, module)
+		c.String(http.StatusOK, fmt.Sprintf("Module [%s] registered", module))
+	})
+
 	return r
 }
 
-func registerStaticDir(r *gin.Engine) {
-	mods := strings.Split(modules, ",")
-	for _, mod := range mods {
-		path := fmt.Sprintf("%s/%s", publicLintDir, mod)
-		r.Static(path, path)
+func registerStaticRouter(r *gin.Engine) {
+	mdls := strings.Split(modules, ",")
+	for _, module := range mdls {
+		registerStaticDir(r, module)
 	}
+}
+
+func registerStaticDir(r *gin.Engine, module string) {
+	path := fmt.Sprintf("%s/%s", publicLintDir, module)
+	r.Static(path, path)
 }
 
 func fileUploadHandler(c *gin.Context) {
@@ -115,7 +130,7 @@ func fileUploadHandler(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "Save file error:", err)
 		return
 	}
-	c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded", file.Filename))
+	c.String(http.StatusOK, fmt.Sprintf("[%s] uploaded", file.Filename))
 }
 
 func getFileSavePath(component, fileName string) (string, error) {
