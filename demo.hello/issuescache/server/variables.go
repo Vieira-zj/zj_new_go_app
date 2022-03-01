@@ -3,7 +3,7 @@ package server
 import (
 	"sync"
 
-	"demo.hello/cicd/pkg"
+	"demo.hello/issuescache/pkg"
 )
 
 const (

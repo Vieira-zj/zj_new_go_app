@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"demo.hello/cicd/pkg"
+	"demo.hello/issuescache/pkg"
 	"github.com/labstack/echo"
 )
 

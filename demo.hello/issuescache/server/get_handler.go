@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"demo.hello/cicd/pkg"
+	"demo.hello/issuescache/pkg"
 	"github.com/labstack/echo"
 )
 

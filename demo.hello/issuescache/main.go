@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"time"
 
-	"demo.hello/cicd/pkg"
-	serve "demo.hello/cicd/server"
+	"demo.hello/issuescache/pkg"
+	serve "demo.hello/issuescache/server"
 	"github.com/labstack/echo"
 	"github.com/labstack/gommon/log"
 )
