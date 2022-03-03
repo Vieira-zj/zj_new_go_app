@@ -3,14 +3,17 @@ package main
 import "flag"
 
 var (
-	gocWatcherWorkingDir string
+	gocAdapterWorkingDir string
 	help                 bool
 )
 
-func main() {
-	flag.StringVar(&gocWatcherWorkingDir, "d", "/app/gocwatcher", "goc watch dog working dir.")
+func init() {
+	flag.StringVar(&gocAdapterWorkingDir, "d", "/app/gocadapter", "goc watch dog working dir.")
 	flag.BoolVar(&help, "h", false, "help.")
+	flag.Parse()
+}
 
+func main() {
 	if help {
 		flag.Usage()
 		return

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,7 +15,23 @@ import (
 	"demo.hello/echo/utils"
 )
 
+var (
+	port string
+	help bool
+)
+
+func init() {
+	flag.StringVar(&port, "p", "8081", "Server listen port.")
+	flag.BoolVar(&help, "h", false, "Help.")
+	flag.Parse()
+}
+
 func main() {
+	if help {
+		flag.Usage()
+		return
+	}
+
 	// echo refer: https://echo.labstack.com/guide/request/
 	deco := utils.Deco
 
@@ -38,7 +55,7 @@ func main() {
 
 	go func() {
 		e.Logger.SetLevel(log.INFO)
-		e.Logger.Fatal(e.Start(":8081"))
+		e.Logger.Fatal(e.Start(":" + port))
 	}()
 
 	quit := make(chan os.Signal, 1)

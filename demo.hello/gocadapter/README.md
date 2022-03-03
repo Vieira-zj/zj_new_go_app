@@ -59,6 +59,52 @@
       - reports/
 ```
 
+## Local Test Env
+
+1. Build and start goc server
+
+```sh
+# build
+cd goc/; go build .
+# run
+goc server
+```
+
+2. Build and tart echoserver
+
+```sh
+# build
+cd echo/; goc build . -o goc_echoserver
+# run
+ENV=staging APPTYPE=apa REGION=th GIT_BRANCH=origin/master GIT_COMMIT=518e0a570c ./goc_echoserver
+```
+
+3. Check register service
+
+```sh
+goc list
+# {
+#  "staging_th_apa_goc_echoserver_origin/master_518e0a570c":["http://127.0.0.1:49970","http://127.0.0.1:51007"],
+#  "staging_th_apa_goc_echoserver_v2_origin/master_518e0a570c":["http://127.0.0.1:51025"]
+# }
+```
+
+## Goc API
+
+- goc list
+
+```sh
+# list service
+curl http://localhost:7777/v1/cover/list
+# register service in goc center
+curl -XPOST "http://localhost:7777//v1/cover/register?name=staging_th_apa_goc_echoserver_v1&address=http://127.0.0.1:49971"
+# remove service from goc center
+curl -XPOST http://localhost:7777/v1/cover/remove -H "Content-Type:application/json" -d '{"service":["staging_th_apa_goc_echoserver_v1"]}'
+
+# attach server api
+curl http://127.0.0.1:51025/v1/cover/coverage
+```
+
 ## Goc Adapter API
 
 TODO:

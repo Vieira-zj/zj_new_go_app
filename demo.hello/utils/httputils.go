@@ -216,7 +216,25 @@ func (utils *HTTPUtils) send(req *http.Request) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-// sendV2 returns both response and resp body.
+// GetV2 sends http get request.
+func (utils *HTTPUtils) GetV2(ctx context.Context, url string, headers map[string]string) (*http.Response, []byte, error) {
+	req, err := utils.createRequest(ctx, http.MethodGet, url, headers, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	return utils.sendV2(req)
+}
+
+// PostV2 sends http post request.
+func (utils *HTTPUtils) PostV2(ctx context.Context, url string, headers map[string]string, body string) (*http.Response, []byte, error) {
+	req, err := utils.createRequest(ctx, http.MethodPost, url, headers, body)
+	if err != nil {
+		return nil, nil, err
+	}
+	return utils.sendV2(req)
+}
+
+// sendV2 returns both http response and resp body.
 func (utils *HTTPUtils) sendV2(req *http.Request) (*http.Response, []byte, error) {
 	resp, err := utils.client.Do(req)
 	if resp != nil {
