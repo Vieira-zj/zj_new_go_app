@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"demo.hello/utils"
 )
@@ -34,13 +35,20 @@ type GocAPI struct {
 	http *utils.HTTPUtils
 }
 
+var (
+	gocAPI     *GocAPI
+	gocAPIOnce sync.Once
+)
+
 // NewGocAPI .
-func NewGocAPI(host string) *GocAPI {
-	http := utils.NewDefaultHTTPUtils()
-	return &GocAPI{
-		host: host,
-		http: http,
-	}
+func NewGocAPI(gocCenterHost string) *GocAPI {
+	gocAPIOnce.Do(func() {
+		gocAPI = &GocAPI{
+			host: gocCenterHost,
+			http: utils.NewDefaultHTTPUtils(),
+		}
+	})
+	return gocAPI
 }
 
 //
@@ -175,12 +183,13 @@ func getDefaultHeader() map[string]string {
 //
 
 // GetServiceCoverage .
-func (goc *GocAPI) GetServiceCoverage(ctx context.Context, host string) (string, error) {
+func GetServiceCoverage(ctx context.Context, host string) (string, error) {
 	const coverageAPI = "/v1/cover/coverage"
 	url := host + coverageAPI
-	resp, respBody, err := goc.http.GetV2(ctx, url, map[string]string{})
+	httpClient := utils.NewDefaultHTTPUtils()
+	resp, respBody, err := httpClient.GetV2(ctx, url, map[string]string{})
 	if err != nil {
-		return "-1", err
+		return "-1", fmt.Errorf("GetServiceCoverage send http get failed: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return "-1", fmt.Errorf("GetAttachServiceCoverage get non-200 returned code: %d", resp.StatusCode)

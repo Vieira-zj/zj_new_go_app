@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"go/build"
 	"io"
@@ -38,10 +39,13 @@ func HasPermission(filePath string) bool {
 	return true
 }
 
+// ErrDirExist .
+var ErrDirExist = errors.New("dir is exist")
+
 // MakeDir .
 func MakeDir(dirPath string) error {
 	if IsExist(dirPath) {
-		return fmt.Errorf("dir path is exist: %s", dirPath)
+		return ErrDirExist
 	}
 	return os.MkdirAll(dirPath, os.ModePerm)
 }
