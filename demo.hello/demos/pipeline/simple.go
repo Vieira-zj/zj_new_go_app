@@ -3,15 +3,21 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 )
 
-// Pipeline Stages
-// if upstream failed, current stage (pending for input chan), input chann is closed and go out "for" loop, then return.
+//
+// Pipeline Stages:
+// lineListSource -> lineParser -> sink
+//
+// if upstream failed, current stage (pending for input chan), input chan is closed and go out "for" loop, then return.
 // if downstream failed, current stage (pending for output chan), context is cancelled, then return.
+//
 
 func lineListSource(ctx context.Context, lines ...string) (<-chan string, <-chan error, error) {
 	// Handle an error that occurs before the goroutine begins.
@@ -81,33 +87,34 @@ func sink(ctx context.Context, in <-chan int64) (<-chan error, error) {
 			fmt.Printf("sink: %v\n", n)
 		}
 	}()
-
 	return errc, nil
 }
 
-// Helper
+//
+// Run simple pipeline
+//
 
-// RunSimplePipeline entry for run simple pipeline demo
+// RunSimplePipeline entry for run simple pipeline demo.
 func RunSimplePipeline(base int, lines []string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	var errcList []<-chan error
-	// Source pipeline stage.
+	// stage1: Source pipeline
 	linec, errc, err := lineListSource(ctx, lines...)
 	if err != nil {
 		return err
 	}
 	errcList = append(errcList, errc)
 
-	// Transformer pipeline stage.
+	// stage2: Transformer pipeline
 	numberc, errc, err := lineParser(ctx, base, linec)
 	if err != nil {
 		return err
 	}
 	errcList = append(errcList, errc)
 
-	// Sink pipeline stage.
+	// stage3: Sink pipeline
 	errc, err = sink(ctx, numberc)
 	if err != nil {
 		return err
@@ -128,7 +135,7 @@ func waitForPipeline(errs ...<-chan error) error {
 	return nil
 }
 
-// mergeErrors merges multiple channels of errors.
+// mergeErrors merges multiple channels of errors into one output channel.
 func mergeErrors(cs ...<-chan error) <-chan error {
 	var wg sync.WaitGroup
 	out := make(chan error, len(cs))
@@ -150,4 +157,68 @@ func mergeErrors(cs ...<-chan error) <-chan error {
 		close(out)
 	}()
 	return out
+}
+
+//
+// Run simple pipeline with timeout
+//
+
+// RunPipelineWithTimeout runs pipeline with timeout.
+func RunPipelineWithTimeout(timeout int) error {
+	fmt.Println("runPipelineWithTimeout")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var errcList []<-chan error
+
+	// stage1: Source pipeline
+	linec, errc, err := randomNumberSource(ctx, time.Now().Unix())
+	if err != nil {
+		return err
+	}
+	errcList = append(errcList, errc)
+
+	// stage2: Transformer pipeline
+	numberc, errc, err := lineParser(ctx, 10, linec)
+	if err != nil {
+		return err
+	}
+
+	// stage3: Sink pipeline
+	errc, err = sink(ctx, numberc)
+	if err != nil {
+		return err
+	}
+	errcList = append(errcList, errc)
+	fmt.Println("Pipeline started. Waiting for pipeline to complete.")
+
+	go func() {
+		time.Sleep(time.Duration(timeout) * time.Second)
+		fmt.Println("Cancelling context")
+		cancel()
+	}()
+	return waitForPipeline(errcList...)
+}
+
+func randomNumberSource(ctx context.Context, seed int64) (<-chan string, <-chan error, error) {
+	outc := make(chan string)
+	errc := make(chan error, 1)
+	random := rand.New(rand.NewSource(seed))
+
+	go func() {
+		defer close(outc)
+		defer close(errc)
+		for {
+			n := random.Intn(100)
+			line := fmt.Sprintf("%v", n)
+			select {
+			case outc <- line:
+			case <-ctx.Done():
+				fmt.Println("Source exit:", ctx.Err())
+				return
+			}
+			time.Sleep(time.Second)
+		}
+	}()
+	return outc, errc, nil
 }

@@ -3,17 +3,9 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"math/rand"
-	"time"
 )
 
-// a complex pipeline:
-//
-//                                  / squarer -> sink
-// lines -> lineParser -> splitter -|
-//                                   \ sink
-
-// minimalPipelineStage shows the elements that every pipeline stage should have.
+// minimalPipelineStage shows the elements that every pipeline stage should have:
 // All stages should accept a context for cancellation.
 // All stages should return a channel of errors to report any error produced after this function returns.
 // All stages should return an error to report any error produced before this function returns.
@@ -28,6 +20,14 @@ func minimalPipelineStage(ctx context.Context) (<-chan error, error) {
 	}()
 	return errc, nil
 }
+
+//
+// a complex pipeline:
+//
+//                                  / squarer -> sink
+// lines -> lineParser -> splitter -|
+//                                   \ sink
+//
 
 func splitter(ctx context.Context, in <-chan int64) (<-chan int64, <-chan int64, <-chan error, error) {
 	outc1 := make(chan int64)
@@ -80,42 +80,42 @@ func RunComplexPipeline(base int, lines []string) error {
 
 	var errcList []<-chan error
 
-	// Source pipeline stage.
+	// stage1: Source pipeline
 	linec, errc, err := lineListSource(ctx, lines...)
 	if err != nil {
 		return err
 	}
 	errcList = append(errcList, errc)
 
-	// Transformer pipeline stage 1.
+	// stage2: Transformer pipeline
 	numberc, errc, err := lineParser(ctx, base, linec)
 	if err != nil {
 		return err
 	}
 	errcList = append(errcList, errc)
 
-	// Transformer pipeline stage 2.
+	// stage3: Transformer pipeline
 	numberc1, numberc2, errc, err := splitter(ctx, numberc)
 	if err != nil {
 		return err
 	}
 	errcList = append(errcList, errc)
 
-	// Transformer pipeline stage 3.
+	// stage4-1: Transformer pipeline
 	numberc3, errc, err := squarer(ctx, numberc1)
 	if err != nil {
 		return err
 	}
 	errcList = append(errcList, errc)
 
-	// Sink pipeline stage 1.
+	// stage5: Sink pipeline stage
 	errc, err = sink(ctx, numberc2)
 	if err != nil {
 		return err
 	}
 	errcList = append(errcList, errc)
 
-	// Sink pipeline stage 2.
+	// stage4-2: Sink pipeline
 	errc, err = sink(ctx, numberc3)
 	if err != nil {
 		return err
@@ -123,67 +123,5 @@ func RunComplexPipeline(base int, lines []string) error {
 	errcList = append(errcList, errc)
 
 	fmt.Println("Pipeline started. Waiting for pipeline to complete.")
-	return waitForPipeline(errcList...)
-}
-
-func randomNumberSource(ctx context.Context, seed int64) (<-chan string, <-chan error, error) {
-	outc := make(chan string)
-	errc := make(chan error, 1)
-	random := rand.New(rand.NewSource(seed))
-
-	go func() {
-		defer close(outc)
-		defer close(errc)
-		for {
-			n := random.Intn(100)
-			line := fmt.Sprintf("%v", n)
-			select {
-			case outc <- line:
-			case <-ctx.Done():
-				return
-			}
-			time.Sleep(time.Second)
-		}
-	}()
-
-	return outc, errc, nil
-}
-
-// RunPipelineWithTimeout runs pipeline with timeout.
-func RunPipelineWithTimeout() error {
-	fmt.Println("runPipelineWithTimeout")
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	var errcList []<-chan error
-
-	// Source pipeline stage.
-	linec, errc, err := randomNumberSource(ctx, 3)
-	if err != nil {
-		return err
-	}
-	errcList = append(errcList, errc)
-
-	// Transformer pipeline stage.
-	numberc, errc, err := lineParser(ctx, 10, linec)
-	if err != nil {
-		return err
-	}
-
-	// Sink pipeline stage.
-	errc, err = sink(ctx, numberc)
-	if err != nil {
-		return err
-	}
-	errcList = append(errcList, errc)
-
-	fmt.Println("Pipeline started. Waiting for pipeline to complete.")
-
-	go func() {
-		time.Sleep(time.Duration(10) * time.Second)
-		fmt.Println("Cancelling context.")
-		cancel()
-	}()
 	return waitForPipeline(errcList...)
 }

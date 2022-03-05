@@ -59,3 +59,9 @@ func TestRunSimplePipeline05(t *testing.T) {
 		t.Fatal("want error, and got nil")
 	}
 }
+
+func TestRunPipelineWithTimeout(t *testing.T) {
+	if err := RunPipelineWithTimeout(8); err != nil {
+		t.Fatal(err)
+	}
+}

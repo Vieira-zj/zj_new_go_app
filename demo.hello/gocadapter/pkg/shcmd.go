@@ -3,7 +3,6 @@ package pkg
 import (
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 
 	"demo.hello/utils"
@@ -29,20 +28,6 @@ func NewShCmd(root string) *ShCmd {
 		}
 	})
 	return shCmd
-}
-
-// AddSSHKey .
-func (c *ShCmd) AddSSHKey() error {
-	key := os.Getenv("SSH_KEY")
-	if len(key) == 0 {
-		return fmt.Errorf("Env var SSH_KEY not set")
-	}
-
-	cmd := fmt.Sprintf("ssh-add ${HOME}/.ssh/%s", key)
-	if _, err := utils.RunShellCmd(c.sh, "-c", cmd); err != nil {
-		return fmt.Errorf("SSHAddKey add ssh key failed: %w", err)
-	}
-	return nil
 }
 
 // CloneProject .

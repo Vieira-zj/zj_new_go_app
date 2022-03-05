@@ -266,11 +266,12 @@ func (pool *GoPool) Submit(task func()) error {
 	if !pool.isRunning {
 		return fmt.Errorf("pool is not running")
 	}
-	if len(pool.queue) != 0 && len(pool.queue) == cap(pool.queue) {
+
+	select {
+	case pool.queue <- task:
+	default:
 		return fmt.Errorf("exceed max size %d, and discard", cap(pool.semaphore)+cap(pool.queue))
 	}
-
-	pool.queue <- task
 	return nil
 }
 

@@ -33,30 +33,31 @@
 
 1. 实时拉取覆盖率报告性能问题。
 
-## Goc Adapter 目录结构
+## Goc Adapter Image
 
-设置变量 `goc_watcher_home`，目录结果如下：
+1. Use image `bitnami/git:2.35.1`
+2. Add `id_rsa` to `~/.ssh`
+  - Init ssh connection (add git server fingerprint to know hosts)
+3. Add golang runtime and set `PATH`
+
+### Goc Adapter Work 目录结构
+
+设置变量 `GOC_ADAPTER_HOME`，目录结构如下：
 
 ```text
 - goc_adapter/
-  - bin/
-    - goc
-  run.sh
-  - goc_coverage/
-    - payment/
-      - cur_cov.txt
-      - history/
-        - pre_cov_ts1.txt
-        - pre_cov_ts2.txt
-      - reports/
-        - cov_func_report_ts1.txt
-        - cov_func_report_ts2.txt
-        - cov_html_report_ts1.txt
-        - cov_html_report_ts2.txt
-        - cov_history_report.txt
-    - wallet/
-      - history/
-      - reports/
+  - module_x/
+    - cov_history/
+      - module_x_1.cov
+      - module_x_2.cov
+    - module_x.cov
+    - module_x_report.txt
+    - module_x_report.html
+  - module_y/
+    - cov_history/
+    - module_y.cov
+    - module_y_report.txt
+    - module_y_report.html
 ```
 
 ## Local Test Env
@@ -89,7 +90,7 @@ goc list
 # }
 ```
 
-## Goc API
+### Goc API
 
 - goc list
 
