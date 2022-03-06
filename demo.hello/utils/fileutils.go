@@ -14,6 +14,16 @@ import (
 	"time"
 )
 
+//
+// IO utils
+//
+
+// GetCurRunPath returns the current run abs path.
+func GetCurRunPath() string {
+	dir, _ := filepath.Split(os.Args[0])
+	return dir
+}
+
 // IsExist .
 func IsExist(filePath string) bool {
 	if _, err := os.Stat(filePath); err != nil {
@@ -48,6 +58,41 @@ func MakeDir(dirPath string) error {
 		return ErrDirExist
 	}
 	return os.MkdirAll(dirPath, os.ModePerm)
+}
+
+// MoveFile .
+func MoveFile(src, dst string) error {
+	if !IsExist(src) {
+		return fmt.Errorf("src file not found: %s", src)
+	}
+
+	dstDir := filepath.Dir(dst)
+	if !IsDirExist(dstDir) {
+		if err := MakeDir(dstDir); err != nil {
+			return err
+		}
+	}
+	return os.Rename(src, dst)
+}
+
+// GetFilesBySuffix .
+func GetFilesBySuffix(dirPath, suffix string) ([]string, error) {
+	entries, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	foundFiles := make([]string, 0, 4)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasSuffix(name, suffix) {
+			foundFiles = append(foundFiles, filepath.Join(dirPath, name))
+		}
+	}
+	return foundFiles, nil
 }
 
 // GetGoFileAbsPath returns .go file absolute path.
@@ -141,6 +186,35 @@ func RemoveExpiredFiles(dir string, expired float64, unit int) ([]string, error)
 // Common IO
 //
 
+// ReadFile .
+func ReadFile(filePath string) ([]byte, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	return io.ReadAll(f)
+}
+
+// CreateFile creates a file by bytes content.
+func CreateFile(filePath string, b []byte) error {
+	if IsExist(filePath) {
+		return fmt.Errorf("file [%s] is exist", filePath)
+	}
+
+	buf := bytes.NewBuffer(b)
+	newFile, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("os.Create [%s] error: %v", filePath, err)
+	}
+	defer newFile.Close()
+
+	if _, err = newFile.Write(buf.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ReadFileLines read and return file content lines.
 func ReadFileLines(filePath string) ([]string, error) {
 	if !IsExist(filePath) {
@@ -188,23 +262,42 @@ func WriteLinesToFile(filePath string, outLines []string) error {
 	return nil
 }
 
-// CreateFile creates a file by bytes content.
-func CreateFile(filePath string, b []byte) error {
-	if IsExist(filePath) {
-		return fmt.Errorf("file [%s] is exist", filePath)
-	}
-
-	buf := bytes.NewBuffer(b)
-	newFile, err := os.Create(filePath)
+// IsFileSizeEqual .
+func IsFileSizeEqual(srcPath, dstPath string) (bool, error) {
+	srcStat, err := os.Stat(srcPath)
 	if err != nil {
-		return fmt.Errorf("os.Create [%s] error: %v", filePath, err)
+		return false, err
 	}
-	defer newFile.Close()
+	dstStat, err := os.Stat(dstPath)
+	if err != nil {
+		return false, err
+	}
+	return srcStat.Size() == dstStat.Size(), nil
+}
 
-	if _, err = newFile.Write(buf.Bytes()); err != nil {
-		return err
+// IsFileContentEqual .
+func IsFileContentEqual(srcPath, dstPath string) (bool, error) {
+	isFileSzeEqual, err := IsFileSizeEqual(srcPath, dstPath)
+	if err != nil {
+		return false, err
 	}
-	return nil
+	if !isFileSzeEqual {
+		return false, nil
+	}
+
+	srcBytes, err := ReadFile(srcPath)
+	if err != nil {
+		return false, err
+	}
+	dstBytes, err := ReadFile(dstPath)
+	if err != nil {
+		return false, err
+	}
+
+	if len(srcBytes) != len(dstBytes) {
+		return false, nil
+	}
+	return bytes.Equal(srcBytes, dstBytes), nil
 }
 
 // FileWordsCount gets file words count. (for test)

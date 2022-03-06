@@ -307,14 +307,15 @@ func (pool *GoPool) worker(task func()) {
 
 	duration := 3 * time.Second
 	tick := time.NewTicker(duration)
+	localTask := task
 	for {
-		task()
+		localTask()
 		select {
 		case <-tick.C:
 			// if there is no more tasks for 3 sec, then worker exit
 			fmt.Printf("[worker %d]: exit\n", workerID)
 			return
-		case task = <-pool.work:
+		case localTask = <-pool.work:
 			fmt.Printf("[worker %d]: fetch task\n", workerID)
 			tick.Reset(duration)
 		}

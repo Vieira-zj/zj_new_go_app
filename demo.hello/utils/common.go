@@ -16,7 +16,6 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -55,12 +54,6 @@ func GobDeepCopy(dst, src interface{}) error {
 	return gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(dst)
 }
 
-// GetCurRunPath returns the current run abs path.
-func GetCurRunPath() string {
-	dir, _ := filepath.Split(os.Args[0])
-	return dir
-}
-
 // RunFunc .
 type RunFunc func() interface{}
 
@@ -86,16 +79,20 @@ func RunFuncWithTimeout(fn RunFunc, timeout time.Duration) (interface{}, error) 
 Datetime
 */
 
+// GetSimpleNowDate .
+func GetSimpleNowDate() string {
+	return time.Now().Format("2006-01-02")
+}
+
+// GetSimpleNowDatetime .
+func GetSimpleNowDatetime() string {
+	return time.Now().Format("2006/01/02 15:04:05")
+}
+
 // FormatDateTimeAsDate .
 func FormatDateTimeAsDate(t time.Time) string {
 	year, month, day := t.Date()
 	return fmt.Sprintf("%d-%02d-%02d", year, month, day)
-}
-
-// GetSimpleCurrentDatetime .
-func GetSimpleCurrentDatetime() string {
-	currentTime := time.Now()
-	return currentTime.Format("2006/01/02 15:04:05")
 }
 
 // IsWeekDay .

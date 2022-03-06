@@ -102,7 +102,7 @@ func TestGetServiceCoverage(t *testing.T) {
 	for _, hosts := range services {
 		if len(hosts) > 0 {
 			host := hosts[0]
-			cov, err := GetServiceCoverage(context.Background(), host)
+			cov, err := APIGetServiceCoverage(context.Background(), host)
 			if err != nil {
 				t.Fatal(err)
 			}

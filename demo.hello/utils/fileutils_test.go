@@ -13,6 +13,10 @@ import (
 	"time"
 )
 
+func TestGetCurRunPath(t *testing.T) {
+	fmt.Println("run path:", GetCurRunPath())
+}
+
 func TestIsExist(t *testing.T) {
 	for _, filePath := range [2]string{"/tmp/test/results.txt", "/tmp/test/data.txt"} {
 		fmt.Println("file exist:", IsExist(filePath))
@@ -37,6 +41,24 @@ func TestMakeDir(t *testing.T) {
 	}
 }
 
+func TestMoveFile(t *testing.T) {
+	src := "/tmp/test/test.txt"
+	dst := "/tmp/test/move/test.txt"
+	if err := MoveFile(src, dst); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("file moved")
+}
+
+func TestGetFilesBySuffix(t *testing.T) {
+	path := filepath.Join(os.Getenv("HOME"), "Downloads/tmps")
+	pyFiles, err := GetFilesBySuffix(path, ".py")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("python files:", pyFiles)
+}
+
 func TestGetGoFileAbsPath(t *testing.T) {
 	// Get project go file abs path
 	path := "demo.hello/echoserver/handlers/ping.go"
@@ -45,6 +67,17 @@ func TestGetGoFileAbsPath(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(res)
+}
+
+func TestRemoveExpiredFile(t *testing.T) {
+	dir := "/tmp/test"
+	files, err := RemoveExpiredFiles(dir, 10.0, Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) > 0 {
+		fmt.Println("removed files:", files)
+	}
 }
 
 /*
@@ -344,6 +377,22 @@ func TestStringSliceCopy(t *testing.T) {
 	fmt.Println("result:", res)
 }
 
+func TestIsFileContentEqual(t *testing.T) {
+	src := "/tmp/test/gitlab-ci.yml"
+	dst := "/tmp/test/copy/gitlab-ci.yml"
+	res, err := IsFileSizeEqual(src, dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("file size equal:", res)
+
+	res, err = IsFileContentEqual(src, dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("file content equal:", res)
+}
+
 /*
 io.Pipe / io.TeeReader
 
@@ -377,15 +426,4 @@ func TestTeeReader(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println("buf value:", buf.String())
-}
-
-func TestRemoveExpiredFile(t *testing.T) {
-	dir := "/tmp/test"
-	files, err := RemoveExpiredFiles(dir, 10.0, Second)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(files) > 0 {
-		fmt.Println("removed files:", files)
-	}
 }

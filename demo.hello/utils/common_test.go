@@ -40,10 +40,6 @@ func TestGobDeepCopy(t *testing.T) {
 	fmt.Printf("dst fruit: %+v\n", f2)
 }
 
-func TestGetCurRunPath(t *testing.T) {
-	fmt.Println("run path:", GetCurRunPath())
-}
-
 func TestRunFuncWithTimeout(t *testing.T) {
 	timeout := 2
 	addFunc := func(a int, b int) int {
@@ -68,12 +64,13 @@ func TestRunFuncWithTimeout(t *testing.T) {
 	}
 }
 
-func TestFormatDateTimeAsDate(t *testing.T) {
-	fmt.Println("current date:", FormatDateTimeAsDate(time.Now()))
+func TestGetSimpleNowDatetime(t *testing.T) {
+	fmt.Println("current date:", GetSimpleNowDate())
+	fmt.Println("current datetime:", GetSimpleNowDatetime())
 }
 
-func TestGetSimpleCurrentDatetime(t *testing.T) {
-	fmt.Println("current datetime:", GetSimpleCurrentDatetime())
+func TestFormatDateTimeAsDate(t *testing.T) {
+	fmt.Println("current date:", FormatDateTimeAsDate(time.Now()))
 }
 
 func TestIsWeekDay(t *testing.T) {

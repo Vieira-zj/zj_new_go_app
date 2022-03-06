@@ -182,8 +182,8 @@ func getDefaultHeader() map[string]string {
 // Attach Server API
 //
 
-// GetServiceCoverage .
-func GetServiceCoverage(ctx context.Context, host string) (string, error) {
+// APIGetServiceCoverage .
+func APIGetServiceCoverage(ctx context.Context, host string) (string, error) {
 	const coverageAPI = "/v1/cover/coverage"
 	url := host + coverageAPI
 	httpClient := utils.NewDefaultHTTPUtils()

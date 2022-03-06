@@ -44,9 +44,6 @@ func (mm *MatterMost) SendMessageToUser(ctx context.Context, user, text string) 
 
 // SendMessage send message to given channel.
 func (mm *MatterMost) SendMessage(ctx context.Context, text string) error {
-	headers := make(map[string]string, 1)
-	headers["Authorization"] = "Bearer " + mm.token
-
 	message := MMMessage{
 		ChannelID: mm.channel,
 		Message:   text,
@@ -56,6 +53,8 @@ func (mm *MatterMost) SendMessage(ctx context.Context, text string) error {
 		return err
 	}
 
+	headers := make(map[string]string, 1)
+	headers["Authorization"] = "Bearer " + mm.token
 	if _, err = mm.client.Post(ctx, mm.baseURL+"/posts", headers, string(b)); err != nil {
 		return err
 	}
