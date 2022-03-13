@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"go/build"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,18 +76,18 @@ func MoveFile(src, dst string) error {
 
 // GetFilesBySuffix .
 func GetFilesBySuffix(dirPath, suffix string) ([]string, error) {
-	entries, err := ioutil.ReadDir(dirPath)
+	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return nil, err
 	}
 
-	foundFiles := make([]string, 0, 4)
+	foundFiles := make([]string, 0, 8)
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
 		name := entry.Name()
-		if strings.HasSuffix(name, suffix) {
+		if filepath.Ext(name) == suffix {
 			foundFiles = append(foundFiles, filepath.Join(dirPath, name))
 		}
 	}
@@ -108,18 +107,20 @@ func GetGoFileAbsPath(path string) (string, error) {
 // ReadFileWithExpandEnv returns file content with expand env.
 func ReadFileWithExpandEnv(path string) (string, error) {
 	// 替换原文件
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
 	return os.ExpandEnv(string(bytes)), nil
 }
 
-// WalkDir 获取指定目录及所有子目录下的所有文件, 根据后缀过滤
+// WalkDir 获取指定目录及所有子目录下的所有文件，根据后缀过滤
 func WalkDir(dirPath, suffix string) (files []string, err error) {
-	files = make([]string, 0, 30)
-	suffix = strings.ToLower(suffix)
+	if suffix[0] != '.' {
+		suffix = "." + suffix
+	}
 
+	files = make([]string, 0, 16)
 	onWalk := func(fullFilename string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -128,7 +129,7 @@ func WalkDir(dirPath, suffix string) (files []string, err error) {
 			return nil
 		}
 
-		if strings.HasSuffix(strings.ToLower(fi.Name()), suffix) {
+		if filepath.Ext(fi.Name()) == suffix {
 			files = append(files, fullFilename)
 		}
 		return nil
@@ -149,18 +150,22 @@ const (
 
 // RemoveExpiredFiles removes files in spec dir by expired time.
 func RemoveExpiredFiles(dir string, expired float64, unit int) ([]string, error) {
-	items, err := ioutil.ReadDir(dir)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	removedFiles := make([]string, 0, len(items))
-	for _, item := range items {
-		if item.IsDir() {
+	deletedFiles := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
 			continue
 		}
 
-		since := time.Since(item.ModTime())
+		info, err := entry.Info()
+		if err != nil {
+			return nil, err
+		}
+		since := time.Since(info.ModTime())
 		var duration float64
 		switch unit {
 		case Hour:
@@ -172,14 +177,14 @@ func RemoveExpiredFiles(dir string, expired float64, unit int) ([]string, error)
 		}
 
 		if duration >= expired {
-			absPath := filepath.Join(dir, item.Name())
+			absPath := filepath.Join(dir, entry.Name())
 			if err := os.Remove(absPath); err != nil {
 				return nil, err
 			}
-			removedFiles = append(removedFiles, item.Name())
+			deletedFiles = append(deletedFiles, absPath)
 		}
 	}
-	return removedFiles, nil
+	return deletedFiles, nil
 }
 
 //
@@ -188,6 +193,7 @@ func RemoveExpiredFiles(dir string, expired float64, unit int) ([]string, error)
 
 // ReadFile .
 func ReadFile(filePath string) ([]byte, error) {
+	// equal to: return os.ReadFile(filePath)
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, err

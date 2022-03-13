@@ -5,13 +5,26 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 	"time"
 )
+
+func TestGetFileExt(t *testing.T) {
+	ext := filepath.Ext("fileutils.go")
+	fmt.Println("file ext:", ext)
+
+	// handle suffix string
+	suffix := "py"
+	if suffix[0] != '.' {
+		suffix = "." + suffix
+	}
+	fmt.Println("suffix:", suffix)
+}
 
 func TestGetCurRunPath(t *testing.T) {
 	fmt.Println("run path:", GetCurRunPath())
@@ -105,18 +118,18 @@ Dir utils
 
 func TestListDirFile(t *testing.T) {
 	dirPath := "/tmp/test"
-	files, err := ioutil.ReadDir(dirPath)
+	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for _, file := range files {
-		if !strings.HasSuffix(file.Name(), ".json") {
+	for _, e := range entries {
+		if filepath.Ext(e.Name()) != ".json" {
 			continue
 		}
-		filePath := filepath.Join(dirPath, file.Name())
+		filePath := filepath.Join(dirPath, e.Name())
 		fmt.Println("read file:", filePath)
-		b, err := ioutil.ReadFile(filePath)
+		b, err := os.ReadFile(filePath)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -351,7 +364,7 @@ func TestMyReader(t *testing.T) {
 
 func TestMyReaderCopy(t *testing.T) {
 	reader := NewMyReader("this is a my reader copy test.")
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -426,4 +439,101 @@ func TestTeeReader(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println("buf value:", buf.String())
+}
+
+//
+// File Sys: "io/fs"
+//
+
+func TestFileSysReadFile(t *testing.T) {
+	// read file by fs
+	dirPath := filepath.Join(os.Getenv("HOME"), "Downloads/tmps")
+	fsys := os.DirFS(dirPath)
+	entries, err := fs.ReadDir(fsys, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, e := range entries {
+		if !e.IsDir() && filepath.Ext(e.Name()) == ".py" {
+			fmt.Println("read file:", e.Name())
+			// equal to: fs.ReadFile(fsys, e.Name())
+			f, err := fsys.Open(e.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+
+			b, err := io.ReadAll(f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			fmt.Println(string(b))
+		}
+	}
+}
+
+// mock fs for unit test
+type Finder struct {
+	fsys fs.ReadFileFS
+}
+
+func (f *Finder) containsWord(name, word string) (bool, error) {
+	b, err := f.fsys.ReadFile(name)
+	return bytes.Contains(b, []byte(word)), err
+}
+
+func TestFinder(t *testing.T) {
+	testFs := fstest.MapFS{
+		"pass.txt": &fstest.MapFile{
+			Data:    []byte("hello, foo"),
+			Mode:    0456,
+			ModTime: time.Now(),
+			Sys:     1,
+		},
+		"fail.txt": {
+			Data:    []byte("hello, bar"),
+			Mode:    0456,
+			ModTime: time.Now(),
+			Sys:     1,
+		},
+	}
+
+	finder := &Finder{fsys: testFs}
+	for _, name := range []string{"pass.txt", "fail.txt"} {
+		got, err := finder.containsWord(name, "foo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("got foo in %s: %v\n", name, got)
+	}
+}
+
+// test custom fs
+type fsys struct{}
+
+func (*fsys) Open(name string) (fs.File, error) {
+	// NOTE: name 参数不能以 / 开头或者结尾
+	if ok := fs.ValidPath(name); !ok {
+		return nil, &fs.PathError{
+			Op:   "open",
+			Path: name,
+			Err:  os.ErrInvalid,
+		}
+	}
+	return os.Open(name)
+}
+
+func (*fsys) ReadFile(name string) ([]byte, error) {
+	if ok := fs.ValidPath(name); !ok {
+		return nil, &fs.PathError{Op: "open", Path: name, Err: os.ErrInvalid}
+	}
+	return os.ReadFile(name)
+}
+
+func TestFs(t *testing.T) {
+	existFile := "fileutils_test.go"
+	if err := fstest.TestFS(new(fsys), existFile); err != nil {
+		t.Fatal(err)
+	}
 }

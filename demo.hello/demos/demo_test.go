@@ -640,17 +640,11 @@ func (op Op) String() string {
 }
 
 func (op Op) hasCreate() bool {
-	if op&Create != 0 {
-		return true
-	}
-	return false
+	return op&Create != 0
 }
 
 func (op Op) hasWrite() bool {
-	if op&Write != 0 {
-		return true
-	}
-	return false
+	return op&Write != 0
 }
 
 func TestDemo25(t *testing.T) {
@@ -1495,7 +1489,7 @@ func TestDemo49(t *testing.T) {
 	fmt.Printf("user: %+v\n", *user)
 }
 
-// defer
+// demo50, defer
 type testSlice []int
 
 func (s *testSlice) add(i int) *testSlice {
@@ -1511,6 +1505,24 @@ func TestDemo50(t *testing.T) {
 		s.add(4)
 	}()
 	fmt.Println("slice:", s) // 1 2 4 3
+}
+
+// demo51, interface and string type
+type tPerson interface {
+	SayHello()
+}
+
+type tStudent string
+
+// tStudent 基于 string 类型，这里参数 s 不使用指针类型
+func (s tStudent) SayHello() {
+	fmt.Println("Hello, my name is", string(s))
+}
+
+func TestDemo51(t *testing.T) {
+	var p tPerson
+	p = tStudent("foo")
+	p.SayHello()
 }
 
 func TestDemo95(t *testing.T) {
