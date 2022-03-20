@@ -1,5 +1,7 @@
 # goc覆盖率工具介绍
 
+## Overview
+
 目的：获得功能测试后的代码覆盖率，检查哪些模块的覆盖率较低，或者当前feature所提交的代码哪些没有被覆盖。
 
 > 单元测试使用go原生的代码覆盖率工具即可。
@@ -21,7 +23,7 @@ goccenter服务已在测试环境中部署：
 
 注：覆盖率数据保存在被测服务的内存中，如果测试过程中被测服务重启，则覆盖率数据会丢失。因此如果要执行长时间的测试，建议定时获取覆盖率数据并保存。
 
-## Run code coverage
+## Code Coverage Demo
 
 Run and get code coverage results.
 
@@ -53,7 +55,7 @@ goc clear --center=http://goccenter.ns.ing --address=http://127.0.0.1:7778
 goc init --center=http://goccenter.ns.ing
 ```
 
-## Run coverage for specified files
+### Demo: Coverage for specified files
 
 Only output coverage data of the files matching the patterns.
 
@@ -67,14 +69,14 @@ goc profile --coverfile="handlers/.*" \
   --center=goccenter.ns.ing --address=http://127.0.0.1:7778 -o coverprofile.cov
 ```
 
-## go coverage report
+### Coverage Report
 
 覆盖率结果支持分支覆盖，代码染色结果支持路径覆盖。
 
 1. `-func` 函数级别
 2. `-html` 行级别
 
-## Create cobertura results
+### Create Cobertura Results
 
 Generate cobertura coverage results which is compatible with jenkins.
 

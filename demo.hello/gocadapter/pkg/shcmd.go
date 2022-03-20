@@ -43,13 +43,13 @@ func (c *ShCmd) CloneProject(uri string) error {
 	return nil
 }
 
-// CreateNewBranchFromRemotes .
-func CreateNewBranchFromRemotes(name string) {
+// CheckoutBranchFromRemotes .
+func CheckoutBranchFromRemotes(name string) {
 	// git checkout -b ${branch} remotes/origin/${branch}
 }
 
-// SyncGitBranch .
-func SyncGitBranch(name string) {
+// SyncBranchWithRemotes .
+func SyncBranchWithRemotes(name string) {
 	// git checkout ${branch}
 	// git fetch origin ${branch}
 	// git rebase origin/${branch}

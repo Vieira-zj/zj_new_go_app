@@ -406,6 +406,18 @@ func TestIsFileContentEqual(t *testing.T) {
 	fmt.Println("file content equal:", res)
 }
 
+func TestMergeFiles(t *testing.T) {
+	outPath := "/tmp/test/out.txt"
+	inPaths := []string{
+		"/tmp/test/in_part1.txt",
+		"/tmp/test/in_part2.txt",
+		"/tmp/test/in_part3.txt",
+	}
+	if err := MergeFiles(inPaths, outPath); err != nil {
+		t.Fatal(err)
+	}
+}
+
 /*
 io.Pipe / io.TeeReader
 

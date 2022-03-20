@@ -1,14 +1,13 @@
 package pkg
 
 import (
-	"context"
 	"fmt"
 	"testing"
 )
 
 func TestIsAttachServerOK(t *testing.T) {
 	host := "http://127.0.0.1:51025"
-	ok := IsAttachServerOK(context.Background(), host)
+	ok := IsAttachServerOK(host)
 	fmt.Println("service ok:", ok)
 }
 

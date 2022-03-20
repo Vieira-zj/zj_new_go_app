@@ -268,6 +268,42 @@ func WriteLinesToFile(filePath string, outLines []string) error {
 	return nil
 }
 
+// MergeFiles .
+func MergeFiles(inPaths []string, outPath string) error {
+	if err := os.Remove(outPath); err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+
+	// NOTE: os.O_APPEND append text to existing file content. Do not use here.
+	outFile, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	outBuf := bufio.NewWriter(outFile)
+	for _, path := range inPaths {
+		if err := func(path string) error {
+			inFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
+			if err != nil {
+				return err
+			}
+			defer inFile.Close()
+
+			_, err = io.Copy(outBuf, inFile)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(path); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // IsFileSizeEqual .
 func IsFileSizeEqual(srcPath, dstPath string) (bool, error) {
 	srcStat, err := os.Stat(srcPath)

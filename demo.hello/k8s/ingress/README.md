@@ -5,7 +5,7 @@
 
 ## Kubernetes Ingress
 
-Ingress 对象，只是一个集群的资源对象而已，并不会去真正处理我们的请求，这个时候我们还必须安装一个 Ingress Controller, 该控制器负责读取 Ingress 对象的规则并进行真正的请求处理。简单来说就是 Ingress 对象只是一个声明，Ingress Controllers 就是真正的实现。
+Ingress 对象，只是一个集群的资源对象而已，并不会去真正处理我们的请求，这个时候我们还必须安装一个 Ingress Controller, 该控制器负责读取 Ingress 对象的规则并进行真正的请求处理。简单来说就是 Ingress 对象只是一个声明，Ingress Controllers 才是真正的实现。
 
 对于 Ingress Controller 有很多种选择，比如 traefik、或者 ingress-nginx 等等。
 

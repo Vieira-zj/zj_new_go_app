@@ -1,4 +1,4 @@
-# K8S client-go app
+# K8s Client-go App
 
 ## Build env
 

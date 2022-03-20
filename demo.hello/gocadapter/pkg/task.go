@@ -13,7 +13,7 @@ import (
 )
 
 //
-// Task remove unhealth services at fixed interval.
+// Task removes unhealth services from goc register list at fixed interval.
 //
 
 // TaskRemoveUnhealthServices .
@@ -39,7 +39,7 @@ func TaskRemoveUnhealthServices(ctx context.Context, interval time.Duration, hos
 	}()
 }
 
-// removeUnhealthServicesFromGocSvrList removes unhealth service from goc register services list.
+// removeUnhealthServicesFromGocSvrList removes unhealth services from goc register list.
 func removeUnhealthServicesFromGocSvrList(host string) error {
 	goc := NewGocAPI(host)
 	ctx, cancel := context.WithTimeout(context.Background(), ShortWait)
@@ -51,27 +51,26 @@ func removeUnhealthServicesFromGocSvrList(host string) error {
 
 	for _, addrs := range services {
 		for _, addr := range addrs {
-			if err := func() error {
-				localCtx, cancel := context.WithTimeout(context.Background(), LongWait)
-				defer cancel()
-				if !IsAttachServerOK(localCtx, addr) {
-					if _, err := goc.DeleteRegisterServiceByAddr(ctx, addr); err != nil {
-						return fmt.Errorf("RemoveUnhealthServicesFromGocSvrList remove goc register service [%s] failed: %w", addr, err)
-					}
+			if !IsAttachServerOK(addr) {
+				if _, err := goc.DeleteRegisterServiceByAddr(ctx, addr); err != nil {
+					return fmt.Errorf("RemoveUnhealthServicesFromGocSvrList remove goc register service [%s] failed: %w", addr, err)
 				}
-				return nil
-			}(); err != nil {
-				return err
 			}
 		}
 	}
 	return nil
 }
 
-// IsAttachServerOK checks whether attach server is ok, and retry 3 times default.
-func IsAttachServerOK(ctx context.Context, addr string) bool {
+// IsAttachServerOK checks wheather attached server is ok, and retry 3 times by default.
+func IsAttachServerOK(addr string) bool {
 	for i := 1; ; i++ {
-		if _, err := APIGetServiceCoverage(ctx, addr); err != nil {
+		err := func() (err error) {
+			ctx, cancel := context.WithTimeout(context.Background(), ShortWait)
+			defer cancel()
+			_, err = APIGetServiceCoverage(ctx, addr)
+			return
+		}()
+		if err != nil {
 			if i >= 4 {
 				return false
 			}
@@ -90,6 +89,7 @@ func IsAttachServerOK(ctx context.Context, addr string) bool {
 // SyncSrvCoverParam .
 type SyncSrvCoverParam struct {
 	Host      string
+	SrvName   string
 	Address   string
 	SavedPath string
 }
@@ -134,7 +134,7 @@ func getSrvCoverProcess(param SyncSrvCoverParam) (bool, error) {
 		return false, fmt.Errorf("getSrvCoverProcess get more than one existing profile file from dir: %s", dirPath)
 	}
 
-	if err := saveSrvCoverFile(param); err != nil {
+	if err := getSrvCoverAndSaveToFile(param); err != nil {
 		return false, fmt.Errorf("getSrvCoverProcess save service profile file failed: %w", err)
 	}
 
@@ -152,7 +152,7 @@ func getSrvCoverProcess(param SyncSrvCoverParam) (bool, error) {
 	return res, nil
 }
 
-func saveSrvCoverFile(param SyncSrvCoverParam) error {
+func getSrvCoverAndSaveToFile(param SyncSrvCoverParam) error {
 	ctx, cancel := context.WithTimeout(context.Background(), LongWait)
 	defer cancel()
 

@@ -2,7 +2,7 @@
 set -eu
 
 #
-# Code Check
+# Build, Lint
 #
 
 function build_linux_bin {
@@ -25,7 +25,7 @@ function govet_check {
 }
 
 #
-# Docker Image
+# Build Docker Image
 #
 
 function build_echoserver_img {
@@ -55,11 +55,13 @@ function get_all_go_pkgs {
 
 report_dir="echoserver/ut_reports"
 ut_cov_xml="${report_dir}/ut_cover.xml"
+master_branch="remotes/origin/master"
 
-function run_diff_cover_deubg {
-  # local debug (pre-condition: pip uninstall diff-cover)
+function run_diff_cover_debug {
+  # debug by local py module
+  # pre-condition: pip uninstall diff-cover
   local diffcover="python ${HOME}/Workspaces/github_repos/diff_cover/diff_cover/main.py"
-  ${diffcover} ${ut_cov_xml} --compare-branch=remotes/origin/master --html-report=${report_dir}/diff_cov.html
+  ${diffcover} ${ut_cov_xml} --compare-branch=${master_branch} --html-report=${report_dir}/diff_cov.html
 }
 
 function go_test_with_diff_cover {
@@ -67,12 +69,11 @@ function go_test_with_diff_cover {
 
   local ut_cov_file="${report_dir}/ut.cov"
   local go_pkgs="demo.hello/echoserver/handlers"
-  go test -v -timeout 10s ${go_pkgs} -cover -coverprofile ${ut_cov_file} > ${report_dir}/ut.results
-  go tool cover -func=${ut_cov_file} -o ${report_dir}/cover_all.out
+  go test -v -timeout 10s ${go_pkgs} -cover -coverprofile ${ut_cov_file} > ${report_dir}/ut_results.out
+  go tool cover -func=${ut_cov_file} -o ${report_dir}/func_cover.out
 
-  local git_branch="remotes/origin/master"
   gocov convert ${ut_cov_file} | gocov-xml > ${ut_cov_xml}
-  diff-cover ${ut_cov_xml} --compare-branch=${git_branch} --html-report=${report_dir}/cover_diff.html > ${report_dir}/cover_diff.out
+  diff-cover ${ut_cov_xml} --compare-branch=${master_branch} --html-report=${report_dir}/diff_cover.html > ${report_dir}/diff_cover.out
 }
 
 #
@@ -88,7 +89,7 @@ goccenter_addr="http://goccenter.default.k8s"
 #$(goc list --center=${goccenter_addr} | jq ".echoserver[0]")
 gocagent_addr="http://127.0.0.1:8080"
 
-function clear_coverage_data {
+function clear_goc_coverage {
   rm ${coverprofiles_dir}/*
   rm ${coverreport_dir}/*
   rm ${cobertura_dir}/*
@@ -97,10 +98,10 @@ function clear_coverage_data {
 }
 
 function get_goc_coverage {
-  goc profile --center=${goccenter_addr} --address=${gocagent_addr} -o ${coverprofiles_dir}/coverprofile_$(date +%s).cov
+  goc profile --center=${goccenter_addr} --address=${gocagent_addr} -o ${coverprofiles_dir}/profile_$(date +%s).cov
 }
 
-function merge_goc_coverages {
+function merge_coverage_files {
   local target_file=$1
   local count=$(ls ${coverprofiles_dir} | wc -l)
 
@@ -111,20 +112,20 @@ function merge_goc_coverages {
   fi
 }
 
-function show_goc_coverage {
+function show_func_coverage {
   # manual set coverage file
-  go tool cover -func=echoserver/coverprofile.cov
+  go tool cover -func=echoserver/profile.cov
 }
 
-function create_goc_coverage_html {
+function create_coverage_html {
   local src_file=$1
   go tool cover -html=${src_file} -o ${coverreport_dir}/coverage_$(date +%Y%m%d_%H%M).html
 }
 
-function create_cobertura_thml {
+function create_cobertura_cover_html {
   local src_file=$1
   local project_path="${HOME}/Workspaces/zj_repos/zj_go2_project"
-  local cobertura_xml_path="${project_path}/cobertura.xml"
+  local cobertura_xml_path="${project_path}/cobertura_cover.xml"
 
   gocover-cobertura < ${src_file} > ${cobertura_xml_path}
   pycobertura show --format html --output ${cobertura_dir}/cobertura_$(date +%Y%m%d_%H%M).html ${cobertura_xml_path}
@@ -132,29 +133,26 @@ function create_cobertura_thml {
 }
 
 #
-# main
+# Main
 #
 
-merge_coverage_fname="merge_coverprofile_$(date +%Y%m%d_%H%M).cov"
+merge_coverage_fname="merge_cover_$(date +%Y%m%d_%H%M).cov"
 merge_coverage_fpath="${app_dir}/${merge_coverage_fname}"
 
 if [[ $1 == "clear" ]]; then
-  clear_coverage_data
+  clear_goc_coverage
 elif [[ $1 == "sync" ]]; then
   get_goc_coverage
 elif [[ $1 == "show" ]]; then
-  show_goc_coverage # for test
+  show_func_coverage
 elif [[ $1 == "report" ]]; then
-  merge_goc_coverages ${merge_coverage_fpath}
-  create_goc_coverage_html ${merge_coverage_fpath}
-  create_cobertura_thml ${merge_coverage_fpath}
+  merge_coverage_files ${merge_coverage_fpath}
+  create_coverage_html ${merge_coverage_fpath}
+  create_cobertura_cover_html ${merge_coverage_fpath}
   rm ${merge_coverage_fpath}
 elif [[ $1 == "ut" ]]; then
-  # ut ci workflow
   go_test_with_diff_cover
-  # gen-diff-cover-html-report
 elif [[ $1 == "main" ]]; then
-  # main
   # build_linux_bin
   build_cover_bin
   # golint_check
