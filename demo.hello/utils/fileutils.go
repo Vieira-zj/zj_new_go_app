@@ -283,7 +283,7 @@ func MergeFiles(inPaths []string, outPath string) error {
 	}
 	defer outFile.Close()
 
-	outBuf := bufio.NewWriter(outFile)
+	dstBuf := bufio.NewWriter(outFile)
 	for _, path := range inPaths {
 		if err := func(path string) error {
 			inFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
@@ -292,8 +292,7 @@ func MergeFiles(inPaths []string, outPath string) error {
 			}
 			defer inFile.Close()
 
-			_, err = io.Copy(outBuf, inFile)
-			if err != nil {
+			if _, err = io.Copy(dstBuf, inFile); err != nil {
 				return err
 			}
 			return nil
@@ -301,6 +300,7 @@ func MergeFiles(inPaths []string, outPath string) error {
 			return err
 		}
 	}
+	dstBuf.Flush()
 	return nil
 }
 

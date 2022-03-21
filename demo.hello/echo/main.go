@@ -39,6 +39,9 @@ func main() {
 	e.GET("/", deco(handlers.IndexHandler))
 	e.GET("/ping", utils.RateLimiterDeco(deco(handlers.PingHandler)))
 
+	e.GET("/mirror", handlers.MirrorHandler)
+	e.POST("/mirror", handlers.MirrorHandler)
+
 	// router reg test
 	e.GET("/users/", deco(handlers.Users))
 	e.POST("/users/new", deco(handlers.UsersNew))

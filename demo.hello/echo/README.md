@@ -144,19 +144,22 @@ goc build --buildflags="-mod=vendor -a -installsuffix cgo" --center=http://gocce
 
 ## Echoserver APIs
 
+Test echo api:
+
 ```sh
 curl "http://echoserver.ns.ing/"
 curl "http://echoserver.ns.ing/ping"
+
 curl "http://echoserver.ns.ing/users/"
+curl -XPOST "http://localhost:8081/users/new" -d '{"name": "tester01", "age": 39}'
 
 curl "http://echoserver.ns.ing/test?base=3"
 curl "http://echoserver.ns.ing/cover?cond1=true&cond2=false"
-```
 
-Test post api:
-
-```sh
-curl -XPOST "http://localhost:8081/users/new" -d '{"name": "tester01", "age": 39}'
+# mirror
+curl "http://localhost:8081/mirror?name=foo" -H "X-Test:Mirror" | jq .
+curl -XPOST "http://localhost:8081/mirror?name=foo" -H "X-Test:Mirror" -d 'hello' | jq .
+curl -XPOST "http://localhost:8081/mirror?name=foo" -H "X-Test:Mirror" -d '{"name": "bar", "age": 31}' | jq .
 ```
 
 ## RateLimiter 测试
