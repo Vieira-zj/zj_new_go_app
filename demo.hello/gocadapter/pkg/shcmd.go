@@ -1,8 +1,6 @@
 package pkg
 
 import (
-	"errors"
-	"fmt"
 	"sync"
 
 	"demo.hello/utils"
@@ -10,8 +8,7 @@ import (
 
 // ShCmd .
 type ShCmd struct {
-	sh   string
-	root string
+	sh string
 }
 
 var (
@@ -20,62 +17,28 @@ var (
 )
 
 // NewShCmd .
-func NewShCmd(root string) *ShCmd {
+func NewShCmd() *ShCmd {
 	shCmdOnce.Do(func() {
 		shCmd = &ShCmd{
-			sh:   utils.GetShellPath(),
-			root: root,
+			sh: utils.GetShellPath(),
 		}
 	})
 	return shCmd
 }
 
 // CloneProject .
-func (c *ShCmd) CloneProject(uri string) error {
-	if err := utils.MakeDir(c.root); err != nil && !errors.Is(err, utils.ErrDirExist) {
-		return fmt.Errorf("CloneProject make dir failed: %w", err)
-	}
-
-	cmd := fmt.Sprintf("git clone -q %s", uri)
-	if _, err := utils.RunShellCmd(c.sh, "-c", cmd); err != nil {
-		return fmt.Errorf("CloneProject git clone failed: %w", err)
-	}
-	return nil
-}
-
-// CheckoutBranchFromRemotes .
-func CheckoutBranchFromRemotes(name string) {
-	// git checkout -b ${branch} remotes/origin/${branch}
-}
-
-// SyncBranchWithRemotes .
-func SyncBranchWithRemotes(name string) {
-	// git checkout ${branch}
-	// git fetch origin ${branch}
-	// git rebase origin/${branch}
-	//
-	// or
-	// git checkout ${branch}
-	// git pull --rebase origin/${branch}
-}
-
-// CheckoutToCommit git checkout to specific commit.
-func (c *ShCmd) CheckoutToCommit(commitID string) error {
-	cmd := fmt.Sprintf("cd %s; git checkout %s", c.root, commitID)
-	if _, err := utils.RunShellCmd(c.sh, "-c", cmd); err != nil {
-		return fmt.Errorf("CheckoutToCommit git checkout commit failed: %w", err)
-	}
+func (c *ShCmd) CloneProject(uri, moduleDir string) error {
 	return nil
 }
 
 // GoToolCreateCoverFuncReport .
-func (c *ShCmd) GoToolCreateCoverFuncReport() error {
+func (c *ShCmd) GoToolCreateCoverFuncReport(workingPath string) error {
 	// cd ${project_root}; go tool cover -func=${input.cov} -o ${output.txt}
 	return nil
 }
 
 // GoToolCreateCoverHTMLReport .
-func (c *ShCmd) GoToolCreateCoverHTMLReport() error {
+func (c *ShCmd) GoToolCreateCoverHTMLReport(workingPath string) error {
 	// cd ${project_root}; go tool cover -html=${input.cov} -o ${output.html}
 	return nil
 }

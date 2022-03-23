@@ -16,6 +16,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gin-gonic/gin v1.7.4
+	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/go-xorm/xorm v0.7.9
@@ -43,7 +44,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/fx v1.14.2
 	go.uber.org/zap v1.19.0
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 	golang.org/x/tools v0.1.2

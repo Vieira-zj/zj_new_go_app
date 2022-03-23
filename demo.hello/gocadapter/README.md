@@ -47,6 +47,7 @@
 ```text
 - goc_adapter/
   - module_x/
+    - repo/
     - cov_history/
       - module_x_1.cov
       - module_x_2.cov
@@ -54,6 +55,7 @@
     - module_x_report.txt
     - module_x_report.html
   - module_y/
+    - repo/
     - cov_history/
     - module_y.cov
     - module_y_report.txt
@@ -85,8 +87,8 @@ ENV=staging APPTYPE=apa REGION=th GIT_BRANCH=origin/master GIT_COMMIT=518e0a570c
 ```sh
 goc list
 # {
-#  "staging_th_apa_goc_echoserver_origin/master_518e0a570c":["http://127.0.0.1:49970","http://127.0.0.1:51007"],
-#  "staging_th_apa_goc_echoserver_v2_origin/master_518e0a570c":["http://127.0.0.1:51025"]
+#  "staging_th_apa_goc_echoserver_master_518e0a570c":["http://127.0.0.1:49970","http://127.0.0.1:51007"],
+#  "staging_th_apa_goc_echoserver_v2_master_518e0a570c":["http://127.0.0.1:51025"]
 # }
 ```
 

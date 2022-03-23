@@ -7,12 +7,12 @@ import (
 
 func TestIsAttachServerOK(t *testing.T) {
 	host := "http://127.0.0.1:51025"
-	ok := IsAttachServerOK(host)
+	ok := isAttachServerOK(host)
 	fmt.Println("service ok:", ok)
 }
 
-func TestRemoveUnhealthServicesFromGocSvrList(t *testing.T) {
-	if err := removeUnhealthServicesFromGocSvrList(localHost); err != nil {
+func TestRemoveUnhealthServicesFromGoc(t *testing.T) {
+	if err := removeUnhealthServicesFromGoc(localHost); err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println("done")

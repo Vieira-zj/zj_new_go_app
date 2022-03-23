@@ -16,17 +16,17 @@ import (
 // Task removes unhealth services from goc register list at fixed interval.
 //
 
-// TaskRemoveUnhealthServices .
-func TaskRemoveUnhealthServices(ctx context.Context, interval time.Duration, host string) {
+// ScheduleTaskRemoveUnhealthSrv .
+func ScheduleTaskRemoveUnhealthSrv(ctx context.Context, interval time.Duration, host string) {
 	go func() {
 		tick := time.Tick(interval)
 		for {
 			select {
 			case <-tick:
 				func() {
-					localCtx, cancel := context.WithTimeout(context.Background(), Wait)
-					defer cancel()
-					if err := removeUnhealthServicesFromGocSvrList(host); err != nil {
+					if err := removeUnhealthServicesFromGoc(host); err != nil {
+						localCtx, cancel := context.WithTimeout(context.Background(), wait)
+						defer cancel()
 						errText := fmt.Sprintln("TaskRemoveUnhealthServices remove unhealth service failed:", err)
 						notify.SendMessageToDefaultUser(localCtx, errText)
 					}
@@ -39,10 +39,10 @@ func TaskRemoveUnhealthServices(ctx context.Context, interval time.Duration, hos
 	}()
 }
 
-// removeUnhealthServicesFromGocSvrList removes unhealth services from goc register list.
-func removeUnhealthServicesFromGocSvrList(host string) error {
+// removeUnhealthServicesFromGoc removes unhealth services from goc register list.
+func removeUnhealthServicesFromGoc(host string) error {
 	goc := NewGocAPI(host)
-	ctx, cancel := context.WithTimeout(context.Background(), ShortWait)
+	ctx, cancel := context.WithTimeout(context.Background(), shortWait)
 	defer cancel()
 	services, err := goc.ListRegisterServices(ctx)
 	if err != nil {
@@ -51,7 +51,7 @@ func removeUnhealthServicesFromGocSvrList(host string) error {
 
 	for _, addrs := range services {
 		for _, addr := range addrs {
-			if !IsAttachServerOK(addr) {
+			if !isAttachServerOK(addr) {
 				if _, err := goc.DeleteRegisterServiceByAddr(ctx, addr); err != nil {
 					return fmt.Errorf("RemoveUnhealthServicesFromGocSvrList remove goc register service [%s] failed: %w", addr, err)
 				}
@@ -61,11 +61,11 @@ func removeUnhealthServicesFromGocSvrList(host string) error {
 	return nil
 }
 
-// IsAttachServerOK checks wheather attached server is ok, and retry 3 times by default.
-func IsAttachServerOK(addr string) bool {
+// isAttachServerOK checks wheather attached server is ok, and retry 3 times by default.
+func isAttachServerOK(addr string) bool {
 	for i := 1; ; i++ {
 		err := func() (err error) {
-			ctx, cancel := context.WithTimeout(context.Background(), ShortWait)
+			ctx, cancel := context.WithTimeout(context.Background(), shortWait)
 			defer cancel()
 			_, err = APIGetServiceCoverage(ctx, addr)
 			return
@@ -88,91 +88,134 @@ func IsAttachServerOK(addr string) bool {
 
 // SyncSrvCoverParam .
 type SyncSrvCoverParam struct {
-	Host      string
-	SrvName   string
-	Address   string
-	SavedPath string
+	Host    string
+	SrvName string
+	Address string
 }
 
-// SyncSrvCoverTaskManager .
-type SyncSrvCoverTaskManager struct {
-	tasks     map[string]*time.Timer
-	intervals []time.Duration
-	index     map[string]int
+// ScheduleTaskSyncSrvCoverFromGoc .
+func ScheduleTaskSyncSrvCoverFromGoc(param SyncSrvCoverParam, intervals []time.Duration) error {
+	return nil
 }
 
-// NewSyncSrvCoverTaskManager .
-func NewSyncSrvCoverTaskManager(intervals []time.Duration) *SyncSrvCoverTaskManager {
-	return &SyncSrvCoverTaskManager{
-		tasks:     make(map[string]*time.Timer, 8),
-		intervals: intervals,
+func createSrvCoverReport(param SyncSrvCoverParam) error {
+	moduleName, err := getModuleFromSrvName(param.SrvName)
+	if err != nil {
+		return fmt.Errorf("createSrvCoverReport get module name failed: %w", err)
 	}
-}
-
-// Exec .
-func (m *SyncSrvCoverTaskManager) Exec(name string, param SyncSrvCoverParam) {
-	m.index[name] = 0
-	m.tasks[name] = time.AfterFunc(time.Second, func() {
-		// TODO:
-		idx := m.index[name]
-		if idx >= len(m.intervals) {
-			idx = len(m.intervals) - 1
+	moduleDir := filepath.Join(WorkingRootDir, moduleName)
+	if !utils.IsDirExist(moduleDir) {
+		if err := utils.MakeDir(moduleDir); err != nil {
+			return fmt.Errorf("createSrvCoverReport mkdir failed: %w", err)
 		}
-		m.tasks[name].Reset(m.intervals[idx])
-		m.index[name] = idx + 1
+	}
 
-	})
+	isUpdated, err := getSrvCoverProcess(param, moduleDir)
+	if err != nil {
+		return err
+	}
+	if !isUpdated {
+		return nil
+	}
+
+	repoDir := filepath.Join(moduleDir, "repo")
+	cmd := NewShCmd()
+	if !utils.IsDirExist(repoDir) {
+		uri := ModuleToRepoMap[moduleName]
+		if err := cmd.CloneProject(uri, moduleDir); err != nil {
+			return err
+		}
+	}
+
+	if err := syncSrvRepo(param, repoDir); err != nil {
+		return err
+	}
+	if err := cmd.GoToolCreateCoverFuncReport(repoDir); err != nil {
+		return err
+	}
+	if err := cmd.GoToolCreateCoverHTMLReport(repoDir); err != nil {
+		return err
+	}
+	return nil
 }
 
-func getSrvCoverProcess(param SyncSrvCoverParam) (bool, error) {
-	dirPath := filepath.Dir(param.SavedPath)
-	coverFiles, err := utils.GetFilesBySuffix(dirPath, ".cov")
+func syncSrvRepo(param SyncSrvCoverParam, repoDir string) error {
+	// TODO:
+	return nil
+}
+
+// getSrvCoverProcess 1) get coverage from goc, and save to file; 2) move last cov file to history dir.
+func getSrvCoverProcess(param SyncSrvCoverParam, moduleDir string) (bool, error) {
+	coverFiles, err := utils.GetFilesBySuffix(moduleDir, ".cov")
 	if err != nil {
 		return false, fmt.Errorf("getSrvCoverProcess get exsting profile file failed: %w", err)
 	}
-	if len(coverFiles) != 1 {
-		return false, fmt.Errorf("getSrvCoverProcess get more than one existing profile file from dir: %s", dirPath)
+	if len(coverFiles) > 1 {
+		return false, fmt.Errorf("getSrvCoverProcess get more than one existing profile file from dir: %s", moduleDir)
 	}
 
-	if err := getSrvCoverAndSaveToFile(param); err != nil {
+	savedPath, err := getSrvCoverAndSave(param, moduleDir)
+	if err != nil {
 		return false, fmt.Errorf("getSrvCoverProcess save service profile file failed: %w", err)
 	}
 
-	coverFilePath := coverFiles[0]
-	coverFileName := filepath.Base(coverFilePath)
-	historyCoverFilePath := filepath.Join(dirPath, "history", coverFileName)
-	if err := utils.MoveFile(coverFilePath, historyCoverFilePath); err != nil {
+	isCovUpdated := true
+	if len(coverFiles) == 0 {
+		return isCovUpdated, nil
+	}
+	lastCoverFilePath := coverFiles[0]
+	lastCoverFileName := filepath.Base(lastCoverFilePath)
+	historyCoverFilePath := filepath.Join(moduleDir, "history", lastCoverFileName)
+	if err := utils.MoveFile(lastCoverFilePath, historyCoverFilePath); err != nil {
 		return false, fmt.Errorf("getSrvCoverProcess move exiting profile file to history failed: %w", err)
 	}
 
-	res, err := utils.IsFileContentEqual(historyCoverFilePath, param.SavedPath)
+	isEqual, err := utils.IsFileContentEqual(historyCoverFilePath, savedPath)
 	if err != nil {
 		return false, fmt.Errorf("getSrvCoverProcess compare profile files content failed: %w", err)
 	}
-	return res, nil
+	if isEqual {
+		isCovUpdated = false
+	}
+	return isCovUpdated, nil
 }
 
-func getSrvCoverAndSaveToFile(param SyncSrvCoverParam) error {
-	ctx, cancel := context.WithTimeout(context.Background(), LongWait)
+func getSrvCoverAndSave(param SyncSrvCoverParam, savedDir string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), longWait)
 	defer cancel()
 
 	goc := NewGocAPI(param.Host)
 	b, err := goc.GetServiceProfileByAddr(ctx, param.Address)
 	if err != nil {
-		return fmt.Errorf("saveSrvCoverFile get service [%s] profile failed: %w", param.Address, err)
+		return "", fmt.Errorf("saveSrvCoverFile get service [%s] profile failed: %w", param.Address, err)
 	}
 
-	f, err := os.Create(param.SavedPath)
+	fileName, err := getSavedCovFileName(param)
 	if err != nil {
-		return fmt.Errorf("saveSrvCoverFile open file [%s] failed: %w", param.SavedPath, err)
+		return "", fmt.Errorf("saveSrvCoverFile get saved cov file name failed: %w", err)
+	}
+
+	savedPath := filepath.Join(savedDir, fileName)
+	f, err := os.Create(savedPath)
+	if err != nil {
+		return "", fmt.Errorf("saveSrvCoverFile open file [%s] failed: %w", savedPath, err)
 	}
 	defer f.Close()
 
 	buf := bytes.NewBuffer(b)
 	if _, err := f.Write(buf.Bytes()); err != nil {
-		return fmt.Errorf("saveSrvCoverFile write file [%s] failed: %w", param.SavedPath, err)
+		return "", fmt.Errorf("saveSrvCoverFile write file [%s] failed: %w", savedPath, err)
 	}
-	return nil
+	return savedPath, nil
+}
+
+func getSavedCovFileName(param SyncSrvCoverParam) (string, error) {
+	ip, err := getIPfromSrvAddress(param.Address)
+	if err != nil {
+		return "", err
+	}
+	now := getSimpleNowDatetime()
+	return fmt.Sprintf("%s_%s_%s_%s.cov", param.SrvName, param.Address, ip, now), nil
 }
 
 //
