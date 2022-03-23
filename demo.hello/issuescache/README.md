@@ -48,25 +48,25 @@ curl http://localhost:8081/ping
 - Put
 
 ```sh
-curl http://localhost:8081/store/save -d '{"storeKey": "2021.04.v4 - AirPay", "storeKeyType": "ReleaseCycle"}'
-curl http://localhost:8081/store/save -d '{"storeKey": "2021.04.v4 - AirPay", "storeKeyType": "ReleaseCycle", "forceUpdate": true}'
+curl http://localhost:8081/store/save -d '{"storeKey": "2021.04.v4 - Payment", "storeKeyType": "ReleaseCycle"}'
+curl http://localhost:8081/store/save -d '{"storeKey": "2021.04.v4 - Payment", "storeKeyType": "ReleaseCycle", "forceUpdate": true}'
 
 # usage
-curl http://localhost:8081/store/usage -d '{"storeKey": "2021.04.v4 - AirPay"}'
+curl http://localhost:8081/store/usage -d '{"storeKey": "2021.04.v4 - Payment"}'
 ```
 
 - Get
 
 ```sh
 # get by relcycle
-curl http://localhost:8081/get/store -d '{"storeKey": "2021.04.v4 - AirPay", "storeKeyType": "ReleaseCycle"}'
-curl http://localhost:8081/get/repos -d '{"storeKey": "2021.04.v4 - AirPay"}'
+curl http://localhost:8081/get/store -d '{"storeKey": "2021.04.v4 - Payment", "storeKeyType": "ReleaseCycle"}'
+curl http://localhost:8081/get/repos -d '{"storeKey": "2021.04.v4 - Payment"}'
 
 # get by version
 curl http://localhost:8081/get/store -d '{"storeKey": "apa_v1.0.20.20210426", "storeKeyType": "FixVersion"}'
-curl http://localhost:8081/get/issue -d '{"storeKey": "apa_v1.0.20.20210426", "issueKey": "AIRPAY-56683"}'
+curl http://localhost:8081/get/issue -d '{"storeKey": "apa_v1.0.20.20210426", "issueKey": "Payment-56683"}'
 
 # get by jql
-curl http://localhost:8081/get/store -d '{"storeKey": "key in (AIRPAY-46283,SPPAY-196)", "storeKeyType": "jql"}'
+curl http://localhost:8081/get/store -d '{"storeKey": "key in (Payment-46283,SPayment-196)", "storeKeyType": "jql"}'
 ```
 

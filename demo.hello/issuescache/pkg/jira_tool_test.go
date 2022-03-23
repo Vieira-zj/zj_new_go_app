@@ -6,11 +6,11 @@ import (
 	"testing"
 )
 
-var issueID = "AIRPAY-61523"
+var testIssueID = "Payment-61523"
 
 func TestJiraGetIssue(t *testing.T) {
 	jira := NewJiraTool()
-	resp, err := jira.GetIssue(context.TODO(), issueID, nil)
+	resp, err := jira.GetIssue(context.TODO(), testIssueID, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -20,7 +20,7 @@ func TestJiraGetIssue(t *testing.T) {
 func TestJiraGetIssueByFields(t *testing.T) {
 	jira := NewJiraTool()
 	fields := []string{"key", "summary"}
-	resp, err := jira.GetIssue(context.TODO(), issueID, fields)
+	resp, err := jira.GetIssue(context.TODO(), testIssueID, fields)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func TestJiraSearchIssues(t *testing.T) {
 
 func TestGetIssueLink(t *testing.T) {
 	jira := NewJiraTool()
-	resp, err := jira.GetIssueLink(context.TODO(), issueID)
+	resp, err := jira.GetIssueLink(context.TODO(), testIssueID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestGetIssueLink(t *testing.T) {
 
 func TestGetRemoteLink(t *testing.T) {
 	jira := NewJiraTool()
-	resp, err := jira.GetRemoteLink(context.TODO(), issueID)
+	resp, err := jira.GetRemoteLink(context.TODO(), testIssueID)
 	if err != nil {
 		t.Fatal(err)
 	}

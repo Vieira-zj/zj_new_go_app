@@ -9,7 +9,7 @@ import (
 
 func TestGetDeployReposText(t *testing.T) {
 	jira := NewJiraTool()
-	jql := `"Release Cycle" = "2021.04.v4 - AirPay"`
+	jql := `"Release Cycle" = "2021.04.v4 - Payment"`
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(8)*time.Second)
 	defer cancel()
 	keys, err := jira.SearchIssues(ctx, jql)

@@ -44,7 +44,7 @@ func TestRemoveDulpicatedItem(t *testing.T) {
 }
 
 func TestTicketsTree(t *testing.T) {
-	tickets := "AIRPAY-66492,SPPAY-2210,AIRPAY-57284,AIRPAY-62043"
+	tickets := "Payment-66492,SPayment-2210,Payment-57284,Payment-62043"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 	defer cancel()
 
@@ -63,7 +63,7 @@ func TestPrintReleaseTicketTree(t *testing.T) {
 	jira := NewJiraTool()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 	defer cancel()
-	releaseTicket, err := NewJiraIssue(ctx, jira, "AIRPAY-66425")
+	releaseTicket, err := NewJiraIssue(ctx, jira, "Payment-66425")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func TestPrintFixVersionTree(t *testing.T) {
 
 func TestPrintReleaseCycleTree(t *testing.T) {
 	jira := NewJiraTool()
-	jql := `"Release Cycle" = "2021.04.v4 - AirPay"`
+	jql := `"Release Cycle" = "2021.04.v4 - Payment"`
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
 	defer cancel()
 	keys, err := jira.SearchIssues(ctx, jql)
