@@ -189,10 +189,10 @@ func APIGetServiceCoverage(ctx context.Context, host string) (string, error) {
 	httpClient := utils.NewDefaultHTTPUtils()
 	resp, respBody, err := httpClient.GetV2(ctx, url, map[string]string{})
 	if err != nil {
-		return "-1", fmt.Errorf("GetServiceCoverage send http get failed: %w", err)
+		return "", fmt.Errorf("GetServiceCoverage send http get failed: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return "-1", fmt.Errorf("GetAttachServiceCoverage get non-200 returned code: %d", resp.StatusCode)
+		return "", fmt.Errorf("GetAttachServiceCoverage get non-200 returned code: %d", resp.StatusCode)
 	}
 	return string(respBody), nil
 }

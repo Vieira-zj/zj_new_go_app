@@ -62,14 +62,14 @@ func (notify *MatterMostNotify) SendMessage(ctx context.Context, text string) er
 	}
 	b, err := json.Marshal(&message)
 	if err != nil {
-		return fmt.Errorf("Notify json marshal failed: %w", err)
+		return fmt.Errorf("SendMessage json marshal failed: %w", err)
 	}
 
 	headers := map[string]string{
 		"Authorization": "Bearer " + notify.token,
 	}
 	if _, err = notify.client.Post(ctx, notify.baseURL+"/posts", headers, string(b)); err != nil {
-		return fmt.Errorf("Notify send message failed: %w", err)
+		return fmt.Errorf("SendMessage post message failed: %w", err)
 	}
 	return nil
 }

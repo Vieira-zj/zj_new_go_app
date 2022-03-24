@@ -8,7 +8,7 @@ import (
 )
 
 //
-// run: go test -timeout 10s -run ^TestCheckoutBranch$ demo.hello/gocadapter/pkg -v -count=1
+// run: go test -timeout 10s -run ^TestCheckoutRemoteBranch$ demo.hello/gocadapter/pkg -v -count=1
 //
 
 var (
@@ -142,7 +142,7 @@ func TestCheckoutRemoteBranch(t *testing.T) {
 	}
 
 	repo := NewGitRepo(path)
-	commitID, err := repo.CheckoutRemoteBranch(context.Background(), "rm_staging_copied")
+	commitID, err := repo.CheckoutRemoteBranch(context.Background(), "rm_staging_test")
 	if err != nil {
 		t.Fatal(err)
 	}

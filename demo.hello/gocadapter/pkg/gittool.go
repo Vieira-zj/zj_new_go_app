@@ -19,41 +19,6 @@ import (
 // Refer: https://github.com/go-git/go-git/tree/master/_examples
 //
 
-// GitClone .
-func GitClone(ctx context.Context, URL, workingDir string) (string, error) {
-	repo, err := git.PlainCloneContext(ctx, workingDir, false, &git.CloneOptions{
-		URL: URL,
-		Auth: &http.BasicAuth{
-			Username: getParamFromEnv("GITLAB_USER"),
-			Password: getParamFromEnv("GITLAB_TOKEN"),
-		},
-		Progress: os.Stdout,
-	})
-	if err != nil {
-		if errors.Is(err, git.ErrRepositoryAlreadyExists) {
-			repoName, err := getRepoNameFromURL(URL)
-			if err != nil {
-				return "", fmt.Errorf("GitClone error: %w", err)
-			}
-			log.Printf("Clone repo [%s]: %s", repoName, err.Error())
-
-			r := NewGitRepo(workingDir)
-			head, err := r.getRepoHeadCommitShortID()
-			if err != nil {
-				return "", fmt.Errorf("GitClone error: %w", err)
-			}
-			return head, nil
-		}
-		return "", fmt.Errorf("GitClone clone repo error: %w", err)
-	}
-
-	ref, err := repo.Head()
-	if err != nil {
-		return "", fmt.Errorf("GitClone get repo head commit error: %w", err)
-	}
-	return ref.Hash().String()[:8], nil
-}
-
 var (
 	gitRepo  *GitRepo
 	repoOnce sync.Once
@@ -99,7 +64,7 @@ func (r *GitRepo) Fetch(ctx context.Context) error {
 	return nil
 }
 
-// Pull fetch changes from remote and fast-forward to current branch.
+// Pull fetch changes from remote and fast-forward to branch.
 func (r *GitRepo) Pull(ctx context.Context, branch string) (string, error) {
 	commitID, err := r.CheckoutBranch(branch)
 	if err != nil {
@@ -212,6 +177,10 @@ func (r *GitRepo) CheckoutRemoteBranch(ctx context.Context, branch string) (stri
 	if err = r.repo.Storer.SetReference(ref); err != nil {
 		return "", fmt.Errorf("CheckoutRemoteBranch create new branch error: %w", err)
 	}
+
+	if _, err := r.CheckoutBranch(branch); err != nil {
+		return "", fmt.Errorf("CheckoutRemoteBranch error: %w", err)
+	}
 	return commitID[:8], nil
 }
 
@@ -301,6 +270,41 @@ func (r *GitRepo) getRepoHeadCommitShortID() (string, error) {
 	ref, err := r.repo.Head()
 	if err != nil {
 		return "", fmt.Errorf("getRepoHeadCommitShortID get repo head ref error: %w", err)
+	}
+	return ref.Hash().String()[:8], nil
+}
+
+// GitClone .
+func GitClone(ctx context.Context, URL, workingDir string) (string, error) {
+	repo, err := git.PlainCloneContext(ctx, workingDir, false, &git.CloneOptions{
+		URL: URL,
+		Auth: &http.BasicAuth{
+			Username: getParamFromEnv("GITLAB_USER"),
+			Password: getParamFromEnv("GITLAB_TOKEN"),
+		},
+		Progress: os.Stdout,
+	})
+	if err != nil {
+		if errors.Is(err, git.ErrRepositoryAlreadyExists) {
+			repoName, err := getRepoNameFromURL(URL)
+			if err != nil {
+				return "", fmt.Errorf("GitClone error: %w", err)
+			}
+			log.Printf("Clone repo [%s]: %s", repoName, err.Error())
+
+			r := NewGitRepo(workingDir)
+			head, err := r.getRepoHeadCommitShortID()
+			if err != nil {
+				return "", fmt.Errorf("GitClone error: %w", err)
+			}
+			return head, nil
+		}
+		return "", fmt.Errorf("GitClone clone repo error: %w", err)
+	}
+
+	ref, err := repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("GitClone get repo head commit error: %w", err)
 	}
 	return ref.Hash().String()[:8], nil
 }

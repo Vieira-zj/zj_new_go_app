@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -24,6 +25,14 @@ func getSimpleNowDatetime() string {
 	return time.Now().Format("20060102_150405")
 }
 
+func getFileNameWithoutExt(fileName string) string {
+	ext := filepath.Ext(fileName)
+	if len(ext) == 0 {
+		return fileName
+	}
+	return strings.Replace(fileName, ext, "", 1)
+}
+
 func getRepoNameFromURL(url string) (string, error) {
 	if !strings.HasPrefix(url, "http") {
 		return "", fmt.Errorf("URL is not http/https")
@@ -38,7 +47,7 @@ func getRepoNameFromURL(url string) (string, error) {
 // Task Utils
 //
 
-func getIPfromSrvAddress(address string) (string, error) {
+func formatIPfromSrvAddress(address string) (string, error) {
 	u, err := url.Parse(address)
 	if err != nil {
 		return "", err
@@ -54,6 +63,11 @@ func getModuleFromSrvName(name string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("Module is not found for service: %s", name)
+}
+
+func getGitURLFromSrvName(name string) string {
+	// TODO:
+	return ""
 }
 
 func getBranchAndCommitFromSrvName(name string) (string, string) {

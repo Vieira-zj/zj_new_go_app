@@ -11,13 +11,9 @@ func TestIsAttachServerOK(t *testing.T) {
 	fmt.Println("service ok:", ok)
 }
 
-func TestRemoveUnhealthServicesFromGoc(t *testing.T) {
-	if err := removeUnhealthServicesFromGoc(localHost); err != nil {
+func TestRemoveUnhealthSrvInGocTask(t *testing.T) {
+	if err := removeUnhealthSrvInGocTask(localHost); err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println("done")
-}
-
-func TestGetSrvCoverProcess(t *testing.T) {
-	// TODO:
 }

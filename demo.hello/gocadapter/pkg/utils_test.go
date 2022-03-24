@@ -9,9 +9,15 @@ func TestGetSimpleNowDatetime(t *testing.T) {
 	fmt.Println("now:", getSimpleNowDatetime())
 }
 
-func TestGetIPfromSrvAddress(t *testing.T) {
+func TestGetFileNameWithoutExt(t *testing.T) {
+	for _, fileName := range []string{"test.json", "sh_output.txt", "results"} {
+		fmt.Println("name:", getFileNameWithoutExt(fileName))
+	}
+}
+
+func TestFormatIPfromSrvAddress(t *testing.T) {
 	addr := "http://127.0.0.1:49970"
-	ip, err := getIPfromSrvAddress(addr)
+	ip, err := formatIPfromSrvAddress(addr)
 	if err != nil {
 		t.Fatal(err)
 	}
