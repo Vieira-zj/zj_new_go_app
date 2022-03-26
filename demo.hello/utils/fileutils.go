@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"archive/zip"
 	"bufio"
 	"bytes"
 	"errors"
@@ -268,6 +269,28 @@ func WriteLinesToFile(filePath string, outLines []string) error {
 	return nil
 }
 
+// CopyFile .
+func CopyFile(srcPath, dstPath string) error {
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		return fmt.Errorf("CopyFile error: %w", err)
+	}
+	defer srcFile.Close()
+
+	outFile, err := os.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("CopyFile error: %w", err)
+	}
+
+	readerBuf := bufio.NewReader(srcFile)
+	writerBuf := bufio.NewWriter(outFile)
+	if _, err := io.Copy(writerBuf, readerBuf); err != nil {
+		return fmt.Errorf("CopyFile error: %w", err)
+	}
+	defer writerBuf.Flush()
+	return nil
+}
+
 // MergeFiles .
 func MergeFiles(inPaths []string, outPath string) error {
 	if err := os.Remove(outPath); err != nil {
@@ -283,7 +306,7 @@ func MergeFiles(inPaths []string, outPath string) error {
 	}
 	defer outFile.Close()
 
-	dstBuf := bufio.NewWriter(outFile)
+	writerBuf := bufio.NewWriter(outFile)
 	for _, path := range inPaths {
 		if err := func(path string) error {
 			inFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
@@ -292,7 +315,7 @@ func MergeFiles(inPaths []string, outPath string) error {
 			}
 			defer inFile.Close()
 
-			if _, err = io.Copy(dstBuf, inFile); err != nil {
+			if _, err = io.Copy(writerBuf, inFile); err != nil {
 				return err
 			}
 			return nil
@@ -300,7 +323,7 @@ func MergeFiles(inPaths []string, outPath string) error {
 			return err
 		}
 	}
-	dstBuf.Flush()
+	writerBuf.Flush()
 	return nil
 }
 
@@ -369,4 +392,95 @@ func FileWordsCount(filePath string) (map[string]int, error) {
 		}
 	}
 	return counts, nil
+}
+
+//
+// Zip
+//
+
+// Zip 压缩
+func Zip(srcDir, dstZipFile string) error {
+	zipFile, err := os.Create(dstZipFile)
+	if err != nil {
+		return fmt.Errorf("Zip create zip file error: %w", err)
+	}
+	defer zipFile.Close()
+
+	archive := zip.NewWriter(zipFile)
+	defer archive.Close()
+
+	filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return fmt.Errorf("Zip get file [%s] header error: %w", info.Name(), err)
+		}
+
+		header.Name = strings.Replace(path, srcDir, "", 1)
+		if info.IsDir() {
+			header.Name += "/"
+		} else {
+			header.Method = zip.Deflate
+		}
+
+		writer, err := archive.CreateHeader(header)
+		if err != nil {
+			return fmt.Errorf("Zip create header error: %w", err)
+		}
+
+		if !info.IsDir() {
+			file, err := os.Open(path)
+			if err != nil {
+				return fmt.Errorf("Zip open file [%s] error: %w", path, err)
+			}
+			defer file.Close()
+
+			if _, err = io.Copy(writer, file); err != nil {
+				return fmt.Errorf("Zip copy error: %w", err)
+			}
+		}
+		return nil
+	})
+
+	return nil
+}
+
+// Unzip 解压
+func Unzip(zipFile, dstDir string) error {
+	zipReader, err := zip.OpenReader(zipFile)
+	if err != nil {
+		return fmt.Errorf("Unzip open zip file error: %w", err)
+	}
+	defer zipReader.Close()
+
+	for _, f := range zipReader.File {
+		filePath := filepath.Join(dstDir, f.Name)
+		if f.FileInfo().IsDir() {
+			if err = MakeDir(filePath); err != nil {
+				return fmt.Errorf("Unzip make dir [%s] error: %w", filePath, err)
+			}
+			continue
+		}
+
+		inFile, err := f.Open()
+		if err != nil {
+			return fmt.Errorf("Unzip open file error: %w", err)
+		}
+		defer inFile.Close()
+
+		outFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return fmt.Errorf("Unzip open file [%s] error: %w", filePath, err)
+		}
+		defer outFile.Close()
+
+		if _, err = io.Copy(outFile, inFile); err != nil {
+			return fmt.Errorf("Unzip copy error: %w", err)
+		}
+	}
+
+	return nil
 }

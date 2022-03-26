@@ -406,6 +406,15 @@ func TestIsFileContentEqual(t *testing.T) {
 	fmt.Println("file content equal:", res)
 }
 
+func TestCopyFile(t *testing.T) {
+	srcPath := "/tmp/test/echoserver/staging_th_apa_goc_echoserver_master_518e0a570c_127-0-0-1_20220325_181410.func"
+	dstPath := "/tmp/test/echoserver/staging_th_apa_goc_echoserver_master_518e0a570c_127-0-0-1_20220325_181410_copied.func"
+	if err := CopyFile(srcPath, dstPath); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("copy done")
+}
+
 func TestMergeFiles(t *testing.T) {
 	outPath := "/tmp/test/out.txt"
 	inPaths := []string{
@@ -548,4 +557,26 @@ func TestFs(t *testing.T) {
 	if err := fstest.TestFS(new(fsys), existFile); err != nil {
 		t.Fatal(err)
 	}
+}
+
+//
+// Zip
+//
+
+func TestZip(t *testing.T) {
+	srcDir := "/tmp/test/data"
+	dstFile := "/tmp/test/data.zip"
+	if err := Zip(srcDir, dstFile); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("zip done.")
+}
+
+func TestUnzip(t *testing.T) {
+	zipFile := "/tmp/test/data.zip"
+	dstDir := "/tmp/test/unzip"
+	if err := Unzip(zipFile, dstDir); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("unzip done.")
 }

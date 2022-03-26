@@ -8,11 +8,11 @@ import (
 )
 
 //
-// run: go test -timeout 10s -run ^TestCheckoutRemoteBranch$ demo.hello/gocadapter/pkg -v -count=1
+// run: go test -timeout 10s -run ^TestCheckoutToCommit$ demo.hello/gocadapter/pkg -v -count=1
 //
 
 var (
-	testRepoPath = "/tmp/test/git_repos"
+	testRepoPath = "/tmp/test/echoserver"
 )
 
 func TestGetLastDirName(t *testing.T) {
@@ -20,13 +20,9 @@ func TestGetLastDirName(t *testing.T) {
 }
 
 func TestGitClone(t *testing.T) {
-	dir, err := testGetRepoPath()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	url := getParamFromEnv("GITLAB_REPO_TEST")
-	commitID, err := GitClone(context.Background(), url, dir)
+	url := testGetRepoURL()
+	fmt.Println("repo url:", url)
+	commitID, err := GitClone(context.Background(), url, testRepoPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,24 +30,14 @@ func TestGitClone(t *testing.T) {
 }
 
 func TestFetch(t *testing.T) {
-	path, err := testGetRepoPath()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repo := NewGitRepo(path)
+	repo := NewGitRepo(testRepoPath)
 	if err := repo.Fetch(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestPull(t *testing.T) {
-	path, err := testGetRepoPath()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repo := NewGitRepo(path)
+	repo := NewGitRepo(testRepoPath)
 	head, err := repo.Pull(context.Background(), "rm_staging_copied")
 	if err != nil {
 		t.Fatal(err)
@@ -60,12 +46,7 @@ func TestPull(t *testing.T) {
 }
 
 func TestGetRepoHeadCommitID(t *testing.T) {
-	path, err := testGetRepoPath()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repo := NewGitRepo(path)
+	repo := NewGitRepo(testRepoPath)
 	head, err := repo.getRepoHeadCommitShortID()
 	if err != nil {
 		t.Fatal(err)
@@ -74,12 +55,7 @@ func TestGetRepoHeadCommitID(t *testing.T) {
 }
 
 func TestGetBranchFullName(t *testing.T) {
-	path, err := testGetRepoPath()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repo := NewGitRepo(path)
+	repo := NewGitRepo(testRepoPath)
 	for _, branch := range []string{"master"} {
 		name, err := repo.GetBranchFullName(branch)
 		if err != nil {
@@ -90,13 +66,8 @@ func TestGetBranchFullName(t *testing.T) {
 }
 
 func TestGetBranchCommit(t *testing.T) {
-	path, err := testGetRepoPath()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	branch := "rm_staging_copied"
-	repo := NewGitRepo(path)
+	repo := NewGitRepo(testRepoPath)
 	commitID, err := repo.GetBranchCommit(branch)
 	if err != nil {
 		t.Fatal(err)
@@ -105,12 +76,7 @@ func TestGetBranchCommit(t *testing.T) {
 }
 
 func TestGetRemoteBranchFullName(t *testing.T) {
-	path, err := testGetRepoPath()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repo := NewGitRepo(path)
+	repo := NewGitRepo(testRepoPath)
 	for _, branch := range []string{"release", "rm_staging_test"} {
 		name, err := repo.GetRemoteBranchFullName(branch)
 		if err != nil {
@@ -120,14 +86,16 @@ func TestGetRemoteBranchFullName(t *testing.T) {
 	}
 }
 
-func TestCheckoutBranch(t *testing.T) {
-	path, err := testGetRepoPath()
-	if err != nil {
+func TestCheckoutToCommit(t *testing.T) {
+	repo := NewGitRepo(testRepoPath)
+	if err := repo.CheckoutToCommit("a6023e5e"); err != nil {
 		t.Fatal(err)
 	}
+}
 
+func TestCheckoutBranch(t *testing.T) {
 	branch := "rm_staging_copied"
-	repo := NewGitRepo(path)
+	repo := NewGitRepo(testRepoPath)
 	head, err := repo.CheckoutBranch(branch)
 	if err != nil {
 		t.Fatal(err)
@@ -136,12 +104,7 @@ func TestCheckoutBranch(t *testing.T) {
 }
 
 func TestCheckoutRemoteBranch(t *testing.T) {
-	path, err := testGetRepoPath()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repo := NewGitRepo(path)
+	repo := NewGitRepo(testRepoPath)
 	commitID, err := repo.CheckoutRemoteBranch(context.Background(), "rm_staging_test")
 	if err != nil {
 		t.Fatal(err)
@@ -149,13 +112,15 @@ func TestCheckoutRemoteBranch(t *testing.T) {
 	fmt.Println("checkout remote branch:", commitID)
 }
 
-func testGetRepoPath() (string, error) {
-	url := getParamFromEnv("GITLAB_REPO_TEST")
-	repoName, err := getRepoNameFromURL(url)
-	if err != nil {
-		return "", err
+func testGetRepoURL() string {
+	if err := mockLoadConfig("/tmp/test"); err != nil {
+		panic(err)
 	}
 
-	path := filepath.Join(testRepoPath, repoName)
-	return path, nil
+	srvName := "echoserver"
+	val, ok := ModuleToRepoMap[srvName]
+	if !ok {
+		panic(fmt.Sprintf("service [%s] is not found", srvName))
+	}
+	return val
 }

@@ -12,6 +12,7 @@ import (
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
@@ -105,7 +106,12 @@ func (r *GitRepo) Pull(ctx context.Context, branch string) (string, error) {
 }
 
 // CheckoutToCommit .
-func (r *GitRepo) CheckoutToCommit(commitID string) error {
+func (r *GitRepo) CheckoutToCommit(shortCommitID string) error {
+	commitID, err := r.getFullCommitID(shortCommitID)
+	if err != nil {
+		return fmt.Errorf("CheckoutToCommit error: %w", err)
+	}
+
 	w, err := r.repo.Worktree()
 	if err != nil {
 		return fmt.Errorf("CheckoutToCommit get worktree error: %w", err)
@@ -114,7 +120,7 @@ func (r *GitRepo) CheckoutToCommit(commitID string) error {
 	if err := w.Checkout(&git.CheckoutOptions{
 		Hash: plumbing.NewHash(commitID),
 	}); err != nil {
-		return fmt.Errorf("CheckoutToCommit checkout to commit error: %w", err)
+		return fmt.Errorf("shortCommitID checkout commit error: %w", err)
 	}
 	return nil
 }
@@ -220,13 +226,15 @@ func (r *GitRepo) getBranch(branch string) (string, string, error) {
 
 	name := ""
 	commitID := ""
-	refs.ForEach(func(ref *plumbing.Reference) error {
+	if err := refs.ForEach(func(ref *plumbing.Reference) error {
 		if ref.Name().IsBranch() && ref.Name().Short() == branch {
 			name = ref.Name().String()
 			commitID = ref.Hash().String()
 		}
 		return nil
-	})
+	}); err != nil {
+		return "", "", fmt.Errorf("getBranch iterator refs error: %w", err)
+	}
 
 	if name == "" {
 		err = git.ErrBranchNotFound
@@ -252,18 +260,42 @@ func (r *GitRepo) getRemoteBranch(branch string) (string, string, error) {
 
 	name := ""
 	commitID := ""
-	refs.ForEach(func(ref *plumbing.Reference) error {
+	if err := refs.ForEach(func(ref *plumbing.Reference) error {
 		if ref.Name().IsRemote() && ref.Name().Short() == branch {
 			name = ref.Name().String()
 			commitID = ref.Hash().String()
 		}
 		return nil
-	})
+	}); err != nil {
+		return "", "", fmt.Errorf("getRemoteBranch iterator refs error: %w", err)
+	}
 
 	if name == "" {
 		err = git.ErrBranchNotFound
 	}
 	return name, commitID, err
+}
+
+func (r *GitRepo) getFullCommitID(shortCommitID string) (string, error) {
+	objects, err := r.repo.CommitObjects()
+	if err != nil {
+		return "", fmt.Errorf("getFullCommitID get commit objects error: %w", err)
+	}
+
+	commitID := ""
+	if err := objects.ForEach(func(c *object.Commit) error {
+		if strings.HasPrefix(c.Hash.String(), shortCommitID) {
+			commitID = c.Hash.String()
+		}
+		return nil
+	}); err != nil {
+		return "", fmt.Errorf("getFullCommitID iterator commit objects error: %w", err)
+	}
+
+	if len(commitID) == 0 {
+		return commitID, fmt.Errorf("getFullCommitID commit [%s] not found", shortCommitID)
+	}
+	return commitID, nil
 }
 
 func (r *GitRepo) getRepoHeadCommitShortID() (string, error) {

@@ -29,6 +29,7 @@ func scheduleTaskRemoveUnhealthSrv(ctx context.Context, interval time.Duration, 
 	}()
 }
 
-func scheduleTaskSyncSrvCover(param SyncSrvCoverParam, intervals []time.Duration) error {
+func scheduleTaskSyncSrvCoverAndCreateReport(param SyncSrvCoverParam, intervals []time.Duration) error {
+	// TODO:
 	return nil
 }

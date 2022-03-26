@@ -9,17 +9,17 @@ import (
 )
 
 const (
-	localHost = "http://localhost:7777"
+	testGocLocalHost = "http://localhost:7777"
 )
 
 func TestNewGocAPIOnce(t *testing.T) {
 	for i := 0; i < 3; i++ {
-		NewGocAPI(localHost)
+		NewGocAPI(testGocLocalHost)
 	}
 }
 
 func TestListRegisterServices(t *testing.T) {
-	goc := NewGocAPI(localHost)
+	goc := NewGocAPI(testGocLocalHost)
 	svc, err := goc.ListRegisterServices(context.Background())
 	if err != nil {
 		t.Fatal(err)
@@ -28,7 +28,7 @@ func TestListRegisterServices(t *testing.T) {
 }
 
 func TestRegisterService(t *testing.T) {
-	goc := NewGocAPI(localHost)
+	goc := NewGocAPI(testGocLocalHost)
 	for i := 1; i < 3; i++ {
 		service := "test_th_apa_goc_echoserver_v1"
 		addr := fmt.Sprintf("http://127.0.0.1:4997%d", i)
@@ -41,7 +41,7 @@ func TestRegisterService(t *testing.T) {
 }
 
 func TestDeleteRegisterServiceByName(t *testing.T) {
-	goc := NewGocAPI(localHost)
+	goc := NewGocAPI(testGocLocalHost)
 	service := "test_th_apa_goc_echoserver_v1"
 	resp, err := goc.DeleteRegisterServiceByName(context.Background(), service)
 	if err != nil {
@@ -51,7 +51,7 @@ func TestDeleteRegisterServiceByName(t *testing.T) {
 }
 
 func TestDeleteRegisterServiceByAddr(t *testing.T) {
-	goc := NewGocAPI(localHost)
+	goc := NewGocAPI(testGocLocalHost)
 	addr := "http://127.0.0.1:49971"
 	resp, err := goc.DeleteRegisterServiceByAddr(context.Background(), addr)
 	if err != nil {
@@ -62,7 +62,7 @@ func TestDeleteRegisterServiceByAddr(t *testing.T) {
 
 func TestGetServiceProfileByAddr(t *testing.T) {
 	// curl http://localhost:8081/
-	goc := NewGocAPI(localHost)
+	goc := NewGocAPI(testGocLocalHost)
 	addr := "http://127.0.0.1:51025"
 	profile, err := goc.GetServiceProfileByAddr(context.Background(), addr)
 	if err != nil {
@@ -83,7 +83,7 @@ func TestGetServiceProfileByAddr(t *testing.T) {
 }
 
 func TestClearServiceProfileByAddr(t *testing.T) {
-	goc := NewGocAPI(localHost)
+	goc := NewGocAPI(testGocLocalHost)
 	addr := "http://127.0.0.1:51025"
 	resp, err := goc.ClearServiceProfileByAddr(context.Background(), addr)
 	if err != nil {
@@ -93,7 +93,7 @@ func TestClearServiceProfileByAddr(t *testing.T) {
 }
 
 func TestGetServiceCoverage(t *testing.T) {
-	goc := NewGocAPI(localHost)
+	goc := NewGocAPI(testGocLocalHost)
 	services, err := goc.ListRegisterServices(context.Background())
 	if err != nil {
 		t.Fatal(err)

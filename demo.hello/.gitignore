@@ -2,3 +2,5 @@ env.sh
 bin/
 
 test.pcap
+
+gocadapter/config

@@ -3,10 +3,12 @@ package pkg
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"demo.hello/utils"
@@ -65,8 +67,19 @@ func isAttachServerOK(addr string) bool {
 
 // SyncSrvCoverParam .
 type SyncSrvCoverParam struct {
+	GocHost string
 	SrvName string
 	Address string
+}
+
+func getSrvCoverAndCreateReportTask(moduleDir string, param SyncSrvCoverParam) error {
+	covFile, isUpdate, err := getSrvCoverTask(moduleDir, param)
+	if err != nil {
+		return fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
+	}
+	fmt.Println(covFile, isUpdate)
+	// TODO:
+	return nil
 }
 
 func createSrvCoverReportTask(moduleDir, covFile string, param SyncSrvCoverParam) error {
@@ -76,10 +89,10 @@ func createSrvCoverReportTask(moduleDir, covFile string, param SyncSrvCoverParam
 		return fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
 
-	if err := cmd.GoToolCreateCoverFuncReport(repoDir, covFile); err != nil {
+	if _, err := cmd.GoToolCreateCoverFuncReport(repoDir, covFile); err != nil {
 		return fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
-	if err := cmd.GoToolCreateCoverHTMLReport(repoDir, covFile); err != nil {
+	if _, err := cmd.GoToolCreateCoverHTMLReport(repoDir, covFile); err != nil {
 		return fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
 	return nil
@@ -88,9 +101,14 @@ func createSrvCoverReportTask(moduleDir, covFile string, param SyncSrvCoverParam
 func syncSrvRepo(workingDir string, param SyncSrvCoverParam) error {
 	if !utils.IsDirExist(workingDir) {
 		if err := func() error {
+			url, err := getRepoURLFromSrvName(param.SrvName)
+			if err != nil {
+				return fmt.Errorf("syncSrvRepo get repo url error: %w", err)
+			}
+
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 			defer cancel()
-			url := getGitURLFromSrvName(param.SrvName)
+
 			head, err := GitClone(ctx, url, workingDir)
 			if err != nil {
 				return err
@@ -137,10 +155,15 @@ func syncSrvRepo(workingDir string, param SyncSrvCoverParam) error {
 // Task sync service coverage/profile
 //
 
-// getSrvCoverTask
+func getSrvCoverTask(moduleDir string, param SyncSrvCoverParam) (string, bool, error) {
+	// TODO:
+	return "", false, nil
+}
+
+// getSrvCoverTaskDeprecated
 // 1. get service coverage from goc, and save to file;
 // 2. move last cov file to history dir.
-func getSrvCoverTask(gocHost, moduleDir string, param SyncSrvCoverParam) (string, bool, error) {
+func getSrvCoverTaskDeprecated(moduleDir string, param SyncSrvCoverParam) (string, bool, error) {
 	coverFiles, err := utils.GetFilesBySuffix(moduleDir, ".cov")
 	if err != nil {
 		return "", false, fmt.Errorf("getSrvCoverTask get exsting profile file error: %w", err)
@@ -149,14 +172,14 @@ func getSrvCoverTask(gocHost, moduleDir string, param SyncSrvCoverParam) (string
 		return "", false, fmt.Errorf("getSrvCoverTask get more than one existing cover file from dir: %s", moduleDir)
 	}
 
-	savedPath, err := getAndSaveSrvCover(gocHost, moduleDir, param)
+	savedPath, err := getAndSaveSrvCover(moduleDir, param)
 	if err != nil {
 		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
 	}
 
 	isCovUpdated := true
 	if len(coverFiles) == 0 {
-		return "", isCovUpdated, nil
+		return savedPath, isCovUpdated, nil
 	}
 
 	historyDir := filepath.Join(moduleDir, "history")
@@ -183,11 +206,11 @@ func getSrvCoverTask(gocHost, moduleDir string, param SyncSrvCoverParam) (string
 	return savedPath, isCovUpdated, nil
 }
 
-func getAndSaveSrvCover(gocHost, savedDir string, param SyncSrvCoverParam) (string, error) {
+func getAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), longWait)
 	defer cancel()
 
-	goc := NewGocAPI(gocHost)
+	goc := NewGocAPI(param.GocHost)
 	b, err := goc.GetServiceProfileByAddr(ctx, param.Address)
 	if err != nil {
 		return "", fmt.Errorf("getAndSaveSrvCover get service [%s] profile error: %w", param.Address, err)
@@ -212,8 +235,18 @@ func getAndSaveSrvCover(gocHost, savedDir string, param SyncSrvCoverParam) (stri
 	return savedPath, nil
 }
 
+//
+// Task delete history profile files
+//
+
+// TODO:
+
+//
+// Helper
+//
+
 func getSavedCovFileName(param SyncSrvCoverParam) (string, error) {
-	ip, err := formatIPfromSrvAddress(param.Address)
+	ip, err := formatIPAddress(param.Address)
 	if err != nil {
 		return "", err
 	}
@@ -221,8 +254,35 @@ func getSavedCovFileName(param SyncSrvCoverParam) (string, error) {
 	return fmt.Sprintf("%s_%s_%s.cov", param.SrvName, ip, now), nil
 }
 
-//
-// Task delete history profile files
-//
+func getModuleFromSrvName(name string) (string, error) {
+	for mod := range ModuleToRepoMap {
+		if strings.Contains(name, mod) {
+			return mod, nil
+		}
+	}
+	return "", fmt.Errorf("Module is not found for service: %s", name)
+}
 
-// TODO:
+// ErrURLNotFound .
+var ErrURLNotFound = errors.New("Repo URL not found")
+
+func getRepoURLFromSrvName(name string) (string, error) {
+	for k, v := range ModuleToRepoMap {
+		if strings.Contains(name, k) {
+			return v, nil
+		}
+	}
+	return "", ErrURLNotFound
+}
+
+func getBranchAndCommitFromSrvName(name string) (string, string) {
+	items := strings.Split(name, "_")
+	commitID := items[len(items)-1]
+
+	branch := items[len(items)-2]
+	if strings.Contains(branch, "/") {
+		brItems := strings.Split(branch, "/")
+		branch = brItems[len(brItems)-1]
+	}
+	return branch, commitID
+}

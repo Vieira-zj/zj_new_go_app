@@ -73,13 +73,18 @@ cd goc/; go build .
 goc server
 ```
 
-2. Build and tart echoserver
+2. Build and start echoserver
 
 ```sh
 # build
 cd echo/; goc build . -o goc_echoserver
 # run
 ENV=staging APPTYPE=apa REGION=th GIT_BRANCH=origin/master GIT_COMMIT=518e0a570c ./goc_echoserver
+
+# api test
+curl http://localhost:8081/
+curl http://localhost:8081/ping
+curl -XPOST "http://localhost:8081/mirror?name=foo" -H "X-Test:Mirror" -d 'hello' | jq .
 ```
 
 3. Check register service

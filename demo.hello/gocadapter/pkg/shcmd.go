@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"log"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -34,24 +35,30 @@ func (c *ShCmd) Run(cmd string) (string, error) {
 	return utils.RunShellCmd(c.sh, "-c", cmd)
 }
 
+const (
+	coverRptTypeFunc = "func"
+	coverRptTypeHTML = "html"
+)
+
 // GoToolCreateCoverFuncReport .
-func (c *ShCmd) GoToolCreateCoverFuncReport(workingPath, covFile string) error {
-	outFile := strings.Replace(covFile, filepath.Ext(covFile), "func", 1)
-	cmd := fmt.Sprintf("cd %s; go tool cover -func=%s -o %s", workingPath, covFile, outFile)
-	if _, err := utils.RunShellCmd(c.sh, "-c", cmd); err != nil {
-		return fmt.Errorf("GoToolCreateCoverFuncReport run command failed: %s", cmd)
-	}
-	return nil
+func (c *ShCmd) GoToolCreateCoverFuncReport(workingPath, covFile string) (string, error) {
+	return c.goToolCreateCoverReport(workingPath, covFile, coverRptTypeFunc)
 }
 
 // GoToolCreateCoverHTMLReport .
-func (c *ShCmd) GoToolCreateCoverHTMLReport(workingPath, covFile string) error {
-	outFile := strings.Replace(covFile, filepath.Ext(covFile), "html", 1)
-	cmd := fmt.Sprintf("cd %s; go tool cover -html=%s -o %s", workingPath, covFile, outFile)
-	if _, err := utils.RunShellCmd(c.sh, "-c", cmd); err != nil {
-		return fmt.Errorf("GoToolCreateCoverHTMLReport run command failed: %s", cmd)
+func (c *ShCmd) GoToolCreateCoverHTMLReport(workingPath, covFile string) (string, error) {
+	return c.goToolCreateCoverReport(workingPath, covFile, coverRptTypeHTML)
+}
+
+func (c *ShCmd) goToolCreateCoverReport(workingPath, covFile, coverType string) (string, error) {
+	outFile := strings.Replace(covFile, filepath.Ext(covFile), "."+coverType, 1)
+	cmd := fmt.Sprintf("cd %s; go tool cover -%s=%s -o %s", workingPath, coverType, covFile, outFile)
+	log.Println("Run cmd:", cmd)
+	output, err := utils.RunShellCmd(c.sh, "-c", cmd)
+	if err != nil {
+		return "", fmt.Errorf("goToolCreateCoverReport run command error: %s", err)
 	}
-	return nil
+	return output, nil
 }
 
 // CreateDiffCoverHTMLReport .
