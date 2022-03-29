@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"os/exec"
 	"testing"
@@ -22,6 +23,30 @@ func TestGetRandString(t *testing.T) {
 			t.Fatal(err)
 		}
 		fmt.Printf("random string (%d): %s\n", i, res)
+	}
+}
+
+func TestShuffle(t *testing.T) {
+	list := make([]int, 0, 10)
+	for i := 0; i < 10; i++ {
+		list = append(list, i)
+	}
+	fmt.Println("src values:", list)
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(list), func(i, j int) {
+		list[i], list[j] = list[j], list[i]
+	})
+	fmt.Println("shuffle values:", list)
+}
+
+func TestBase62(t *testing.T) {
+	fmt.Printf("char to int: %d, %d, %d\n", '0', 'a', 'A')
+	fmt.Printf("int to char: %c\n", 97)
+
+	for _, num := range []int{9, 100, 201314} {
+		res := GetBase62Text(num)
+		fmt.Printf("number %d base62 value: %s\n", num, res)
 	}
 }
 

@@ -44,6 +44,32 @@ func GetRandString(length uint) (string, error) {
 	return hex.EncodeToString(randBytes), nil
 }
 
+// GetBase62Text converts int number to base62 string.
+func GetBase62Text(number int) string {
+	getChars := func(start, count int) string {
+		ret := ""
+		for i := 0; i < count; i++ {
+			ret += fmt.Sprintf("%c", start+i)
+		}
+		return ret
+	}
+
+	chars := getChars(int('0'), 10) // 0-9
+	chars += getChars(int('a'), 26) // a-z
+	chars += getChars(int('A'), 26) // A-Z
+
+	b := make([]byte, 0, 4)
+	for {
+		remained := number % 62
+		b = append(b, chars[remained])
+		number /= 62
+		if number == 0 {
+			break
+		}
+	}
+	return string(b)
+}
+
 // GobDeepCopy .
 func GobDeepCopy(dst, src interface{}) error {
 	// src and dst are pointer

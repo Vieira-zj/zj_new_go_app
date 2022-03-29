@@ -276,13 +276,30 @@ func getRepoURLFromSrvName(name string) (string, error) {
 }
 
 func getBranchAndCommitFromSrvName(name string) (string, string) {
-	items := strings.Split(name, "_")
-	commitID := items[len(items)-1]
+	srvMeta := getSrvMetaFromName(name)
+	return srvMeta.Branch, srvMeta.Commit
+}
 
-	branch := items[len(items)-2]
+func getSrvMetaFromName(name string) SrvCoverMeta {
+	// name: staging_th_apa_goc_echoserver_master_518e0a570c
+	items := strings.Split(name, "_")
+	size := len(items)
+	compItems := make([]string, 0, 4)
+	for i := 2; i < size-2; i++ {
+		compItems = append(compItems, items[i])
+	}
+
+	branch := items[size-2]
 	if strings.Contains(branch, "/") {
 		brItems := strings.Split(branch, "/")
 		branch = brItems[len(brItems)-1]
 	}
-	return branch, commitID
+
+	return SrvCoverMeta{
+		Env:     items[0],
+		Region:  items[1],
+		AppName: strings.Join(compItems, "_"),
+		Branch:  branch,
+		Commit:  items[size-1],
+	}
 }

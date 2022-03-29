@@ -96,11 +96,13 @@ func TestGetModuleFromSrvName(t *testing.T) {
 	fmt.Println("module:", mod)
 }
 
-func TestGetBranchAndCommitFromSrvName(t *testing.T) {
-	if err := mockLoadConfig("/tmp/test"); err != nil {
-		t.Fatal(err)
-	}
+func TestGetSrvMetaFromName(t *testing.T) {
+	name := "staging_th_apa_goc_echoserver_master_518e0a570c"
+	meta := getSrvMetaFromName(name)
+	fmt.Printf("service meta data: %+v\n", meta)
+}
 
+func TestGetBranchAndCommitFromSrvName(t *testing.T) {
 	name := "staging_th_apa_goc_echoserver_master_518e0a570c"
 	br, commit := getBranchAndCommitFromSrvName(name)
 	fmt.Printf("branch=%s, commitID=%s\n", br, commit)
