@@ -156,8 +156,55 @@ func syncSrvRepo(workingDir string, param SyncSrvCoverParam) error {
 //
 
 func getSrvCoverTask(moduleDir string, param SyncSrvCoverParam) (string, bool, error) {
-	// TODO:
-	return "", false, nil
+	coverDir := filepath.Join(moduleDir, "cover_data")
+	if !utils.IsDirExist(coverDir) {
+		if err := utils.MakeDir(coverDir); err != nil {
+			return "", false, fmt.Errorf("getSrvCoverTask create cover dir error: %w", err)
+		}
+	}
+
+	savedPath, err := getAndSaveSrvCover(coverDir, param)
+	if err != nil {
+		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
+	}
+
+	dbInstance := NewGocSrvCoverDBInstance(moduleDir)
+	meta := getSrvMetaFromName(param.SrvName)
+	meta.IPAddr = param.Address
+	rows, err := dbInstance.GetLatestSrvCoverRow(meta)
+	if err != nil {
+		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
+	}
+
+	isCovUpdated := true
+	newRow := GocSrvCoverModel{
+		SrvCoverMeta: meta,
+		IsLatest:     true,
+		CovFilePath:  savedPath,
+	}
+	if len(rows) == 0 {
+		if err := dbInstance.InsertSrvCoverRow(newRow); err != nil {
+			return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
+		}
+		return savedPath, isCovUpdated, nil
+	}
+
+	if len(rows) != 1 {
+		return "", false, fmt.Errorf("getSrvCoverTask latest rows count not equal to 1")
+	}
+	if err := dbInstance.InsertLatestSrvCoverRow(newRow); err != nil {
+		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
+	}
+
+	oldRow := rows[0]
+	isEqual, err := utils.IsFileContentEqual(oldRow.CovFilePath, newRow.CovFilePath)
+	if err != nil {
+		return "", false, fmt.Errorf("getSrvCoverTask compare cover files content error: %w", err)
+	}
+	if isEqual {
+		isCovUpdated = false
+	}
+	return savedPath, isCovUpdated, nil
 }
 
 // getSrvCoverTaskDeprecated
@@ -246,12 +293,8 @@ func getAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, error
 //
 
 func getSavedCovFileName(param SyncSrvCoverParam) (string, error) {
-	ip, err := formatIPAddress(param.Address)
-	if err != nil {
-		return "", err
-	}
 	now := getSimpleNowDatetime()
-	return fmt.Sprintf("%s_%s_%s.cov", param.SrvName, ip, now), nil
+	return fmt.Sprintf("%s_%s.cov", param.SrvName, now), nil
 }
 
 func getModuleFromSrvName(name string) (string, error) {
@@ -277,7 +320,7 @@ func getRepoURLFromSrvName(name string) (string, error) {
 
 func getBranchAndCommitFromSrvName(name string) (string, string) {
 	srvMeta := getSrvMetaFromName(name)
-	return srvMeta.Branch, srvMeta.Commit
+	return srvMeta.GitBranch, srvMeta.GitCommit
 }
 
 func getSrvMetaFromName(name string) SrvCoverMeta {
@@ -296,10 +339,10 @@ func getSrvMetaFromName(name string) SrvCoverMeta {
 	}
 
 	return SrvCoverMeta{
-		Env:     items[0],
-		Region:  items[1],
-		AppName: strings.Join(compItems, "_"),
-		Branch:  branch,
-		Commit:  items[size-1],
+		Env:       items[0],
+		Region:    items[1],
+		AppName:   strings.Join(compItems, "_"),
+		GitBranch: branch,
+		GitCommit: items[size-1],
 	}
 }

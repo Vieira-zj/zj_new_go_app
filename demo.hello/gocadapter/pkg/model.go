@@ -12,11 +12,12 @@ import (
 
 // SrvCoverMeta .
 type SrvCoverMeta struct {
-	Env     string
-	Region  string
-	AppName string
-	Branch  string
-	Commit  string
+	Env       string
+	Region    string
+	AppName   string
+	IPAddr    string
+	GitBranch string
+	GitCommit string
 }
 
 // GocSrvCoverModel .
@@ -44,9 +45,9 @@ var (
 )
 
 // NewGocSrvCoverDBInstance .
-func NewGocSrvCoverDBInstance() GocSrvCoverDBInstance {
+func NewGocSrvCoverDBInstance(moduleDir string) GocSrvCoverDBInstance {
 	modelOnce.Do(func() {
-		dbPath := filepath.Join(AppConfig.RootDir, "sqlite.db")
+		dbPath := filepath.Join(moduleDir, "sqlite.db")
 		sqliteDB, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 		if err != nil {
 			panic("NewGocSrvCoverDBInstance open db error: " + err.Error())
@@ -65,7 +66,11 @@ func NewGocSrvCoverDBInstance() GocSrvCoverDBInstance {
 
 // InsertSrvCoverRow .
 func (in *GocSrvCoverDBInstance) InsertSrvCoverRow(row GocSrvCoverModel) error {
-	if result := in.sqliteDB.Create(&row); result.Error != nil {
+	return in.insertSrvCoverRowByDB(in.sqliteDB, row)
+}
+
+func (*GocSrvCoverDBInstance) insertSrvCoverRowByDB(db *gorm.DB, row GocSrvCoverModel) error {
+	if result := db.Create(&row); result.Error != nil {
 		return fmt.Errorf("InsertSrvCoverRow error: %w", result.Error)
 	}
 	return nil
@@ -73,16 +78,38 @@ func (in *GocSrvCoverDBInstance) InsertSrvCoverRow(row GocSrvCoverModel) error {
 
 // GetLatestSrvCoverRow .
 func (in *GocSrvCoverDBInstance) GetLatestSrvCoverRow(meta SrvCoverMeta) ([]GocSrvCoverModel, error) {
+	return in.getLatestSrvCoverRowByDB(in.sqliteDB, meta)
+}
+
+func (*GocSrvCoverDBInstance) getLatestSrvCoverRowByDB(db *gorm.DB, meta SrvCoverMeta) ([]GocSrvCoverModel, error) {
 	var rows []GocSrvCoverModel
 	condition := "env = ? and region = ? and app_name = ? and is_latest = ?"
-	if result := in.sqliteDB.Where(condition, meta.Env, meta.Region, meta.AppName, true).Find(&rows); result.Error != nil {
+	if result := db.Where(condition, meta.Env, meta.Region, meta.AppName, true).Find(&rows); result.Error != nil {
 		return nil, fmt.Errorf("GetLatestSrvCoverRow find error: %w", result.Error)
 	}
 	return rows, nil
 }
 
-// UpdateLatestRowToFalse .
-func (in *GocSrvCoverDBInstance) UpdateLatestRowToFalse(meta SrvCoverMeta) error {
+// UpdateSrvCoverTotalByCommit .
+func (in *GocSrvCoverDBInstance) UpdateSrvCoverTotalByCommit(total float64, commit string) error {
+	data := GocSrvCoverModel{
+		CoverTotal: sql.NullFloat64{
+			Float64: total,
+			Valid:   true,
+		},
+	}
+	if result := in.sqliteDB.Model(&GocSrvCoverModel{}).Where("git_commit = ? and is_latest = ?", commit, true).Updates(data); result.Error != nil {
+		return fmt.Errorf("UpdateSrvCoverTotal update row error: %w", result.Error)
+	}
+	return nil
+}
+
+// UpdateLatestSrvCoverRowToFalse .
+func (in *GocSrvCoverDBInstance) UpdateLatestSrvCoverRowToFalse(meta SrvCoverMeta) error {
+	return in.updateLatestSrvCoverRowToFalseByDB(in.sqliteDB, meta)
+}
+
+func (in *GocSrvCoverDBInstance) updateLatestSrvCoverRowToFalseByDB(db *gorm.DB, meta SrvCoverMeta) error {
 	rows, err := in.GetLatestSrvCoverRow(meta)
 	if err != nil {
 		return fmt.Errorf("UpdateLatestRowToFalse error: %w", err)
@@ -94,8 +121,27 @@ func (in *GocSrvCoverDBInstance) UpdateLatestRowToFalse(meta SrvCoverMeta) error
 	data := map[string]interface{}{
 		"IsLatest": false,
 	}
-	if result := in.sqliteDB.Model(&GocSrvCoverModel{}).Where("id = ?", rows[0].ID).Updates(data); result.Error != nil {
-		return fmt.Errorf("UpdateLatestRowToFalse update error: %w", result.Error)
+	if result := db.Model(&GocSrvCoverModel{}).Where("id = ?", rows[0].ID).Updates(data); result.Error != nil {
+		return fmt.Errorf("UpdateLatestRowToFalse update row error: %w", result.Error)
+	}
+	return nil
+}
+
+// InsertLatestSrvCoverRow .
+func (in *GocSrvCoverDBInstance) InsertLatestSrvCoverRow(row GocSrvCoverModel) error {
+	transaction := in.sqliteDB.Begin()
+	if err := in.updateLatestSrvCoverRowToFalseByDB(transaction, row.SrvCoverMeta); err != nil {
+		transaction.Rollback()
+		return fmt.Errorf("InsertLatestSrvCoverRow error: %w", err)
+	}
+
+	if err := in.insertSrvCoverRowByDB(transaction, row); err != nil {
+		transaction.Rollback()
+		return fmt.Errorf("InsertLatestSrvCoverRow error: %w", err)
+	}
+
+	if result := transaction.Commit(); result.Error != nil {
+		return fmt.Errorf("InsertLatestSrvCoverRow transaction commit error: %w", result.Error)
 	}
 	return nil
 }

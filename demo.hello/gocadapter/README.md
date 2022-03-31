@@ -48,18 +48,21 @@
 - goc_adapter/
   - module_x/
     - repo/
-    - cov_history/
+    - sqlite.db
+    - cov_data/
       - module_x_1.cov
+      - module_x_1_report.txt
+      - module_x_1_report.html
       - module_x_2.cov
-    - module_x.cov
-    - module_x_report.txt
-    - module_x_report.html
+      - module_x_2_report.txt
+      - module_x_2_report.html
   - module_y/
     - repo/
-    - cov_history/
-    - module_y.cov
-    - module_y_report.txt
-    - module_y_report.html
+    - sqlite.db
+    - cov_data/
+      - module_y_1.cov
+      - module_y_1_report.txt
+      - module_y_1_report.html
 ```
 
 ## Local Test Env

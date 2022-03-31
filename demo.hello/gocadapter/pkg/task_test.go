@@ -62,6 +62,20 @@ func TestGetAndSaveSrvCover(t *testing.T) {
 	fmt.Println("saved cover file to:", savedPath)
 }
 
+func TestGetSrvCoverTask(t *testing.T) {
+	moduleDir := "/tmp/test/echoserver"
+	param := SyncSrvCoverParam{
+		GocHost: testGocLocalHost,
+		SrvName: "staging_th_apa_goc_echoserver_master_518e0a570c",
+		Address: "http://127.0.0.1:51007",
+	}
+	savePath, isUpdate, err := getSrvCoverTask(moduleDir, param)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("save_path=%s, is_update=%v\n", savePath, isUpdate)
+}
+
 //
 // Helper Test
 //
