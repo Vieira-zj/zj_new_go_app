@@ -327,7 +327,10 @@ func (r *Resource) GetPodStateRaw(pod *apiv1.Pod, containerName string) (*PodSta
 	// refer: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-states
 	for idx, container := range pod.Status.ContainerStatuses {
 		if container.Name == containerName {
-			state.IPAddress = pod.Status.PodIPs[idx].IP
+			if len(pod.Status.ContainerStatuses) == len(pod.Status.PodIPs) {
+				state.IPAddress = pod.Status.PodIPs[idx].IP
+			}
+
 			if container.State.Running != nil {
 				state.Value = "Running"
 				return state, nil

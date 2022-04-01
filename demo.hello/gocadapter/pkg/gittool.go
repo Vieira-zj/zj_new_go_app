@@ -135,7 +135,7 @@ func (r *GitRepo) CheckoutBranch(branch string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("CheckoutBranch error: %w", err)
 	}
-	if commitID[:8] == head {
+	if commitID[:10] == head {
 		log.Println("Already on branch:", branch)
 		return head, nil
 	}
@@ -187,7 +187,7 @@ func (r *GitRepo) CheckoutRemoteBranch(ctx context.Context, branch string) (stri
 	if _, err := r.CheckoutBranch(branch); err != nil {
 		return "", fmt.Errorf("CheckoutRemoteBranch error: %w", err)
 	}
-	return commitID[:8], nil
+	return commitID[:10], nil
 }
 
 // IsBranchExist .
@@ -303,7 +303,7 @@ func (r *GitRepo) getRepoHeadCommitShortID() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("getRepoHeadCommitShortID get repo head ref error: %w", err)
 	}
-	return ref.Hash().String()[:8], nil
+	return ref.Hash().String()[:10], nil
 }
 
 // GitClone .
@@ -338,5 +338,5 @@ func GitClone(ctx context.Context, URL, workingDir string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("GitClone get repo head commit error: %w", err)
 	}
-	return ref.Hash().String()[:8], nil
+	return ref.Hash().String()[:10], nil
 }

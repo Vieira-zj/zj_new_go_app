@@ -21,12 +21,16 @@ func getSimpleNowDatetime() string {
 	return time.Now().Format("20060102_150405")
 }
 
-func getFileNameWithoutExt(fileName string) string {
-	ext := filepath.Ext(fileName)
+func getFilePathWithNewExt(filePath, newExt string) string {
+	return strings.Replace(filePath, filepath.Ext(filePath), "."+newExt, 1)
+}
+
+func getFilePathWithoutExt(filePath string) string {
+	ext := filepath.Ext(filePath)
 	if len(ext) == 0 {
-		return fileName
+		return filePath
 	}
-	return strings.Replace(fileName, ext, "", 1)
+	return strings.Replace(filePath, ext, "", 1)
 }
 
 func getRepoNameFromURL(url string) (string, error) {
@@ -50,4 +54,10 @@ func formatIPAddress(address string) (string, error) {
 	}
 	ip := strings.Replace(u.Hostname(), ".", "-", -1)
 	return ip, nil
+}
+
+func getCoverTotalFromSummary(summary string) string {
+	items := strings.Split(summary, "\t")
+	total := items[len(items)-1]
+	return strings.Replace(total, "%", "", 1)
 }

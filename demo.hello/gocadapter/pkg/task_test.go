@@ -18,22 +18,6 @@ func TestRemoveUnhealthSrvInGocTask(t *testing.T) {
 	fmt.Println("done")
 }
 
-func TestSyncSrvRepo(t *testing.T) {
-	// run: go test -timeout 300s -run ^TestSyncSrvRepo$ demo.hello/gocadapter/pkg -v -count=1
-	if err := mockLoadConfig("/tmp/test"); err != nil {
-		t.Fatal(err)
-	}
-
-	workingDir := "/tmp/test/echoserver/repo"
-	param := SyncSrvCoverParam{
-		SrvName: "staging_th_apa_goc_echoserver_master_a6023e5e",
-		Address: "http://127.0.0.1:51007",
-	}
-	if err := syncSrvRepo(workingDir, param); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestGetSrvCoverTaskDeprecated(t *testing.T) {
 	savedDir := "/tmp/test/echoserver"
 	param := SyncSrvCoverParam{
@@ -66,7 +50,7 @@ func TestGetSrvCoverTask(t *testing.T) {
 	moduleDir := "/tmp/test/echoserver"
 	param := SyncSrvCoverParam{
 		GocHost: testGocLocalHost,
-		SrvName: "staging_th_apa_goc_echoserver_master_518e0a570c",
+		SrvName: "staging_th_apa_goc_echoserver_master_845820727e",
 		Address: "http://127.0.0.1:51007",
 	}
 	savePath, isUpdate, err := getSrvCoverTask(moduleDir, param)
@@ -74,6 +58,45 @@ func TestGetSrvCoverTask(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Printf("save_path=%s, is_update=%v\n", savePath, isUpdate)
+}
+
+func TestSyncSrvRepo(t *testing.T) {
+	// run: go test -timeout 300s -run ^TestSyncSrvRepo$ demo.hello/gocadapter/pkg -v -count=1
+	if err := mockLoadConfig("/tmp/test"); err != nil {
+		t.Fatal(err)
+	}
+
+	workingDir := "/tmp/test/echoserver/repo"
+	param := SyncSrvCoverParam{
+		SrvName: "staging_th_apa_goc_echoserver_master_518e0a570c",
+		Address: "http://127.0.0.1:51007",
+	}
+	if err := syncSrvRepo(workingDir, param); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCreateSrvCoverReportTask(t *testing.T) {
+	// run: go test -timeout 300s -run ^TestCreateSrvCoverReportTask$ demo.hello/gocadapter/pkg -v -count=1
+	moduleDir := "/tmp/test/echoserver"
+	srvName := "staging_th_apa_goc_echoserver_master_845820727e"
+	meta := getSrvMetaFromName(srvName)
+	instance := NewGocSrvCoverDBInstance(moduleDir)
+	rows, err := instance.GetLatestSrvCoverRow(meta)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	row := rows[0]
+	fmt.Printf("rows_count=%d, is_latest=%v, path=%s\n", len(rows), row.IsLatest, row.CovFilePath)
+
+	param := SyncSrvCoverParam{
+		SrvName: "staging_th_apa_goc_echoserver_master_845820727e",
+		Address: "http://127.0.0.1:51007",
+	}
+	if err := createSrvCoverReportTask(moduleDir, row.CovFilePath, param); err != nil {
+		t.Fatal(err)
+	}
 }
 
 //

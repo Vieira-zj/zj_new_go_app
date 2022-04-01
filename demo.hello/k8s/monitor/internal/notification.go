@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 
 	"demo.hello/utils"
 )
@@ -23,15 +24,23 @@ type MatterMost struct {
 	client  *utils.HTTPUtils
 }
 
+var (
+	mm     *MatterMost
+	mmOnce sync.Once
+)
+
 // NewMatterMost create an instance of MatterMost.
 func NewMatterMost() *MatterMost {
-	client := utils.NewDefaultHTTPUtils()
-	return &MatterMost{
-		baseURL: getParamFromEnv("MM_URL"),
-		token:   getParamFromEnv("MM_TOKEN"),
-		channel: getParamFromEnv("MM_CHANNEL"),
-		client:  client,
-	}
+	mmOnce.Do(func() {
+		client := utils.NewDefaultHTTPUtils()
+		mm = &MatterMost{
+			baseURL: getParamFromEnv("MM_URL"),
+			token:   getParamFromEnv("MM_TOKEN"),
+			channel: getParamFromEnv("MM_CHANNEL"),
+			client:  client,
+		}
+	})
+	return mm
 }
 
 // SendMessageToUser send message to given channel and At specified user.

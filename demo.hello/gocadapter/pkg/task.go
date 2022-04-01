@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -77,8 +78,14 @@ func getSrvCoverAndCreateReportTask(moduleDir string, param SyncSrvCoverParam) e
 	if err != nil {
 		return fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
 	}
-	fmt.Println(covFile, isUpdate)
-	// TODO:
+
+	if isUpdate {
+		if err = createSrvCoverReportTask(moduleDir, covFile, param); err != nil {
+			return fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
+		}
+	}
+
+	// TODO: if cover do not update, reuse old report
 	return nil
 }
 
@@ -89,10 +96,23 @@ func createSrvCoverReportTask(moduleDir, covFile string, param SyncSrvCoverParam
 		return fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
 
-	if _, err := cmd.GoToolCreateCoverFuncReport(repoDir, covFile); err != nil {
+	coverTotal, err := cmd.GoToolCreateCoverFuncReport(repoDir, covFile)
+	if err != nil {
 		return fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
-	if _, err := cmd.GoToolCreateCoverHTMLReport(repoDir, covFile); err != nil {
+
+	total, err := strconv.ParseFloat(coverTotal, 64)
+	if err != nil {
+		return fmt.Errorf("createSrvCoverReportTask convert cover total error: %w", err)
+	}
+
+	meta := getSrvMetaFromName(param.SrvName)
+	dbInstance := NewGocSrvCoverDBInstance(moduleDir)
+	if err := dbInstance.UpdateSrvCoverTotalByCommit(total, meta.GitCommit); err != nil {
+		return fmt.Errorf("createSrvCoverReportTask update cover total in db error: %w", err)
+	}
+
+	if _, err = cmd.GoToolCreateCoverHTMLReport(repoDir, covFile); err != nil {
 		return fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
 	return nil
@@ -130,6 +150,7 @@ func syncSrvRepo(workingDir string, param SyncSrvCoverParam) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
+
 	head := ""
 	if IsExist {
 		head, err = repo.Pull(ctx, branch)

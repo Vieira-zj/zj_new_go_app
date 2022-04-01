@@ -82,7 +82,7 @@ goc server
 # build
 cd echo/; goc build . -o goc_echoserver
 # run
-ENV=staging APPTYPE=apa REGION=th GIT_BRANCH=origin/master GIT_COMMIT=518e0a570c ./goc_echoserver
+ENV=staging APPTYPE=apa REGION=th GIT_BRANCH=origin/master GIT_COMMIT=845820727e ./goc_echoserver
 
 # api test
 curl http://localhost:8081/

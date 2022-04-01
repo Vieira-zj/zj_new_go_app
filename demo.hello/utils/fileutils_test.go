@@ -248,9 +248,9 @@ func TestReadFileContent(t *testing.T) {
 	fmt.Printf("read content:\n%s\n", b)
 }
 
-func TestReadFileLines(t *testing.T) {
+func TestReadLinesFile(t *testing.T) {
 	filePath := "/tmp/test/output.txt"
-	lines, err := ReadFileLines(filePath)
+	lines, err := ReadLinesFile(filePath)
 	if err != nil {
 		t.Fatal(err)
 	}

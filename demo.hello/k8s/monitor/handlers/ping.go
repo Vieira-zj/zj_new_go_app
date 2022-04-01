@@ -3,11 +3,16 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo"
 )
 
-var count int
+var (
+	count int
+	// IsNotify .
+	IsNotify = true
+)
 
 // Index .
 func Index(c echo.Context) error {
@@ -18,4 +23,15 @@ func Index(c echo.Context) error {
 // Ping .
 func Ping(c echo.Context) error {
 	return c.String(http.StatusOK, "ok")
+}
+
+// SetNotify .
+func SetNotify(c echo.Context) error {
+	notify := c.QueryParam("set")
+	if strings.ToLower(notify) == "true" {
+		IsNotify = true
+	} else {
+		IsNotify = false
+	}
+	return c.String(http.StatusOK, "set success")
 }

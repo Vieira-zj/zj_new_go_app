@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	logs "log"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -20,9 +21,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	defaultUser = "jin.zheng"
+)
+
 var (
 	addr, runMode, ns string
-	isDebug, help     bool
+	help, isDebug     bool
 	interval          uint
 	duration          int
 )
@@ -53,10 +58,7 @@ func main() {
 	// init list watcher
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGTERM)
 
-	client, err := initK8sClient()
-	if err != nil {
-		panic(fmt.Sprintf("init k8s client error: %v", err))
-	}
+	client := initK8sClient()
 	namespaces := strings.Split(ns, ",")
 	watcher := internal.NewWatcher(client, namespaces, interval, isDebug)
 	lister := internal.NewLister(client, watcher, namespaces)
@@ -68,6 +70,14 @@ func main() {
 	e := echo.New()
 	e.Logger.SetLevel(log.INFO)
 	initServerRouter(e, lister)
+
+	stateHandler := func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"is_notify":  handlers.IsNotify,
+			"queue_size": len(watcher.ErrorPodStatusCh),
+		})
+	}
+	e.GET("/state", deco(stateHandler))
 
 	go func() {
 		addr = fmt.Sprintf(":%s", addr)
@@ -82,13 +92,12 @@ func main() {
 	}()
 
 	// run notify
-	mm := internal.NewMatterMost()
 	go func() {
 		tick := time.Tick(time.Duration(3*interval) * time.Second)
 		for {
 			select {
 			case <-tick:
-				handler(ctx, watcher, limiter, mm)
+				notifyProcess(ctx, watcher, limiter)
 			case <-ctx.Done():
 				logs.Println("notify exit")
 				return
@@ -110,16 +119,29 @@ func main() {
 // common
 //
 
-func initK8sClient() (*kubernetes.Clientset, error) {
+func initK8sClient() *kubernetes.Clientset {
+	var (
+		client *kubernetes.Clientset
+		err    error
+	)
 	if strings.ToLower(runMode) == "local" {
-		return k8spkg.CreateK8sClientLocalDefault()
+		if client, err = k8spkg.CreateK8sClientLocalDefault(); err != nil {
+			msg := "init k8s local error: " + err.Error()
+			panic(msg)
+		}
+	} else {
+		if client, err = k8spkg.CreateK8sClient(); err != nil {
+			msg := "init k8s cluster error: " + err.Error()
+			panic(msg)
+		}
 	}
-	return k8spkg.CreateK8sClient()
+	return client
 }
 
 func initServerRouter(e *echo.Echo, lister *internal.Lister) {
 	e.GET("/", deco(handlers.Index))
 	e.GET("/ping", deco(handlers.Ping))
+	e.GET("/notify", deco(handlers.SetNotify))
 
 	e.GET("/resource/pods", deco(func(c echo.Context) error {
 		return handlers.GetPodsStatus(c, lister)
@@ -132,7 +154,7 @@ func initServerRouter(e *echo.Echo, lister *internal.Lister) {
 	}))
 }
 
-func handler(ctx context.Context, watcher *internal.Watcher, limiter *internal.RateLimiter, mm *internal.MatterMost) {
+func notifyProcess(ctx context.Context, watcher *internal.Watcher, limiter *internal.RateLimiter) {
 	statusMap := make(map[string]*internal.PodStatus, interval) // distinct values
 outer:
 	for {
@@ -144,31 +166,52 @@ outer:
 		}
 	}
 	for _, status := range statusMap {
-		if !limiter.Add(status.Name) {
+		if limiter.Add(status.Name) {
+			notifyToChannel(ctx, status)
+		} else {
 			logs.Printf("exceed the rate limit, ignore: [namespace=%s,name=%s,status=%s]",
 				status.Namespace, status.Name, status.Value)
-			continue
 		}
-		notify(ctx, mm, status)
 	}
 }
 
-func notify(ctx context.Context, mm *internal.MatterMost, status *internal.PodStatus) {
+func notifyToChannel(ctx context.Context, status *internal.PodStatus) {
 	// 日志中包含换行，单独输出
 	podLog := status.Log
 	status.Log = ""
 	b, err := json.MarshalIndent(status, "", "  ")
 	if err != nil {
-		logs.Printf("json marshal error: %v\n", err)
+		logs.Printf("json marshal error: %v", err)
 	}
 
 	logs.Println("send notification")
-	defaultUser := "jin.zheng"
 	msg := fmt.Sprintf("`Notification:` pods not running:\n%s", markdownBlockText("json", string(b)))
-	mm.SendMessageToUser(ctx, defaultUser, msg)
+	sendNotifyAtUser(ctx, msg)
 	if len(podLog) > 0 {
 		msg = fmt.Sprintf("Pod `%s` Log:\n%s", status.Name, markdownBlockText("text", podLog))
-		mm.SendMessageToUser(ctx, "", msg)
+		sendNotify(ctx, msg)
+	}
+}
+
+func sendNotifyAtUser(ctx context.Context, msg string) {
+	if !handlers.IsNotify {
+		logs.Printf("log notify:\n%s", msg)
+		return
+	}
+	mm := internal.NewMatterMost()
+	if err := mm.SendMessageToUser(ctx, defaultUser, msg); err != nil {
+		logs.Printf("send notify error: %v", err)
+	}
+}
+
+func sendNotify(ctx context.Context, msg string) {
+	if !handlers.IsNotify {
+		logs.Printf("log notify:\n%s", msg)
+		return
+	}
+	mm := internal.NewMatterMost()
+	if err := mm.SendMessageToUser(ctx, "", msg); err != nil {
+		logs.Printf("send notify error: %v", err)
 	}
 }
 

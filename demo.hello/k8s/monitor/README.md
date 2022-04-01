@@ -9,7 +9,8 @@
 
 ```sh
 kubectl create -f deploy/monitor_rbac.yaml
-./run.sh # deploy_pod_monitor
+# deploy_pod_monitor
+./run.sh
 
 # check resources
 kubectl get sa -n k8s-test
@@ -17,9 +18,6 @@ kubectl get all -n k8s-test
 
 # watch logs
 kubectl logs -f pod-monitor-68df8b57b5-wg2dw -n k8s-test
-
-# start a error pod for test
-kubectl create -f deploy/error_exit_deploy.yaml
 ```
 
 ## Monitor APIs Test
@@ -44,5 +42,23 @@ curl http://test.monitor.com/ping
 
 curl http://test.monitor.com/resource/pods | jq .
 curl http://test.monitor.com/list/pods | jq .
+```
+
+## Notification Test
+
+Test send notification when pod terminate or crash.
+
+```sh
+# state
+curl "http://localhost:8081/notify?set=true"
+curl http://localhost:8081/state | jq .
+
+# start a pod for test
+kubectl run debug-pod -it --rm --restart=Never --image=busybox:1.35.0 sh
+# test notify by exit pod with error code
+root# exit 99
+
+# deploy a error pod for test
+kubectl create -f deploy/error_exit_deploy.yaml
 ```
 

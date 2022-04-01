@@ -222,8 +222,8 @@ func CreateFile(filePath string, b []byte) error {
 	return nil
 }
 
-// ReadFileLines read and return file content lines.
-func ReadFileLines(filePath string) ([]string, error) {
+// ReadLinesFile read and return file content lines.
+func ReadLinesFile(filePath string) ([]string, error) {
 	if !IsExist(filePath) {
 		return nil, fmt.Errorf("file [%s] not found", filePath)
 	}
