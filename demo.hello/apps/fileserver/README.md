@@ -1,37 +1,54 @@
 # File Server
 
-1. Upload and download files.
+1. Upload and download files with auth.
 2. Clear expired history files.
 
 ## APIs
+
+- Run server:
+
+```sh
+./fileserver -m=test,testfs -t=hello
+```
 
 - Test API:
 
 ```sh
 curl http://localhost:8081/
 curl http://localhost:8081/ping | jq .
+
+curl http://localhost:8081/modules | jq .
 ```
 
 - File server API:
 
-Upload report html file:
+Upload and download file:
 
 ```sh
-curl -XPOST http://localhost:8081/upload -H "Content-Type: multipart/form-data" -H "X-Component: spba" \
-    -F "file=@./lint_report.html"
-```
+# invalid token
+curl -XPOST http://localhost:8081/upload -H "Content-Type: multipart/form-data" -H "Token: aGVsbG8K" -F "file=@./report.html"
+# invalid file type
+curl -XPOST http://localhost:8081/upload -H "Content-Type: multipart/form-data" -H "Token: dGVzdGZz" -F "file=@./report.txt"
 
-Browser html file by `http://localhost:8081/public/lint/spba/lint_report.html`.
+# valid token
+curl -XPOST http://localhost:8081/upload -H "Content-Type: multipart/form-data" -H "Token: dGVzdGZz" -F "file=@./report.html"
+# browser file
+curl -v http://localhost:8081/public/lint/testfs/report.html
+```
 
 - Register static router:
 
 ```sh
+# register by invalid token
+curl "http://localhost:8081/register?module=goc" -H "Token: test"
+# register existing module
+curl "http://localhost:8081/register?module=test" -H "Token: hello"
+
 # register
-curl "http://localhost:8081/register?module=goc"
+curl "http://localhost:8081/register?module=goc" -H "Token: hello"
 # upload
-curl -XPOST http://localhost:8081/upload -H "Content-Type: multipart/form-data" -H "X-Component: goc" \
-    -F "file=@./test.txt"
+curl -XPOST http://localhost:8081/upload -H "Content-Type: multipart/form-data" -H "Token: Z29j" -F "file=@./test.html"
 # download
-curl http://localhost:8081/public/lint/goc/test.txt
+curl -v http://localhost:8081/public/lint/goc/test.html
 ```
 

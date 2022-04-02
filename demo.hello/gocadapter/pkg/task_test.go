@@ -94,9 +94,11 @@ func TestCreateSrvCoverReportTask(t *testing.T) {
 		SrvName: "staging_th_apa_goc_echoserver_master_845820727e",
 		Address: "http://127.0.0.1:51007",
 	}
-	if err := createSrvCoverReportTask(moduleDir, row.CovFilePath, param); err != nil {
+	total, err := createSrvCoverReportTask(moduleDir, row.CovFilePath, param)
+	if err != nil {
 		t.Fatal(err)
 	}
+	fmt.Printf("last cover total: %.2f\n", total)
 }
 
 //

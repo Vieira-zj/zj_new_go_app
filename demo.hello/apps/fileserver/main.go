@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
@@ -26,18 +27,37 @@ var (
 	port    string
 	expired float64
 	modules string
+	token   string
 	help    bool
+
+	registerModules = make(map[string]struct{}, 8)
 )
 
-func init() {
+//
+// Main
+//
+
+func initFlags() {
 	flag.StringVar(&port, "p", ":8081", "Server listen port.")
 	flag.Float64Var(&expired, "e", 24, "Clear history files whose mod time gt expired time.")
-	flag.StringVar(&modules, "m", "spba", "Modules to be register in static router.")
+	flag.StringVar(&modules, "m", "", "Register modules separated by ',', not null.")
+	flag.StringVar(&token, "t", "", "Authorized token, not null.")
 	flag.BoolVar(&help, "h", false, "Help.")
+	flag.Parse()
+}
+
+func initModules() {
+	if len(modules) == 0 {
+		panic("Param var [module] is not set")
+	}
+	for _, module := range strings.Split(modules, ",") {
+		registerModules[module] = struct{}{}
+	}
 }
 
 func main() {
-	flag.Parse()
+	initFlags()
+	initModules()
 	if help {
 		flag.Usage()
 		return
@@ -78,6 +98,10 @@ func setupRouter() *gin.Engine {
 		c.String(http.StatusOK, "Hello Gin")
 	})
 
+	r.GET("/modules", func(c *gin.Context) {
+		c.JSON(http.StatusOK, registerModules)
+	})
+
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
@@ -88,11 +112,27 @@ func setupRouter() *gin.Engine {
 
 	// register static router
 	r.GET("/register", func(c *gin.Context) {
+		if len(token) == 0 {
+			log.Println("Param [token] is not set")
+			c.String(http.StatusInternalServerError, "Env error")
+			return
+		}
+
+		if c.GetHeader("Token") != token {
+			c.String(http.StatusUnauthorized, "Permission not allow")
+			return
+		}
+
 		module := c.Query("module")
 		if len(module) == 0 {
 			c.String(http.StatusBadRequest, "Param [module] is not set")
 			return
 		}
+		if _, ok := registerModules[module]; ok {
+			c.String(http.StatusOK, fmt.Sprintf("Module [%s] is already registered", module))
+			return
+		}
+		registerModules[module] = struct{}{}
 		registerStaticDir(r, module)
 		c.String(http.StatusOK, fmt.Sprintf("Module [%s] registered", module))
 	})
@@ -101,8 +141,7 @@ func setupRouter() *gin.Engine {
 }
 
 func registerStaticRouter(r *gin.Engine) {
-	mdls := strings.Split(modules, ",")
-	for _, module := range mdls {
+	for module := range registerModules {
 		registerStaticDir(r, module)
 	}
 }
@@ -113,14 +152,32 @@ func registerStaticDir(r *gin.Engine, module string) {
 }
 
 func fileUploadHandler(c *gin.Context) {
+	token := c.GetHeader("Token")
+	b, err := decodeToken(token)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Token decode error")
+		return
+	}
+
+	module := string(b)
+	if _, ok := registerModules[module]; !ok {
+		c.String(http.StatusUnauthorized, "Permssion not allow")
+		return
+	}
+
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Read file error:", err)
 		return
 	}
 
-	component := strings.ToLower(c.GetHeader("X-Component"))
-	fileSavePath, err := getFileSavePath(component, file.Filename)
+	ext := filepath.Ext(file.Filename)
+	if ext != ".html" {
+		c.String(http.StatusBadRequest, fmt.Sprintf("Not support upload [%s] file", ext))
+		return
+	}
+
+	fileSavePath, err := getFileSavePath(module, file.Filename)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Get file save path error:", err)
 		return
@@ -133,8 +190,12 @@ func fileUploadHandler(c *gin.Context) {
 	c.String(http.StatusOK, fmt.Sprintf("[%s] uploaded", file.Filename))
 }
 
-func getFileSavePath(component, fileName string) (string, error) {
-	saveDir := filepath.Join(publicLintDir, component)
+func decodeToken(token string) ([]byte, error) {
+	return base64.URLEncoding.DecodeString(token)
+}
+
+func getFileSavePath(module, fileName string) (string, error) {
+	saveDir := filepath.Join(publicLintDir, module)
 	if !utils.IsDirExist(saveDir) {
 		if err := utils.MakeDir(saveDir); err != nil {
 			return "", nil

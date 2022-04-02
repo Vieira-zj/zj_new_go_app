@@ -127,6 +127,12 @@ func (in *GocSrvCoverDBInstance) updateLatestSrvCoverRowToFalseByDB(db *gorm.DB,
 	return nil
 }
 
+// SyncLatestSrvCoverRowUpdatedTime .
+func (in *GocSrvCoverDBInstance) SyncLatestSrvCoverRowUpdatedTime(meta SrvCoverMeta) error {
+	// TODO:
+	return nil
+}
+
 // InsertLatestSrvCoverRow .
 func (in *GocSrvCoverDBInstance) InsertLatestSrvCoverRow(row GocSrvCoverModel) error {
 	transaction := in.sqliteDB.Begin()

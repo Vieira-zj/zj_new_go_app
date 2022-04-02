@@ -55,9 +55,9 @@ func main() {
 		return
 	}
 
-	// init list watcher
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill, syscall.SIGTERM)
 
+	// init list watcher
 	client := initK8sClient()
 	namespaces := strings.Split(ns, ",")
 	watcher := internal.NewWatcher(client, namespaces, interval, isDebug)
@@ -87,9 +87,7 @@ func main() {
 
 	// run ratelimiter
 	limiter := internal.NewRateLimiter(duration*60, 3)
-	go func() {
-		limiter.Run(ctx)
-	}()
+	go limiter.Run(ctx)
 
 	// run notify
 	go func() {
