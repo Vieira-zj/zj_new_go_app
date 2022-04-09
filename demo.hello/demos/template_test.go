@@ -142,12 +142,12 @@ FuncMap
 },
 
 - 错误：不允许没有返回参数，否则直接panic
-"ReplaceAll": func(src string, old, new string)  {
+"ReplaceAll": func(src string, old, new string) {
    strings.ReplaceAll(src, old, new)
 },
 
 - 正确：参数可以不传递，但是必须有返回值的（其实可以理解，没有返回值，你渲染啥）
-tem, _ := template.New("").Funcs(map[string]interface{}{
+tem, _ := template.New("").Funcs(map[string]interface{} {
   "Echo": func() string {
     return "hello world"
   },

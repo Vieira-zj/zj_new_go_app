@@ -9,7 +9,13 @@ import (
 )
 
 func setupRouter() *gin.Engine {
+	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
+
+	// curl -v http://localhost:8081/health
+	r.NoRoute(func(c *gin.Context) {
+		c.String(http.StatusNotFound, fmt.Sprintln("gin: path not found:", c.Request.URL.Path))
+	})
 
 	// curl http://localhost:8081/ping | jq .
 	r.GET("ping", func(c *gin.Context) {
