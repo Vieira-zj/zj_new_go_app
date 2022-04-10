@@ -1,62 +1,61 @@
 package internal
 
 import (
-	"context"
 	"log"
 	"time"
 )
 
 // RateLimiter 非并发安全。
 type RateLimiter struct {
-	duration int
-	rate     int
-	burst    int
-	store    map[string]int
-	closeCh  chan struct{}
+	duration  int
+	threshold int
+	burst     int
+	store     map[string]int
+	closeCh   chan struct{}
 }
 
-// NewRateLimiter creates rate limiter with duration (seconds), rate (const 1), and burst (max capacity).
-func NewRateLimiter(duration int, burst int) *RateLimiter {
+// NewRateLimiter creates rate limiter with rate (threshold/duration), and burst (max capacity).
+func NewRateLimiter(duration, burst int) *RateLimiter {
+	const threshold = 1
+	if burst < threshold {
+		log.Fatalln("burst should be >= threshold (const 1)")
+	}
+
 	return &RateLimiter{
-		duration: duration,
-		rate:     1,
-		burst:    burst,
-		store:    make(map[string]int, 16),
-		closeCh:  make(chan struct{}, 1),
+		duration:  duration,
+		threshold: threshold,
+		burst:     burst,
 	}
 }
 
-// Run .
-func (rl *RateLimiter) Run(ctx context.Context) {
-	tick := time.Tick(time.Duration(rl.duration) * time.Second)
-	for {
-		select {
-		case <-tick:
-			for key := range rl.store {
-				if rl.store[key] > 0 {
-					rl.store[key] -= rl.rate
+// Start .
+func (rl *RateLimiter) Start() {
+	rl.store = make(map[string]int, 16)
+	rl.closeCh = make(chan struct{})
+
+	go func() {
+		tick := time.Tick(time.Duration(rl.duration) * time.Second)
+		for {
+			select {
+			case <-tick:
+				for key := range rl.store {
+					rl.store[key] -= rl.threshold
+					if rl.store[key] < 0 {
+						delete(rl.store, key)
+					}
 				}
-				if rl.store[key] <= 0 {
-					delete(rl.store, key)
-				}
+			case <-rl.closeCh:
+				log.Println("ratelimiter exit by closed.")
+				return
 			}
-		case <-rl.closeCh:
-			log.Println("ratelimiter exit by closed.")
-			return
-		case <-ctx.Done():
-			log.Println("ratelimiter exit by cancel.")
-			return
 		}
-	}
+	}()
 }
 
-// Add .
-func (rl *RateLimiter) Add(key string) bool {
-	var (
-		count int
-		ok    bool
-	)
-	if count, ok = rl.store[key]; !ok {
+// Acquire .
+func (rl *RateLimiter) Acquire(key string) bool {
+	count, ok := rl.store[key]
+	if !ok {
 		rl.store[key] = 1
 		return true
 	}
@@ -67,7 +66,7 @@ func (rl *RateLimiter) Add(key string) bool {
 	return false
 }
 
-// Close .
-func (rl *RateLimiter) Close() {
-	rl.closeCh <- struct{}{}
+// Stop .
+func (rl *RateLimiter) Stop() {
+	close(rl.closeCh)
 }

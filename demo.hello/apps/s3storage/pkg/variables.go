@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"errors"
 	"os"
 )
 
@@ -19,6 +18,6 @@ func init() {
 	secretKey = os.Getenv("S3_SECRET_KEY")
 
 	if len(host) == 0 {
-		panic(errors.New("Env variables is not set"))
+		panic("Env variables is not set")
 	}
 }

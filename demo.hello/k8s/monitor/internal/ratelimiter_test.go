@@ -1,30 +1,24 @@
 package internal
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
 )
 
+// run: go test -timeout 33s -run ^TestRateLimiter$ demo.hello/k8s/monitor/internal -v -count=1
 func TestRateLimiter(t *testing.T) {
 	limiter := NewRateLimiter(3, 3)
-	defer func() {
-		limiter.Close()
-		time.Sleep(time.Second)
-	}()
-
 	myPrint := func() {
-		if !limiter.Add("myPrint") {
-			fmt.Println("exceed rate limit.")
+		if !limiter.Acquire("myPrint") {
+			fmt.Println("exceed rate limit")
 			return
 		}
 		fmt.Println("foo")
 	}
 
-	go func() {
-		limiter.Run(context.Background())
-	}()
+	limiter.Start()
+	defer limiter.Stop()
 
 	for i := 0; i < 10; i++ {
 		myPrint()

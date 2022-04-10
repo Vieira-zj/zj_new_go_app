@@ -87,7 +87,8 @@ func main() {
 
 	// run ratelimiter
 	limiter := internal.NewRateLimiter(duration*60, 3)
-	go limiter.Run(ctx)
+	limiter.Start()
+	defer limiter.Stop()
 
 	// run notify
 	go func() {
@@ -164,7 +165,7 @@ outer:
 		}
 	}
 	for _, status := range statusMap {
-		if limiter.Add(status.Name) {
+		if limiter.Acquire(status.Name) {
 			notifyToChannel(ctx, status)
 		} else {
 			logs.Printf("exceed the rate limit, ignore: [namespace=%s,name=%s,status=%s]",

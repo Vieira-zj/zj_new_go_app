@@ -17,7 +17,7 @@ import (
 type MyProvider struct{}
 
 // Retrieve .
-func (m *MyProvider) Retrieve() (credentials.Value, error) {
+func (*MyProvider) Retrieve() (credentials.Value, error) {
 	return credentials.Value{
 		AccessKeyID:     accessKey,
 		SecretAccessKey: secretKey,
@@ -25,7 +25,7 @@ func (m *MyProvider) Retrieve() (credentials.Value, error) {
 }
 
 // IsExpired .
-func (m *MyProvider) IsExpired() bool { return false }
+func (*MyProvider) IsExpired() bool { return false }
 
 // CephMgmt .
 type CephMgmt struct {
