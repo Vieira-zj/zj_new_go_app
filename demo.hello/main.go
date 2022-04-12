@@ -92,8 +92,11 @@ func httpServe() {
 		}
 	}()
 
-	// kill (no param) default send syscall.SIGTERM
-	// kill -2 is syscall.SIGINT
+	// ctrl-c: signal interrupt
+	// ctrl-d: io eof
+	//
+	// kill (no param) default send syscall.SIGTERM (terminate)
+	// kill -2 is syscall.SIGINT (interrupt)
 	// kill -9 is syscall.SIGKILL but can't be caught, so don't need to add it
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	<-ctx.Done()

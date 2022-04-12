@@ -114,8 +114,8 @@ func (in *GocSrvCoverDBInstance) updateLatestSrvCoverRowToFalseByDB(db *gorm.DB,
 	if err != nil {
 		return fmt.Errorf("UpdateLatestRowToFalse error: %w", err)
 	}
-	if len(rows) != 1 {
-		return fmt.Errorf("UpdateLatestRowToFalse latest rows count not equal to 1")
+	if err := checkLatestRows(rows, meta); err != nil {
+		return fmt.Errorf("updateLatestSrvCoverRowToFalseByDB error: %w", err)
 	}
 
 	data := map[string]interface{}{
@@ -148,6 +148,16 @@ func (in *GocSrvCoverDBInstance) InsertLatestSrvCoverRow(row GocSrvCoverModel) e
 
 	if result := transaction.Commit(); result.Error != nil {
 		return fmt.Errorf("InsertLatestSrvCoverRow transaction commit error: %w", result.Error)
+	}
+	return nil
+}
+
+func checkLatestRows(rows []GocSrvCoverModel, meta SrvCoverMeta) error {
+	if len(rows) == 0 {
+		return fmt.Errorf("checkLatestRows latest row not found: env=%s,region=%s,app_name=%s", meta.Env, meta.Region, meta.AppName)
+	}
+	if len(rows) != 1 {
+		return fmt.Errorf("checkLatestRows latest rows count not equal to 1")
 	}
 	return nil
 }

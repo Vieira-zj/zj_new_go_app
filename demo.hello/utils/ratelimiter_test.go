@@ -27,7 +27,7 @@ func TestNewRateLimiter(t *testing.T) {
 	defer limiter.Stop()
 
 	time.Sleep(5 * time.Second)
-	fmt.Println("done")
+	fmt.Println("ratelimiter test done")
 }
 
 func TestRateLimiterAcquireWithBlocked(t *testing.T) {
@@ -48,7 +48,7 @@ func TestRateLimiterAcquireWithBlocked(t *testing.T) {
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
-	fmt.Println("done")
+	fmt.Println("ratelimiter test done")
 }
 
 // run: go test -timeout 40s -run ^TestRateLimiter$ demo.hello/utils -v -count=1
@@ -90,5 +90,5 @@ func TestRateLimiterAcquire(t *testing.T) {
 		myPrint()
 		time.Sleep(time.Second)
 	}
-	fmt.Println("done")
+	fmt.Println("ratelimiter test done")
 }

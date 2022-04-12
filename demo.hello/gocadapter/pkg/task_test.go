@@ -101,6 +101,23 @@ func TestCreateSrvCoverReportTask(t *testing.T) {
 	fmt.Printf("last cover total: %.2f\n", total)
 }
 
+func TestGetSrvCoverAndCreateReportTask(t *testing.T) {
+	// run: go test -timeout 300s -run ^TestGetSrvCoverAndCreateReportTask$ demo.hello/gocadapter/pkg -v -count=1
+	if err := mockLoadConfig("/tmp/test"); err != nil {
+		t.Fatal(err)
+	}
+
+	moduleDir := "/tmp/test/echoserver"
+	param := SyncSrvCoverParam{
+		GocHost: testGocLocalHost,
+		SrvName: "staging_th_apa_goc_echoserver_master_845820727e",
+		Address: "http://127.0.0.1:51007",
+	}
+	if err := getSrvCoverAndCreateReportTask(moduleDir, param); err != nil {
+		t.Fatal(err)
+	}
+}
+
 //
 // Helper Test
 //

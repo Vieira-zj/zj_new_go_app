@@ -35,12 +35,9 @@ func TestGetLatestSrvCoverRow(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	fmt.Println("rows count:", len(rows))
 	for _, row := range rows {
-		value, err := row.CoverTotal.Value()
-		if err != nil {
-			t.Fatal(err)
-		}
-		fmt.Printf("row: id=%d, is_latest=%v, cover_total=%v\n", row.ID, row.IsLatest, value)
+		fmt.Printf("row: id=%d, is_latest=%v, cover_total=%.2f\n", row.ID, row.IsLatest, row.CoverTotal.Float64)
 	}
 }
 
