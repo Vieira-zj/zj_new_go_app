@@ -1,4 +1,4 @@
-# Goc Adapter
+# Goc Watch Dog
 
 ## Overview
 
@@ -26,12 +26,12 @@
 
 1. 实时拉取覆盖率数据性能问题。
 
-## Goc Adapter Work 目录结构
+## Goc Watch Dog Work 目录
 
-设置变量 `GOC_ADAPTER_HOME`，目录结构如下：
+目录结构如下：
 
 ```text
-- goc_adapter/
+- goc_watch_dog_root/
   - module_x/
     - repo/
     - sqlite.db
@@ -115,9 +115,9 @@ curl -XPOST http://localhost:7777/v1/cover/remove -H "Content-Type:application/j
 curl http://127.0.0.1:51025/v1/cover/coverage
 ```
 
-## Goc Adapter API
+## Goc Watch Dog API
 
-Test goc adapter server:
+Test goc watch dog server:
 
 ```sh
 curl -i http://127.0.0.1:8089/

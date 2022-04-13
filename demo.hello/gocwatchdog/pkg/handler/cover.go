@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"demo.hello/gocadapter/pkg"
+	"demo.hello/gocwatchdog/pkg"
 	"github.com/gin-gonic/gin"
 )
 

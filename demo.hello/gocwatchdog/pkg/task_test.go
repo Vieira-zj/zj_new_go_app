@@ -61,7 +61,7 @@ func TestGetSrvCoverTask(t *testing.T) {
 }
 
 func TestSyncSrvRepo(t *testing.T) {
-	// run: go test -timeout 300s -run ^TestSyncSrvRepo$ demo.hello/gocadapter/pkg -v -count=1
+	// run: go test -timeout 300s -run ^TestSyncSrvRepo$ demo.hello/gocwatchdog/pkg -v -count=1
 	if err := mockLoadConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestSyncSrvRepo(t *testing.T) {
 }
 
 func TestCreateSrvCoverReportTask(t *testing.T) {
-	// run: go test -timeout 300s -run ^TestCreateSrvCoverReportTask$ demo.hello/gocadapter/pkg -v -count=1
+	// run: go test -timeout 300s -run ^TestCreateSrvCoverReportTask$ demo.hello/gocwatchdog/pkg -v -count=1
 	moduleDir := "/tmp/test/echoserver"
 	srvName := "staging_th_apa_goc_echoserver_master_845820727e"
 	meta := getSrvMetaFromName(srvName)
@@ -102,7 +102,7 @@ func TestCreateSrvCoverReportTask(t *testing.T) {
 }
 
 func TestGetSrvCoverAndCreateReportTask(t *testing.T) {
-	// run: go test -timeout 300s -run ^TestGetSrvCoverAndCreateReportTask$ demo.hello/gocadapter/pkg -v -count=1
+	// run: go test -timeout 300s -run ^TestGetSrvCoverAndCreateReportTask$ demo.hello/gocwatchdog/pkg -v -count=1
 	if err := mockLoadConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
 	}

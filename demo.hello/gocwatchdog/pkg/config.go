@@ -16,13 +16,13 @@ const (
 
 var (
 	// AppConfig .
-	AppConfig AdapterConfig
+	AppConfig GocWatchDogConfig
 	// ModuleToRepoMap .
 	ModuleToRepoMap map[string]string
 )
 
-// AdapterConfig .
-type AdapterConfig struct {
+// GocWatchDogConfig .
+type GocWatchDogConfig struct {
 	RootDir string `json:"root"`
 	GocHost string `json:"goc_host"`
 }

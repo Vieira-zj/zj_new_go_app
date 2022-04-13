@@ -8,7 +8,7 @@ import (
 )
 
 //
-// run: go test -timeout 10s -run ^TestCheckoutToCommit$ demo.hello/gocadapter/pkg -v -count=1
+// run: go test -timeout 10s -run ^TestCheckoutToCommit$ demo.hello/gocwatchdog/pkg -v -count=1
 //
 
 var (
