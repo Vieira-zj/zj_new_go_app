@@ -69,7 +69,6 @@ func isAttachServerOK(addr string) bool {
 
 // SyncSrvCoverParam .
 type SyncSrvCoverParam struct {
-	GocHost string
 	SrvName string
 	Address string
 }
@@ -81,34 +80,32 @@ func getSrvCoverAndCreateReportTask(moduleDir string, param SyncSrvCoverParam) e
 	}
 
 	meta := getSrvMetaFromName(param.SrvName)
+	if !isUpdate {
+		// if coverage data is not changed, reuse the last results
+		oldCovFile, err := updateCovFileOfLastSrvCoverRowInDB(moduleDir, covFile, meta)
+		if err != nil {
+			return fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
+		}
+		if err := renameLastSrvCoverResults(oldCovFile, covFile); err != nil {
+			return fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
+		}
+		return nil
+	}
+
+	total, err := createSrvCoverReportTask(moduleDir, covFile, param)
+	if err != nil {
+		return fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
+	}
+
 	meta.IPAddr = param.Address
 	newRow := GocSrvCoverModel{
 		SrvCoverMeta: meta,
 		IsLatest:     true,
 		CovFilePath:  covFile,
-	}
-
-	var total float64
-	if isUpdate {
-		total, err = createSrvCoverReportTask(moduleDir, covFile, param)
-		if err != nil {
-			return fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
-		}
-	} else {
-		// if coverage data is not changed, reuse the last results
-		row, err := getLastSrvCoverRowInDB(moduleDir, meta)
-		total = row.CoverTotal.Float64
-		if err != nil {
-			return fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
-		}
-		if err := copyLastSrvCoverResults(row.CovFilePath, covFile); err != nil {
-			return fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
-		}
-	}
-
-	newRow.CoverTotal = sql.NullFloat64{
-		Float64: total,
-		Valid:   true,
+		CoverTotal: sql.NullFloat64{
+			Float64: total,
+			Valid:   true,
+		},
 	}
 	if err := saveSrvCoverInDB(moduleDir, newRow); err != nil {
 		return fmt.Errorf("getSrvCoverAndCreateReportTask save db error: %w", err)
@@ -116,29 +113,31 @@ func getSrvCoverAndCreateReportTask(moduleDir string, param SyncSrvCoverParam) e
 	return nil
 }
 
-func copyLastSrvCoverResults(src, dst string) error {
+func renameLastSrvCoverResults(src, dst string) error {
 	srcName := getFilePathWithoutExt(src)
 	dstName := getFilePathWithoutExt(dst)
 	for _, ext := range []string{".func", ".html"} {
-		if err := utils.CopyFile(srcName+ext, dstName+ext); err != nil {
+		if err := os.Rename(srcName+ext, dstName+ext); err != nil {
 			return fmt.Errorf("copyLastSrvCoverResults error: %w", err)
 		}
 	}
 	return nil
 }
 
-func getLastSrvCoverRowInDB(moduleDir string, meta SrvCoverMeta) (GocSrvCoverModel, error) {
+// updateCovFileOfLastSrvCoverRowInDB updates cov file of latest cover row, and returns the old one.
+func updateCovFileOfLastSrvCoverRowInDB(moduleDir, covFilePath string, meta SrvCoverMeta) (string, error) {
 	dbInstance := NewGocSrvCoverDBInstance(moduleDir)
 	rows, err := dbInstance.GetLatestSrvCoverRow(meta)
 	if err != nil {
-		return GocSrvCoverModel{}, fmt.Errorf("getLastSrvCoverTotalInDB error: %w", err)
+		return "", err
 	}
-	if err := checkLatestRows(rows, meta); err != nil {
-		return GocSrvCoverModel{}, fmt.Errorf("getLastSrvCoverTotalInDB error: %w", err)
+	if err = checkLatestRows(rows, meta); err != nil {
+		return "", err
 	}
 
-	latestRow := rows[0]
-	return latestRow, nil
+	oldCovFilePath := rows[0].CovFilePath
+	err = dbInstance.UpdateCovFileOfLatestSrvCoverRow(meta, covFilePath)
+	return oldCovFilePath, err
 }
 
 func saveSrvCoverInDB(moduleDir string, row GocSrvCoverModel) error {
@@ -153,7 +152,7 @@ func saveSrvCoverInDB(moduleDir string, row GocSrvCoverModel) error {
 			return fmt.Errorf("saveSrvCoverInDB error: %w", err)
 		}
 	} else {
-		if err := dbInstance.InsertLatestSrvCoverRow(row); err != nil {
+		if err := dbInstance.AddLatestSrvCoverRow(row); err != nil {
 			return fmt.Errorf("createSrvCoverReportTask save db error: %w", err)
 		}
 	}
@@ -182,7 +181,6 @@ func createSrvCoverReportTask(moduleDir, covFile string, param SyncSrvCoverParam
 	if _, err = cmd.GoToolCreateCoverHTMLReport(repoDir, covFile); err != nil {
 		return 0, fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
-
 	return total, nil
 }
 
@@ -336,7 +334,7 @@ func getAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, error
 	ctx, cancel := context.WithTimeout(context.Background(), longWait)
 	defer cancel()
 
-	goc := NewGocAPI(param.GocHost)
+	goc := NewGocAPI(AppConfig.GocHost)
 	b, err := goc.GetServiceProfileByAddr(ctx, param.Address)
 	if err != nil {
 		return "", fmt.Errorf("getAndSaveSrvCover get service [%s] profile error: %w", param.Address, err)

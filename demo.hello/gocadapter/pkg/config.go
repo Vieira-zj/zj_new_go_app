@@ -24,7 +24,7 @@ var (
 // AdapterConfig .
 type AdapterConfig struct {
 	RootDir string `json:"root"`
-	GocHost string `json:"host"`
+	GocHost string `json:"goc_host"`
 }
 
 // LoadConfig .
@@ -37,12 +37,14 @@ func LoadConfig(cfgPath string) error {
 	if err := json.Unmarshal(b, &AppConfig); err != nil {
 		return fmt.Errorf("LoadConfig error: %w", err)
 	}
+
+	LoadModuleToRepoMap()
 	return nil
 }
 
 // LoadModuleToRepoMap .
 func LoadModuleToRepoMap() error {
-	jsonFile := "module_repo_map.json"
+	const jsonFile = "module_repo_map.json"
 	b, err := os.ReadFile(filepath.Join(AppConfig.RootDir, jsonFile))
 	if err != nil {
 		return fmt.Errorf("LoadModuleToRepoMap error: %w", err)

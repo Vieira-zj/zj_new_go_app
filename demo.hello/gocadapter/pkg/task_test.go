@@ -19,9 +19,9 @@ func TestRemoveUnhealthSrvInGocTask(t *testing.T) {
 }
 
 func TestGetSrvCoverTaskDeprecated(t *testing.T) {
+	AppConfig.GocHost = testGocLocalHost
 	savedDir := "/tmp/test/echoserver"
 	param := SyncSrvCoverParam{
-		GocHost: testGocLocalHost,
 		SrvName: "staging_th_apa_goc_echoserver_master_518e0a570c",
 		Address: "http://127.0.0.1:51007",
 	}
@@ -33,9 +33,9 @@ func TestGetSrvCoverTaskDeprecated(t *testing.T) {
 }
 
 func TestGetAndSaveSrvCover(t *testing.T) {
+	AppConfig.GocHost = testGocLocalHost
 	savedDir := "/tmp/test/echoserver"
 	param := SyncSrvCoverParam{
-		GocHost: testGocLocalHost,
 		SrvName: "staging_th_apa_goc_echoserver_master_518e0a570c",
 		Address: "http://127.0.0.1:51007",
 	}
@@ -47,9 +47,9 @@ func TestGetAndSaveSrvCover(t *testing.T) {
 }
 
 func TestGetSrvCoverTask(t *testing.T) {
+	AppConfig.GocHost = testGocLocalHost
 	moduleDir := "/tmp/test/echoserver"
 	param := SyncSrvCoverParam{
-		GocHost: testGocLocalHost,
 		SrvName: "staging_th_apa_goc_echoserver_master_845820727e",
 		Address: "http://127.0.0.1:51007",
 	}
@@ -109,7 +109,6 @@ func TestGetSrvCoverAndCreateReportTask(t *testing.T) {
 
 	moduleDir := "/tmp/test/echoserver"
 	param := SyncSrvCoverParam{
-		GocHost: testGocLocalHost,
 		SrvName: "staging_th_apa_goc_echoserver_master_845820727e",
 		Address: "http://127.0.0.1:51007",
 	}

@@ -117,17 +117,28 @@ curl http://127.0.0.1:51025/v1/cover/coverage
 
 ## Goc Adapter API
 
-- get cover raw data
+Test goc adapter server:
 
-- sync cover results
+```sh
+curl -i http://127.0.0.1:8089/
+curl http://127.0.0.1:8089/ping | jq .
+```
 
-- get cover total
+- `/cover/raw`: get cover raw data
 
-- get history cover total
+```sh
+curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" -d '{"srv_addr":"http://127.0.0.1:51007"}' -o 'raw_profile.cov'
+```
 
-- get cover func report
+- `/cover/report/sync`: sync cover results, and generate report
 
-- get cover html report
+- `cover/report/func`: get cover func report
+
+- `cover/report/html`: get cover html report
+
+- `/cover/total`: get cover total
+
+- `/cover/historytotals`: get history cover total
 
 TODO:
 
