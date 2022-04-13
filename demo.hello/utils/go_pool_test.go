@@ -170,7 +170,7 @@ func TestGoPool(t *testing.T) {
 		fmt.Println("hello", text)
 	}
 
-	pool := NewGoPool(3, 6)
+	pool := NewGoPool(3, 6, 5*time.Second)
 	done := make(chan struct{})
 	go func() {
 		tick := time.Tick(200 * time.Millisecond)

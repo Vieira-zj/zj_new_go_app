@@ -32,9 +32,9 @@
 
 ```text
 - goc_watch_dog_root/
+  - sqlite.db
   - module_x/
     - repo/
-    - sqlite.db
     - cov_data/
       - module_x_1.cov
       - module_x_1_report.txt
@@ -44,7 +44,6 @@
       - module_x_2_report.html
   - module_y/
     - repo/
-    - sqlite.db
     - cov_data/
       - module_y_1.cov
       - module_y_1_report.txt
@@ -132,13 +131,11 @@ curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" -
 
 - `/cover/report/sync`: sync cover results, and generate report
 
-- `cover/report/func`: get cover func report
+- `cover/latest/report`: get latest cover func/html report
+- `cover/history/report`: get latest cover func/html report
 
-- `cover/report/html`: get cover html report
-
-- `/cover/total`: get cover total
-
-- `/cover/historytotals`: get history cover total
+- `/cover/latest/total`: get cover total
+- `/cover/history/total`: get history cover total
 
 TODO:
 

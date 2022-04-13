@@ -126,35 +126,31 @@ func renameLastSrvCoverResults(src, dst string) error {
 
 // updateCovFileOfLastSrvCoverRowInDB updates cov file of latest cover row, and returns the old one.
 func updateCovFileOfLastSrvCoverRowInDB(moduleDir, covFilePath string, meta SrvCoverMeta) (string, error) {
-	dbInstance := NewGocSrvCoverDBInstance(moduleDir)
-	rows, err := dbInstance.GetLatestSrvCoverRow(meta)
+	dbInstance := NewGocSrvCoverDBInstance()
+	row, err := dbInstance.GetLatestSrvCoverRow(meta)
 	if err != nil {
-		return "", err
-	}
-	if err = checkLatestRows(rows, meta); err != nil {
-		return "", err
+		return "", fmt.Errorf("updateCovFileOfLastSrvCoverRowInDB error: %w", err)
 	}
 
-	oldCovFilePath := rows[0].CovFilePath
+	oldCovFilePath := row.CovFilePath
 	err = dbInstance.UpdateCovFileOfLatestSrvCoverRow(meta, covFilePath)
-	return oldCovFilePath, err
+	return oldCovFilePath, fmt.Errorf("updateCovFileOfLastSrvCoverRowInDB error: %w", err)
 }
 
 func saveSrvCoverInDB(moduleDir string, row GocSrvCoverModel) error {
-	dbInstance := NewGocSrvCoverDBInstance(moduleDir)
-	rows, err := dbInstance.GetLatestSrvCoverRow(row.SrvCoverMeta)
+	dbInstance := NewGocSrvCoverDBInstance()
+	row, err := dbInstance.GetLatestSrvCoverRow(row.SrvCoverMeta)
 	if err != nil {
+		if errors.Is(err, ErrSrvCoverLatestRowNotFound) {
+			if err = dbInstance.InsertSrvCoverRow(row); err != nil {
+				return fmt.Errorf("saveSrvCoverInDB error: %w", err)
+			}
+		}
 		return fmt.Errorf("saveSrvCoverInDB error: %w", err)
 	}
 
-	if len(rows) == 0 {
-		if err = dbInstance.InsertSrvCoverRow(row); err != nil {
-			return fmt.Errorf("saveSrvCoverInDB error: %w", err)
-		}
-	} else {
-		if err := dbInstance.AddLatestSrvCoverRow(row); err != nil {
-			return fmt.Errorf("createSrvCoverReportTask save db error: %w", err)
-		}
+	if err := dbInstance.AddLatestSrvCoverRow(row); err != nil {
+		return fmt.Errorf("createSrvCoverReportTask save db error: %w", err)
 	}
 	return nil
 }
@@ -258,23 +254,19 @@ func getSrvCoverTask(moduleDir string, param SyncSrvCoverParam) (string, bool, e
 		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
 	}
 
-	dbInstance := NewGocSrvCoverDBInstance(moduleDir)
+	dbInstance := NewGocSrvCoverDBInstance()
 	meta := getSrvMetaFromName(param.SrvName)
-	rows, err := dbInstance.GetLatestSrvCoverRow(meta)
+	row, err := dbInstance.GetLatestSrvCoverRow(meta)
 	if err != nil {
 		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
 	}
 
 	isCovUpdated := true
-	if len(rows) == 0 {
+	if errors.Is(err, ErrSrvCoverLatestRowNotFound) {
 		return savedPath, isCovUpdated, nil
 	}
 
-	if len(rows) != 1 {
-		return "", false, fmt.Errorf("getSrvCoverTask latest rows count not equal to 1")
-	}
-	oldRow := rows[0]
-	isEqual, err := utils.IsFileContentEqual(oldRow.CovFilePath, savedPath)
+	isEqual, err := utils.IsFileContentEqual(row.CovFilePath, savedPath)
 	if err != nil {
 		return "", false, fmt.Errorf("getSrvCoverTask compare cover files content error: %w", err)
 	}

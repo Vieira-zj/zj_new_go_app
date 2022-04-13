@@ -40,7 +40,7 @@ func NewEventBusServer(poolSize, queueSize int) *EventBusServer {
 	once.Do(func() {
 		var goPool *GoPool
 		if poolSize > 0 {
-			goPool = NewGoPool(poolSize, poolSize)
+			goPool = NewGoPool(poolSize, poolSize, 8*time.Second)
 		}
 		_eventbus = &EventBusServer{
 			running:  false,

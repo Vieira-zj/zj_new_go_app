@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -45,10 +46,10 @@ var (
 )
 
 // NewGocSrvCoverDBInstance .
-func NewGocSrvCoverDBInstance(moduleDir string) GocSrvCoverDBInstance {
+func NewGocSrvCoverDBInstance() GocSrvCoverDBInstance {
 	modelOnce.Do(func() {
 		const dbFile = "sqlite.db"
-		dbPath := filepath.Join(moduleDir, dbFile)
+		dbPath := filepath.Join(AppConfig.RootDir, dbFile)
 		sqliteDB, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 		if err != nil {
 			panic("NewGocSrvCoverDBInstance open db error: " + err.Error())
@@ -77,12 +78,30 @@ func (*GocSrvCoverDBInstance) insertSrvCoverRowByDB(db *gorm.DB, row GocSrvCover
 	return nil
 }
 
+var (
+	// ErrSrvCoverLatestRowNotFound .
+	ErrSrvCoverLatestRowNotFound = errors.New("ErrSrvCoverLatestRowNotFound")
+	// ErrMoreThanOneSrvCoverLatestRow .
+	ErrMoreThanOneSrvCoverLatestRow = errors.New("ErrMoreThanOneSrvCoverLatestRow")
+)
+
 // GetLatestSrvCoverRow .
-func (in *GocSrvCoverDBInstance) GetLatestSrvCoverRow(meta SrvCoverMeta) ([]GocSrvCoverModel, error) {
-	return in.getLatestSrvCoverRowByDB(in.sqliteDB, meta)
+func (in *GocSrvCoverDBInstance) GetLatestSrvCoverRow(meta SrvCoverMeta) (GocSrvCoverModel, error) {
+	rows, err := in.getLatestSrvCoverRowsByDB(in.sqliteDB, meta)
+	if err != nil {
+		return GocSrvCoverModel{}, fmt.Errorf("GetLatestSrvCoverRow error: %w", err)
+	}
+
+	if len(rows) == 0 {
+		return GocSrvCoverModel{}, fmt.Errorf("GetLatestSrvCoverRow error: %w", ErrSrvCoverLatestRowNotFound)
+	}
+	if len(rows) != 1 {
+		return GocSrvCoverModel{}, fmt.Errorf("GetLatestSrvCoverRow error: %w", ErrMoreThanOneSrvCoverLatestRow)
+	}
+	return rows[0], nil
 }
 
-func (*GocSrvCoverDBInstance) getLatestSrvCoverRowByDB(db *gorm.DB, meta SrvCoverMeta) ([]GocSrvCoverModel, error) {
+func (*GocSrvCoverDBInstance) getLatestSrvCoverRowsByDB(db *gorm.DB, meta SrvCoverMeta) ([]GocSrvCoverModel, error) {
 	var rows []GocSrvCoverModel
 	condition := "env = ? and region = ? and app_name = ? and is_latest = ?"
 	if result := db.Where(condition, meta.Env, meta.Region, meta.AppName, true).Find(&rows); result.Error != nil {
@@ -97,18 +116,15 @@ func (in *GocSrvCoverDBInstance) UpdateLatestSrvCoverRowToFalse(meta SrvCoverMet
 }
 
 func (in *GocSrvCoverDBInstance) updateLatestSrvCoverRowToFalseByDB(db *gorm.DB, meta SrvCoverMeta) error {
-	rows, err := in.GetLatestSrvCoverRow(meta)
+	row, err := in.GetLatestSrvCoverRow(meta)
 	if err != nil {
-		return fmt.Errorf("updateLatestSrvCoverRowToFalseByDB error: %w", err)
-	}
-	if err := checkLatestRows(rows, meta); err != nil {
 		return fmt.Errorf("updateLatestSrvCoverRowToFalseByDB error: %w", err)
 	}
 
 	data := map[string]interface{}{
 		"IsLatest": false,
 	}
-	if result := db.Model(&GocSrvCoverModel{}).Where("id = ?", rows[0].ID).Updates(data); result.Error != nil {
+	if result := db.Model(&GocSrvCoverModel{}).Where("id = ?", row.ID).Updates(data); result.Error != nil {
 		return fmt.Errorf("updateLatestSrvCoverRowToFalseByDB update row error: %w", result.Error)
 	}
 	return nil
@@ -116,18 +132,15 @@ func (in *GocSrvCoverDBInstance) updateLatestSrvCoverRowToFalseByDB(db *gorm.DB,
 
 // UpdateCovFileOfLatestSrvCoverRow .
 func (in *GocSrvCoverDBInstance) UpdateCovFileOfLatestSrvCoverRow(meta SrvCoverMeta, covFilePath string) error {
-	rows, err := in.GetLatestSrvCoverRow(meta)
+	row, err := in.GetLatestSrvCoverRow(meta)
 	if err != nil {
-		return fmt.Errorf("UpdateCovFileOfLatestSrvCoverRow error: %w", err)
-	}
-	if err := checkLatestRows(rows, meta); err != nil {
 		return fmt.Errorf("UpdateCovFileOfLatestSrvCoverRow error: %w", err)
 	}
 
 	data := GocSrvCoverModel{
 		CovFilePath: covFilePath,
 	}
-	if result := in.sqliteDB.Model(&GocSrvCoverModel{}).Where("id = ?", rows[0].ID).Updates(data); result.Error != nil {
+	if result := in.sqliteDB.Model(&GocSrvCoverModel{}).Where("id = ?", row.ID).Updates(data); result.Error != nil {
 		return fmt.Errorf("updateLatestSrvCoverRowToFalseByDB update row error: %w", result.Error)
 	}
 	return nil
@@ -162,16 +175,6 @@ func (in *GocSrvCoverDBInstance) AddLatestSrvCoverRow(row GocSrvCoverModel) erro
 
 	if result := transaction.Commit(); result.Error != nil {
 		return fmt.Errorf("InsertLatestSrvCoverRow transaction commit error: %w", result.Error)
-	}
-	return nil
-}
-
-func checkLatestRows(rows []GocSrvCoverModel, meta SrvCoverMeta) error {
-	if len(rows) == 0 {
-		return fmt.Errorf("checkLatestRows latest row not found: env=%s,region=%s,app_name=%s", meta.Env, meta.Region, meta.AppName)
-	}
-	if len(rows) != 1 {
-		return fmt.Errorf("checkLatestRows latest rows count not equal to 1")
 	}
 	return nil
 }

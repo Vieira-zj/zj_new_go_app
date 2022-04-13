@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 )
 
@@ -78,22 +79,22 @@ func TestSyncSrvRepo(t *testing.T) {
 
 func TestCreateSrvCoverReportTask(t *testing.T) {
 	// run: go test -timeout 300s -run ^TestCreateSrvCoverReportTask$ demo.hello/gocwatchdog/pkg -v -count=1
-	moduleDir := "/tmp/test/echoserver"
+	AppConfig.RootDir = "/tmp/test"
+	instance := NewGocSrvCoverDBInstance()
+
 	srvName := "staging_th_apa_goc_echoserver_master_845820727e"
 	meta := getSrvMetaFromName(srvName)
-	instance := NewGocSrvCoverDBInstance(moduleDir)
-	rows, err := instance.GetLatestSrvCoverRow(meta)
+	row, err := instance.GetLatestSrvCoverRow(meta)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	row := rows[0]
-	fmt.Printf("rows_count=%d, is_latest=%v, path=%s\n", len(rows), row.IsLatest, row.CovFilePath)
+	fmt.Printf("is_latest=%v, path=%s\n", row.IsLatest, row.CovFilePath)
 
 	param := SyncSrvCoverParam{
 		SrvName: "staging_th_apa_goc_echoserver_master_845820727e",
 		Address: "http://127.0.0.1:51007",
 	}
+	moduleDir := filepath.Join(AppConfig.RootDir, "echoserver")
 	total, err := createSrvCoverReportTask(moduleDir, row.CovFilePath, param)
 	if err != nil {
 		t.Fatal(err)

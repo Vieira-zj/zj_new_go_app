@@ -244,14 +244,16 @@ type Worker struct {
 // GoPool .
 type GoPool struct {
 	isRunning bool
+	idleTime  time.Duration
 	queue     chan func()
 	Worker
 }
 
 // NewGoPool .
-func NewGoPool(coreSize, maxSize int) *GoPool {
+func NewGoPool(coreSize, maxSize int, idleTime time.Duration) *GoPool {
 	pool := &GoPool{
-		queue: make(chan func(), maxSize-coreSize),
+		idleTime: idleTime,
+		queue:    make(chan func(), maxSize-coreSize),
 		Worker: Worker{
 			work:      make(chan func()),
 			semaphore: make(chan struct{}, coreSize),
@@ -270,6 +272,20 @@ func (pool *GoPool) Submit(task func()) error {
 	select {
 	case pool.queue <- task:
 	default:
+		return fmt.Errorf("exceed max size %d, and discard", cap(pool.semaphore)+cap(pool.queue))
+	}
+	return nil
+}
+
+// SubmitWithTimeout .
+func (pool *GoPool) SubmitWithTimeout(task func(), timeout time.Duration) error {
+	if !pool.isRunning {
+		return fmt.Errorf("pool is not running")
+	}
+
+	select {
+	case pool.queue <- task:
+	case <-time.After(timeout):
 		return fmt.Errorf("exceed max size %d, and discard", cap(pool.semaphore)+cap(pool.queue))
 	}
 	return nil
@@ -305,8 +321,7 @@ func (pool *GoPool) worker(task func()) {
 		<-pool.semaphore
 	}()
 
-	duration := 3 * time.Second
-	tick := time.NewTicker(duration)
+	tick := time.NewTicker(pool.idleTime)
 	localTask := task
 	for {
 		localTask()
@@ -317,7 +332,7 @@ func (pool *GoPool) worker(task func()) {
 			return
 		case localTask = <-pool.work:
 			fmt.Printf("[worker %d]: fetch task\n", workerID)
-			tick.Reset(duration)
+			tick.Reset(pool.idleTime)
 		}
 	}
 }

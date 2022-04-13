@@ -21,7 +21,8 @@ func getSimpleNowDatetime() string {
 	return time.Now().Format("20060102_150405")
 }
 
-func getFilePathWithNewExt(filePath, newExt string) string {
+// GetFilePathWithNewExt .
+func GetFilePathWithNewExt(filePath, newExt string) string {
 	return strings.Replace(filePath, filepath.Ext(filePath), "."+newExt, 1)
 }
 

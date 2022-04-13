@@ -13,7 +13,7 @@ func TestGetSimpleNowDatetime(t *testing.T) {
 
 func TestGetFilePathWithNewExt(t *testing.T) {
 	filePath := "/tmp/test/output.txt"
-	result := getFilePathWithNewExt(filePath, "html")
+	result := GetFilePathWithNewExt(filePath, "html")
 	fmt.Println(result)
 }
 

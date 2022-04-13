@@ -51,7 +51,7 @@ func (c *ShCmd) GoToolCreateCoverHTMLReport(workingPath, covFile string) (string
 }
 
 func (c *ShCmd) goToolCreateCoverReport(workingPath, covFilePath, coverType string) (string, error) {
-	outFilePath := getFilePathWithNewExt(covFilePath, coverType)
+	outFilePath := GetFilePathWithNewExt(covFilePath, coverType)
 	cmd := fmt.Sprintf("cd %s; go tool cover -%s=%s -o %s", workingPath, coverType, covFilePath, outFilePath)
 	log.Println("Run cmd:", cmd)
 	output, err := utils.RunShellCmd(c.sh, "-c", cmd)
@@ -60,14 +60,22 @@ func (c *ShCmd) goToolCreateCoverReport(workingPath, covFilePath, coverType stri
 	}
 
 	if coverType == "func" {
-		lines, err := utils.ReadLinesFile(outFilePath)
+		output, err = GetCoverTotalFromFuncReport(outFilePath)
 		if err != nil {
-			return "", fmt.Errorf("goToolCreateCoverReport readlines error: %w", err)
+			return "", fmt.Errorf("goToolCreateCoverReport error: %w", err)
 		}
-		summary := lines[len(lines)-1]
-		output = getCoverTotalFromSummary(summary)
 	}
 	return output, nil
+}
+
+// GetCoverTotalFromFuncReport .
+func GetCoverTotalFromFuncReport(filePath string) (string, error) {
+	lines, err := utils.ReadLinesFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("GetCoverTotalFromFuncReport read file lines error: %w", err)
+	}
+	summary := lines[len(lines)-1]
+	return getCoverTotalFromSummary(summary), nil
 }
 
 // CreateDiffCoverHTMLReport .
