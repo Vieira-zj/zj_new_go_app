@@ -7,14 +7,16 @@ import (
 	"time"
 )
 
-func scheduleTaskRemoveUnhealthSrv(ctx context.Context, interval time.Duration, host string) {
+/* Run tasks by schedule. */
+
+func scheduleTaskRemoveUnhealthSrv(ctx context.Context, interval time.Duration) {
 	go func() {
 		tick := time.Tick(interval)
 		for {
 			select {
 			case <-tick:
 				func() {
-					if err := removeUnhealthSrvInGocTask(host); err != nil {
+					if err := removeUnhealthSrvInGocTask(); err != nil {
 						localCtx, cancel := context.WithTimeout(context.Background(), wait)
 						defer cancel()
 						errText := fmt.Sprintln("TaskRemoveUnhealthServices remove unhealth service failed:", err)

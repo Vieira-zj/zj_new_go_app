@@ -50,6 +50,14 @@
       - module_y_1_report.html
 ```
 
+## DB
+
+- `goc_o_staging_service_cover`: 服务覆盖率数据。
+
+字段包括：`id,created_at,updated_at,deleted_at,env,region,app_name,addresses,git_branch,git_commit,is_latest,cov_file_path,cover_total`
+
+使用 key `env + region + app_name + git_commit` 标识一个服务的覆盖率数据，有多条数据，但 `is_latest=y` 的数据只会有1条。
+
 ## Local Test
 
 1. Build and start goc server
@@ -93,7 +101,7 @@ curl -XPOST "http://localhost:8081/mirror?name=foo" -H "X-Test:Mirror" -d 'hello
 - list service
 
 ```sh
-curl http://localhost:7777/v1/cover/list
+curl http://localhost:7777/v1/cover/list | jq .
 ```
 
 - register service in goc center
@@ -123,19 +131,38 @@ curl -i http://127.0.0.1:8089/
 curl http://127.0.0.1:8089/ping | jq .
 ```
 
-- `/cover/raw`: get cover raw data
+- `/cover/list`: get list of services cover info.
 
 ```sh
-curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" -d '{"srv_addr":"http://127.0.0.1:51007"}' -o 'raw_profile.cov'
+curl http://127.0.0.1:8089/cover/list | jq .
 ```
 
-- `/cover/report/sync`: sync cover results, and generate report
+- `/cover/raw`: get services cover raw data.
 
-- `cover/latest/report`: get latest cover func/html report
-- `cover/history/report`: get latest cover func/html report
+```sh
+curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" \
+  -d '{"srv_addr":"http://127.0.0.1:51007"}' -o 'raw_profile.cov'
+```
 
-- `/cover/latest/total`: get cover total
-- `/cover/history/total`: get history cover total
+- `/cover/report/sync`: sync cover results, and generate report.
+
+```sh
+curl -XPOST http://127.0.0.1:8089/cover/report/sync -H "Content-Type:application/json" \
+  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_845820727e", "addresses": ["http://127.0.0.1:51007"]}'
+```
+
+- `cover/latest/report`: get latest cover func/html report.
+
+```sh
+curl -XPOST http://127.0.0.1:8089/cover/latest/report -H "Content-Type:application/json" \
+  -d '{"rpt_type":"func", "srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' -o 'cover_report.func'
+```
+
+- `cover/history/report`: get latest cover func/html report.
+
+- `/cover/latest/total`: get service latest cover total.
+
+- `/cover/history/total`: get service history cover totals.
 
 TODO:
 

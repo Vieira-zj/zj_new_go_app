@@ -16,7 +16,7 @@ type SrvCoverMeta struct {
 	Env       string
 	Region    string
 	AppName   string
-	IPAddr    string
+	Addrs     string `gorm:"column:addresses"`
 	GitBranch string
 	GitCommit string
 }
@@ -27,7 +27,7 @@ type GocSrvCoverModel struct {
 	SrvCoverMeta
 	IsLatest    bool
 	CovFilePath string
-	CoverTotal  sql.NullFloat64
+	CoverTotal  sql.NullString
 }
 
 // TableName .
@@ -87,24 +87,29 @@ var (
 
 // GetLatestSrvCoverRow .
 func (in *GocSrvCoverDBInstance) GetLatestSrvCoverRow(meta SrvCoverMeta) (GocSrvCoverModel, error) {
+	return in.GetLatestSrvCoverRowByDB(in.sqliteDB, meta)
+}
+
+// GetLatestSrvCoverRowByDB .
+func (in *GocSrvCoverDBInstance) GetLatestSrvCoverRowByDB(db *gorm.DB, meta SrvCoverMeta) (GocSrvCoverModel, error) {
 	rows, err := in.getLatestSrvCoverRowsByDB(in.sqliteDB, meta)
 	if err != nil {
-		return GocSrvCoverModel{}, fmt.Errorf("GetLatestSrvCoverRow error: %w", err)
+		return GocSrvCoverModel{}, fmt.Errorf("GetLatestSrvCoverRowByDB error: %w", err)
 	}
 
 	if len(rows) == 0 {
-		return GocSrvCoverModel{}, fmt.Errorf("GetLatestSrvCoverRow error: %w", ErrSrvCoverLatestRowNotFound)
+		return GocSrvCoverModel{}, fmt.Errorf("GetLatestSrvCoverRowByDB error: %w", ErrSrvCoverLatestRowNotFound)
 	}
 	if len(rows) != 1 {
-		return GocSrvCoverModel{}, fmt.Errorf("GetLatestSrvCoverRow error: %w", ErrMoreThanOneSrvCoverLatestRow)
+		return GocSrvCoverModel{}, fmt.Errorf("GetLatestSrvCoverRowByDB error: %w", ErrMoreThanOneSrvCoverLatestRow)
 	}
 	return rows[0], nil
 }
 
 func (*GocSrvCoverDBInstance) getLatestSrvCoverRowsByDB(db *gorm.DB, meta SrvCoverMeta) ([]GocSrvCoverModel, error) {
 	var rows []GocSrvCoverModel
-	condition := "env = ? and region = ? and app_name = ? and is_latest = ?"
-	if result := db.Where(condition, meta.Env, meta.Region, meta.AppName, true).Find(&rows); result.Error != nil {
+	condition := "env = ? and region = ? and app_name = ? and git_commit = ? and is_latest = ?"
+	if result := db.Where(condition, meta.Env, meta.Region, meta.AppName, meta.GitCommit, true).Find(&rows); result.Error != nil {
 		return nil, fmt.Errorf("getLatestSrvCoverRowByDB find error: %w", result.Error)
 	}
 	return rows, nil
@@ -132,7 +137,12 @@ func (in *GocSrvCoverDBInstance) updateLatestSrvCoverRowToFalseByDB(db *gorm.DB,
 
 // UpdateCovFileOfLatestSrvCoverRow .
 func (in *GocSrvCoverDBInstance) UpdateCovFileOfLatestSrvCoverRow(meta SrvCoverMeta, covFilePath string) error {
-	row, err := in.GetLatestSrvCoverRow(meta)
+	return in.UpdateCovFileOfLatestSrvCoverRowByDB(in.sqliteDB, meta, covFilePath)
+}
+
+// UpdateCovFileOfLatestSrvCoverRowByDB .
+func (in *GocSrvCoverDBInstance) UpdateCovFileOfLatestSrvCoverRowByDB(db *gorm.DB, meta SrvCoverMeta, covFilePath string) error {
+	row, err := in.GetLatestSrvCoverRowByDB(db, meta)
 	if err != nil {
 		return fmt.Errorf("UpdateCovFileOfLatestSrvCoverRow error: %w", err)
 	}
@@ -140,18 +150,18 @@ func (in *GocSrvCoverDBInstance) UpdateCovFileOfLatestSrvCoverRow(meta SrvCoverM
 	data := GocSrvCoverModel{
 		CovFilePath: covFilePath,
 	}
-	if result := in.sqliteDB.Model(&GocSrvCoverModel{}).Where("id = ?", row.ID).Updates(data); result.Error != nil {
+	if result := db.Model(&GocSrvCoverModel{}).Where("id = ?", row.ID).Updates(data); result.Error != nil {
 		return fmt.Errorf("updateLatestSrvCoverRowToFalseByDB update row error: %w", result.Error)
 	}
 	return nil
 }
 
 // UpdateSrvCoverTotalByCommit .
-func (in *GocSrvCoverDBInstance) UpdateSrvCoverTotalByCommit(total float64, commit string) error {
+func (in *GocSrvCoverDBInstance) UpdateSrvCoverTotalByCommit(total, commit string) error {
 	data := GocSrvCoverModel{
-		CoverTotal: sql.NullFloat64{
-			Float64: total,
-			Valid:   true,
+		CoverTotal: sql.NullString{
+			String: total,
+			Valid:  true,
 		},
 	}
 	if result := in.sqliteDB.Model(&GocSrvCoverModel{}).Where("git_commit = ? and is_latest = ?", commit, true).Updates(data); result.Error != nil {
@@ -177,4 +187,9 @@ func (in *GocSrvCoverDBInstance) AddLatestSrvCoverRow(row GocSrvCoverModel) erro
 		return fmt.Errorf("InsertLatestSrvCoverRow transaction commit error: %w", result.Error)
 	}
 	return nil
+}
+
+// BeginTransaction .
+func (in *GocSrvCoverDBInstance) BeginTransaction() *gorm.DB {
+	return in.sqliteDB.Begin()
 }

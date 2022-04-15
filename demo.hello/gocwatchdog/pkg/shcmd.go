@@ -60,7 +60,7 @@ func (c *ShCmd) goToolCreateCoverReport(workingPath, covFilePath, coverType stri
 	}
 
 	if coverType == "func" {
-		output, err = GetCoverTotalFromFuncReport(outFilePath)
+		output, err = getCoverTotalFromFuncReport(outFilePath)
 		if err != nil {
 			return "", fmt.Errorf("goToolCreateCoverReport error: %w", err)
 		}
@@ -68,14 +68,18 @@ func (c *ShCmd) goToolCreateCoverReport(workingPath, covFilePath, coverType stri
 	return output, nil
 }
 
-// GetCoverTotalFromFuncReport .
-func GetCoverTotalFromFuncReport(filePath string) (string, error) {
+func getCoverTotalFromFuncReport(filePath string) (string, error) {
 	lines, err := utils.ReadLinesFile(filePath)
 	if err != nil {
 		return "", fmt.Errorf("GetCoverTotalFromFuncReport read file lines error: %w", err)
 	}
 	summary := lines[len(lines)-1]
 	return getCoverTotalFromSummary(summary), nil
+}
+
+func (c *ShCmd) gocToolMergeSrvCovers(workingPath string, covFiles []string) error {
+	// TODO:
+	return nil
 }
 
 // CreateDiffCoverHTMLReport .

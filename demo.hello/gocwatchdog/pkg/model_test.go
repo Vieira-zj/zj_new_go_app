@@ -9,15 +9,15 @@ import (
 
 func TestInsertSrvCoverRow(t *testing.T) {
 	srvName := "staging_th_apa_goc_echoserver_master_518e0a570d"
-	meta := getSrvMetaFromName(srvName)
-	meta.IPAddr = "http://127.0.0.1:51007"
+	meta := GetSrvMetaFromName(srvName)
+	meta.Addrs = "http://127.0.0.1:51007"
 	row := GocSrvCoverModel{
 		SrvCoverMeta: meta,
 		IsLatest:     true,
 		CovFilePath:  "/tmp/test/profile2.cov",
-		CoverTotal: sql.NullFloat64{
-			Float64: 37.92,
-			Valid:   true,
+		CoverTotal: sql.NullString{
+			String: "37.92",
+			Valid:  true,
 		},
 	}
 
@@ -33,12 +33,12 @@ func TestGetLatestSrvCoverRow(t *testing.T) {
 	instance := NewGocSrvCoverDBInstance()
 
 	srvName := "staging_th_apa_goc_echoserver_master_518e0a570c"
-	meta := getSrvMetaFromName(srvName)
+	meta := GetSrvMetaFromName(srvName)
 	row, err := instance.GetLatestSrvCoverRow(meta)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Printf("row: id=%d, is_latest=%v, cover_total=%.2f\n", row.ID, row.IsLatest, row.CoverTotal.Float64)
+	fmt.Printf("row: id=%d, is_latest=%v, cover_total=%s\n", row.ID, row.IsLatest, row.CoverTotal.String)
 }
 
 func TestGetLatestSrvCoverRowNotFound(t *testing.T) {
@@ -46,7 +46,7 @@ func TestGetLatestSrvCoverRowNotFound(t *testing.T) {
 	instance := NewGocSrvCoverDBInstance()
 
 	srvName := "staging_vn_apa_goc_echoserver_master_518e0a570c"
-	meta := getSrvMetaFromName(srvName)
+	meta := GetSrvMetaFromName(srvName)
 	_, err := instance.GetLatestSrvCoverRow(meta)
 	fmt.Println("error:", err)
 	if !errors.Is(err, ErrSrvCoverLatestRowNotFound) {
@@ -59,7 +59,7 @@ func TestGetLatestSrvCoverRowMoreThanOneErr(t *testing.T) {
 	instance := NewGocSrvCoverDBInstance()
 
 	srvName := "staging_th_apa_goc_echoserver_master_518e0a570c"
-	meta := getSrvMetaFromName(srvName)
+	meta := GetSrvMetaFromName(srvName)
 	_, err := instance.GetLatestSrvCoverRow(meta)
 	fmt.Println("error:", err)
 	if !errors.Is(err, ErrMoreThanOneSrvCoverLatestRow) {
@@ -72,7 +72,7 @@ func TestUpdateLatestRowToFalse(t *testing.T) {
 	instance := NewGocSrvCoverDBInstance()
 
 	srvName := "staging_th_apa_goc_echoserver_master_518e0a570c"
-	meta := getSrvMetaFromName(srvName)
+	meta := GetSrvMetaFromName(srvName)
 	if err := instance.UpdateLatestSrvCoverRowToFalse(meta); err != nil {
 		t.Fatal(err)
 	}
@@ -83,15 +83,15 @@ func TestAddLatestSrvCoverRow(t *testing.T) {
 	instance := NewGocSrvCoverDBInstance()
 
 	srvName := "staging_th_apa_goc_echoserver_master_518e0a570d"
-	meta := getSrvMetaFromName(srvName)
-	meta.IPAddr = "http://127.0.0.1:51007"
+	meta := GetSrvMetaFromName(srvName)
+	meta.Addrs = "http://127.0.0.1:51007"
 	row := GocSrvCoverModel{
 		SrvCoverMeta: meta,
 		IsLatest:     true,
 		CovFilePath:  "/tmp/test/profile2.cov",
-		CoverTotal: sql.NullFloat64{
-			Float64: 27.33,
-			Valid:   true,
+		CoverTotal: sql.NullString{
+			String: "27.33",
+			Valid:  true,
 		},
 	}
 
@@ -105,7 +105,7 @@ func TestUpdateCovFileOfLatestSrvCoverRow(t *testing.T) {
 	instance := NewGocSrvCoverDBInstance()
 
 	srvName := "staging_th_apa_goc_echoserver_master_518e0a570c"
-	meta := getSrvMetaFromName(srvName)
+	meta := GetSrvMetaFromName(srvName)
 	covFilePath := "/tmp/test/profile3x.cov"
 	if err := instance.UpdateCovFileOfLatestSrvCoverRow(meta, covFilePath); err != nil {
 		t.Fatal(err)
@@ -117,8 +117,8 @@ func TestUpdateSrvCoverTotal(t *testing.T) {
 	instance := NewGocSrvCoverDBInstance()
 
 	srvName := "staging_th_apa_goc_echoserver_master_518e0a570c"
-	meta := getSrvMetaFromName(srvName)
-	if err := instance.UpdateSrvCoverTotalByCommit(61.59, meta.GitCommit); err != nil {
+	meta := GetSrvMetaFromName(srvName)
+	if err := instance.UpdateSrvCoverTotalByCommit("61.59", meta.GitCommit); err != nil {
 		t.Fatal(err)
 	}
 }

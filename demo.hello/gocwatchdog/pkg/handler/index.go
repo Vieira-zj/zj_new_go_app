@@ -8,7 +8,7 @@ import (
 
 // IndexHandler .
 func IndexHandler(c *gin.Context) {
-	c.String(http.StatusOK, "ok")
+	c.String(http.StatusOK, "Goc watch dog: ok")
 }
 
 // PingHandler .

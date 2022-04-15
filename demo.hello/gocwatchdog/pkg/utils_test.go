@@ -32,6 +32,16 @@ func TestFormatIPAddress(t *testing.T) {
 	fmt.Println("ip:", ip)
 }
 
+func TestFormatCoverPercentage(t *testing.T) {
+	for _, value := range []string{"0.23", "0.3501", "0.911178"} {
+		res, err := formatCoverPercentage(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("float value:", res)
+	}
+}
+
 func TestReadCoverTotalFromResults(t *testing.T) {
 	filePath := "/tmp/test/echoserver/cover_data/staging_th_apa_goc_echoserver_master_845820727e_20220331_182224.func"
 	lines, err := utils.ReadLinesFile(filePath)

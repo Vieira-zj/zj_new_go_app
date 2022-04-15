@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -55,6 +56,14 @@ func formatIPAddress(address string) (string, error) {
 	}
 	ip := strings.Replace(u.Hostname(), ".", "-", -1)
 	return ip, nil
+}
+
+func formatCoverPercentage(cover string) (string, error) {
+	total, err := strconv.ParseFloat(cover, 32)
+	if err != nil {
+		return "0", fmt.Errorf("formatCoverPercentage error: %w", err)
+	}
+	return fmt.Sprintf("%.2f", total*100), nil
 }
 
 func getCoverTotalFromSummary(summary string) string {

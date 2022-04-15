@@ -41,10 +41,10 @@ var (
 )
 
 // NewGocAPI .
-func NewGocAPI(gocCenterHost string) *GocAPI {
+func NewGocAPI() *GocAPI {
 	gocAPIOnce.Do(func() {
 		gocAPI = &GocAPI{
-			host: gocCenterHost,
+			host: AppConfig.GocHost,
 			http: utils.NewDefaultHTTPUtils(),
 		}
 	})
@@ -63,7 +63,7 @@ func (goc *GocAPI) ListRegisterServices(ctx context.Context) (map[string][]strin
 		return nil, fmt.Errorf("ListRegisterServices send http get failed: %w", err)
 	}
 
-	services := make(map[string][]string, 8)
+	services := make(map[string][]string, 16)
 	if err := json.Unmarshal(resp, &services); err != nil {
 		return nil, fmt.Errorf("ListRegisterServices json unmarshal failed: %w", err)
 	}
@@ -183,9 +183,9 @@ func getDefaultHeader() map[string]string {
 //
 
 // APIGetServiceCoverage .
-func APIGetServiceCoverage(ctx context.Context, host string) (string, error) {
+func APIGetServiceCoverage(ctx context.Context, addr string) (string, error) {
 	const coverageAPI = "/v1/cover/coverage"
-	url := host + coverageAPI
+	url := addr + coverageAPI
 	httpClient := utils.NewDefaultHTTPUtils()
 	resp, respBody, err := httpClient.GetV2(ctx, url, map[string]string{})
 	if err != nil {
