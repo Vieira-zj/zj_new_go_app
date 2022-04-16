@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-/* Run tasks by schedule. */
+/* Run scheduled tasks by goroutine pool. */
 
 func scheduleTaskRemoveUnhealthSrv(ctx context.Context, interval time.Duration) {
 	go func() {

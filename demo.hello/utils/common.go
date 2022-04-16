@@ -219,8 +219,9 @@ func GetShellPath() string {
 		if path, err := exec.LookPath("sh"); err == nil {
 			return path
 		}
+		path = "/bin/sh"
 	}
-	return "/bin/sh"
+	return path
 }
 
 // RunShellCmd runs a shell command and returns output.

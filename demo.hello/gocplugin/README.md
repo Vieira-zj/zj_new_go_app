@@ -42,18 +42,26 @@
 - 服务下线，获取服务异常退出前的覆盖率结果
 - 服务下线，没有获取到当前 commit 的覆盖率结果
 
-## Goc Plugin 设计
+### Dev Plan
 
-### 部署
+1. 获取和展示服务最新的覆盖率结果，包括 func/html 报告，cover total 趋势图
+2. 服务有多个副本时，覆盖率结果合并
+3. 展示历史覆盖率结果（基于 commit）
+4. 展示基于 commit 和 branch 比较的增量覆盖率结果
+5. 支持单测覆盖率结果上报，及展示
+
+## Goc Plugin Design
+
+### 服务部署
 
 // TODO:
 
-### Goc Report Work 目录
+### Goc Report 工作目录
 
-目录结构如下：
+工作目录（root dir）结构如下：
 
 ```text
-- goc_watch_dog_root/
+- goc_report_root/
   - sqlite.db
   - module_x/
     - repo/

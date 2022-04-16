@@ -10,6 +10,7 @@ require (
 	github.com/bep/debounce v1.2.0
 	github.com/casbin/casbin v1.9.1
 	github.com/casbin/gorm-adapter v1.0.0
+	github.com/creack/pty v1.1.11
 	github.com/docker/docker v20.10.2+incompatible
 	github.com/emicklei/proto v1.9.0
 	github.com/evanphx/json-patch v4.11.0+incompatible
@@ -46,6 +47,7 @@ require (
 	go.uber.org/fx v1.14.2
 	go.uber.org/zap v1.19.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 	golang.org/x/tools v0.1.2
 	google.golang.org/grpc v1.38.0
