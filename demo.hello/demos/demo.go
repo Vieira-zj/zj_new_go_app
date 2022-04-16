@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -416,12 +417,13 @@ func demo11() {
 
 // demo12, struct func split in 2 files
 type myPerson struct {
-	Name  string
-	Age   int
-	Skill []string
+	Name   string
+	Age    int
+	Skills []string
 }
 
 func (p myPerson) SayHello() {
+	p.Name = strings.Title(p.Name)
 	fmt.Println("hello, my name is:", p.Name)
 }
 

@@ -6,7 +6,7 @@ import (
 )
 
 func TestNotifySendMessage(t *testing.T) {
-	// run: go test -timeout 3s -run ^TestNotifySendMessage$ demo.hello/gocwatchdog/pkg -v -count=1
+	// run: go test -timeout 3s -run ^TestNotifySendMessage$ demo.hello/gocplugin/pkg -v -count=1
 	ctx := context.Background()
 	notify := NewMatterMostNotify()
 	if err := notify.SendMessageToUser(ctx, "jin.zheng", "Hello"); err != nil {

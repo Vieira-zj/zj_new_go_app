@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -123,6 +124,11 @@ func (goc *GocAPI) GetServiceProfileByAddr(ctx context.Context, addr string) ([]
 	return goc.getServiceProfile(ctx, nil, []string{addr})
 }
 
+var (
+	// ErrAddrNotFound .
+	ErrAddrNotFound = errors.New("ErrAddrNotFound")
+)
+
 func (goc *GocAPI) getServiceProfile(ctx context.Context, service, addr []string) ([]byte, error) {
 	param := GocParam{
 		Service: service,
@@ -130,16 +136,19 @@ func (goc *GocAPI) getServiceProfile(ctx context.Context, service, addr []string
 	}
 	body, err := json.Marshal(&param)
 	if err != nil {
-		return nil, fmt.Errorf("getServiceProfile json marshal failed: %w", err)
+		return nil, fmt.Errorf("getServiceProfile json marshal error: %w", err)
 	}
 
 	url := goc.host + CoverProfileAPI
 	resp, respProfile, err := goc.http.PostV2(ctx, url, getDefaultHeader(), string(body))
 	if err != nil {
-		return nil, fmt.Errorf("getServiceProfile send http post failed: %w", err)
+		return nil, fmt.Errorf("getServiceProfile post goc api error: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("getServiceProfile get non-200 returned code: %d, message: %s", resp.StatusCode, respProfile)
+		if resp.StatusCode == 417 {
+			return nil, fmt.Errorf("getServiceProfile error: %w", ErrAddrNotFound)
+		}
+		return nil, fmt.Errorf("getServiceProfile error: ret_code=%d, message=[%s]", resp.StatusCode, respProfile)
 	}
 	return respProfile, nil
 }

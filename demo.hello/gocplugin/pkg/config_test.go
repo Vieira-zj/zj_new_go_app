@@ -10,9 +10,9 @@ import (
 )
 
 func mockLoadConfig(workingDir string) error {
-	subDir := "Workspaces/zj_repos/zj_go2_project/demo.hello/gocwatchdog/config"
+	subDir := "Workspaces/zj_repos/zj_go2_project/demo.hello/gocplugin/config"
 	srcDir := filepath.Join(os.Getenv("HOME"), subDir)
-	for _, file := range []string{"gocwatchdog.json", "module_repo_map.json"} {
+	for _, file := range []string{"gocplugin.json", "module_repo_map.json"} {
 		dstPath := filepath.Join(workingDir, file)
 		if utils.IsExist(dstPath) {
 			continue
@@ -23,7 +23,7 @@ func mockLoadConfig(workingDir string) error {
 		}
 	}
 
-	if err := LoadConfig(filepath.Join(workingDir, "gocwatchdog.json")); err != nil {
+	if err := LoadConfig(filepath.Join(workingDir, "gocplugin.json")); err != nil {
 		return err
 	}
 	if err := LoadModuleToRepoMap(); err != nil {

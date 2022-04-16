@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"demo.hello/gocwatchdog/pkg"
-	"demo.hello/gocwatchdog/pkg/handler"
+	"demo.hello/gocplugin/pkg"
+	"demo.hello/gocplugin/pkg/handler"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&cfgPath, "c", "/tmp/test/gocwatchdog.json", "Goc watch dog config file path.")
+	flag.StringVar(&cfgPath, "c", "/tmp/test/gocplugin.json", "Goc watch dog config file path.")
 	flag.StringVar(&addr, "addr", ":8089", "Goc server address.")
 	flag.BoolVar(&help, "h", false, "help.")
 	flag.Parse()

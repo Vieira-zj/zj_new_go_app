@@ -1407,19 +1407,34 @@ func TestDemo46(t *testing.T) {
 }
 
 // demo47, struct func split into 2 files
-func (p myPerson) String() string {
-	skills := strings.Join(p.Skill, "|")
+func (p *myPerson) String() string {
+	skills := strings.Join(p.Skills, "|")
 	return fmt.Sprintf("name:%s, age:%d, skills:%s", p.Name, p.Age, skills)
+}
+
+func (p myPerson) State() {
+	fmt.Printf("arg copied [p]: %p\n", &p)
+}
+
+func (p *myPerson) StatePtr() {
+	fmt.Printf("arg [*p]: %p\n", p)
 }
 
 func TestDemo47(t *testing.T) {
 	p := myPerson{
-		Name:  "foo",
-		Age:   31,
-		Skill: []string{"java", "golang", "javascript"},
+		Name:   "foo",
+		Age:    31,
+		Skills: []string{"java", "golang", "javascript"},
 	}
 	p.SayHello()
+	fmt.Println("src name:", p.Name)
 	fmt.Println(p.String())
+	fmt.Println()
+
+	fmt.Printf("src p: %p\n", &p)
+	p.State()
+	p.StatePtr()
+
 }
 
 func TestDemo48(t *testing.T) {

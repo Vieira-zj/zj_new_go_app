@@ -1,0 +1,35 @@
+package handler
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+// IndexHandler .
+func IndexHandler(c *gin.Context) {
+	c.String(http.StatusOK, "Goc watch dog: ok")
+}
+
+// PingHandler .
+func PingHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "pong",
+	})
+}
+
+//
+// Helper
+//
+
+func sendBytes(c *gin.Context, body []byte) {
+	c.Data(http.StatusOK, "application/octet-stream", body)
+}
+
+func sendMessageResp(c *gin.Context, message string) {
+	c.JSON(http.StatusOK, gin.H{"code": 0, "message": message})
+}
+
+func sendErrorResp(c *gin.Context, errCode int, err error) {
+	c.JSON(errCode, gin.H{"code": errCode, "error": err.Error()})
+}

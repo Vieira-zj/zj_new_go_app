@@ -69,7 +69,7 @@ func TestGetServiceProfileByAddr(t *testing.T) {
 	// curl http://localhost:8081/
 	AppConfig.GocHost = testGocLocalHost
 	goc := NewGocAPI()
-	addr := "http://127.0.0.1:51025"
+	addr := "http://127.0.0.1:51007"
 	profile, err := goc.GetServiceProfileByAddr(context.Background(), addr)
 	if err != nil {
 		t.Fatal(err)
@@ -86,6 +86,17 @@ func TestGetServiceProfileByAddr(t *testing.T) {
 		t.Fatal()
 	}
 	fmt.Println("get profile done")
+}
+
+func TestGetServiceProfileByAddrNotFound(t *testing.T) {
+	AppConfig.GocHost = testGocLocalHost
+	goc := NewGocAPI()
+	addr := "http://127.0.0.1:51027"
+	b, err := goc.GetServiceProfileByAddr(context.Background(), addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(len(b))
 }
 
 func TestClearServiceProfileByAddr(t *testing.T) {

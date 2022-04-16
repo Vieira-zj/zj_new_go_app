@@ -1,32 +1,54 @@
-# Goc Watch Dog
+# Goc Plugin
 
 ## Overview
 
+- 基于 Goc + diff_cover (二次开发)
+- Goc Plugin 包括 Goc Report, Goc Watch Dog 和 Goc Portal 三部分
+
+### Goc Report
+
 1. 获取指定服务的覆盖率 raw 数据
   - 一个服务的一个 commit 下，可能会包括 N 份覆盖率数据（1份最新数据+历史数据）
+  - 如果服务已下线（异常退出），则从 goc watch dog 中获取覆盖率数据
 
 2. 生成服务覆盖率报告
   - 生成 func/html 覆盖率报告
-  - 如果服务已下线，则使用历史覆盖率结果
   - 生成增量代码覆盖率报告
 
-3. 定时清除已下线服务
-  - 从 goc server list 中删除已下线的服务（pod）
-  - 检查 goc attached server 端口（代替从 pod monitor 服务接口查询 pod 状态）
-
-4. 定时拉取 goc server list 中服务的覆盖率数据
+3. 定时拉取 goc server list 中服务的覆盖率数据
   - 定时 + 随机时间 防止同一时间有多个覆盖率任务在执行
   - 如果覆盖率数据没有更新，则基于退让机制拉取覆盖率数据
-    - 退让机制：15min -> 60min -> 2hours -> 4hours
+    - 退让机制：20min -> 60min -> 2hours -> 4hours
 
-5. 服务异常退出前，拉取覆盖率 raw 数据
+问题：
+
+1. 实时拉取和生成覆盖率结果性能问题。
+  - 同步执行，前端需要处理超时的情况
+  - 覆盖率结果缓存 N 分钟，防止频繁执行
+
+### Goc Watch Dog
+
+1. 定时从 goc server list 中删除已下线的服务（pod）
+  - 检查 goc attached server 端口（代替从 pod monitor 服务接口查询 pod 状态）
+
+2. 服务异常退出前，拉取覆盖率 raw 数据
   - 通过设置 pod pre-stop webhook
 
-注意：
+### Goc Portal
 
-1. 实时拉取覆盖率数据性能问题。
+服务覆盖率结果展示：
 
-## Goc Watch Dog Work 目录
+- 服务正常，获取最新的覆盖率结果
+- 服务下线，获取服务异常退出前的覆盖率结果
+- 服务下线，没有获取到当前 commit 的覆盖率结果
+
+## Goc Plugin 设计
+
+### 部署
+
+// TODO:
+
+### Goc Report Work 目录
 
 目录结构如下：
 
@@ -50,7 +72,7 @@
       - module_y_1_report.html
 ```
 
-## DB
+### Goc Report Table
 
 - `goc_o_staging_service_cover`: 服务覆盖率数据。
 
@@ -122,9 +144,9 @@ curl -XPOST http://localhost:7777/v1/cover/remove -H "Content-Type:application/j
 curl http://127.0.0.1:51025/v1/cover/coverage
 ```
 
-## Goc Watch Dog API
+## Goc Report API
 
-Test goc watch dog server:
+- server health:
 
 ```sh
 curl -i http://127.0.0.1:8089/
@@ -137,14 +159,14 @@ curl http://127.0.0.1:8089/ping | jq .
 curl http://127.0.0.1:8089/cover/list | jq .
 ```
 
-- `/cover/raw`: get services cover raw data.
+- `/cover/raw`: get service cover raw data.
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" \
   -d '{"srv_addr":"http://127.0.0.1:51007"}' -o 'raw_profile.cov'
 ```
 
-- `/cover/report/sync`: sync cover results, and generate report.
+- `/cover/report/sync`: sync services cover results, and generate report.
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/report/sync -H "Content-Type:application/json" \
@@ -160,9 +182,7 @@ curl -XPOST http://127.0.0.1:8089/cover/latest/report -H "Content-Type:applicati
 
 - `cover/history/report`: get latest cover func/html report.
 
-- `/cover/latest/total`: get service latest cover total.
+- `/cover/latest/total`: get latest cover total.
 
-- `/cover/history/total`: get service history cover totals.
-
-TODO:
+- `/cover/history/total`: get history cover totals.
 

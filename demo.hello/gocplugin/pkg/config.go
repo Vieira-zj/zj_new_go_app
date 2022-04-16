@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
+
+/* Config */
 
 const (
 	shortWait = 3 * time.Second
@@ -16,13 +19,13 @@ const (
 
 var (
 	// AppConfig .
-	AppConfig GocWatchDogConfig
+	AppConfig GocPluginConfig
 	// ModuleToRepoMap .
 	ModuleToRepoMap map[string]string
 )
 
-// GocWatchDogConfig .
-type GocWatchDogConfig struct {
+// GocPluginConfig .
+type GocPluginConfig struct {
 	RootDir string `json:"root"`
 	GocHost string `json:"goc_host"`
 }
@@ -55,3 +58,41 @@ func LoadModuleToRepoMap() error {
 	}
 	return nil
 }
+
+/* Srv Cover Sync Task State */
+
+const (
+	// StateRunning .
+	StateRunning = iota
+	// StateFreshed .
+	StateFreshed
+	// StateExpired .
+	StateExpired
+)
+
+// SrvCoverSyncTasksState .
+type SrvCoverSyncTasksState struct {
+	store map[string]bool
+	lock  *sync.RWMutex
+}
+
+// NewSrvCoverSyncTasksState .
+func NewSrvCoverSyncTasksState() *SrvCoverSyncTasksState {
+	// TODO:
+	return nil
+}
+
+// Set .
+func (state *SrvCoverSyncTasksState) Set(key string, value int, expired time.Duration) {
+	time.AfterFunc(expired, func() {})
+}
+
+// Get .
+func (state *SrvCoverSyncTasksState) Get(key string) (int, error) {
+	state.lock.Lock()
+	defer state.lock.Unlock()
+	return 0, nil
+}
+
+// Usage .
+func (state *SrvCoverSyncTasksState) Usage() {}

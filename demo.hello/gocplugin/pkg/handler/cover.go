@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"demo.hello/gocwatchdog/pkg"
+	"demo.hello/gocplugin/pkg"
 	"demo.hello/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +21,7 @@ func GetCoverSrvListHandler(c *gin.Context) {
 	gocAPI := pkg.NewGocAPI()
 	srvs, err := gocAPI.ListRegisterServices(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -38,11 +38,11 @@ func GetCoverSrvListHandler(c *gin.Context) {
 				// get cover total from frist addr by default
 				defaultAddr := addrs[0]
 				if item.CoverTotal, err = pkg.GetSrvTotalFromGoc(defaultAddr); err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					sendErrorResp(c, http.StatusInternalServerError, err)
 					return
 				}
 			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				sendErrorResp(c, http.StatusInternalServerError, err)
 				return
 			}
 		} else {
@@ -51,7 +51,7 @@ func GetCoverSrvListHandler(c *gin.Context) {
 		srvList = append(srvList, item)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"count": len(srvList), "data": srvList})
+	c.JSON(http.StatusOK, gin.H{"code": 0, "count": len(srvList), "data": srvList})
 }
 
 // GetSrvRawCoverHandler .
@@ -67,28 +67,27 @@ func GetSrvRawCoverHandler(c *gin.Context) {
 	gocAPI := pkg.NewGocAPI()
 	b, err := gocAPI.GetServiceProfileByAddr(c.Request.Context(), req.SrvAddr)
 	if err != nil {
-		msg := fmt.Sprintf("Get service profile for [%s] failed: %v", req.SrvAddr, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		err = fmt.Errorf("Get service profile error: %v", err)
+		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
-
-	c.Data(http.StatusOK, "application/octet-stream", b)
+	sendBytes(c, b)
 }
 
 // SyncCoverReportHandler .
 func SyncCoverReportHandler(c *gin.Context) {
 	param := pkg.SyncSrvCoverParam{}
 	if err := c.ShouldBindJSON(&param); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
 
 	// TODO: use pool to run task
 	if err := pkg.GetSrvCoverAndCreateReportTask(param); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
-	c.String(http.StatusOK, "sync success")
+	sendMessageResp(c, "sync success")
 }
 
 type getLatestCoverReportReq struct {
@@ -100,7 +99,7 @@ type getLatestCoverReportReq struct {
 func GetLatestCoverReportHandler(c *gin.Context) {
 	var req getLatestCoverReportReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -109,9 +108,10 @@ func GetLatestCoverReportHandler(c *gin.Context) {
 	row, err := dbInstance.GetLatestSrvCoverRow(meta)
 	if err != nil {
 		if errors.Is(err, pkg.ErrSrvCoverLatestRowNotFound) {
-			// TODO:
+			err = fmt.Errorf("Cover report is not found for [%v]", req.SrvName)
+			sendErrorResp(c, http.StatusBadRequest, err)
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			sendErrorResp(c, http.StatusInternalServerError, err)
 		}
 		return
 	}
@@ -119,9 +119,8 @@ func GetLatestCoverReportHandler(c *gin.Context) {
 	filePath := pkg.GetFilePathWithNewExt(row.CovFilePath, req.RptType)
 	b, err := utils.ReadFile(filePath)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
-
-	c.Data(http.StatusOK, "application/octet-stream", b)
+	sendBytes(c, b)
 }

@@ -364,9 +364,8 @@ func getAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, error
 
 //
 // Task delete history profile files/db rows
-//
-
 // TODO:
+//
 
 //
 // Helper
