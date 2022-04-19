@@ -110,9 +110,11 @@ func TestGetSrvCoverAndCreateReportTask(t *testing.T) {
 		SrvName:   "staging_th_apa_goc_echoserver_master_845820727e",
 		Addresses: []string{"http://127.0.0.1:51007"},
 	}
-	if err := GetSrvCoverAndCreateReportTask(param); err != nil {
+	total, err := GetSrvCoverAndCreateReportTask(param)
+	if err != nil {
 		t.Fatal(err)
 	}
+	fmt.Println("cover total:", total)
 }
 
 //

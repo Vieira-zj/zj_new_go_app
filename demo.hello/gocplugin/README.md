@@ -174,11 +174,11 @@ curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" \
   -d '{"srv_addr":"http://127.0.0.1:51007"}' -o 'raw_profile.cov'
 ```
 
-- `/cover/report/sync`: sync services cover results, and generate report.
+- `/cover/report/sync`: sync services cover results, generate report, and returns cover total.
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/report/sync -H "Content-Type:application/json" \
-  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_845820727e", "addresses": ["http://127.0.0.1:51007"]}'
+  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_845820727e", "addresses": ["http://127.0.0.1:51007"]}' | jq .
 ```
 
 - `cover/latest/report`: get latest cover func/html report.

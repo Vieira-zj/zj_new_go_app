@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-/* Run scheduled tasks by goroutine pool. */
+/* Run scheduled tasks */
 
 func scheduleTaskRemoveUnhealthSrv(ctx context.Context, interval time.Duration) {
 	go func() {
@@ -17,7 +17,7 @@ func scheduleTaskRemoveUnhealthSrv(ctx context.Context, interval time.Duration) 
 			case <-tick:
 				func() {
 					if err := removeUnhealthSrvInGocTask(); err != nil {
-						localCtx, cancel := context.WithTimeout(context.Background(), wait)
+						localCtx, cancel := context.WithTimeout(context.Background(), Wait)
 						defer cancel()
 						errText := fmt.Sprintln("TaskRemoveUnhealthServices remove unhealth service failed:", err)
 						notify.SendMessageToDefaultUser(localCtx, errText)

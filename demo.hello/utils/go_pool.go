@@ -243,10 +243,11 @@ type Worker struct {
 
 // GoPool .
 type GoPool struct {
+	Worker
 	isRunning bool
 	idleTime  time.Duration
 	queue     chan func()
-	Worker
+	stopCh    chan struct{}
 }
 
 // NewGoPool .
@@ -254,6 +255,7 @@ func NewGoPool(coreSize, maxSize int, idleTime time.Duration) *GoPool {
 	pool := &GoPool{
 		idleTime: idleTime,
 		queue:    make(chan func(), maxSize-coreSize),
+		stopCh:   make(chan struct{}),
 		Worker: Worker{
 			work:      make(chan func()),
 			semaphore: make(chan struct{}, coreSize),
@@ -286,7 +288,7 @@ func (pool *GoPool) SubmitWithTimeout(task func(), timeout time.Duration) error 
 	select {
 	case pool.queue <- task:
 	case <-time.After(timeout):
-		return fmt.Errorf("exceed max size %d, and discard", cap(pool.semaphore)+cap(pool.queue))
+		return fmt.Errorf("timeout: exceed max size %d, and discard", cap(pool.semaphore)+cap(pool.queue))
 	}
 	return nil
 }
@@ -322,13 +324,18 @@ func (pool *GoPool) worker(task func()) {
 	}()
 
 	tick := time.NewTicker(pool.idleTime)
+	defer tick.Stop()
+
 	localTask := task
 	for {
 		localTask()
 		select {
+		case <-pool.stopCh:
+			fmt.Printf("[worker %d]: stop\n", workerID)
+			return
 		case <-tick.C:
-			// if there is no more tasks for 3 sec, then worker exit
-			fmt.Printf("[worker %d]: exit\n", workerID)
+			// if there is no more tasks for N sec, then worker exit
+			fmt.Printf("[worker %d]: idle and exit\n", workerID)
 			return
 		case localTask = <-pool.work:
 			fmt.Printf("[worker %d]: fetch task\n", workerID)
@@ -344,6 +351,7 @@ func (pool *GoPool) worker(task func()) {
 // Note: task itself should make sure it can be cancelled by "ctx", or it will be leak after GoPool stop.
 func (pool *GoPool) Stop(waitSec int) {
 	pool.isRunning = false
+	close(pool.stopCh)
 	for i := 0; i < waitSec; i++ {
 		if len(pool.semaphore) == 0 {
 			break

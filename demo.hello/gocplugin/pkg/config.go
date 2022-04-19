@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 )
 
-/* Config */
-
 const (
-	shortWait = 3 * time.Second
-	wait      = 5 * time.Second
-	longWait  = 8 * time.Second
+	// ShortWait .
+	ShortWait = 3 * time.Second
+	// Wait .
+	Wait = 5 * time.Second
+	// LongWait .
+	LongWait = 8 * time.Second
 )
 
 var (
@@ -58,41 +58,3 @@ func LoadModuleToRepoMap() error {
 	}
 	return nil
 }
-
-/* Srv Cover Sync Task State */
-
-const (
-	// StateRunning .
-	StateRunning = iota
-	// StateFreshed .
-	StateFreshed
-	// StateExpired .
-	StateExpired
-)
-
-// SrvCoverSyncTasksState .
-type SrvCoverSyncTasksState struct {
-	store map[string]bool
-	lock  *sync.RWMutex
-}
-
-// NewSrvCoverSyncTasksState .
-func NewSrvCoverSyncTasksState() *SrvCoverSyncTasksState {
-	// TODO:
-	return nil
-}
-
-// Set .
-func (state *SrvCoverSyncTasksState) Set(key string, value int, expired time.Duration) {
-	time.AfterFunc(expired, func() {})
-}
-
-// Get .
-func (state *SrvCoverSyncTasksState) Get(key string) (int, error) {
-	state.lock.Lock()
-	defer state.lock.Unlock()
-	return 0, nil
-}
-
-// Usage .
-func (state *SrvCoverSyncTasksState) Usage() {}

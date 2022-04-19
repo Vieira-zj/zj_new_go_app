@@ -26,8 +26,12 @@ func sendBytes(c *gin.Context, body []byte) {
 	c.Data(http.StatusOK, "application/octet-stream", body)
 }
 
-func sendMessageResp(c *gin.Context, message string) {
-	c.JSON(http.StatusOK, gin.H{"code": 0, "message": message})
+func sendMessageResp(c *gin.Context, msg string) {
+	c.JSON(http.StatusOK, gin.H{"code": 0, "message": msg})
+}
+
+func sendSrvCoverTotalResp(c *gin.Context, msg, coverTotal string) {
+	c.JSON(http.StatusOK, gin.H{"code": 0, "message": msg, "cover_total": coverTotal})
 }
 
 func sendErrorResp(c *gin.Context, errCode int, err error) {

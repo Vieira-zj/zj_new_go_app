@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"demo.hello/gocplugin/pkg"
 	"demo.hello/utils"
@@ -74,20 +76,61 @@ func GetSrvRawCoverHandler(c *gin.Context) {
 	sendBytes(c, b)
 }
 
-// SyncCoverReportHandler .
-func SyncCoverReportHandler(c *gin.Context) {
+// SyncSrvCoverHandler .
+func SyncSrvCoverHandler(c *gin.Context) {
 	param := pkg.SyncSrvCoverParam{}
 	if err := c.ShouldBindJSON(&param); err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
 
-	// TODO: use pool to run task
-	if err := pkg.GetSrvCoverAndCreateReportTask(param); err != nil {
-		sendErrorResp(c, http.StatusBadRequest, err)
+	tasksState := pkg.NewSrvCoverSyncTasksState()
+	if srvState, ok := tasksState.Get(param.SrvName); ok {
+		switch srvState {
+		case pkg.StateRunning:
+			sendMessageResp(c, "Sync service cover task is currently running")
+		case pkg.StateFreshed:
+			if getIsForceSync(c) {
+				break
+			}
+			if coverTotal, err := getLatestSrvCoverTotal(param); err != nil {
+				sendErrorResp(c, http.StatusInternalServerError, err)
+			} else {
+				sendSrvCoverTotalResp(c, "Sync service cover success", coverTotal)
+			}
+		}
 		return
 	}
-	sendMessageResp(c, "sync success")
+
+	retCh := pkg.SubmitSrvCoverSyncTask(param)
+	select {
+	case res := <-retCh:
+		if coverTotal, ok := res.(string); ok {
+			sendSrvCoverTotalResp(c, "Sync service cover success", coverTotal)
+		} else if err, ok := res.(error); ok {
+			sendErrorResp(c, http.StatusInternalServerError, err)
+		}
+	case <-time.After(pkg.LongWait):
+		sendErrorResp(c, http.StatusOK, fmt.Errorf("Timeout for wait sync service cover task"))
+	}
+}
+
+func getIsForceSync(c *gin.Context) bool {
+	force := c.Query("force")
+	if strings.ToLower(force) != "true" {
+		return false
+	}
+	return true
+}
+
+func getLatestSrvCoverTotal(param pkg.SyncSrvCoverParam) (string, error) {
+	dbInstance := pkg.NewGocSrvCoverDBInstance()
+	meta := pkg.GetSrvMetaFromName(param.SrvName)
+	row, err := dbInstance.GetLatestSrvCoverRow(meta)
+	if err != nil {
+		return "", fmt.Errorf("getLatestSrvCoverTotal error: %w", err)
+	}
+	return row.CoverTotal.String, nil
 }
 
 type getLatestCoverReportReq struct {

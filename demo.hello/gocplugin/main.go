@@ -34,6 +34,9 @@ func main() {
 		log.Fatalf("Load config error: %v", err)
 	}
 
+	pkg.InitSrvCoverSyncTasksPool()
+	defer pkg.CloseSrvCoverSyncTasksPool()
+
 	r := setupRouter()
 	if err := r.Run(addr); err != nil {
 		log.Fatalln(err)
@@ -54,7 +57,7 @@ func setupRouter() *gin.Engine {
 	r.POST("/cover/raw", handler.GetSrvRawCoverHandler)
 
 	r.GET("/cover/list", handler.GetCoverSrvListHandler)
-	r.POST("/cover/report/sync", handler.SyncCoverReportHandler)
+	r.POST("/cover/report/sync", handler.SyncSrvCoverHandler)
 	r.POST("cover/latest/report", handler.GetLatestCoverReportHandler)
 
 	// middleware
