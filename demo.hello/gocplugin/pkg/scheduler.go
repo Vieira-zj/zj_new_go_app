@@ -16,7 +16,7 @@ func scheduleTaskRemoveUnhealthSrv(ctx context.Context, interval time.Duration) 
 			select {
 			case <-tick:
 				func() {
-					if err := removeUnhealthSrvInGocTask(); err != nil {
+					if err := RemoveUnhealthSrvInGocTask(); err != nil {
 						localCtx, cancel := context.WithTimeout(context.Background(), Wait)
 						defer cancel()
 						errText := fmt.Sprintln("TaskRemoveUnhealthServices remove unhealth service failed:", err)

@@ -13,6 +13,9 @@ import (
 const (
 	coverRptTypeFunc = "func"
 	coverRptTypeHTML = "html"
+
+	goBin  = "go"
+	gocBin = "goc"
 )
 
 var (
@@ -52,7 +55,7 @@ func (c *ShCmd) GoToolCreateCoverHTMLReport(workingPath, covFile string) (string
 
 func (c *ShCmd) goToolCreateCoverReport(workingPath, covFilePath, coverType string) (string, error) {
 	outFilePath := GetFilePathWithNewExt(covFilePath, coverType)
-	cmd := fmt.Sprintf("cd %s; go tool cover -%s=%s -o %s", workingPath, coverType, covFilePath, outFilePath)
+	cmd := fmt.Sprintf("cd %s; %s tool cover -%s=%s -o %s", workingPath, goBin, coverType, covFilePath, outFilePath)
 	log.Println("Run cmd:", cmd)
 	output, err := utils.RunShellCmd(c.sh, "-c", cmd)
 	if err != nil {
@@ -77,8 +80,13 @@ func getCoverTotalFromFuncReport(filePath string) (string, error) {
 	return getCoverTotalFromSummary(summary), nil
 }
 
-func (c *ShCmd) gocToolMergeSrvCovers(workingPath string, covFiles []string) error {
-	// TODO:
+// GocToolMergeSrvCovers .
+func (c *ShCmd) GocToolMergeSrvCovers(covFilePaths []string, mergeFilePath string) error {
+	files := strings.Join(covFilePaths, " ")
+	mergeCmd := fmt.Sprintf("%s merge %s -o %s", gocBin, files, mergeFilePath)
+	if _, err := utils.RunShellCmd(c.sh, "-c", mergeCmd); err != nil {
+		return fmt.Errorf("gocToolMergeSrvCovers run command error: %w", err)
+	}
 	return nil
 }
 
@@ -87,13 +95,13 @@ func (c *ShCmd) CreateDiffCoverHTMLReport(workingPath, covFilePath string) error
 	xmlOutput := strings.Replace(covFilePath, filepath.Ext(covFilePath), "xml", 1)
 	covCmd := fmt.Sprintf("cd %s; gocov convert %s | gocov-xml > %s", workingPath, covFilePath, xmlOutput)
 	if _, err := utils.RunShellCmd(c.sh, "-c", covCmd); err != nil {
-		return fmt.Errorf("CreateDiffCoverHTMLReport run command failed: %s", covCmd)
+		return fmt.Errorf("CreateDiffCoverHTMLReport run command error: %s", covCmd)
 	}
 
 	htmlOutput := fmt.Sprintf("%s_diff.html", getFilePathWithoutExt(covFilePath))
 	diffCoverCmd := fmt.Sprintf("cd %s; diff-cover %s --compare-branch=master --html-report=%s", workingPath, xmlOutput, htmlOutput)
 	if _, err := utils.RunShellCmd(c.sh, "-c", diffCoverCmd); err != nil {
-		return fmt.Errorf("CreateDiffCoverHTMLReport run command failed: %s", diffCoverCmd)
+		return fmt.Errorf("CreateDiffCoverHTMLReport run command error: %s", diffCoverCmd)
 	}
 	return nil
 }

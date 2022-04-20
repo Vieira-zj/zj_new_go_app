@@ -13,10 +13,10 @@ func TestIsAttachSrvOK(t *testing.T) {
 
 func TestRemoveUnhealthSrvInGocTask(t *testing.T) {
 	AppConfig.GocHost = testGocLocalHost
-	if err := removeUnhealthSrvInGocTask(); err != nil {
+	if err := RemoveUnhealthSrvInGocTask(); err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("done")
+	fmt.Println("unhealth check done")
 }
 
 func TestDeprecatedGetSrvCoverTask(t *testing.T) {
@@ -131,7 +131,7 @@ func TestGetSavedCovFileName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	name := getSavedCovFileName(param)
+	name := getSavedCovFileNameWithSuffix(param, "")
 	fmt.Println("saved file name:", name)
 }
 

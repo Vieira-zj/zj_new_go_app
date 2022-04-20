@@ -105,7 +105,7 @@ goc server
 # build
 cd echo/; goc build . -o goc_echoserver
 # run
-ENV=staging APPTYPE=apa REGION=th GIT_BRANCH=origin/master GIT_COMMIT=845820727e ./goc_echoserver
+ENV=staging APPTYPE=apa REGION=th GIT_BRANCH=origin/master GIT_COMMIT=b63d82705a ./goc_echoserver -p 8081
 ```
 
 3. Check register service
@@ -162,6 +162,8 @@ curl -i http://127.0.0.1:8089/
 curl http://127.0.0.1:8089/ping | jq .
 ```
 
+------
+
 Get service cover data:
 
 - `/cover/list`: get list of services cover info.
@@ -184,17 +186,19 @@ curl -XPOST http://127.0.0.1:8089/cover/total/history -H "Content-Type:applicati
   -d '{"srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' | jq .
 ```
 
+------
+
 Sync service cover data and create report:
 
 - `/cover/report/sync`: sync service cover results, generate report, and returns cover total.
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/report/sync -H "Content-Type:application/json" \
-  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_845820727e", "addresses": ["http://127.0.0.1:51007"]}' | jq .
+  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
 
 # force sync
 curl -XPOST "http://127.0.0.1:8089/cover/report/sync?force=true" -H "Content-Type:application/json" \
-  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_845820727e", "addresses": ["http://127.0.0.1:51007"]}' | jq .
+  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
 ```
 
 - `/cover/raw`: get service cover raw data.

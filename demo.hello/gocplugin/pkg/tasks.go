@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,8 +25,8 @@ const (
 // Task check unhealth services
 //
 
-// removeUnhealthSrvInGocTask removes unhealth services from goc register list.
-func removeUnhealthSrvInGocTask() error {
+// RemoveUnhealthSrvInGocTask removes unhealth services from goc register list.
+func RemoveUnhealthSrvInGocTask() error {
 	goc := NewGocAPI()
 	ctx, cancel := context.WithTimeout(context.Background(), ShortWait)
 	defer cancel()
@@ -339,30 +340,44 @@ func deprecatedGetSrvCoverTask(moduleDir string, param SyncSrvCoverParam) (strin
 }
 
 func fetchAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), LongWait)
-	defer cancel()
-
+	savedPaths := make([]string, len(param.Addresses))
 	goc := NewGocAPI()
-	// TODO: merge cover for addresses
-	addr := param.Addresses[0]
-	b, err := goc.GetServiceProfileByAddr(ctx, addr)
-	if err != nil {
-		return "", fmt.Errorf("fetchAndSaveSrvCover get service [%s] profile error: %w", param.Addresses[0], err)
+	for idx, addr := range param.Addresses {
+		b, err := func() ([]byte, error) {
+			ctx, cancel := context.WithTimeout(context.Background(), LongWait)
+			defer cancel()
+			return goc.GetServiceProfileByAddr(ctx, addr)
+		}()
+		if err != nil {
+			return "", fmt.Errorf("fetchAndSaveSrvCover get service [%s] profile error: %w", param.Addresses[0], err)
+		}
+
+		fileName := getSavedCovFileNameWithSuffix(param, strconv.Itoa(idx))
+		savedPath := filepath.Join(savedDir, fileName)
+		f, err := os.Create(savedPath)
+		if err != nil {
+			return "", fmt.Errorf("fetchAndSaveSrvCover open file [%s] error: %w", savedPath, err)
+		}
+		defer f.Close()
+
+		buf := bytes.NewBuffer(b)
+		if _, err := f.Write(buf.Bytes()); err != nil {
+			return "", fmt.Errorf("fetchAndSaveSrvCover write file [%s] error: %w", savedPath, err)
+		}
+		savedPaths = append(savedPaths, savedPath)
 	}
 
-	fileName := getSavedCovFileName(param)
-	savedPath := filepath.Join(savedDir, fileName)
-	f, err := os.Create(savedPath)
-	if err != nil {
-		return "", fmt.Errorf("fetchAndSaveSrvCover open file [%s] error: %w", savedPath, err)
+	if len(savedPaths) == 1 {
+		return savedPaths[0], nil
 	}
-	defer f.Close()
 
-	buf := bytes.NewBuffer(b)
-	if _, err := f.Write(buf.Bytes()); err != nil {
-		return "", fmt.Errorf("fetchAndSaveSrvCover write file [%s] error: %w", savedPath, err)
+	cmd := NewShCmd()
+	mergeFileName := getSavedCovFileNameWithSuffix(param, "merge")
+	mergeFilePath := filepath.Join(savedDir, mergeFileName)
+	if err := cmd.GocToolMergeSrvCovers(savedPaths, mergeFilePath); err != nil {
+		return "", fmt.Errorf("fetchAndSaveSrvCover merge srv cov files error: %w", err)
 	}
-	return savedPath, nil
+	return mergeFilePath, nil
 }
 
 //
@@ -374,8 +389,11 @@ func fetchAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, err
 // Helper
 //
 
-func getSavedCovFileName(param SyncSrvCoverParam) string {
+func getSavedCovFileNameWithSuffix(param SyncSrvCoverParam, suffix string) string {
 	now := getSimpleNowDatetime()
+	if len(suffix) > 0 {
+		return fmt.Sprintf("%s_%s_%s.cov", param.SrvName, now, suffix)
+	}
 	return fmt.Sprintf("%s_%s.cov", param.SrvName, now)
 }
 
@@ -426,10 +444,6 @@ func GetSrvMetaFromName(name string) SrvCoverMeta {
 
 // GetSrvTotalFromGoc .
 func GetSrvTotalFromGoc(addrs []string) (string, error) {
-	if addrs == nil || len(addrs) == 0 {
-		return "", fmt.Errorf("Addresses is nil or empty")
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), ShortWait)
 	defer cancel()
 

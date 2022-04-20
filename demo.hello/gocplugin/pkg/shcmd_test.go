@@ -52,3 +52,22 @@ func TestGoToolCreateCoverHTMLReport(t *testing.T) {
 		fmt.Println("output:", output)
 	}
 }
+
+func TestGocToolMergeSrvCovers(t *testing.T) {
+	workingDir := "/tmp/test/apa_goc_echoserver/cover_data"
+	srcCovFiles := []string{
+		filepath.Join(workingDir, "staging_th_apa_goc_echoserver_master_845820727e_20220420_154057.cov"),
+		filepath.Join(workingDir, "staging_th_apa_goc_echoserver_master_845820727e_20220420_154143.cov"),
+	}
+
+	param := SyncSrvCoverParam{
+		SrvName: "staging_th_apa_goc_echoserver_master_845820727e",
+	}
+	mergeFileName := getSavedCovFileNameWithSuffix(param, "merge")
+	mergeFilePath := filepath.Join(workingDir, mergeFileName)
+
+	cmd := NewShCmd()
+	if err := cmd.GocToolMergeSrvCovers(srcCovFiles, mergeFilePath); err != nil {
+		t.Fatal(err)
+	}
+}

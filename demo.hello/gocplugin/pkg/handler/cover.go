@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -66,6 +67,11 @@ func getLatestSrvCoverTotal(param pkg.SyncSrvCoverParam) (string, error) {
 	row, err := dbInstance.GetLatestSrvCoverRow(meta)
 	if err != nil {
 		if errors.Is(err, pkg.ErrSrvCoverLatestRowNotFound) {
+			if len(param.Addresses) == 0 {
+				if err := setSrvAddrsForParam(&param); err != nil {
+					return "", fmt.Errorf("getLatestSrvCoverTotal error: %w", err)
+				}
+			}
 			coverTotal, err := pkg.GetSrvTotalFromGoc(param.Addresses)
 			if err != nil {
 				return "", fmt.Errorf("getLatestSrvCoverTotal error: %w", err)
@@ -78,8 +84,37 @@ func getLatestSrvCoverTotal(param pkg.SyncSrvCoverParam) (string, error) {
 	return row.CoverTotal.String, nil
 }
 
+func setSrvAddrsForParam(param *pkg.SyncSrvCoverParam) error {
+	if err := pkg.RemoveUnhealthSrvInGocTask(); err != nil {
+		return fmt.Errorf("setSrvAddrsForParam error: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), pkg.ShortWait)
+	defer cancel()
+
+	gocAPI := pkg.NewGocAPI()
+	srvs, err := gocAPI.ListRegisterServices(ctx)
+	if err != nil {
+		return fmt.Errorf("setSrvAddrsForParam error: %w", err)
+	}
+
+	addrs, ok := srvs[param.SrvName]
+	if !ok {
+		err = fmt.Errorf("Service name not found: %s", param.SrvName)
+		return fmt.Errorf("setSrvAddrsForParam error: %w", err)
+	}
+	if len(addrs) == 0 {
+		err = fmt.Errorf("No address found for service: %s", param.SrvName)
+		return fmt.Errorf("setSrvAddrsForParam error: %w", err)
+	}
+	param.Addresses = addrs
+	return nil
+}
+
 type respSrvCoverTotalItem struct {
 	ID         uint
+	Addresses  []string
+	Commit     string
 	CoverTotal string
 }
 
@@ -103,6 +138,8 @@ func GetHistorySrvCoverTotalsHandler(c *gin.Context) {
 	for _, row := range rows {
 		item := respSrvCoverTotalItem{
 			ID:         row.ID,
+			Addresses:  strings.Split(row.Addrs, ","),
+			Commit:     row.GitCommit,
 			CoverTotal: row.CoverTotal.String,
 		}
 		srvCoverTotals = append(srvCoverTotals, item)
@@ -111,7 +148,6 @@ func GetHistorySrvCoverTotalsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"code":             0,
 		"srv_name":         meta.AppName,
-		"addresses":        strings.Split(meta.Addrs, ","),
 		"count":            len(srvCoverTotals),
 		"srv_cover_totals": srvCoverTotals,
 	})
@@ -143,8 +179,7 @@ func SyncSrvCoverHandler(c *gin.Context) {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
-	if param.Addresses == nil {
-		err := fmt.Errorf("Addresses is nil")
+	if err := setSrvAddrsForParam(&param); err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
