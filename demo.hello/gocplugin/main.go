@@ -54,11 +54,15 @@ func setupRouter() *gin.Engine {
 
 	r.GET("/", handler.IndexHandler)
 	r.GET("/ping", handler.PingHandler)
-	r.POST("/cover/raw", handler.GetSrvRawCoverHandler)
 
-	r.GET("/cover/list", handler.GetCoverSrvListHandler)
+	r.GET("/cover/list", handler.GetListOfSrvCoversHandler)
+	r.POST("/cover/total/latest", handler.GetLatestSrvCoverTotalHandler)
+	r.POST("/cover/total/history", handler.GetHistorySrvCoverTotalsHandler)
+
 	r.POST("/cover/report/sync", handler.SyncSrvCoverHandler)
-	r.POST("cover/latest/report", handler.GetLatestCoverReportHandler)
+
+	r.POST("/cover/raw", handler.GetSrvRawCoverHandler)
+	r.POST("/cover/report/latest", handler.GetLatestSrvCoverReportHandler)
 
 	// middleware
 	r.Use(gin.Logger())

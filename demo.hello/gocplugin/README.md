@@ -143,7 +143,8 @@ curl -XPOST "http://localhost:7777//v1/cover/register?name=staging_th_apa_goc_ec
 - remove service from goc center
 
 ```sh
-curl -XPOST http://localhost:7777/v1/cover/remove -H "Content-Type:application/json" -d '{"service":["staging_th_apa_goc_echoserver_v1"]}'
+curl -XPOST http://localhost:7777/v1/cover/remove -H "Content-Type:application/json" \
+  -d '{"service":["staging_th_apa_goc_echoserver_v1"]}'
 ```
 
 - attach server api
@@ -154,17 +155,46 @@ curl http://127.0.0.1:51025/v1/cover/coverage
 
 ## Goc Report API
 
-- server health:
+Server health check:
 
 ```sh
 curl -i http://127.0.0.1:8089/
 curl http://127.0.0.1:8089/ping | jq .
 ```
 
+Get service cover data:
+
 - `/cover/list`: get list of services cover info.
 
 ```sh
 curl http://127.0.0.1:8089/cover/list | jq .
+```
+
+- `/cover/total/latest`: get latest service cover total.
+
+```sh
+curl -XPOST http://127.0.0.1:8089/cover/total/latest -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' | jq .
+```
+
+- `/cover/total/history`: get history service cover totals.
+
+```sh
+curl -XPOST http://127.0.0.1:8089/cover/total/history -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' | jq .
+```
+
+Sync service cover data and create report:
+
+- `/cover/report/sync`: sync service cover results, generate report, and returns cover total.
+
+```sh
+curl -XPOST http://127.0.0.1:8089/cover/report/sync -H "Content-Type:application/json" \
+  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_845820727e", "addresses": ["http://127.0.0.1:51007"]}' | jq .
+
+# force sync
+curl -XPOST "http://127.0.0.1:8089/cover/report/sync?force=true" -H "Content-Type:application/json" \
+  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_845820727e", "addresses": ["http://127.0.0.1:51007"]}' | jq .
 ```
 
 - `/cover/raw`: get service cover raw data.
@@ -174,23 +204,17 @@ curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" \
   -d '{"srv_addr":"http://127.0.0.1:51007"}' -o 'raw_profile.cov'
 ```
 
-- `/cover/report/sync`: sync services cover results, generate report, and returns cover total.
+- `cover/report/latest`: get latest cover func/html report.
 
 ```sh
-curl -XPOST http://127.0.0.1:8089/cover/report/sync -H "Content-Type:application/json" \
-  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_845820727e", "addresses": ["http://127.0.0.1:51007"]}' | jq .
-```
-
-- `cover/latest/report`: get latest cover func/html report.
-
-```sh
-curl -XPOST http://127.0.0.1:8089/cover/latest/report -H "Content-Type:application/json" \
+# func report
+curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:application/json" \
   -d '{"rpt_type":"func", "srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' -o 'cover_report.func'
+
+# html report
+curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:application/json" \
+  -d '{"rpt_type":"html", "srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' -o 'cover_report.html'
 ```
 
-- `cover/history/report`: get latest cover func/html report.
-
-- `/cover/latest/total`: get latest cover total.
-
-- `/cover/history/total`: get history cover totals.
+- `cover/report/history`: get latest cover func/html report.
 

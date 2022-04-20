@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-func TestIsAttachServerOK(t *testing.T) {
+func TestIsAttachSrvOK(t *testing.T) {
 	host := "http://127.0.0.1:51025"
-	ok := isAttachServerOK(host)
+	ok := isAttachSrvOK(host)
 	fmt.Println("service ok:", ok)
 }
 
@@ -19,28 +19,28 @@ func TestRemoveUnhealthSrvInGocTask(t *testing.T) {
 	fmt.Println("done")
 }
 
-func TestGetSrvCoverTaskDeprecated(t *testing.T) {
+func TestDeprecatedGetSrvCoverTask(t *testing.T) {
 	AppConfig.GocHost = testGocLocalHost
 	savedDir := "/tmp/test/apa_goc_echoserver"
 	param := SyncSrvCoverParam{
 		SrvName:   "staging_th_apa_goc_echoserver_master_518e0a570c",
 		Addresses: []string{"http://127.0.0.1:51007"},
 	}
-	savedPath, isUpdate, err := getSrvCoverTaskDeprecated(savedDir, param)
+	savedPath, isUpdate, err := deprecatedGetSrvCoverTask(savedDir, param)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("saved=%s, updated=%v\n", savedPath, isUpdate)
 }
 
-func TestGetAndSaveSrvCover(t *testing.T) {
+func TestFetchAndSaveSrvCover(t *testing.T) {
 	AppConfig.GocHost = testGocLocalHost
 	savedDir := "/tmp/test/apa_goc_echoserver"
 	param := SyncSrvCoverParam{
 		SrvName:   "staging_th_apa_goc_echoserver_master_518e0a570c",
 		Addresses: []string{"http://127.0.0.1:51007"},
 	}
-	savedPath, err := getAndSaveSrvCover(savedDir, param)
+	savedPath, err := fetchAndSaveSrvCover(savedDir, param)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestGetSrvCoverTask(t *testing.T) {
 	fmt.Printf("save_path=%s, is_update=%v\n", savePath, isUpdate)
 }
 
-func TestSyncSrvRepo(t *testing.T) {
+func TestCheckoutSrvRepo(t *testing.T) {
 	// run: go test -timeout 300s -run ^TestSyncSrvRepo$ demo.hello/gocplugin/pkg -v -count=1
 	if err := mockLoadConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
@@ -71,7 +71,7 @@ func TestSyncSrvRepo(t *testing.T) {
 		SrvName:   "staging_th_apa_goc_echoserver_master_518e0a570c",
 		Addresses: []string{"http://127.0.0.1:51007"},
 	}
-	if err := syncSrvRepo(workingDir, param); err != nil {
+	if err := checkoutSrvRepo(workingDir, param); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -131,10 +131,7 @@ func TestGetSavedCovFileName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	name, err := getSavedCovFileName(param)
-	if err != nil {
-		t.Fatal(err)
-	}
+	name := getSavedCovFileName(param)
 	fmt.Println("saved file name:", name)
 }
 
@@ -161,17 +158,4 @@ func TestGetBranchAndCommitFromSrvName(t *testing.T) {
 	name := "staging_th_apa_goc_echoserver_master_518e0a570c"
 	br, commit := getBranchAndCommitFromSrvName(name)
 	fmt.Printf("branch=%s, commitID=%s\n", br, commit)
-}
-
-func TestGetRepoURLFromSrvName(t *testing.T) {
-	if err := mockLoadConfig("/tmp/test"); err != nil {
-		t.Fatal(err)
-	}
-
-	name := "staging_th_apa_goc_echoserver_master_518e0a570c"
-	url, err := getRepoURLFromSrvName(name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println("url:", url)
 }

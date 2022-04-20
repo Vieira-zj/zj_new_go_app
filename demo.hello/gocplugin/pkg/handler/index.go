@@ -30,7 +30,8 @@ func sendMessageResp(c *gin.Context, msg string) {
 	c.JSON(http.StatusOK, gin.H{"code": 0, "message": msg})
 }
 
-func sendSrvCoverTotalResp(c *gin.Context, msg, coverTotal string) {
+func sendSrvCoverTotalResp(c *gin.Context, coverTotal string) {
+	const msg = "Sync service cover success"
 	c.JSON(http.StatusOK, gin.H{"code": 0, "message": msg, "cover_total": coverTotal})
 }
 

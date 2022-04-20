@@ -16,10 +16,12 @@ import (
 	"gorm.io/gorm"
 )
 
-const defaultCover = "0"
+const (
+	defaultCover = "0"
+)
 
 //
-// Task for unhealth services
+// Task check unhealth services
 //
 
 // removeUnhealthSrvInGocTask removes unhealth services from goc register list.
@@ -34,7 +36,7 @@ func removeUnhealthSrvInGocTask() error {
 
 	for _, addrs := range services {
 		for _, addr := range addrs {
-			if !isAttachServerOK(addr) {
+			if !isAttachSrvOK(addr) {
 				if _, err := goc.DeleteRegisterServiceByAddr(ctx, addr); err != nil {
 					return fmt.Errorf("RemoveUnhealthServicesFromGocSvrList error: %w", err)
 				}
@@ -44,8 +46,8 @@ func removeUnhealthSrvInGocTask() error {
 	return nil
 }
 
-// isAttachServerOK checks wheather attached server is ok, and retry 4 times by default.
-func isAttachServerOK(addr string) bool {
+// isAttachSrvOK checks wheather attached server is ok, and retry 4 times by default.
+func isAttachSrvOK(addr string) bool {
 	for i := 1; ; i++ {
 		err := func() (err error) {
 			ctx, cancel := context.WithTimeout(context.Background(), ShortWait)
@@ -66,13 +68,13 @@ func isAttachServerOK(addr string) bool {
 }
 
 //
-// Task create cover report
+// Task sync service cover and create report
 //
 
 // SyncSrvCoverParam .
 type SyncSrvCoverParam struct {
 	SrvName   string   `json:"srv_name"`
-	Addresses []string `json:"addresses"`
+	Addresses []string `json:"addresses,omitempty"`
 }
 
 // GetSrvCoverAndCreateReportTask .
@@ -168,6 +170,10 @@ func saveSrvCoverInDB(row GocSrvCoverModel) error {
 	return nil
 }
 
+//
+// Task create service cover report
+//
+
 // createSrvCoverReportTask
 // 1. sync repo with specified commit;
 // 2. run "go tool cover" to generate .func and .html coverage report.
@@ -175,7 +181,7 @@ func createSrvCoverReportTask(covFile string, param SyncSrvCoverParam) (string, 
 	moduleDir := getModuleDir(param.SrvName)
 	repoDir := filepath.Join(moduleDir, "repo")
 	cmd := NewShCmd()
-	if err := syncSrvRepo(repoDir, param); err != nil {
+	if err := checkoutSrvRepo(repoDir, param); err != nil {
 		return defaultCover, fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
 
@@ -190,25 +196,25 @@ func createSrvCoverReportTask(covFile string, param SyncSrvCoverParam) (string, 
 	return coverTotal, nil
 }
 
-func syncSrvRepo(workingDir string, param SyncSrvCoverParam) error {
+func checkoutSrvRepo(workingDir string, param SyncSrvCoverParam) error {
 	if !utils.IsDirExist(workingDir) {
 		if err := func() error {
-			url, err := getRepoURLFromSrvName(param.SrvName)
-			if err != nil {
-				return fmt.Errorf("syncSrvRepo get repo url error: %w", err)
+			repoURL, ok := ModuleToRepoMap[param.SrvName]
+			if !ok {
+				return fmt.Errorf("checkoutSrvRepo repo url not found for service: [%s]", param.SrvName)
 			}
 
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 			defer cancel()
 
-			head, err := GitClone(ctx, url, workingDir)
+			head, err := GitClone(ctx, repoURL, workingDir)
 			if err != nil {
 				return err
 			}
 			log.Printf("Git clone repo [%s] with head [%s]", param.SrvName, head)
 			return nil
 		}(); err != nil {
-			return fmt.Errorf("syncSrvRepo error: %w", err)
+			return fmt.Errorf("checkoutSrvRepo error: %w", err)
 		}
 		return nil
 	}
@@ -217,28 +223,28 @@ func syncSrvRepo(workingDir string, param SyncSrvCoverParam) error {
 	branch, commitID := getBranchAndCommitFromSrvName(param.SrvName)
 	IsExist, err := repo.IsBranchExist(branch)
 	if err != nil {
-		return fmt.Errorf("syncSrvRepo error: %w", err)
+		return fmt.Errorf("checkoutSrvRepo error: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
 	head := ""
 	if IsExist {
 		head, err = repo.Pull(ctx, branch)
 		if err != nil {
-			return fmt.Errorf("syncSrvRepo error: %w", err)
+			return fmt.Errorf("checkoutSrvRepo error: %w", err)
 		}
 	} else {
 		head, err = repo.CheckoutRemoteBranch(ctx, branch)
 		if err != nil {
-			return fmt.Errorf("syncSrvRepo error: %w", err)
+			return fmt.Errorf("checkoutSrvRepo error: %w", err)
 		}
 	}
 
 	if head != commitID {
 		if err := repo.CheckoutToCommit(commitID); err != nil {
-			return fmt.Errorf("syncSrvRepo error: %w", err)
+			return fmt.Errorf("checkoutSrvRepo error: %w", err)
 		}
 	}
 	return nil
@@ -249,18 +255,18 @@ func syncSrvRepo(workingDir string, param SyncSrvCoverParam) error {
 //
 
 // getSrvCoverTask
-// 1. get service coverage from goc, and save to file;
+// 1. fetch service coverage from goc, and save to file;
 // 2. compare current coverage data with last one.
 func getSrvCoverTask(param SyncSrvCoverParam) (string, bool, error) {
 	moduleDir := getModuleDir(param.SrvName)
 	coverDir := filepath.Join(moduleDir, "cover_data")
 	if !utils.IsDirExist(coverDir) {
 		if err := utils.MakeDir(coverDir); err != nil {
-			return "", false, fmt.Errorf("getSrvCoverTask create cover dir error: %w", err)
+			return "", false, fmt.Errorf("getSrvCoverTask make cover data dir error: %w", err)
 		}
 	}
 
-	savedPath, err := getAndSaveSrvCover(coverDir, param)
+	savedPath, err := fetchAndSaveSrvCover(coverDir, param)
 	if err != nil {
 		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
 	}
@@ -278,7 +284,7 @@ func getSrvCoverTask(param SyncSrvCoverParam) (string, bool, error) {
 
 	isEqual, err := utils.IsFileContentEqual(row.CovFilePath, savedPath)
 	if err != nil {
-		return "", false, fmt.Errorf("getSrvCoverTask compare cover files content error: %w", err)
+		return "", false, fmt.Errorf("getSrvCoverTask compare cover files error: %w", err)
 	}
 	if isEqual {
 		isCovUpdated = false
@@ -286,10 +292,10 @@ func getSrvCoverTask(param SyncSrvCoverParam) (string, bool, error) {
 	return savedPath, isCovUpdated, nil
 }
 
-// getSrvCoverTask (Deprecated)
+// deprecatedGetSrvCoverTask
 // 1. get service coverage from goc, and save to file;
 // 2. move last cov file to history dir.
-func getSrvCoverTaskDeprecated(moduleDir string, param SyncSrvCoverParam) (string, bool, error) {
+func deprecatedGetSrvCoverTask(moduleDir string, param SyncSrvCoverParam) (string, bool, error) {
 	coverFiles, err := utils.GetFilesBySuffix(moduleDir, ".cov")
 	if err != nil {
 		return "", false, fmt.Errorf("getSrvCoverTask get exsting profile file error: %w", err)
@@ -298,7 +304,7 @@ func getSrvCoverTaskDeprecated(moduleDir string, param SyncSrvCoverParam) (strin
 		return "", false, fmt.Errorf("getSrvCoverTask get more than one existing cover file from dir: %s", moduleDir)
 	}
 
-	savedPath, err := getAndSaveSrvCover(moduleDir, param)
+	savedPath, err := fetchAndSaveSrvCover(moduleDir, param)
 	if err != nil {
 		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
 	}
@@ -332,32 +338,29 @@ func getSrvCoverTaskDeprecated(moduleDir string, param SyncSrvCoverParam) (strin
 	return savedPath, isCovUpdated, nil
 }
 
-func getAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, error) {
+func fetchAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), LongWait)
 	defer cancel()
 
-	// TODO: merge cover for addresses
 	goc := NewGocAPI()
-	b, err := goc.GetServiceProfileByAddr(ctx, param.Addresses[0])
+	// TODO: merge cover for addresses
+	addr := param.Addresses[0]
+	b, err := goc.GetServiceProfileByAddr(ctx, addr)
 	if err != nil {
-		return "", fmt.Errorf("getAndSaveSrvCover get service [%s] profile error: %w", param.Addresses[0], err)
+		return "", fmt.Errorf("fetchAndSaveSrvCover get service [%s] profile error: %w", param.Addresses[0], err)
 	}
 
-	fileName, err := getSavedCovFileName(param)
-	if err != nil {
-		return "", fmt.Errorf("getAndSaveSrvCover get saved cov file name error: %w", err)
-	}
-
+	fileName := getSavedCovFileName(param)
 	savedPath := filepath.Join(savedDir, fileName)
 	f, err := os.Create(savedPath)
 	if err != nil {
-		return "", fmt.Errorf("getAndSaveSrvCover open file [%s] error: %w", savedPath, err)
+		return "", fmt.Errorf("fetchAndSaveSrvCover open file [%s] error: %w", savedPath, err)
 	}
 	defer f.Close()
 
 	buf := bytes.NewBuffer(b)
 	if _, err := f.Write(buf.Bytes()); err != nil {
-		return "", fmt.Errorf("getAndSaveSrvCover write file [%s] error: %w", savedPath, err)
+		return "", fmt.Errorf("fetchAndSaveSrvCover write file [%s] error: %w", savedPath, err)
 	}
 	return savedPath, nil
 }
@@ -371,9 +374,9 @@ func getAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, error
 // Helper
 //
 
-func getSavedCovFileName(param SyncSrvCoverParam) (string, error) {
+func getSavedCovFileName(param SyncSrvCoverParam) string {
 	now := getSimpleNowDatetime()
-	return fmt.Sprintf("%s_%s.cov", param.SrvName, now), nil
+	return fmt.Sprintf("%s_%s.cov", param.SrvName, now)
 }
 
 func getModuleFromSrvName(name string) (string, error) {
@@ -383,18 +386,6 @@ func getModuleFromSrvName(name string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("Module is not found for service: %s", name)
-}
-
-// ErrURLNotFound .
-var ErrURLNotFound = errors.New("Repo URL not found")
-
-func getRepoURLFromSrvName(name string) (string, error) {
-	for k, v := range ModuleToRepoMap {
-		if strings.Contains(name, k) {
-			return v, nil
-		}
-	}
-	return "", ErrURLNotFound
 }
 
 func getBranchAndCommitFromSrvName(name string) (string, string) {
@@ -409,7 +400,8 @@ func getModuleDir(srvName string) string {
 
 // GetSrvMetaFromName .
 func GetSrvMetaFromName(name string) SrvCoverMeta {
-	// example: staging_th_apa_goc_echoserver_master_518e0a570c
+	// input name example:
+	// staging_th_apa_goc_echoserver_master_518e0a570c
 	items := strings.Split(name, "_")
 	size := len(items)
 	compItems := make([]string, 0, 4)
@@ -433,9 +425,16 @@ func GetSrvMetaFromName(name string) SrvCoverMeta {
 }
 
 // GetSrvTotalFromGoc .
-func GetSrvTotalFromGoc(addr string) (string, error) {
+func GetSrvTotalFromGoc(addrs []string) (string, error) {
+	if addrs == nil || len(addrs) == 0 {
+		return "", fmt.Errorf("Addresses is nil or empty")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), ShortWait)
 	defer cancel()
+
+	// if multiple addrs, get cover total from first addr by default
+	addr := addrs[0]
 	cover, err := APIGetServiceCoverage(ctx, addr)
 	if err != nil {
 		return defaultCover, fmt.Errorf("GetSrvTotalFromGoc error: %w", err)

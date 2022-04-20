@@ -52,10 +52,6 @@ func NewGocAPI() *GocAPI {
 	return gocAPI
 }
 
-//
-// Service API
-//
-
 // ListRegisterServices .
 func (goc *GocAPI) ListRegisterServices(ctx context.Context) (map[string][]string, error) {
 	url := goc.host + CoverServicesListAPI
@@ -170,13 +166,13 @@ func (goc *GocAPI) clearServiceProfile(ctx context.Context, service, addr []stri
 	}
 	body, err := json.Marshal(&param)
 	if err != nil {
-		return "", fmt.Errorf("ClearProfile json marshal failed: %w", err)
+		return "", fmt.Errorf("clearServiceProfile json marshal failed: %w", err)
 	}
 
 	url := goc.host + CoverProfileClearAPI
 	resp, err := goc.http.Post(ctx, url, getDefaultHeader(), string(body))
 	if err != nil {
-		return "", fmt.Errorf("ClearProfile send http post failed: %w", err)
+		return "", fmt.Errorf("clearServiceProfile send http post failed: %w", err)
 	}
 	return string(resp), nil
 }
@@ -198,10 +194,10 @@ func APIGetServiceCoverage(ctx context.Context, addr string) (string, error) {
 	httpClient := utils.NewDefaultHTTPUtils()
 	resp, respBody, err := httpClient.GetV2(ctx, url, map[string]string{})
 	if err != nil {
-		return "", fmt.Errorf("GetServiceCoverage send http get failed: %w", err)
+		return "", fmt.Errorf("APIGetServiceCoverage send http get failed: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GetAttachServiceCoverage get non-200 returned code: %d", resp.StatusCode)
+		return "", fmt.Errorf("APIGetServiceCoverage get non-200 returned code: %d", resp.StatusCode)
 	}
 	return string(respBody), nil
 }

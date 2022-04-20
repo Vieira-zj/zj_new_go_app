@@ -67,6 +67,23 @@ func TestGetLatestSrvCoverRowMoreThanOneErr(t *testing.T) {
 	}
 }
 
+func TestGetLimitedHistorySrvCoverRows(t *testing.T) {
+	AppConfig.RootDir = "/tmp/test"
+	instance := NewGocSrvCoverDBInstance()
+
+	srvName := "staging_th_apa_goc_echoserver_master_518e0a570c"
+	meta := GetSrvMetaFromName(srvName)
+	rows, err := instance.GetLimitedHistorySrvCoverRows(meta, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println("query results:")
+	for _, row := range rows {
+		fmt.Println(row.ID, row.AppName, row.IsLatest, row.CoverTotal.String, row.CovFilePath)
+	}
+}
+
 func TestUpdateLatestRowToFalse(t *testing.T) {
 	AppConfig.RootDir = "/tmp/test"
 	instance := NewGocSrvCoverDBInstance()

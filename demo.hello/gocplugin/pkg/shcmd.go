@@ -10,15 +10,20 @@ import (
 	"demo.hello/utils"
 )
 
-// ShCmd .
-type ShCmd struct {
-	sh string
-}
+const (
+	coverRptTypeFunc = "func"
+	coverRptTypeHTML = "html"
+)
 
 var (
 	shCmd     *ShCmd
 	shCmdOnce sync.Once
 )
+
+// ShCmd .
+type ShCmd struct {
+	sh string
+}
 
 // NewShCmd .
 func NewShCmd() *ShCmd {
@@ -34,11 +39,6 @@ func NewShCmd() *ShCmd {
 func (c *ShCmd) Run(cmd string) (string, error) {
 	return utils.RunShellCmd(c.sh, "-c", cmd)
 }
-
-const (
-	coverRptTypeFunc = "func"
-	coverRptTypeHTML = "html"
-)
 
 // GoToolCreateCoverFuncReport .
 func (c *ShCmd) GoToolCreateCoverFuncReport(workingPath, covFilePath string) (string, error) {
@@ -71,7 +71,7 @@ func (c *ShCmd) goToolCreateCoverReport(workingPath, covFilePath, coverType stri
 func getCoverTotalFromFuncReport(filePath string) (string, error) {
 	lines, err := utils.ReadLinesFile(filePath)
 	if err != nil {
-		return "", fmt.Errorf("GetCoverTotalFromFuncReport read file lines error: %w", err)
+		return "", fmt.Errorf("GetCoverTotalFromFuncReport read lines from file error: %w", err)
 	}
 	summary := lines[len(lines)-1]
 	return getCoverTotalFromSummary(summary), nil
