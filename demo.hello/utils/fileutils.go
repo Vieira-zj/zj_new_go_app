@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -75,24 +76,28 @@ func MoveFile(src, dst string) error {
 	return os.Rename(src, dst)
 }
 
-// GetFilesBySuffix .
-func GetFilesBySuffix(dirPath, suffix string) ([]string, error) {
+// ListFilesInDir returns file names with specified ext in a dir.
+func ListFilesInDir(dirPath, ext string) ([]string, error) {
+	if len(ext) > 0 && !strings.HasPrefix(ext, ".") {
+		ext = "." + ext
+	}
+
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return nil, err
 	}
 
-	foundFiles := make([]string, 0, 8)
+	retFileNames := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		name := entry.Name()
-		if filepath.Ext(name) == suffix {
-			foundFiles = append(foundFiles, filepath.Join(dirPath, name))
+		if len(ext) > 0 && filepath.Ext(entry.Name()) != ext {
+			continue
 		}
+		retFileNames = append(retFileNames, entry.Name())
 	}
-	return foundFiles, nil
+	return retFileNames, nil
 }
 
 // GetGoFileAbsPath returns .go file absolute path.
@@ -186,6 +191,59 @@ func RemoveExpiredFiles(dir string, expired float64, unit int) ([]string, error)
 		}
 	}
 	return deletedFiles, nil
+}
+
+var (
+	// ErrNoFilesExistInDir .
+	ErrNoFilesExistInDir = fmt.Errorf("ErrNoFilesExistInDir")
+)
+
+// GetLatestFileInDir returns latest modify file name with specified ext in a dir.
+func GetLatestFileInDir(dirPath, ext string) (string, error) {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return "", nil
+	}
+
+	if len(ext) > 0 && !strings.HasPrefix(ext, ".") {
+		ext = "." + ext
+	}
+
+	type fileItem struct {
+		name    string
+		modTime float64
+	}
+
+	fileItems := make([]fileItem, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+		if len(ext) > 0 && filepath.Ext(entry.Name()) != ext {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			return "", err
+		}
+		item := fileItem{
+			name:    entry.Name(),
+			modTime: time.Since(info.ModTime()).Seconds(),
+		}
+		fileItems = append(fileItems, item)
+	}
+
+	if len(fileItems) == 0 {
+		return "", ErrNoFilesExistInDir
+	}
+
+	sort.Slice(fileItems, func(x, y int) bool {
+		xModtime := fileItems[x].modTime
+		yModtime := fileItems[y].modTime
+		return xModtime < yModtime
+	})
+	return fileItems[0].name, nil
 }
 
 //
@@ -340,8 +398,8 @@ func IsFileSizeEqual(srcPath, dstPath string) (bool, error) {
 	return srcStat.Size() == dstStat.Size(), nil
 }
 
-// IsFileContentEqual .
-func IsFileContentEqual(srcPath, dstPath string) (bool, error) {
+// IsFilesEqual .
+func IsFilesEqual(srcPath, dstPath string) (bool, error) {
 	isFileSzeEqual, err := IsFileSizeEqual(srcPath, dstPath)
 	if err != nil {
 		return false, err

@@ -63,13 +63,14 @@ func TestMoveFile(t *testing.T) {
 	fmt.Println("file moved")
 }
 
-func TestGetFilesBySuffix(t *testing.T) {
-	path := filepath.Join(os.Getenv("HOME"), "Downloads/tmps")
-	pyFiles, err := GetFilesBySuffix(path, ".py")
+func TestListFilesInDir(t *testing.T) {
+	dir := "/tmp/test/apa_goc_echoserver/cover_data_backup"
+	files, err := ListFilesInDir(dir, ".cov")
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("python files:", pyFiles)
+	fmt.Printf("list files:\n%s", strings.Join(files, "\n"))
+	fmt.Println()
 }
 
 func TestGetGoFileAbsPath(t *testing.T) {
@@ -90,6 +91,17 @@ func TestRemoveExpiredFile(t *testing.T) {
 	}
 	if len(files) > 0 {
 		fmt.Println("removed files:", files)
+	}
+}
+
+func TestGetLatestFileInDir(t *testing.T) {
+	dir := "/tmp/test/apa_goc_echoserver/cover_data_backup"
+	for _, suffix := range []string{".cov", ""} {
+		name, err := GetLatestFileInDir(dir, suffix)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("latest file:", name)
 	}
 }
 
@@ -400,7 +412,7 @@ func TestIsFileContentEqual(t *testing.T) {
 	}
 	fmt.Println("file size equal:", res)
 
-	res, err = IsFileContentEqual(src, dst)
+	res, err = IsFilesEqual(src, dst)
 	if err != nil {
 		t.Fatal(err)
 	}

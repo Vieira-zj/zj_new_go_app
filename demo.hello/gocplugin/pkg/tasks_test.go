@@ -40,7 +40,7 @@ func TestFetchAndSaveSrvCover(t *testing.T) {
 		SrvName:   "staging_th_apa_goc_echoserver_master_518e0a570c",
 		Addresses: []string{"http://127.0.0.1:51007"},
 	}
-	savedPath, err := fetchAndSaveSrvCover(savedDir, param)
+	savedPath, err := FetchAndSaveSrvCover(savedDir, param)
 	if err != nil {
 		t.Fatal(err)
 	}

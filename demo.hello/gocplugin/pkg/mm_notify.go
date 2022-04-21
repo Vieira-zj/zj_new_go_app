@@ -4,9 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 
 	"demo.hello/utils"
+)
+
+const (
+	defaultUser = "jin.zheng"
+)
+
+var (
+	notify               *MatterMostNotify
+	matterMostNotifyOnce sync.Once
 )
 
 // MMMessage .
@@ -23,11 +33,6 @@ type MatterMostNotify struct {
 	client  *utils.HTTPUtils
 }
 
-var (
-	notify               *MatterMostNotify
-	matterMostNotifyOnce sync.Once
-)
-
 // NewMatterMostNotify .
 func NewMatterMostNotify() *MatterMostNotify {
 	matterMostNotifyOnce.Do(func() {
@@ -41,9 +46,16 @@ func NewMatterMostNotify() *MatterMostNotify {
 	return notify
 }
 
+// MustSendMessageToDefaultUser sends notify message without return a error.
+func (notify *MatterMostNotify) MustSendMessageToDefaultUser(ctx context.Context, text string) {
+	if err := notify.SendMessageToUser(ctx, defaultUser, text); err != nil {
+		log.Println("MustSendMessageToDefaultUser error:", err)
+	}
+}
+
 // SendMessageToDefaultUser .
 func (notify *MatterMostNotify) SendMessageToDefaultUser(ctx context.Context, text string) error {
-	return notify.SendMessageToUser(ctx, "jin.zheng", text)
+	return notify.SendMessageToUser(ctx, defaultUser, text)
 }
 
 // SendMessageToUser .

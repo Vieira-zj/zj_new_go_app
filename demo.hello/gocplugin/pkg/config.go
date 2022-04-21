@@ -15,6 +15,11 @@ const (
 	Wait = 5 * time.Second
 	// LongWait .
 	LongWait = 8 * time.Second
+
+	// ReportCoverDataDirName .
+	ReportCoverDataDirName = "cover_data"
+	// WatcherCoverDataDirName .
+	WatcherCoverDataDirName = "saved_cover_data"
 )
 
 var (
