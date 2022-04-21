@@ -47,7 +47,9 @@ func NewMatterMostNotify() *MatterMostNotify {
 }
 
 // MustSendMessageToDefaultUser sends notify message without return a error.
-func (notify *MatterMostNotify) MustSendMessageToDefaultUser(ctx context.Context, text string) {
+func (notify *MatterMostNotify) MustSendMessageToDefaultUser(text string) {
+	ctx, cancel := context.WithTimeout(context.Background(), Wait)
+	defer cancel()
 	if err := notify.SendMessageToUser(ctx, defaultUser, text); err != nil {
 		log.Println("MustSendMessageToDefaultUser error:", err)
 	}

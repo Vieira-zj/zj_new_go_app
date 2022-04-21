@@ -188,7 +188,7 @@ func SyncSrvCoverHandler(c *gin.Context) {
 	if srvState, ok := tasksState.Get(param.SrvName); ok {
 		switch srvState {
 		case pkg.StateRunning:
-			sendMessageResp(c, "Sync service cover task is currently running")
+			sendMessageResp(c, "Sync service cover task is currently running.")
 			return
 		case pkg.StateFreshed:
 			if getIsForceSync(c) {

@@ -268,7 +268,7 @@ func getSrvCoverTask(param SyncSrvCoverParam) (string, bool, error) {
 		}
 	}
 
-	savedPath, err := FetchAndSaveSrvCover(coverDir, param)
+	savedPath, err := FetchAndSaveSrvCover(coverDir, param.SrvName)
 	if err != nil {
 		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
 	}
@@ -306,7 +306,7 @@ func deprecatedGetSrvCoverTask(moduleDir string, param SyncSrvCoverParam) (strin
 		return "", false, fmt.Errorf("getSrvCoverTask get more than one existing cover file from dir: %s", moduleDir)
 	}
 
-	savedPath, err := FetchAndSaveSrvCover(moduleDir, param)
+	savedPath, err := FetchAndSaveSrvCover(moduleDir, param.SrvName)
 	if err != nil {
 		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
 	}
@@ -341,30 +341,60 @@ func deprecatedGetSrvCoverTask(moduleDir string, param SyncSrvCoverParam) (strin
 }
 
 // FetchAndSaveSrvCover .
-func FetchAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, error) {
-	savedPaths := make([]string, len(param.Addresses))
+func FetchAndSaveSrvCover(savedDir, srvName string) (string, error) {
+	b, err := func() ([]byte, error) {
+		ctx, cancel := context.WithTimeout(context.Background(), LongWait)
+		defer cancel()
+		goc := NewGocAPI()
+		b, err := goc.GetServiceProfileByAddr(ctx, srvName)
+		if err != nil {
+			log.Println("FetchAndSaveSrvCover error: %w", err)
+			return getSrvProfileFromWatcher()
+		}
+		return b, nil
+	}()
+	if err != nil {
+		return "", fmt.Errorf("FetchAndSaveSrvCover get srv profile error: %w", err)
+	}
+
+	fileName := getSavedCovFileNameWithSuffix(srvName, "")
+	savedPath := filepath.Join(savedDir, fileName)
+	if err := utils.CreateFile(savedPath, b); err != nil {
+		return "", fmt.Errorf("FetchAndSaveSrvCover save file [%s] error: %w", savedPath, err)
+	}
+	return savedPath, nil
+}
+
+// FetchAndSaveSrvCoverByAddr .
+func FetchAndSaveSrvCoverByAddr(savedDir string, param SyncSrvCoverParam) (string, error) {
+	savedPaths := make([]string, 0, len(param.Addresses))
 	goc := NewGocAPI()
 	for idx, addr := range param.Addresses {
 		b, err := func() ([]byte, error) {
 			ctx, cancel := context.WithTimeout(context.Background(), LongWait)
 			defer cancel()
-			return goc.GetServiceProfileByAddr(ctx, addr)
+			b, err := goc.GetServiceProfileByAddr(ctx, addr)
+			if err != nil {
+				log.Println("FetchAndSaveSrvCoverByAddr error: %w", err)
+				return getSrvProfileFromWatcher()
+			}
+			return b, nil
 		}()
 		if err != nil {
-			return "", fmt.Errorf("fetchAndSaveSrvCover get service [%s] profile error: %w", param.Addresses[0], err)
+			return "", fmt.Errorf("FetchAndSaveSrvCoverByAddr get srv profile error: %w", err)
 		}
 
-		fileName := getSavedCovFileNameWithSuffix(param, strconv.Itoa(idx))
+		fileName := getSavedCovFileNameWithSuffix(param.SrvName, strconv.Itoa(idx))
 		savedPath := filepath.Join(savedDir, fileName)
 		f, err := os.Create(savedPath)
 		if err != nil {
-			return "", fmt.Errorf("fetchAndSaveSrvCover open file [%s] error: %w", savedPath, err)
+			return "", fmt.Errorf("FetchAndSaveSrvCoverByAddr open file [%s] error: %w", savedPath, err)
 		}
 		defer f.Close()
 
 		buf := bytes.NewBuffer(b)
 		if _, err := f.Write(buf.Bytes()); err != nil {
-			return "", fmt.Errorf("fetchAndSaveSrvCover write file [%s] error: %w", savedPath, err)
+			return "", fmt.Errorf("FetchAndSaveSrvCoverByAddr write file [%s] error: %w", savedPath, err)
 		}
 		savedPaths = append(savedPaths, savedPath)
 	}
@@ -374,29 +404,29 @@ func FetchAndSaveSrvCover(savedDir string, param SyncSrvCoverParam) (string, err
 	}
 
 	cmd := NewShCmd()
-	mergeFileName := getSavedCovFileNameWithSuffix(param, "merge")
+	mergeFileName := getSavedCovFileNameWithSuffix(param.SrvName, "merge")
 	mergeFilePath := filepath.Join(savedDir, mergeFileName)
 	if err := cmd.GocToolMergeSrvCovers(savedPaths, mergeFilePath); err != nil {
-		return "", fmt.Errorf("fetchAndSaveSrvCover merge srv cov files error: %w", err)
+		return "", fmt.Errorf("FetchAndSaveSrvCoverByAddr merge srv cov files error: %w", err)
 	}
 	return mergeFilePath, nil
 }
 
-//
-// Task delete history profile files/db rows
-// TODO:
-//
+func getSrvProfileFromWatcher() ([]byte, error) {
+	// TODO:
+	return nil, nil
+}
 
 //
 // Helper
 //
 
-func getSavedCovFileNameWithSuffix(param SyncSrvCoverParam, suffix string) string {
+func getSavedCovFileNameWithSuffix(srvName, suffix string) string {
 	now := getSimpleNowDatetime()
 	if len(suffix) > 0 {
-		return fmt.Sprintf("%s_%s_%s.cov", param.SrvName, now, suffix)
+		return fmt.Sprintf("%s_%s_%s.cov", srvName, now, suffix)
 	}
-	return fmt.Sprintf("%s_%s.cov", param.SrvName, now)
+	return fmt.Sprintf("%s_%s.cov", srvName, now)
 }
 
 func getModuleFromSrvName(name string) (string, error) {

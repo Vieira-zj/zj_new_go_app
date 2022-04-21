@@ -47,3 +47,13 @@ func TestLoadModuleToRepoMap(t *testing.T) {
 	}
 	fmt.Printf("module to repo map: %+v\n", ModuleToRepoMap)
 }
+
+func TestSliceSpaceGrowth(t *testing.T) {
+	s := make([]int, 0, 1)
+	fmt.Printf("init: len=%d,cap=%d\n", len(s), cap(s))
+	for i := 0; i < 3; i++ {
+		s = append(s, i)
+		fmt.Printf("put %d: len=%d,cap=%d\n", i, len(s), cap(s))
+		fmt.Println(s)
+	}
+}

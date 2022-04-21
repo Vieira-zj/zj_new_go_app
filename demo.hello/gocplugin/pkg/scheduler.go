@@ -42,10 +42,8 @@ func (s *Scheduler) RemoveUnhealthSrvTask(ctx context.Context, interval time.Dur
 			case <-tick:
 				func() {
 					if err := RemoveUnhealthSrvInGocTask(); err != nil {
-						localCtx, cancel := context.WithTimeout(context.Background(), Wait)
-						defer cancel()
-						errText := fmt.Sprintln("RemoveUnhealthSrvTask error:", err)
-						s.notify.MustSendMessageToDefaultUser(localCtx, errText)
+						errMsg := fmt.Sprintln("RemoveUnhealthSrvTask error:", err)
+						s.notify.MustSendMessageToDefaultUser(errMsg)
 					}
 				}()
 			case <-ctx.Done():
@@ -63,14 +61,10 @@ func (s *Scheduler) SyncRegisterSrvsCoverTask(ctx context.Context, interval time
 		for {
 			select {
 			case <-tick:
-				func() {
-					if err := fetchAndSaveCoverForRegisterSrvs(); err != nil {
-						localCtx, cancel := context.WithTimeout(context.Background(), Wait)
-						defer cancel()
-						errText := fmt.Sprintln("SyncRegisterSrvsCoverTask error:", err)
-						s.notify.MustSendMessageToDefaultUser(localCtx, errText)
-					}
-				}()
+				if err := s.fetchAndSaveCoverForRegisterSrvs(); err != nil {
+					errMsg := fmt.Sprintln("SyncRegisterSrvsCoverTask error:", err)
+					s.notify.MustSendMessageToDefaultUser(errMsg)
+				}
 			case <-ctx.Done():
 				log.Println("SyncRegisterSrvsCoverTask exit.")
 				return
@@ -79,7 +73,8 @@ func (s *Scheduler) SyncRegisterSrvsCoverTask(ctx context.Context, interval time
 	}()
 }
 
-func fetchAndSaveCoverForRegisterSrvs() error {
+func (s *Scheduler) fetchAndSaveCoverForRegisterSrvs() error {
+	log.Println("fetchAndSaveCoverForRegisterSrvs auto trigger")
 	ctx, cancel := context.WithTimeout(context.Background(), Wait)
 	defer cancel()
 
@@ -89,29 +84,48 @@ func fetchAndSaveCoverForRegisterSrvs() error {
 		return fmt.Errorf("fetchAndSaveCoverForRegisterSrvs error: %w", err)
 	}
 
-	for srvName, addrs := range srvs {
-		dir := GetModuleDir(srvName)
-		savedDir := filepath.Join(dir, WatcherCoverDataDirName)
-		if utils.IsDirExist(savedDir) {
-			utils.MakeDir(savedDir)
-		}
+	const limit = 5
+	semaphore := make(chan struct{}, limit)
+	var wg sync.WaitGroup
 
-		lastCovFilePath, err := utils.GetLatestFileInDir(savedDir, "cov")
-		if err != nil && !errors.Is(err, utils.ErrNoFilesExistInDir) {
-			return fmt.Errorf("fetchAndSaveCoverForRegisterSrvs error: %w", err)
-		}
+	for srvName := range srvs {
+		wg.Add(1)
+		go func(srvName string) {
+			semaphore <- struct{}{}
+			defer func() {
+				<-semaphore
+				wg.Done()
+			}()
 
-		param := SyncSrvCoverParam{
-			SrvName:   srvName,
-			Addresses: addrs,
-		}
-		savedCovPath, err := FetchAndSaveSrvCover(savedDir, param)
-		if err != nil {
-			return fmt.Errorf("fetchAndSaveCoverForRegisterSrvs error: %w", err)
-		}
-		removeLastEqualCovFile(lastCovFilePath, savedCovPath)
+			savedDir := filepath.Join(GetModuleDir(srvName), WatcherCoverDataDirName)
+			if !utils.IsDirExist(savedDir) {
+				utils.MakeDir(savedDir)
+			}
+
+			lastCovFileName, err := utils.GetLatestFileInDir(savedDir, "cov")
+			if err != nil && !errors.Is(err, utils.ErrNoFilesExistInDir) {
+				errMsg := fmt.Sprintln("fetchAndSaveCoverForRegisterSrvs error:", err)
+				s.notify.MustSendMessageToDefaultUser(errMsg)
+				return
+			}
+
+			savedCovPath, err := FetchAndSaveSrvCover(savedDir, srvName)
+			if err != nil {
+				errMsg := fmt.Sprintln("fetchAndSaveCoverForRegisterSrvs error:", err)
+				s.notify.MustSendMessageToDefaultUser(errMsg)
+				return
+			}
+			removeLastEqualCovFile(filepath.Join(savedDir, lastCovFileName), savedCovPath)
+		}(srvName)
 	}
+	wg.Wait()
+
 	return nil
+}
+
+// RemoveExpiredSrvCoverFilesTask .
+func (s *Scheduler) RemoveExpiredSrvCoverFilesTask() {
+	// TODO:
 }
 
 func removeLastEqualCovFile(lastCovFilePath, curCovFilePath string) {
@@ -124,6 +138,7 @@ func removeLastEqualCovFile(lastCovFilePath, curCovFilePath string) {
 		log.Println("fetchAndSaveCoverForRegisterSrvs file compare error:", err)
 		return
 	}
+
 	if isEqual {
 		if err := os.Remove(lastCovFilePath); err != nil {
 			log.Println("fetchAndSaveCoverForRegisterSrvs remove file error:", err)

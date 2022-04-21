@@ -1,10 +1,12 @@
 package handler
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
+	"sort"
 
 	"demo.hello/gocplugin/pkg"
 	"demo.hello/utils"
@@ -12,8 +14,8 @@ import (
 )
 
 type watcherListSrvCoverReq struct {
-	SrvName string
-	Limit   uint
+	SrvName string `json:"srv_name"`
+	Limit   int    `json:"limit"`
 }
 
 // ListSavedSrvCoversHandler .
@@ -24,19 +26,30 @@ func ListSavedSrvCoversHandler(c *gin.Context) {
 		return
 	}
 
+	if param.Limit < 1 {
+		err := fmt.Errorf("Limit cannot be less than 1")
+		sendErrorResp(c, http.StatusBadRequest, err)
+		return
+	}
+
 	savedDirPath := getSavedCoverDirPath(param.SrvName)
 	fileNames, err := utils.ListFilesInDir(savedDirPath, "cov")
 	if err != nil {
 		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
+	sort.Strings(fileNames)
 
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": fileNames[param.Limit]})
+	limit := param.Limit
+	if len(fileNames) < limit {
+		limit = len(fileNames)
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": fileNames[len(fileNames)-limit:]})
 }
 
 type watcherGetSrvCoverReq struct {
-	SrvName     string
-	CovFileName string
+	SrvName     string `json:"srv_name"`
+	CovFileName string `json:"cov_file_name"`
 }
 
 // GetSrvCoverDataHandler .
@@ -65,12 +78,18 @@ func GetSrvCoverDataHandler(c *gin.Context) {
 
 	b, err := utils.ReadFile(covFilePath)
 	if err != nil {
-		sendErrorResp(c, http.StatusInternalServerError, err)
+		if errors.Is(err, os.ErrNotExist) {
+			err = fmt.Errorf("Cov file not found: %s", param.CovFileName)
+			sendErrorResp(c, http.StatusBadRequest, err)
+		} else {
+			sendErrorResp(c, http.StatusInternalServerError, err)
+		}
+		return
 	}
 	sendBytes(c, b)
 }
 
-// FetchAndSaveSrvCoverHandler .
+// FetchAndSaveSrvCoverHandler 服务异常退出时调用该接口去拉取服务覆盖率数据，这里同步执行代替异步。
 func FetchAndSaveSrvCoverHandler(c *gin.Context) {
 	param := pkg.SyncSrvCoverParam{}
 	if err := c.ShouldBindJSON(&param); err != nil {
@@ -78,18 +97,18 @@ func FetchAndSaveSrvCoverHandler(c *gin.Context) {
 		return
 	}
 
-	go func() {
-		savedDirPath := getSavedCoverDirPath(param.SrvName)
-		if _, err := pkg.FetchAndSaveSrvCover(savedDirPath, param); err != nil {
-			ctx, cancel := context.WithTimeout(context.Background(), pkg.Wait)
-			defer cancel()
-			notify := pkg.NewMatterMostNotify()
-			errMsg := fmt.Sprintln("FetchAndSaveSrvCoverHandler error:", err)
-			notify.MustSendMessageToDefaultUser(ctx, errMsg)
-		}
-	}()
+	if len(param.Addresses) == 0 {
+		err := fmt.Errorf("Addresses is empty")
+		sendErrorResp(c, http.StatusBadRequest, err)
+		return
+	}
 
-	sendMessageResp(c, "Trigger fetch and save srv cover success.")
+	savedDirPath := getSavedCoverDirPath(param.SrvName)
+	if _, err := pkg.FetchAndSaveSrvCoverByAddr(savedDirPath, param); err != nil {
+		sendErrorResp(c, http.StatusInternalServerError, err)
+		return
+	}
+	sendMessageResp(c, "Fetch and save service cover success.")
 }
 
 func getSavedCoverDirPath(srvName string) string {

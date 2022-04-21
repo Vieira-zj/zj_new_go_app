@@ -60,10 +60,8 @@ func TestGocToolMergeSrvCovers(t *testing.T) {
 		filepath.Join(workingDir, "staging_th_apa_goc_echoserver_master_845820727e_20220420_154143.cov"),
 	}
 
-	param := SyncSrvCoverParam{
-		SrvName: "staging_th_apa_goc_echoserver_master_845820727e",
-	}
-	mergeFileName := getSavedCovFileNameWithSuffix(param, "merge")
+	srvName := "staging_th_apa_goc_echoserver_master_845820727e"
+	mergeFileName := getSavedCovFileNameWithSuffix(srvName, "merge")
 	mergeFilePath := filepath.Join(workingDir, mergeFileName)
 
 	cmd := NewShCmd()

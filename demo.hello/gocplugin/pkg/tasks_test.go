@@ -5,6 +5,12 @@ import (
 	"testing"
 )
 
+func TestGetModuleDir(t *testing.T) {
+	AppConfig.RootDir = "/tmp/test"
+	srvName := "staging_th_apa_goc_echoserver_master_b63d82705a"
+	fmt.Println(GetModuleDir(srvName))
+}
+
 func TestIsAttachSrvOK(t *testing.T) {
 	host := "http://127.0.0.1:51025"
 	ok := isAttachSrvOK(host)
@@ -40,7 +46,7 @@ func TestFetchAndSaveSrvCover(t *testing.T) {
 		SrvName:   "staging_th_apa_goc_echoserver_master_518e0a570c",
 		Addresses: []string{"http://127.0.0.1:51007"},
 	}
-	savedPath, err := FetchAndSaveSrvCover(savedDir, param)
+	savedPath, err := FetchAndSaveSrvCover(savedDir, param.SrvName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,16 +128,12 @@ func TestGetSrvCoverAndCreateReportTask(t *testing.T) {
 //
 
 func TestGetSavedCovFileName(t *testing.T) {
-	param := SyncSrvCoverParam{
-		SrvName:   "staging_th_apa_goc_echoserver_master_518e0a570c",
-		Addresses: []string{"http://127.0.0.1:51007"},
-	}
-
 	if err := mockLoadConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
 	}
 
-	name := getSavedCovFileNameWithSuffix(param, "")
+	srvName := "staging_th_apa_goc_echoserver_master_518e0a570c"
+	name := getSavedCovFileNameWithSuffix(srvName, "")
 	fmt.Println("saved file name:", name)
 }
 

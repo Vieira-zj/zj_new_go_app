@@ -226,9 +226,23 @@ curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:applicati
 
 - `/watcher/cover/list`: list saved service cov file.
 
-- `/watcher/cover/save`: fetch service cover data and save.
+```sh
+curl -XPOST http://127.0.0.1:8089/watcher/cover/list -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "limit": 3}' | jq .
+```
 
 - `/watcher/cover/get`: get service cov file, default latest one.
 
-// TODO:
+```sh
+cov_file="staging_th_apa_goc_echoserver_master_b63d82705a_20220421_183420_0.cov"
+curl -XPOST http://127.0.0.1:8089/watcher/cover/get -H "Content-Type:application/json" \
+  -d "{\"srv_name\":\"staging_th_apa_goc_echoserver_master_b63d82705a\", \"cov_file_name\":\"${cov_file}\"}" -o ${cov_file} | jq .
+```
+
+- `/watcher/cover/save`: fetch service cover data and save.
+
+```sh
+curl -XPOST http://127.0.0.1:8089/watcher/cover/save -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "addresses": ["http://127.0.0.1:54621"]}' | jq .
+```
 

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"demo.hello/utils"
 )
 
 const (
@@ -99,11 +101,38 @@ func TestGetServiceProfileByAddrNotFound(t *testing.T) {
 	fmt.Println(len(b))
 }
 
+func TestGetServiceProfileByName(t *testing.T) {
+	// if service has multiple addresses (instance), goc will merge profile and return.
+	AppConfig.GocHost = testGocLocalHost
+	srvName := "staging_th_apa_goc_echoserver_master_b63d82705a"
+	goc := NewGocAPI()
+	b, err := goc.GetServiceProfileByName(context.Background(), srvName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	path := "/tmp/test/apa_goc_echoserver/repo/srv_profile.cov"
+	if err = utils.CreateFile(path, b); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestClearServiceProfileByAddr(t *testing.T) {
 	AppConfig.GocHost = testGocLocalHost
 	goc := NewGocAPI()
 	addr := "http://127.0.0.1:51025"
 	resp, err := goc.ClearServiceProfileByAddr(context.Background(), addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(resp)
+}
+
+func TestClearProfileServiceByName(t *testing.T) {
+	AppConfig.GocHost = testGocLocalHost
+	srvName := "staging_th_apa_goc_echoserver_master_b63d82705a"
+	goc := NewGocAPI()
+	resp, err := goc.ClearProfileServiceByName(context.Background(), srvName)
 	if err != nil {
 		t.Fatal(err)
 	}

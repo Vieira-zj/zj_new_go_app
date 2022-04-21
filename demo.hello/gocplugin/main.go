@@ -33,10 +33,10 @@ func init() {
 	flag.StringVar(&mode, "mode", "server", "Goc plugin run mode: server, watcher.")
 	flag.StringVar(&addr, "addr", "8089", "Goc server address.")
 	flag.BoolVar(&help, "h", false, "help.")
-	flag.Parse()
 }
 
 func main() {
+	flag.Parse()
 	if help {
 		flag.Usage()
 		return
@@ -48,18 +48,16 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
-	pkg.InitSrvCoverSyncTasksPool()
-	defer pkg.CloseSrvCoverSyncTasksPool()
-
 	r := initRouter()
 	switch mode {
 	case modeServer:
-		setupServerRouter(r)
+		pkg.InitSrvCoverSyncTasksPool()
+		defer pkg.CloseSrvCoverSyncTasksPool()
+		runServer(r)
 	case modeWatcher:
-		setupWatcherRouter(r)
-		runWatcherScheduleTask(ctx)
+		runWatcher(ctx, r)
 	default:
-		log.Fatalln("Invalid mode:", mode)
+		log.Fatalln("Invalid run mode:", mode)
 	}
 
 	go func() {
@@ -83,7 +81,17 @@ func initRouter() *gin.Engine {
 
 	r.GET("/", handler.IndexHandler)
 	r.GET("/ping", handler.PingHandler)
+
+	// middleware
+	r.Use(gin.Logger())
+	r.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Internal server error: %v", recovered))
+	}))
 	return r
+}
+
+func runServer(r *gin.Engine) {
+	setupServerRouter(r)
 }
 
 func setupServerRouter(r *gin.Engine) {
@@ -95,21 +103,21 @@ func setupServerRouter(r *gin.Engine) {
 
 	r.POST("/cover/raw", handler.GetSrvRawCoverHandler)
 	r.POST("/cover/report/latest", handler.GetLatestSrvCoverReportHandler)
+}
 
-	// middleware
-	r.Use(gin.Logger())
-
-	r.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-		c.String(http.StatusInternalServerError, fmt.Sprintf("Internal server error: %v", recovered))
-	}))
+func runWatcher(ctx context.Context, r *gin.Engine) {
+	setupWatcherRouter(r)
+	runWatcherScheduleTask(ctx)
 }
 
 func setupWatcherRouter(r *gin.Engine) {
-	// TODO:
+	r.POST("/watcher/cover/list", handler.ListSavedSrvCoversHandler)
+	r.POST("/watcher/cover/get", handler.GetSrvCoverDataHandler)
+	r.POST("/watcher/cover/save", handler.FetchAndSaveSrvCoverHandler)
 }
 
 func runWatcherScheduleTask(ctx context.Context) {
 	scheduler := pkg.NewScheduler()
-	scheduler.RemoveUnhealthSrvTask(ctx, 10*time.Second)
-	scheduler.SyncRegisterSrvsCoverTask(ctx, 10*time.Second)
+	scheduler.RemoveUnhealthSrvTask(ctx, time.Hour)
+	scheduler.SyncRegisterSrvsCoverTask(ctx, time.Hour)
 }
