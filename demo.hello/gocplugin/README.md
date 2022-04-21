@@ -176,14 +176,14 @@ curl http://127.0.0.1:8089/cover/list | jq .
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/total/latest -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' | jq .
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
 ```
 
 - `/cover/total/history`: get history service cover totals.
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/total/history -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' | jq .
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
 ```
 
 ------
@@ -208,7 +208,7 @@ curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" \
   -d '{"srv_addr":"http://127.0.0.1:51007"}' -o 'raw_profile.cov'
 ```
 
-- `cover/report/latest`: get latest cover func/html report.
+- `/cover/report/latest`: get latest cover func/html report.
 
 ```sh
 # func report
@@ -220,5 +220,15 @@ curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:applicati
   -d '{"rpt_type":"html", "srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' -o 'cover_report.html'
 ```
 
-- `cover/report/history`: get latest cover func/html report.
+- `/cover/report/history`: get latest cover func/html report.
+
+## Goc Watch Dog API
+
+- `/watcher/cover/list`: list saved service cov file.
+
+- `/watcher/cover/save`: fetch service cover data and save.
+
+- `/watcher/cover/get`: get service cov file, default latest one.
+
+// TODO:
 

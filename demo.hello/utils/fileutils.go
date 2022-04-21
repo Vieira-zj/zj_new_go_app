@@ -359,10 +359,11 @@ func IsFileContentEqual(srcPath, dstPath string) (bool, error) {
 		return false, err
 	}
 
-	if len(srcBytes) != len(dstBytes) {
-		return false, nil
-	}
-	return bytes.Equal(srcBytes, dstBytes), nil
+	// compare md5 instead of bytes equal.
+	// bytes.Equal(srcBytes, dstBytes)
+	srcMD5 := GetMd5HexText(srcBytes)
+	dstMD5 := GetMd5HexText(dstBytes)
+	return srcMD5 == dstMD5, nil
 }
 
 // FileWordsCount gets file words count. (for test)

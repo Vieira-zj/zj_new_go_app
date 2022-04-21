@@ -171,23 +171,23 @@ func GetURLBase64Text(bytes []byte) string {
 }
 
 // GetMd5HexText .
-func GetMd5HexText(text string) string {
-	return getMd5EncodedText(text, "hex")
+func GetMd5HexText(bytes []byte) string {
+	return getMd5EncodedText(bytes, "hex")
 }
 
 // GetBase64MD5Text .
-func GetBase64MD5Text(text string) string {
-	return getMd5EncodedText(text, "std64")
+func GetBase64MD5Text(bytes []byte) string {
+	return getMd5EncodedText(bytes, "std64")
 }
 
 // GetURLBase64MD5Text .
-func GetURLBase64MD5Text(text string) string {
-	return getMd5EncodedText(text, "url")
+func GetURLBase64MD5Text(bytes []byte) string {
+	return getMd5EncodedText(bytes, "url")
 }
 
-func getMd5EncodedText(text, md5Type string) string {
+func getMd5EncodedText(bytes []byte, md5Type string) string {
 	md5hash := md5.New()
-	md5hash.Write([]byte(text))
+	md5hash.Write(bytes)
 	b := md5hash.Sum(nil)
 
 	if md5Type == "hex" {
@@ -200,9 +200,9 @@ func getMd5EncodedText(text, md5Type string) string {
 }
 
 // GetHashFnv32 .
-func GetHashFnv32(text string) (uint32, error) {
+func GetHashFnv32(bytes []byte) (uint32, error) {
 	f := fnv.New32()
-	if _, err := f.Write([]byte(text)); err != nil {
+	if _, err := f.Write(bytes); err != nil {
 		return 0, err
 	}
 	return f.Sum32(), nil

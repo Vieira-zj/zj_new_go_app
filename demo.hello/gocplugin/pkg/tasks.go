@@ -198,9 +198,10 @@ func createSrvCoverReportTask(covFile string, param SyncSrvCoverParam) (string, 
 }
 
 func checkoutSrvRepo(workingDir string, param SyncSrvCoverParam) error {
+	meta := GetSrvMetaFromName(param.SrvName)
 	if !utils.IsDirExist(workingDir) {
 		if err := func() error {
-			repoURL, ok := ModuleToRepoMap[param.SrvName]
+			repoURL, ok := ModuleToRepoMap[meta.AppName]
 			if !ok {
 				return fmt.Errorf("checkoutSrvRepo repo url not found for service: [%s]", param.SrvName)
 			}
@@ -212,7 +213,7 @@ func checkoutSrvRepo(workingDir string, param SyncSrvCoverParam) error {
 			if err != nil {
 				return err
 			}
-			log.Printf("Git clone repo [%s] with head [%s]", param.SrvName, head)
+			log.Printf("Git clone repo [%s] with head [%s]", meta.AppName, head)
 			return nil
 		}(); err != nil {
 			return fmt.Errorf("checkoutSrvRepo error: %w", err)

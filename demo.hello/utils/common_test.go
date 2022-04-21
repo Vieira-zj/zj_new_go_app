@@ -133,7 +133,7 @@ func TestFprintBase64Text(t *testing.T) {
 }
 
 func TestGetHashFnv32(t *testing.T) {
-	res, err := GetHashFnv32("hello world")
+	res, err := GetHashFnv32([]byte("hello world"))
 	if err != nil {
 		t.Fatal(err)
 	}

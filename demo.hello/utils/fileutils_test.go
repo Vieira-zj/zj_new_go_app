@@ -391,8 +391,9 @@ func TestStringSliceCopy(t *testing.T) {
 }
 
 func TestIsFileContentEqual(t *testing.T) {
-	src := "/tmp/test/gitlab-ci.yml"
-	dst := "/tmp/test/copy/gitlab-ci.yml"
+	root := "/tmp/test/apa_goc_echoserver/cover_data"
+	src := filepath.Join(root, "staging_th_apa_goc_echoserver_master_845820727e_20220420_154143.cov")
+	dst := filepath.Join(root, "staging_th_apa_goc_echoserver_master_845820727e_20220420_154307.cov")
 	res, err := IsFileSizeEqual(src, dst)
 	if err != nil {
 		t.Fatal(err)
