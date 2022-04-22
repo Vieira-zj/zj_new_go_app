@@ -123,6 +123,7 @@ goc list
 ```sh
 curl -i http://localhost:8081/
 curl -i http://localhost:8081/ping
+
 curl -XPOST "http://localhost:8081/mirror?name=foo" -H "X-Test:Mirror" -d 'hello' | jq .
 ```
 
@@ -197,8 +198,8 @@ curl -XPOST http://127.0.0.1:8089/cover/report/sync -H "Content-Type:application
   -d '{"srv_name": "staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
 
 # force sync
-curl -XPOST "http://127.0.0.1:8089/cover/report/sync?force=true" -H "Content-Type:application/json" \
-  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
+curl -XPOST "http://127.0.0.1:8089/cover/report/sync" -H "Content-Type:application/json" \
+  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_b63d82705a", "is_force":true}' | jq .
 ```
 
 - `/cover/raw`: get service cover raw data.
@@ -213,11 +214,11 @@ curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" \
 ```sh
 # func report
 curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:application/json" \
-  -d '{"rpt_type":"func", "srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' -o 'cover_report.func'
+  -d '{"rpt_type":"func", "srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o 'cover_report.func'
 
 # html report
 curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:application/json" \
-  -d '{"rpt_type":"html", "srv_name":"staging_th_apa_goc_echoserver_master_845820727e"}' -o 'cover_report.html'
+  -d '{"rpt_type":"html", "srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o 'cover_report.html'
 ```
 
 - `/cover/report/history`: get latest cover func/html report.
@@ -228,13 +229,18 @@ curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:applicati
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/watcher/cover/list -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "limit": 3}' | jq .
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "limit":3}' | jq .
 ```
 
 - `/watcher/cover/get`: get service cov file, default latest one.
 
 ```sh
-cov_file="staging_th_apa_goc_echoserver_master_b63d82705a_20220421_183420_0.cov"
+# get latest cov file
+curl -XPOST http://127.0.0.1:8089/watcher/cover/get -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o profile.cov | jq .
+
+# get specified cov file
+cov_file="staging_th_apa_goc_echoserver_master_b63d82705a_20220422_150331.cov"
 curl -XPOST http://127.0.0.1:8089/watcher/cover/get -H "Content-Type:application/json" \
   -d "{\"srv_name\":\"staging_th_apa_goc_echoserver_master_b63d82705a\", \"cov_file_name\":\"${cov_file}\"}" -o ${cov_file} | jq .
 ```
@@ -243,6 +249,6 @@ curl -XPOST http://127.0.0.1:8089/watcher/cover/get -H "Content-Type:application
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/watcher/cover/save -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "addresses": ["http://127.0.0.1:54621"]}' | jq .
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "addresses":["http://127.0.0.1:62542"]}' | jq .
 ```
 

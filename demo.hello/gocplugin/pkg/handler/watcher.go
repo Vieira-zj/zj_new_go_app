@@ -61,25 +61,25 @@ func GetSrvCoverDataHandler(c *gin.Context) {
 	}
 
 	var (
-		covFilePath string
+		covFileName string
 		err         error
 	)
 
 	savedDirPath := getSavedCoverDirPath(param.SrvName)
 	if len(param.CovFileName) > 0 {
-		covFilePath = filepath.Join(savedDirPath, param.CovFileName)
+		covFileName = param.CovFileName
 	} else {
-		covFilePath, err = utils.GetLatestFileInDir(savedDirPath, "cov")
+		covFileName, err = utils.GetLatestFileInDir(savedDirPath, "cov")
 		if err != nil {
 			sendErrorResp(c, http.StatusInternalServerError, err)
 			return
 		}
 	}
 
-	b, err := utils.ReadFile(covFilePath)
+	b, err := utils.ReadFile(filepath.Join(savedDirPath, covFileName))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			err = fmt.Errorf("Cov file not found: %s", param.CovFileName)
+			err = fmt.Errorf("Cov file not found: %s", covFileName)
 			sendErrorResp(c, http.StatusBadRequest, err)
 		} else {
 			sendErrorResp(c, http.StatusInternalServerError, err)

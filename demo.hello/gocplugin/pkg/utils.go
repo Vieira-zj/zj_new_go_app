@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -18,7 +19,7 @@ func GetFilePathWithNewExt(filePath, newExt string) string {
 func getParamFromEnv(key string) string {
 	value := os.Getenv(key)
 	if len(value) == 0 {
-		panic(fmt.Sprintf("Env var [%s] not set", key))
+		log.Fatalf("Env var [%s] not set", key)
 	}
 	return value
 }
