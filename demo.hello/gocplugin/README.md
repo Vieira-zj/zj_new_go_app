@@ -2,59 +2,63 @@
 
 ## Overview
 
-- 基于 Goc + diff_cover (二次开发)
 - Goc Plugin 包括 Goc Report, Goc Watch Dog 和 Goc Portal 三部分
+- 基于工具 Goc + diff_cover (二次开发)
 
 ### Goc Report
 
-1. 获取指定服务的覆盖率 raw 数据
+1. 从 goc server 获取指定服务的覆盖率数据
   - 一个服务的一个 commit 下，可能会包括 N 份覆盖率数据（1份最新数据+历史数据）
-  - 如果服务已下线（异常退出），则从 goc watch dog 中获取覆盖率数据
+  - 如果服务已下线（异常退出），则从 goc watch dog 获取覆盖率数据
+  - 支持服务多个副本的覆盖率数据合并
 
-2. 生成服务覆盖率报告
-  - 生成 func/html 覆盖率报告
-  - 生成增量代码覆盖率报告
-
-3. 定时拉取 goc server list 中服务的覆盖率数据
-  - 定时 + 随机时间 防止同一时间有多个覆盖率任务在执行
-  - 如果覆盖率数据没有更新，则基于退让机制拉取覆盖率数据
-    - 退让机制：20min -> 60min -> 2hours -> 4hours
+2. 生成覆盖率报告
+  - func/html 覆盖率报告
+  - 增量代码覆盖率报告
 
 问题：
 
-1. 实时拉取和生成覆盖率结果性能问题。
-  - 同步执行，前端需要处理超时的情况
-  - 覆盖率结果缓存 N 分钟，防止频繁执行
+1. 拉取和生成覆盖率报告性能问题
+  - 异步执行，指定时间内完成则返回结果，否则返回超时
+  - 覆盖率结果缓存 N 分钟
 
 ### Goc Watch Dog
 
-1. 定时从 goc server list 中删除已下线的服务（pod）
+1. 定时从 goc server 中删除已下线的服务（pod）
   - 检查 goc attached server 端口（代替从 pod monitor 服务接口查询 pod 状态）
 
-2. 服务异常退出前，拉取覆盖率 raw 数据
-  - 通过设置 pod pre-stop webhook
+2. 定时拉取 goc server 中服务覆盖率数据
+
+3. 服务异常退出前，拉取服务覆盖率数据
+  - 提供回调接口，在 pod 中设置 pre-stop webhook
 
 ### Goc Portal
 
 服务覆盖率结果展示：
 
-- 服务正常，获取最新的覆盖率结果
-- 服务下线，获取服务异常退出前的覆盖率结果
-- 服务下线，没有获取到当前 commit 的覆盖率结果
+- Cover total
+- Func cover report
+- Html cover report
+- 增量覆盖率报告
+- 历史覆盖率数据趋势图
 
-### Dev Plan
+操作：
 
-1. 获取和展示服务最新的覆盖率结果，包括 func/html 报告，cover total 趋势图
-2. 服务有多个副本时，覆盖率结果合并
-3. 展示历史覆盖率结果（基于 commit）
-4. 展示基于 commit 和 branch 比较的增量覆盖率结果
-5. 支持单测覆盖率结果上报，及展示
+- Refresh
+- Force refresh
+- Clear cover
+
+### Todos
+
+1. 展示基于 commit 和 branch 比较的增量覆盖率结果
+2. 展示基于 commit 的历史覆盖率结果
+3. 支持单测覆盖率结果上报，及展示
 
 ## Goc Plugin Design
 
-### 服务部署
+### 服务架构
 
-// TODO:
+![img](static/framework.drawio.svg)
 
 ### Goc Report 工作目录
 
@@ -82,7 +86,7 @@
 
 ### Goc Report Table
 
-- `goc_o_staging_service_cover`: 服务覆盖率数据。
+- `goc_o_staging_service_cover`
 
 字段包括：`id,created_at,updated_at,deleted_at,env,region,app_name,addresses,git_branch,git_commit,is_latest,cov_file_path,cover_total`
 
@@ -108,7 +112,7 @@ cd echo/; goc build . -o goc_echoserver
 ENV=staging APPTYPE=apa REGION=th GIT_BRANCH=origin/master GIT_COMMIT=b63d82705a ./goc_echoserver -p 8081
 ```
 
-3. Check register service
+3. Check register services
 
 ```sh
 goc list
@@ -129,26 +133,26 @@ curl -XPOST "http://localhost:8081/mirror?name=foo" -H "X-Test:Mirror" -d 'hello
 
 ## Goc API
 
-- list service
+- List services
 
 ```sh
 curl http://localhost:7777/v1/cover/list | jq .
 ```
 
-- register service in goc center
+- Register service in goc center
 
 ```sh
 curl -XPOST "http://localhost:7777//v1/cover/register?name=staging_th_apa_goc_echoserver_v1&address=http://127.0.0.1:49971"
 ```
 
-- remove service from goc center
+- Remove service from goc center
 
 ```sh
 curl -XPOST http://localhost:7777/v1/cover/remove -H "Content-Type:application/json" \
   -d '{"service":["staging_th_apa_goc_echoserver_v1"]}'
 ```
 
-- attach server api
+- Attached server api
 
 ```sh
 curl http://127.0.0.1:51025/v1/cover/coverage
@@ -195,11 +199,11 @@ Sync service cover data and create report:
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/report/sync -H "Content-Type:application/json" \
-  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
 
 # force sync
 curl -XPOST "http://127.0.0.1:8089/cover/report/sync" -H "Content-Type:application/json" \
-  -d '{"srv_name": "staging_th_apa_goc_echoserver_master_b63d82705a", "is_force":true}' | jq .
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "is_force":true}' | jq .
 ```
 
 - `/cover/raw`: get service cover raw data.
@@ -212,11 +216,11 @@ curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" \
 - `/cover/report/latest`: get latest cover func/html report.
 
 ```sh
-# func report
+# download func report
 curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:application/json" \
   -d '{"rpt_type":"func", "srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o 'cover_report.func'
 
-# html report
+# download html report
 curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:application/json" \
   -d '{"rpt_type":"html", "srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o 'cover_report.html'
 ```
@@ -235,11 +239,11 @@ curl -XPOST http://127.0.0.1:8089/watcher/cover/list -H "Content-Type:applicatio
 - `/watcher/cover/get`: get service cov file, default latest one.
 
 ```sh
-# get latest cov file
+# download latest cov file
 curl -XPOST http://127.0.0.1:8089/watcher/cover/get -H "Content-Type:application/json" \
   -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o profile.cov | jq .
 
-# get specified cov file
+# download cov file
 cov_file="staging_th_apa_goc_echoserver_master_b63d82705a_20220422_150331.cov"
 curl -XPOST http://127.0.0.1:8089/watcher/cover/get -H "Content-Type:application/json" \
   -d "{\"srv_name\":\"staging_th_apa_goc_echoserver_master_b63d82705a\", \"cov_file_name\":\"${cov_file}\"}" -o ${cov_file} | jq .

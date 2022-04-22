@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -48,7 +47,7 @@ func GetLatestSrvCoverTotalHandler(c *gin.Context) {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
-	if err := isSrvNameValid(param.SrvName); err != nil {
+	if err := pkg.IsSrvOKInGoc(param.SrvName); err != nil {
 		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -75,24 +74,6 @@ func getLatestSrvCoverTotal(srvName string) (string, error) {
 	return row.CoverTotal.String, nil
 }
 
-func isSrvNameValid(srvName string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), pkg.Wait)
-	defer cancel()
-
-	goc := pkg.NewGocAPI()
-	srvs, err := goc.ListRegisterServices(ctx)
-	if err != nil {
-		return fmt.Errorf("isSrvNameValid error: %w", err)
-	}
-
-	for srv := range srvs {
-		if srv == srvName {
-			return nil
-		}
-	}
-	return fmt.Errorf("Service name is not found in goc register list: %s", srvName)
-}
-
 type respSrvCoverTotalItem struct {
 	ID         uint
 	Addresses  []string
@@ -107,7 +88,7 @@ func GetHistorySrvCoverTotalsHandler(c *gin.Context) {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
-	if err := isSrvNameValid(param.SrvName); err != nil {
+	if err := pkg.IsSrvOKInGoc(param.SrvName); err != nil {
 		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -146,7 +127,7 @@ func GetSrvRawCoverHandler(c *gin.Context) {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
-	if err := isSrvNameValid(param.SrvName); err != nil {
+	if err := pkg.IsSrvOKInGoc(param.SrvName); err != nil {
 		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -170,10 +151,6 @@ func SyncSrvCoverHandler(c *gin.Context) {
 	var req syncSrvCoverReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
-		return
-	}
-	if err := isSrvNameValid(req.SrvName); err != nil {
-		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -251,4 +228,9 @@ func GetLatestSrvCoverReportHandler(c *gin.Context) {
 		return
 	}
 	sendBytes(c, b)
+}
+
+// ClearSrvCoverHandler .
+func ClearSrvCoverHandler(c *gin.Context) {
+	// TODO:
 }

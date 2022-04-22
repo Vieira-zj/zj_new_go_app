@@ -67,6 +67,32 @@ func isAttachSrvOK(addr string) bool {
 	}
 }
 
+// IsSrvOKInGoc .
+func IsSrvOKInGoc(srvName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), Wait)
+	defer cancel()
+
+	goc := NewGocAPI()
+	srvs, err := goc.ListRegisterServices(ctx)
+	if err != nil {
+		return fmt.Errorf("IsSrvOKInGoc error: %w", err)
+	}
+
+	for srv := range srvs {
+		if srv == srvName {
+			return nil
+		}
+	}
+	err = fmt.Errorf("Service name is not found in goc register list: %s", srvName)
+	return fmt.Errorf("IsSrvOKInGoc error: %w", err)
+}
+
+// IsSrvFoundInWatcher .
+func IsSrvFoundInWatcher(srvName string) error {
+	// TODO:
+	return nil
+}
+
 //
 // Task sync service cover and create report
 //
