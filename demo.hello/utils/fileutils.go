@@ -50,13 +50,10 @@ func HasPermission(filePath string) bool {
 	return true
 }
 
-// ErrDirExist .
-var ErrDirExist = errors.New("dir is exist")
-
 // MakeDir .
 func MakeDir(dirPath string) error {
 	if IsExist(dirPath) {
-		return ErrDirExist
+		return os.ErrExist
 	}
 	return os.MkdirAll(dirPath, os.ModePerm)
 }
@@ -264,16 +261,16 @@ func ReadFile(filePath string) ([]byte, error) {
 // CreateFile creates a file by bytes content.
 func CreateFile(filePath string, b []byte) error {
 	if IsExist(filePath) {
-		return fmt.Errorf("file [%s] is exist", filePath)
+		return fmt.Errorf("[%s]: %w", filePath, os.ErrExist)
 	}
 
-	buf := bytes.NewBuffer(b)
 	newFile, err := os.Create(filePath)
 	if err != nil {
-		return fmt.Errorf("os.Create [%s] error: %v", filePath, err)
+		return fmt.Errorf("Create file error: %v", err)
 	}
 	defer newFile.Close()
 
+	buf := bytes.NewBuffer(b)
 	if _, err = newFile.Write(buf.Bytes()); err != nil {
 		return err
 	}

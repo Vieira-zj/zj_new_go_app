@@ -97,7 +97,7 @@ func (s *Scheduler) fetchAndSaveCoverForRegisterSrvs() error {
 				wg.Done()
 			}()
 
-			savedDir := filepath.Join(GetModuleDir(srvName), WatcherCoverDataDirName)
+			savedDir := filepath.Join(GetSrvModuleDir(srvName), WatcherCoverDataDirName)
 			if !utils.IsDirExist(savedDir) {
 				utils.MakeDir(savedDir)
 			}

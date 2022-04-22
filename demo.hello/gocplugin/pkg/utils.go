@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+// GetFilePathWithNewExt .
+func GetFilePathWithNewExt(filePath, newExt string) string {
+	return strings.Replace(filePath, filepath.Ext(filePath), "."+newExt, 1)
+}
+
 func getParamFromEnv(key string) string {
 	value := os.Getenv(key)
 	if len(value) == 0 {
@@ -20,11 +25,6 @@ func getParamFromEnv(key string) string {
 
 func getSimpleNowDatetime() string {
 	return time.Now().Format("20060102_150405")
-}
-
-// GetFilePathWithNewExt .
-func GetFilePathWithNewExt(filePath, newExt string) string {
-	return strings.Replace(filePath, filepath.Ext(filePath), "."+newExt, 1)
 }
 
 func getFilePathWithoutExt(filePath string) string {

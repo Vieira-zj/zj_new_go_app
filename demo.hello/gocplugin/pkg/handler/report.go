@@ -27,33 +27,33 @@ func GetListOfSrvCoversHandler(c *gin.Context) {
 		return
 	}
 
-	srvList := make([]respSrvCoverItem, 0, len(srvs))
+	srvCoverItems := make([]respSrvCoverItem, 0, len(srvs))
 	for srvName, addrs := range srvs {
-		item := respSrvCoverItem{}
+		var item respSrvCoverItem
+		if item.CoverTotal, err = getLatestSrvCoverTotal(srvName); err != nil {
+			sendErrorResp(c, http.StatusInternalServerError, err)
+			return
+		}
 		item.SrvName = srvName
 		item.Addresses = addrs
-
-		param := pkg.SyncSrvCoverParam{
-			SrvName:   srvName,
-			Addresses: addrs,
-		}
-		if item.CoverTotal, err = getLatestSrvCoverTotal(param); err != nil {
-			sendErrorResp(c, http.StatusInternalServerError, err)
-		}
-		srvList = append(srvList, item)
+		srvCoverItems = append(srvCoverItems, item)
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "count": len(srvList), "data": srvList})
+	c.JSON(http.StatusOK, gin.H{"code": 0, "count": len(srvCoverItems), "data": srvCoverItems})
 }
 
 // GetLatestSrvCoverTotalHandler .
 func GetLatestSrvCoverTotalHandler(c *gin.Context) {
-	param := pkg.SyncSrvCoverParam{}
+	var param pkg.SyncSrvCoverParam
 	if err := c.ShouldBindJSON(&param); err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
+	if err := isSrvNameValid(param.SrvName); err != nil {
+		sendErrorResp(c, http.StatusInternalServerError, err)
+		return
+	}
 
-	coverTotal, err := getLatestSrvCoverTotal(param)
+	coverTotal, err := getLatestSrvCoverTotal(param.SrvName)
 	if err != nil {
 		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
@@ -61,22 +61,13 @@ func GetLatestSrvCoverTotalHandler(c *gin.Context) {
 	sendSrvCoverTotalResp(c, coverTotal)
 }
 
-func getLatestSrvCoverTotal(param pkg.SyncSrvCoverParam) (string, error) {
+func getLatestSrvCoverTotal(srvName string) (string, error) {
 	dbInstance := pkg.NewGocSrvCoverDBInstance()
-	meta := pkg.GetSrvMetaFromName(param.SrvName)
+	meta := pkg.GetSrvMetaFromName(srvName)
 	row, err := dbInstance.GetLatestSrvCoverRow(meta)
 	if err != nil {
 		if errors.Is(err, pkg.ErrSrvCoverLatestRowNotFound) {
-			if len(param.Addresses) == 0 {
-				if err := setSrvAddrsForParam(&param); err != nil {
-					return "", fmt.Errorf("getLatestSrvCoverTotal error: %w", err)
-				}
-			}
-			coverTotal, err := pkg.GetSrvTotalFromGoc(param.Addresses)
-			if err != nil {
-				return "", fmt.Errorf("getLatestSrvCoverTotal error: %w", err)
-			}
-			return coverTotal, nil
+			return "0.00", nil
 		}
 		return "", fmt.Errorf("getLatestSrvCoverTotal error: %w", err)
 	}
@@ -84,31 +75,22 @@ func getLatestSrvCoverTotal(param pkg.SyncSrvCoverParam) (string, error) {
 	return row.CoverTotal.String, nil
 }
 
-func setSrvAddrsForParam(param *pkg.SyncSrvCoverParam) error {
-	if err := pkg.RemoveUnhealthSrvInGocTask(); err != nil {
-		return fmt.Errorf("setSrvAddrsForParam error: %w", err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), pkg.ShortWait)
+func isSrvNameValid(srvName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), pkg.Wait)
 	defer cancel()
 
-	gocAPI := pkg.NewGocAPI()
-	srvs, err := gocAPI.ListRegisterServices(ctx)
+	goc := pkg.NewGocAPI()
+	srvs, err := goc.ListRegisterServices(ctx)
 	if err != nil {
-		return fmt.Errorf("setSrvAddrsForParam error: %w", err)
+		return fmt.Errorf("isSrvNameValid error: %w", err)
 	}
 
-	addrs, ok := srvs[param.SrvName]
-	if !ok {
-		err = fmt.Errorf("Service name not found: %s", param.SrvName)
-		return fmt.Errorf("setSrvAddrsForParam error: %w", err)
+	for srv := range srvs {
+		if srv == srvName {
+			return nil
+		}
 	}
-	if len(addrs) == 0 {
-		err = fmt.Errorf("No address found for service: %s", param.SrvName)
-		return fmt.Errorf("setSrvAddrsForParam error: %w", err)
-	}
-	param.Addresses = addrs
-	return nil
+	return fmt.Errorf("Service name is not found in goc register list: %s", srvName)
 }
 
 type respSrvCoverTotalItem struct {
@@ -120,9 +102,13 @@ type respSrvCoverTotalItem struct {
 
 // GetHistorySrvCoverTotalsHandler .
 func GetHistorySrvCoverTotalsHandler(c *gin.Context) {
-	param := pkg.SyncSrvCoverParam{}
+	var param pkg.SyncSrvCoverParam
 	if err := c.ShouldBindJSON(&param); err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
+		return
+	}
+	if err := isSrvNameValid(param.SrvName); err != nil {
+		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -155,16 +141,18 @@ func GetHistorySrvCoverTotalsHandler(c *gin.Context) {
 
 // GetSrvRawCoverHandler .
 func GetSrvRawCoverHandler(c *gin.Context) {
-	req := struct {
-		SrvAddr string `json:"srv_addr" binding:"required"`
-	}{}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	var param pkg.SyncSrvCoverParam
+	if err := c.ShouldBindJSON(&param); err != nil {
+		sendErrorResp(c, http.StatusBadRequest, err)
+		return
+	}
+	if err := isSrvNameValid(param.SrvName); err != nil {
+		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	gocAPI := pkg.NewGocAPI()
-	b, err := gocAPI.GetServiceProfileByAddr(c.Request.Context(), req.SrvAddr)
+	b, err := gocAPI.GetServiceProfileByName(c.Request.Context(), param.SrvName)
 	if err != nil {
 		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
@@ -172,29 +160,34 @@ func GetSrvRawCoverHandler(c *gin.Context) {
 	sendBytes(c, b)
 }
 
+type syncSrvCoverReq struct {
+	pkg.SyncSrvCoverParam
+	IsForce bool `json:"is_force"`
+}
+
 // SyncSrvCoverHandler sync service cover data from goc, and create report.
 func SyncSrvCoverHandler(c *gin.Context) {
-	param := pkg.SyncSrvCoverParam{}
-	if err := c.ShouldBindJSON(&param); err != nil {
+	var req syncSrvCoverReq
+	if err := c.ShouldBindJSON(&req); err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
-	if err := setSrvAddrsForParam(&param); err != nil {
-		sendErrorResp(c, http.StatusBadRequest, err)
+	if err := isSrvNameValid(req.SrvName); err != nil {
+		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	tasksState := pkg.NewSrvCoverSyncTasksState()
-	if srvState, ok := tasksState.Get(param.SrvName); ok {
+	if srvState, ok := tasksState.Get(req.SrvName); ok {
 		switch srvState {
 		case pkg.StateRunning:
 			sendMessageResp(c, "Sync service cover task is currently running.")
 			return
 		case pkg.StateFreshed:
-			if getIsForceSync(c) {
+			if req.IsForce {
 				break
 			}
-			if coverTotal, err := getLatestSrvCoverTotal(param); err != nil {
+			if coverTotal, err := getLatestSrvCoverTotal(req.SrvName); err != nil {
 				sendErrorResp(c, http.StatusInternalServerError, err)
 			} else {
 				sendSrvCoverTotalResp(c, coverTotal)
@@ -203,7 +196,10 @@ func SyncSrvCoverHandler(c *gin.Context) {
 		}
 	}
 
-	retCh := pkg.SubmitSrvCoverSyncTask(param)
+	retCh := pkg.SubmitSrvCoverSyncTask(pkg.SyncSrvCoverParam{
+		SrvName:   req.SrvName,
+		Addresses: req.Addresses,
+	})
 	select {
 	case res := <-retCh:
 		if coverTotal, ok := res.(string); ok {
@@ -216,17 +212,9 @@ func SyncSrvCoverHandler(c *gin.Context) {
 	}
 }
 
-func getIsForceSync(c *gin.Context) bool {
-	force := c.Query("force")
-	if strings.ToLower(force) != "true" {
-		return false
-	}
-	return true
-}
-
 type getLatestCoverReportReq struct {
-	RptType string `json:"rpt_type" binding:"required"`
 	SrvName string `json:"srv_name" binding:"required"`
+	RptType string `json:"rpt_type" binding:"required"`
 }
 
 // GetLatestSrvCoverReportHandler .

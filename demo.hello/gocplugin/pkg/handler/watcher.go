@@ -14,13 +14,13 @@ import (
 )
 
 type watcherListSrvCoverReq struct {
-	SrvName string `json:"srv_name"`
-	Limit   int    `json:"limit"`
+	SrvName string `json:"srv_name" binding:"required"`
+	Limit   int    `json:"limit" binding:"required"`
 }
 
 // ListSavedSrvCoversHandler .
 func ListSavedSrvCoversHandler(c *gin.Context) {
-	param := watcherListSrvCoverReq{}
+	var param watcherListSrvCoverReq
 	if err := c.ShouldBindJSON(&param); err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
@@ -48,13 +48,13 @@ func ListSavedSrvCoversHandler(c *gin.Context) {
 }
 
 type watcherGetSrvCoverReq struct {
-	SrvName     string `json:"srv_name"`
+	SrvName     string `json:"srv_name" binding:"required"`
 	CovFileName string `json:"cov_file_name"`
 }
 
 // GetSrvCoverDataHandler .
 func GetSrvCoverDataHandler(c *gin.Context) {
-	param := watcherGetSrvCoverReq{}
+	var param watcherGetSrvCoverReq
 	if err := c.ShouldBindJSON(&param); err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
@@ -91,7 +91,7 @@ func GetSrvCoverDataHandler(c *gin.Context) {
 
 // FetchAndSaveSrvCoverHandler 服务异常退出时调用该接口去拉取服务覆盖率数据，这里同步执行代替异步。
 func FetchAndSaveSrvCoverHandler(c *gin.Context) {
-	param := pkg.SyncSrvCoverParam{}
+	var param pkg.SyncSrvCoverParam
 	if err := c.ShouldBindJSON(&param); err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
@@ -112,6 +112,6 @@ func FetchAndSaveSrvCoverHandler(c *gin.Context) {
 }
 
 func getSavedCoverDirPath(srvName string) string {
-	dir := pkg.GetModuleDir(srvName)
+	dir := pkg.GetSrvModuleDir(srvName)
 	return filepath.Join(dir, pkg.WatcherCoverDataDirName)
 }

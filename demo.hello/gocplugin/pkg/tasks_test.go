@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-func TestGetModuleDir(t *testing.T) {
+func TestGetSrvModuleDir(t *testing.T) {
 	AppConfig.RootDir = "/tmp/test"
 	srvName := "staging_th_apa_goc_echoserver_master_b63d82705a"
-	fmt.Println(GetModuleDir(srvName))
+	fmt.Println(GetSrvModuleDir(srvName))
 }
 
 func TestIsAttachSrvOK(t *testing.T) {
@@ -23,20 +23,6 @@ func TestRemoveUnhealthSrvInGocTask(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println("unhealth check done")
-}
-
-func TestDeprecatedGetSrvCoverTask(t *testing.T) {
-	AppConfig.GocHost = testGocLocalHost
-	savedDir := "/tmp/test/apa_goc_echoserver"
-	param := SyncSrvCoverParam{
-		SrvName:   "staging_th_apa_goc_echoserver_master_518e0a570c",
-		Addresses: []string{"http://127.0.0.1:51007"},
-	}
-	savedPath, isUpdate, err := deprecatedGetSrvCoverTask(savedDir, param)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Printf("saved=%s, updated=%v\n", savedPath, isUpdate)
 }
 
 func TestFetchAndSaveSrvCover(t *testing.T) {
@@ -55,11 +41,8 @@ func TestFetchAndSaveSrvCover(t *testing.T) {
 
 func TestGetSrvCoverTask(t *testing.T) {
 	AppConfig.GocHost = testGocLocalHost
-	param := SyncSrvCoverParam{
-		SrvName:   "staging_th_apa_goc_echoserver_master_845820727e",
-		Addresses: []string{"http://127.0.0.1:51007"},
-	}
-	savePath, isUpdate, err := getSrvCoverTask(param)
+	srvName := "staging_th_apa_goc_echoserver_master_845820727e"
+	savePath, isUpdate, err := getSrvCoverTask(srvName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,11 +56,8 @@ func TestCheckoutSrvRepo(t *testing.T) {
 	}
 
 	workingDir := "/tmp/test/apa_goc_echoserver/repo"
-	param := SyncSrvCoverParam{
-		SrvName:   "staging_th_apa_goc_echoserver_master_518e0a570c",
-		Addresses: []string{"http://127.0.0.1:51007"},
-	}
-	if err := checkoutSrvRepo(workingDir, param); err != nil {
+	srvName := "staging_th_apa_goc_echoserver_master_845820727e"
+	if err := checkoutSrvRepo(workingDir, srvName); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -95,11 +75,7 @@ func TestCreateSrvCoverReportTask(t *testing.T) {
 	}
 	fmt.Printf("is_latest=%v, path=%s\n", row.IsLatest, row.CovFilePath)
 
-	param := SyncSrvCoverParam{
-		SrvName:   "staging_th_apa_goc_echoserver_master_845820727e",
-		Addresses: []string{"http://127.0.0.1:51007"},
-	}
-	total, err := createSrvCoverReportTask(row.CovFilePath, param)
+	total, err := createSrvCoverReportTask(row.CovFilePath, srvName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +103,7 @@ func TestGetSrvCoverAndCreateReportTask(t *testing.T) {
 // Helper Test
 //
 
-func TestGetSavedCovFileName(t *testing.T) {
+func TestGetSavedCovFileNameWithSuffix(t *testing.T) {
 	if err := mockLoadConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
 	}
@@ -137,27 +113,8 @@ func TestGetSavedCovFileName(t *testing.T) {
 	fmt.Println("saved file name:", name)
 }
 
-func TestGetModuleFromSrvName(t *testing.T) {
-	if err := mockLoadConfig("/tmp/test"); err != nil {
-		t.Fatal(err)
-	}
-
-	name := "staging_th_apa_goc_echoserver_master_518e0a570c"
-	mod, err := getModuleFromSrvName(name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println("module:", mod)
-}
-
 func TestGetSrvMetaFromName(t *testing.T) {
 	name := "staging_th_apa_goc_echoserver_master_518e0a570c"
 	meta := GetSrvMetaFromName(name)
 	fmt.Printf("service meta data: %+v\n", meta)
-}
-
-func TestGetBranchAndCommitFromSrvName(t *testing.T) {
-	name := "staging_th_apa_goc_echoserver_master_518e0a570c"
-	br, commit := getBranchAndCommitFromSrvName(name)
-	fmt.Printf("branch=%s, commitID=%s\n", br, commit)
 }
