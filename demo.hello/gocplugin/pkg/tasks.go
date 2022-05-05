@@ -107,7 +107,7 @@ type SyncSrvCoverParam struct {
 func GetSrvCoverAndCreateReportTask(param SyncSrvCoverParam) (string, error) {
 	covFile, isUpdate, err := getSrvCoverTask(param.SrvName)
 	if err != nil {
-		return "", fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
+		return "", fmt.Errorf("GetSrvCoverAndCreateReportTask error: %w", err)
 	}
 
 	meta := GetSrvMetaFromName(param.SrvName)
@@ -117,7 +117,7 @@ func GetSrvCoverAndCreateReportTask(param SyncSrvCoverParam) (string, error) {
 
 	coverTotal, err := createSrvCoverReportTask(covFile, param.SrvName)
 	if err != nil {
-		return "", fmt.Errorf("getSrvCoverAndCreateReportTask error: %w", err)
+		return "", fmt.Errorf("GetSrvCoverAndCreateReportTask error: %w", err)
 	}
 
 	meta.Addrs = strings.Join(param.Addresses, ",")
@@ -131,7 +131,7 @@ func GetSrvCoverAndCreateReportTask(param SyncSrvCoverParam) (string, error) {
 		},
 	}
 	if err := saveSrvCoverInDB(newRow); err != nil {
-		return "", fmt.Errorf("getSrvCoverAndCreateReportTask save db error: %w", err)
+		return "", fmt.Errorf("GetSrvCoverAndCreateReportTask save db error: %w", err)
 	}
 	return coverTotal, nil
 }

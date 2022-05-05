@@ -7,10 +7,14 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"runtime"
 	"time"
 )
 
-const cntKey = "Count"
+const (
+	cntKey     = "Count"
+	listenPort = ":8080"
+)
 
 func init() {
 	// expvar 1. 公共变量 2. 操作都是协程安全的
@@ -18,47 +22,58 @@ func init() {
 	count.Set(0)
 }
 
-/*
-api test:
-curl http://localhost:8080/
-curl http://localhost:8080/ping
-curl http://localhost:8080/debug/vars | jq .
-*/
-
 func main() {
+	go func() {
+		t := time.Tick(time.Second)
+		for {
+			select {
+			case <-t:
+				log.Printf("number of goroutines: %d", runtime.NumGoroutine())
+			}
+		}
+	}()
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", index)
-	mux.HandleFunc("/ping", ping)
-	mux.HandleFunc("/debug/vars", debug)
+	mux.HandleFunc("/", indexHandler)
+	mux.HandleFunc("/ping", pingHandler)
+	mux.HandleFunc("/exec", execHandler)
+	mux.HandleFunc("/debug/vars", debugHandler)
 
 	server := &http.Server{
-		Addr:              ":8080",
+		Addr:              listenPort,
 		ReadHeaderTimeout: 3 * time.Second,
 		ReadTimeout:       5 * time.Second,
 		WriteTimeout:      8 * time.Second,
 		Handler:           logging(mux),
 	}
 
-	log.Println("http serve at :8080")
+	log.Println("http serve at", listenPort)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalln("server error:", err)
 	}
 }
 
 /*
-handler
+Handlers
 */
 
-func index(w http.ResponseWriter, r *http.Request) {
+func indexHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("hello"))
 }
 
-func ping(w http.ResponseWriter, r *http.Request) {
+func pingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("pong"))
 }
 
-func debug(w http.ResponseWriter, r *http.Request) {
+func execHandler(w http.ResponseWriter, r *http.Request) {
+	// http server starts 2 goroutines for each request (connection)
+	time.Sleep(3 * time.Second)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("exec done"))
+}
+
+func debugHandler(w http.ResponseWriter, r *http.Request) {
 	vars := make([]string, 0, 4)
 	expvar.Do(func(kv expvar.KeyValue) {
 		if kv.Key == "memstats" || kv.Key == "cmdline" {
@@ -82,7 +97,7 @@ func debug(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-middleware
+Middlewares
 */
 
 func logging(next http.Handler) http.Handler {
