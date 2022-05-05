@@ -24,6 +24,10 @@ function govet_check {
   go vet demos/*.go
 }
 
+function go_generate {
+  go generate main.go
+}
+
 #
 # Build Docker Image
 #

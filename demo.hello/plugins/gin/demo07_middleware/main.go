@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,10 +26,25 @@ func MyLogger() gin.HandlerFunc {
 	}
 }
 
+// MyRecover .
+func MyRecover(c *gin.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic: %v", r)
+			debug.PrintStack()
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+	}()
+	c.Next()
+}
+
 func main() {
 	// Custom Middleware
 	r := gin.New()
 	r.Use(MyLogger())
+	r.Use(MyRecover)
 
 	// curl http://localhost:8081/test
 	r.GET("/test", func(c *gin.Context) {
@@ -43,7 +59,7 @@ func main() {
 		ctxCopied := c.Copy()
 		go func() {
 			time.Sleep(3 * time.Second)
-			log.Println("Done in path:", ctxCopied.Request.URL.Path)
+			log.Println("done in path:", ctxCopied.Request.URL.Path)
 		}()
 		c.String(http.StatusOK, "ok")
 	})
@@ -51,7 +67,7 @@ func main() {
 	// curl http://localhost:8081/long_sync
 	r.GET("long_sync", func(c *gin.Context) {
 		time.Sleep(3 * time.Second)
-		log.Println("Done in path:", c.Request.URL.Path)
+		log.Println("done in path:", c.Request.URL.Path)
 		c.String(http.StatusOK, "ok")
 	})
 

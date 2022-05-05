@@ -123,6 +123,7 @@ func goRoutinesRunOrder() {
 	<-ctx.Done()
 }
 
+//go:generate echo arch=$GOARCH os=$GOOS file=$GOFILE pkg=$GOPACKAGE
 func main() {
 	help := flag.Bool("h", false, "help")
 	isColor := flag.Bool("c", false, "run color print demo.")

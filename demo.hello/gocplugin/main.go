@@ -76,7 +76,7 @@ func initRouter() *gin.Engine {
 	r := gin.Default()
 
 	r.NoRoute(func(c *gin.Context) {
-		c.String(http.StatusNotFound, fmt.Sprintf("Path not found: %s", c.Request.URL.Path))
+		c.String(http.StatusNotFound, fmt.Sprintf("Path not found: [%s] %s", c.Request.Method, c.Request.URL.Path))
 	})
 
 	r.GET("/", handler.IndexHandler)
