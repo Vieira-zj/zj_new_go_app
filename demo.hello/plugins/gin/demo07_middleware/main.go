@@ -41,7 +41,7 @@ func MyRecover(c *gin.Context) {
 }
 
 func main() {
-	// Custom Middleware
+	// Custom Middlewares
 	r := gin.New()
 	r.Use(MyLogger())
 	r.Use(MyRecover)
