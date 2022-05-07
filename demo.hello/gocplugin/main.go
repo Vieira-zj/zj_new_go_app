@@ -82,11 +82,15 @@ func initRouter() *gin.Engine {
 	r.GET("/", handler.IndexHandler)
 	r.GET("/ping", handler.PingHandler)
 
+	r.Static("/static/report", pkg.AppConfig.PublicDir)
+
 	// middleware
 	r.Use(gin.Logger())
+
 	r.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
 		c.String(http.StatusInternalServerError, fmt.Sprintf("Internal server error: %v", recovered))
 	}))
+
 	return r
 }
 
@@ -96,13 +100,19 @@ func runServer(r *gin.Engine) {
 
 func setupServerRouter(r *gin.Engine) {
 	r.GET("/cover/list", handler.GetListOfSrvCoversHandler)
-	r.POST("/cover/total/latest", handler.GetLatestSrvCoverTotalHandler)
-	r.POST("/cover/total/history", handler.GetHistorySrvCoverTotalsHandler)
 
-	r.POST("/cover/report/sync", handler.SyncSrvCoverHandler)
+	coverTotal := r.Group("/cover/total")
+	coverTotal.POST("latest", handler.GetLatestSrvCoverTotalHandler)
+	coverTotal.POST("history", handler.GetHistorySrvCoverTotalsHandler)
 
-	r.POST("/cover/raw", handler.GetSrvRawCoverHandler)
-	r.POST("/cover/report/latest", handler.GetLatestSrvCoverReportHandler)
+	cover := r.Group("/cover")
+	cover.POST("sync", handler.SyncSrvCoverHandler)
+	cover.POST("clear", handler.ClearSrvCoverHandler)
+
+	report := r.Group("/cover/report")
+	report.POST("list", handler.ListSrvCoverReportsHandler)
+	report.POST("raw", handler.GetSrvRawCoverHandler)
+	report.POST("func", handler.GetLatestSrvFuncCoverReportHandler)
 }
 
 func runWatcher(ctx context.Context, r *gin.Engine) {
@@ -111,9 +121,10 @@ func runWatcher(ctx context.Context, r *gin.Engine) {
 }
 
 func setupWatcherRouter(r *gin.Engine) {
-	r.POST("/watcher/cover/list", handler.ListSavedSrvCoversHandler)
-	r.POST("/watcher/cover/get", handler.GetSrvCoverDataHandler)
-	r.POST("/watcher/cover/save", handler.FetchAndSaveSrvCoverHandler)
+	cover := r.Group("/watcher/cover")
+	cover.POST("list", handler.ListSavedSrvCoversHandler)
+	cover.POST("get", handler.GetSrvCoverDataHandler)
+	cover.POST("save", handler.FetchAndSaveSrvCoverHandler)
 }
 
 func runWatcherScheduleTask(ctx context.Context) {

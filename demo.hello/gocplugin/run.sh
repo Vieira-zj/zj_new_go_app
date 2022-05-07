@@ -26,6 +26,6 @@ function run_goc_watch_dog {
 }
 
 # run_golint
-# run_goc_report
+run_goc_report
 
 echo "done"

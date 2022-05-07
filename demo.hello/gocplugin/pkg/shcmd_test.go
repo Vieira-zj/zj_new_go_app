@@ -21,6 +21,11 @@ func TestRunCmd(t *testing.T) {
 	fmt.Println(res)
 }
 
+func TestGetModuleNameFromFileName(t *testing.T) {
+	fileName := "staging_th_apa_goc_echoserver_master_b63d82705a_20220507_173407.cov"
+	fmt.Println("module name:", getModuleNameFromFileName(fileName))
+}
+
 func TestGoToolCreateCoverFuncReport(t *testing.T) {
 	moduleDir := "/tmp/test/echoserver"
 	workingDir := filepath.Join(moduleDir, "repo")
@@ -38,13 +43,18 @@ func TestGoToolCreateCoverFuncReport(t *testing.T) {
 }
 
 func TestGoToolCreateCoverHTMLReport(t *testing.T) {
-	moduleDir := "/tmp/test/echoserver"
+	if err := LoadConfig("/tmp/test/gocplugin.json"); err != nil {
+		t.Fatal(err)
+	}
+
+	moduleName := "apa_goc_echoserver"
+	moduleDir := filepath.Join(AppConfig.RootDir, moduleName)
 	workingDir := filepath.Join(moduleDir, "repo")
-	covFile := "staging_th_apa_goc_echoserver_master_518e0a570c_127-0-0-1_20220325_181410.cov"
-	covPath := filepath.Join(moduleDir, covFile)
+	covFile := "staging_th_apa_goc_echoserver_master_b63d82705a_20220507_173407.cov"
+	covPath := filepath.Join(moduleDir, "cover_data", covFile)
 
 	cmd := NewShCmd()
-	output, err := cmd.GoToolCreateCoverHTMLReport(workingDir, covPath)
+	output, err := cmd.GoToolCreateCoverHTMLReport(workingDir, moduleName, covPath)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -20,6 +20,11 @@ const (
 	ReportCoverDataDirName = "cover_data"
 	// WatcherCoverDataDirName .
 	WatcherCoverDataDirName = "saved_cover_data"
+
+	// CoverRptTypeFunc .
+	CoverRptTypeFunc = "func"
+	// CoverRptTypeHTML .
+	CoverRptTypeHTML = "html"
 )
 
 var (
@@ -31,8 +36,9 @@ var (
 
 // GocPluginConfig .
 type GocPluginConfig struct {
-	RootDir string `json:"root"`
-	GocHost string `json:"goc_host"`
+	RootDir   string `json:"root"`
+	GocHost   string `json:"goc_host"`
+	PublicDir string
 }
 
 // LoadConfig .
@@ -45,6 +51,7 @@ func LoadConfig(cfgPath string) error {
 	if err := json.Unmarshal(b, &AppConfig); err != nil {
 		return fmt.Errorf("LoadConfig error: %w", err)
 	}
+	AppConfig.PublicDir = filepath.Join(AppConfig.RootDir, "public/report")
 
 	LoadModuleToRepoMap()
 	return nil

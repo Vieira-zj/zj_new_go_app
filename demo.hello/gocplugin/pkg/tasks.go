@@ -204,8 +204,8 @@ func saveSrvCoverInDB(row GocSrvCoverModel) error {
 // 1. sync repo with specified commit;
 // 2. run "go tool cover" to generate .func and .html coverage report.
 func createSrvCoverReportTask(covFile, srvName string) (string, error) {
-	moduleDir := GetSrvModuleDir(srvName)
-	repoDir := filepath.Join(moduleDir, "repo")
+	meta := GetSrvMetaFromName(srvName)
+	repoDir := filepath.Join(AppConfig.RootDir, meta.AppName, "repo")
 	cmd := NewShCmd()
 	if err := checkoutSrvRepo(repoDir, srvName); err != nil {
 		return defaultCover, fmt.Errorf("createSrvCoverReportTask error: %w", err)
@@ -216,7 +216,7 @@ func createSrvCoverReportTask(covFile, srvName string) (string, error) {
 		return defaultCover, fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
 
-	if _, err = cmd.GoToolCreateCoverHTMLReport(repoDir, covFile); err != nil {
+	if _, err = cmd.GoToolCreateCoverHTMLReport(repoDir, meta.AppName, covFile); err != nil {
 		return defaultCover, fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
 	return coverTotal, nil

@@ -33,18 +33,25 @@ func ListSavedSrvCoversHandler(c *gin.Context) {
 	}
 
 	savedDirPath := getSavedCoverDirPath(param.SrvName)
-	fileNames, err := utils.ListFilesInDir(savedDirPath, "cov")
+	fileNames, err := listFileNamesFromDir(savedDirPath, "cov", param.Limit)
 	if err != nil {
 		sendErrorResp(c, http.StatusInternalServerError, err)
-		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": fileNames})
+}
+
+func listFileNamesFromDir(dirPath, fileExt string, limit int) ([]string, error) {
+	fileNames, err := utils.ListFilesInDir(dirPath, fileExt)
+	if err != nil {
+		return nil, fmt.Errorf("listFileNamesFromDir error: %w", err)
 	}
 	sort.Strings(fileNames)
 
-	limit := param.Limit
 	if len(fileNames) < limit {
 		limit = len(fileNames)
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": fileNames[len(fileNames)-limit:]})
+	return fileNames[len(fileNames)-limit:], nil
 }
 
 type watcherGetSrvCoverReq struct {

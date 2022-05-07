@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -57,7 +58,7 @@ func GetLatestSrvCoverTotalHandler(c *gin.Context) {
 		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
-	sendSrvCoverTotalResp(c, coverTotal)
+	c.JSON(http.StatusOK, gin.H{"code": 0, "cover_total": coverTotal})
 }
 
 func getLatestSrvCoverTotal(srvName string) (string, error) {
@@ -189,27 +190,15 @@ func SyncSrvCoverHandler(c *gin.Context) {
 	}
 }
 
-type getLatestCoverReportReq struct {
-	SrvName string `json:"srv_name" binding:"required"`
-	RptType string `json:"rpt_type" binding:"required"`
-}
-
-// GetLatestSrvCoverReportHandler .
-func GetLatestSrvCoverReportHandler(c *gin.Context) {
-	var req getLatestCoverReportReq
-	if err := c.ShouldBindJSON(&req); err != nil {
+// GetLatestSrvFuncCoverReportHandler .
+func GetLatestSrvFuncCoverReportHandler(c *gin.Context) {
+	var param pkg.SyncSrvCoverParam
+	if err := c.ShouldBindJSON(&param); err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
 
-	rptType := strings.ToLower(req.RptType)
-	if rptType != "html" && rptType != "func" {
-		err := fmt.Errorf("Invalid report type: %s", req.RptType)
-		sendErrorResp(c, http.StatusBadRequest, err)
-		return
-	}
-
-	meta := pkg.GetSrvMetaFromName(req.SrvName)
+	meta := pkg.GetSrvMetaFromName(param.SrvName)
 	dbInstance := pkg.NewGocSrvCoverDBInstance()
 	row, err := dbInstance.GetLatestSrvCoverRow(meta)
 	if err != nil {
@@ -221,13 +210,52 @@ func GetLatestSrvCoverReportHandler(c *gin.Context) {
 		return
 	}
 
-	filePath := pkg.GetFilePathWithNewExt(row.CovFilePath, rptType)
+	filePath := pkg.GetFilePathWithNewExt(row.CovFilePath, pkg.CoverRptTypeFunc)
 	b, err := utils.ReadFile(filePath)
 	if err != nil {
 		sendErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
 	sendBytes(c, b)
+}
+
+type listSrvCoverReportsReq struct {
+	watcherListSrvCoverReq
+	RptType string `json:"rpt_type" binding:"required"`
+}
+
+// ListSrvCoverReportsHandler .
+func ListSrvCoverReportsHandler(c *gin.Context) {
+	var req listSrvCoverReportsReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		sendErrorResp(c, http.StatusBadRequest, err)
+		return
+	}
+
+	if req.RptType != pkg.CoverRptTypeFunc && req.RptType != pkg.CoverRptTypeHTML {
+		err := fmt.Errorf("Invalid report type %s", req.RptType)
+		sendErrorResp(c, http.StatusBadRequest, err)
+	}
+
+	if req.Limit < 1 {
+		err := fmt.Errorf("Limit cannot be less than 1")
+		sendErrorResp(c, http.StatusBadRequest, err)
+		return
+	}
+
+	meta := pkg.GetSrvMetaFromName(req.SrvName)
+	listDirPath := filepath.Join(pkg.AppConfig.RootDir, pkg.ReportCoverDataDirName)
+	if req.RptType == pkg.CoverRptTypeHTML {
+		listDirPath = filepath.Join(pkg.AppConfig.PublicDir, meta.AppName)
+	}
+
+	names, err := listFileNamesFromDir(listDirPath, pkg.CoverRptTypeHTML, req.Limit)
+	if err != nil {
+		sendErrorResp(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": names})
 }
 
 // ClearSrvCoverHandler .

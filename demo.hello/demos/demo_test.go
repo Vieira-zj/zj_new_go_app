@@ -1540,6 +1540,38 @@ func TestDemo51(t *testing.T) {
 	p.SayHello()
 }
 
+func TestDemo52(t *testing.T) {
+	// 数组是值传递
+	a := [3]int{1, 2, 3}
+	func(a [3]int) {
+		a[0] = 7
+		fmt.Println("inner array:", a)
+	}(a)
+	fmt.Println("src array:", a)
+
+	// slice 是引用传递
+	s := []int{1, 2, 3}
+	func(s []int) {
+		s[0] = 9
+		fmt.Println("inner slice:", s)
+	}(s)
+	fmt.Println("src slice:", s)
+}
+
+// demo53, verify interface imply
+type MyReader struct{}
+
+func (r *MyReader) Read(p []byte) (n int, err error) {
+	fmt.Println("mock")
+	return 0, nil
+}
+
+func TestDemo53(t *testing.T) {
+	// 在编译阶段检查接口实现
+	var _ io.Reader = (*MyReader)(nil)
+	fmt.Println("verify interface imply")
+}
+
 func TestDemo95(t *testing.T) {
 	// 可变参数
 	myPrint := func(args ...string) {

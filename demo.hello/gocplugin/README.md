@@ -2,7 +2,7 @@
 
 ## Overview
 
-- Goc Plugin 包括 Goc Report, Goc Watch Dog 和 Goc Portal 三部分
+- Goc Plugin 包括 Goc Report, Goc Watch Dog 和 Goc Portal 3个部分
 - 基于工具 Goc + diff_cover (二次开发)
 
 ### Goc Report
@@ -67,21 +67,24 @@
 ```text
 - goc_report_root/
   - sqlite.db
+  - public/report/
+    - module_x/
+      - module_x_1_report.html
+      - module_x_2_report.html
+    - module_y/
+      - module_y_1_report.html
   - module_x/
     - repo/
     - cov_data/
       - module_x_1.cov
       - module_x_1_report.txt
-      - module_x_1_report.html
       - module_x_2.cov
       - module_x_2_report.txt
-      - module_x_2_report.html
   - module_y/
     - repo/
     - cov_data/
       - module_y_1.cov
       - module_y_1_report.txt
-      - module_y_1_report.html
 ```
 
 ### Goc Report Table
@@ -197,37 +200,47 @@ curl -XPOST http://127.0.0.1:8089/cover/total/history -H "Content-Type:applicati
 
 Sync service cover data and create report:
 
-- `/cover/report/sync`: sync service cover results, generate report, and returns cover total.
+- `/cover/sync`: sync service cover results, generate report, and returns cover total.
 
 ```sh
-curl -XPOST http://127.0.0.1:8089/cover/report/sync -H "Content-Type:application/json" \
+curl -XPOST http://127.0.0.1:8089/cover/sync -H "Content-Type:application/json" \
   -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
 
 # force sync
-curl -XPOST "http://127.0.0.1:8089/cover/report/sync" -H "Content-Type:application/json" \
+curl -XPOST http://127.0.0.1:8089/cover/sync -H "Content-Type:application/json" \
   -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "is_force":true}' | jq .
 ```
 
-- `/cover/raw`: get service cover raw data.
+- `/cover/clear`: clear service cover data and set total cover to 0.
+
+------
+
+- `/cover/report/list`: list service cover report files name.
 
 ```sh
-curl -XPOST http://127.0.0.1:8089/cover/raw -H "Content-Type:application/json" \
-  -d '{"srv_addr":"http://127.0.0.1:51007"}' -o 'raw_profile.cov'
+curl -XPOST http://127.0.0.1:8089/cover/report/list -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "rpt_type":"html", "limit":1}'
 ```
 
-- `/cover/report/latest`: get latest cover func/html report.
+- `/cover/report/raw`: get service cover raw data.
 
 ```sh
-# download func report
-curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:application/json" \
-  -d '{"rpt_type":"func", "srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o 'cover_report.func'
-
-# download html report
-curl -XPOST http://127.0.0.1:8089/cover/report/latest -H "Content-Type:application/json" \
-  -d '{"rpt_type":"html", "srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o 'cover_report.html'
+curl -XPOST http://127.0.0.1:8089/cover/report/raw -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o 'raw_profile.cov'
 ```
 
-- `/cover/report/history`: get latest cover func/html report.
+- `/cover/report/func`: get latest cover func report.
+
+```sh
+curl -XPOST http://127.0.0.1:8089/cover/report/func -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o 'cover_report.func'
+```
+
+- `/static/report/{srv_name}/{html_report_file}.html`: get latest cover html report.
+
+Open in chrome: <http://127.0.0.1:8089/static/report/apa_goc_echoserver/staging_th_apa_goc_echoserver_master_b63d82705a_20220507_183451.html>
+
+- `/cover/report/history`: get history cover func/html report.
 
 ## Goc Watch Dog API
 
