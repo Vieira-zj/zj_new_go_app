@@ -17,7 +17,10 @@ import (
 )
 
 const (
-	defaultCover = "0"
+	// ZeroCoverTotal .
+	ZeroCoverTotal = "0.0"
+	// CovFilePathNullValue .
+	CovFilePathNullValue = "null"
 )
 
 //
@@ -67,6 +70,9 @@ func isAttachSrvOK(addr string) bool {
 	}
 }
 
+// ErrSrvNotFoundInGoc .
+var ErrSrvNotFoundInGoc = errors.New("ErrSrvNotFoundInGoc")
+
 // IsSrvOKInGoc .
 func IsSrvOKInGoc(srvName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), Wait)
@@ -83,8 +89,7 @@ func IsSrvOKInGoc(srvName string) error {
 			return nil
 		}
 	}
-	err = fmt.Errorf("Service name is not found in goc register list: %s", srvName)
-	return fmt.Errorf("IsSrvOKInGoc error: %w", err)
+	return fmt.Errorf("IsSrvOKInGoc error: %w", ErrSrvNotFoundInGoc)
 }
 
 // IsSrvFoundInWatcher .
@@ -163,16 +168,17 @@ func updateCovFileOfLastSrvCoverRowInDB(db *gorm.DB, covFilePath string, meta Sr
 	dbInstance := NewGocSrvCoverDBInstance()
 	row, err := dbInstance.GetLatestSrvCoverRowByDB(db, meta)
 	if err != nil {
-		return GocSrvCoverModel{}, fmt.Errorf("updateCovFileOfLastSrvCoverRowInDB get error: %w", err)
+		return GocSrvCoverModel{}, fmt.Errorf("updateCovFileOfLastSrvCoverRowInDB error: %w", err)
 	}
 
-	return row, dbInstance.UpdateCovFileOfLatestSrvCoverRowByDB(db, meta, covFilePath)
+	err = dbInstance.UpdateCovFileOfLatestSrvCoverRowByDB(db, meta, covFilePath)
+	return row, err
 }
 
 func renameLastSrvCoverResults(src, dst string) error {
 	srcName := getFilePathWithoutExt(src)
 	dstName := getFilePathWithoutExt(dst)
-	for _, ext := range []string{".func", ".html"} {
+	for _, ext := range [1]string{".func"} {
 		fmt.Println("rename:", srcName+ext, dstName+ext)
 		if err := os.Rename(srcName+ext, dstName+ext); err != nil {
 			return fmt.Errorf("renameLastSrvCoverResults error: %w", err)
@@ -208,16 +214,16 @@ func createSrvCoverReportTask(covFile, srvName string) (string, error) {
 	repoDir := filepath.Join(AppConfig.RootDir, meta.AppName, "repo")
 	cmd := NewShCmd()
 	if err := checkoutSrvRepo(repoDir, srvName); err != nil {
-		return defaultCover, fmt.Errorf("createSrvCoverReportTask error: %w", err)
+		return ZeroCoverTotal, fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
 
 	coverTotal, err := cmd.GoToolCreateCoverFuncReport(repoDir, covFile)
 	if err != nil {
-		return defaultCover, fmt.Errorf("createSrvCoverReportTask error: %w", err)
+		return ZeroCoverTotal, fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
 
 	if _, err = cmd.GoToolCreateCoverHTMLReport(repoDir, meta.AppName, covFile); err != nil {
-		return defaultCover, fmt.Errorf("createSrvCoverReportTask error: %w", err)
+		return ZeroCoverTotal, fmt.Errorf("createSrvCoverReportTask error: %w", err)
 	}
 	return coverTotal, nil
 }
@@ -228,7 +234,7 @@ func checkoutSrvRepo(workingDir, srvName string) error {
 		if err := func() error {
 			repoURL, ok := ModuleToRepoMap[meta.AppName]
 			if !ok {
-				return fmt.Errorf("checkoutSrvRepo repo url not found for service: [%s]", srvName)
+				return fmt.Errorf("checkoutSrvRepo repo url not found: [%s]", meta.AppName)
 			}
 
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
@@ -306,6 +312,9 @@ func getSrvCoverTask(srvName string) (string, bool, error) {
 			return savedPath, isCovUpdated, nil
 		}
 		return "", false, fmt.Errorf("getSrvCoverTask error: %w", err)
+	}
+	if row.CovFilePath == CovFilePathNullValue {
+		return savedPath, isCovUpdated, nil
 	}
 
 	isEqual, err := utils.IsFilesEqual(row.CovFilePath, savedPath)
@@ -396,12 +405,12 @@ func GetCoverTotalFromAttachSrv(addr string) (string, error) {
 
 	cover, err := APIGetServiceCoverage(ctx, addr)
 	if err != nil {
-		return defaultCover, fmt.Errorf("GetCoverTotalFromAttachSrv error: %w", err)
+		return ZeroCoverTotal, fmt.Errorf("GetCoverTotalFromAttachSrv error: %w", err)
 	}
 
 	total, err := formatCoverPercentage(cover)
 	if err != nil {
-		return defaultCover, fmt.Errorf("GetCoverTotalFromAttachSrv error: %w", err)
+		return ZeroCoverTotal, fmt.Errorf("GetCoverTotalFromAttachSrv error: %w", err)
 	}
 	return total, nil
 }

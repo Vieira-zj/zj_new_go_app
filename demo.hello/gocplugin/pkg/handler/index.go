@@ -13,28 +13,41 @@ func IndexHandler(c *gin.Context) {
 
 // PingHandler .
 func PingHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "pong",
-	})
+	sendSuccessResp(c, "Pong")
 }
 
 //
 // Helper
 //
 
-func sendBytes(c *gin.Context, body []byte) {
-	c.Data(http.StatusOK, "application/octet-stream", body)
-}
-
-func sendMessageResp(c *gin.Context, msg string) {
-	c.JSON(http.StatusOK, gin.H{"code": 0, "message": msg})
-}
-
-func sendSrvCoverTotalResp(c *gin.Context, coverTotal string) {
-	const msg = "Sync service cover success"
-	c.JSON(http.StatusOK, gin.H{"code": 0, "message": msg, "cover_total": coverTotal})
+func sendSuccessResp(c *gin.Context, msg string) {
+	if len(msg) == 0 {
+		msg = "Success"
+	}
+	sendResp(c, http.StatusOK, msg)
 }
 
 func sendErrorResp(c *gin.Context, errCode int, err error) {
-	c.JSON(errCode, gin.H{"code": errCode, "error": err.Error()})
+	sendResp(c, errCode, err.Error())
+}
+
+func sendResp(c *gin.Context, retCode int, message string) {
+	c.JSON(retCode, gin.H{"code": retCode, "message": message})
+}
+
+func sendSrvCoverTotalResp(c *gin.Context, srvStatus, coverTotal string) {
+	msg := "Sync service cover success"
+	if srvStatus == srvStatusOffline {
+		msg = "Service is offline, return history cover value"
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code":        http.StatusOK,
+		"message":     msg,
+		"srv_status":  srvStatus,
+		"cover_total": coverTotal,
+	})
+}
+
+func sendBytes(c *gin.Context, body []byte) {
+	c.Data(http.StatusOK, "application/octet-stream", body)
 }

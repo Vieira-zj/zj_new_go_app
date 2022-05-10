@@ -9,7 +9,7 @@ import (
 	"demo.hello/utils"
 )
 
-func mockLoadConfig(workingDir string) error {
+func mockInitConfig(workingDir string) error {
 	subDir := "Workspaces/zj_repos/zj_go2_project/demo.hello/gocplugin/config"
 	srcDir := filepath.Join(os.Getenv("HOME"), subDir)
 	for _, file := range []string{"gocplugin.json", "module_repo_map.json"} {
@@ -23,29 +23,19 @@ func mockLoadConfig(workingDir string) error {
 		}
 	}
 
-	if err := LoadConfig(filepath.Join(workingDir, "gocplugin.json")); err != nil {
-		return err
-	}
-	if err := LoadModuleToRepoMap(); err != nil {
+	if err := InitConfig(workingDir); err != nil {
 		return err
 	}
 	return nil
 }
 
-func TestLoadConfig(t *testing.T) {
-	workingDir := "/tmp/test"
-	if err := mockLoadConfig(workingDir); err != nil {
+func TestInitConfig(t *testing.T) {
+	workingDir := "/tmp/test/goc_plugin_space"
+	if err := mockInitConfig(workingDir); err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("config: %+v\n", AppConfig)
-}
-
-func TestLoadModuleToRepoMap(t *testing.T) {
-	workingDir := "/tmp/test"
-	if err := mockLoadConfig(workingDir); err != nil {
-		t.Fatal(err)
-	}
-	fmt.Printf("module to repo map: %+v\n", ModuleToRepoMap)
+	fmt.Printf("repo map: %+v\n", ModuleToRepoMap)
 }
 
 func TestSliceSpaceGrowth(t *testing.T) {
@@ -56,4 +46,15 @@ func TestSliceSpaceGrowth(t *testing.T) {
 		fmt.Printf("put %d: len=%d,cap=%d\n", i, len(s), cap(s))
 		fmt.Println(s)
 	}
+}
+
+func TestDeleteMapItem(t *testing.T) {
+	m := map[int]string{
+		1: "one",
+		2: "two",
+	}
+
+	delete(m, 1)
+	delete(m, 3)
+	fmt.Printf("map: %+v\n", m)
 }

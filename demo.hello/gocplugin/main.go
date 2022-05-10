@@ -22,16 +22,16 @@ const (
 )
 
 var (
-	cfgPath string
+	rootDir string
 	mode    string
 	addr    string
 	help    bool
 )
 
 func init() {
-	flag.StringVar(&cfgPath, "c", "/tmp/test/gocplugin.json", "Goc plugin config file path.")
+	flag.StringVar(&rootDir, "root", "/tmp/test/goc_plugin_space", "Goc plugin working root dir path.")
 	flag.StringVar(&mode, "mode", "server", "Goc plugin run mode: server, watcher.")
-	flag.StringVar(&addr, "addr", "8089", "Goc server address.")
+	flag.StringVar(&addr, "addr", "8089", "Goc report server address.")
 	flag.BoolVar(&help, "h", false, "help.")
 }
 
@@ -42,7 +42,7 @@ func main() {
 		return
 	}
 
-	if err := pkg.LoadConfig(cfgPath); err != nil {
+	if err := pkg.InitConfig(rootDir); err != nil {
 		log.Fatalf("Load config error: %v", err)
 	}
 
@@ -99,9 +99,8 @@ func runServer(r *gin.Engine) {
 }
 
 func setupServerRouter(r *gin.Engine) {
-	r.GET("/cover/list", handler.GetListOfSrvCoversHandler)
-
 	coverTotal := r.Group("/cover/total")
+	coverTotal.GET("/list", handler.GetListOfSrvCoversHandler)
 	coverTotal.POST("latest", handler.GetLatestSrvCoverTotalHandler)
 	coverTotal.POST("history", handler.GetHistorySrvCoverTotalsHandler)
 
@@ -112,7 +111,7 @@ func setupServerRouter(r *gin.Engine) {
 	report := r.Group("/cover/report")
 	report.POST("list", handler.ListSrvCoverReportsHandler)
 	report.POST("raw", handler.GetSrvRawCoverHandler)
-	report.POST("func", handler.GetLatestSrvFuncCoverReportHandler)
+	report.POST("func", handler.GetSrvFuncCoverReportHandler)
 }
 
 func runWatcher(ctx context.Context, r *gin.Engine) {

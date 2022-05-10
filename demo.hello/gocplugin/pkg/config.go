@@ -41,26 +41,29 @@ type GocPluginConfig struct {
 	PublicDir string
 }
 
-// LoadConfig .
-func LoadConfig(cfgPath string) error {
+// InitConfig .
+func InitConfig(rootDir string) error {
+	AppConfig.RootDir = rootDir
+	const cfgFileName = "gocplugin.json"
+	cfgPath := filepath.Join(AppConfig.RootDir, cfgFileName)
 	b, err := os.ReadFile(cfgPath)
 	if err != nil {
-		return fmt.Errorf("LoadConfig read config file error: %w", err)
+		return fmt.Errorf("InitConfig read config file error: %w", err)
 	}
 
 	if err := json.Unmarshal(b, &AppConfig); err != nil {
-		return fmt.Errorf("LoadConfig error: %w", err)
+		return fmt.Errorf("InitConfig error: %w", err)
 	}
 	AppConfig.PublicDir = filepath.Join(AppConfig.RootDir, "public/report")
 
-	LoadModuleToRepoMap()
-	return nil
+	err = LoadModuleToRepoMap()
+	return err
 }
 
 // LoadModuleToRepoMap .
 func LoadModuleToRepoMap() error {
-	const jsonFile = "module_repo_map.json"
-	b, err := os.ReadFile(filepath.Join(AppConfig.RootDir, jsonFile))
+	const mapFile = "module_repo_map.json"
+	b, err := os.ReadFile(filepath.Join(AppConfig.RootDir, mapFile))
 	if err != nil {
 		return fmt.Errorf("LoadModuleToRepoMap error: %w", err)
 	}
@@ -69,4 +72,9 @@ func LoadModuleToRepoMap() error {
 		return fmt.Errorf("LoadModuleToRepoMap error: %w", err)
 	}
 	return nil
+}
+
+// GetModuleCoverDataDir .
+func GetModuleCoverDataDir(appName string) string {
+	return filepath.Join(AppConfig.RootDir, appName, ReportCoverDataDirName)
 }

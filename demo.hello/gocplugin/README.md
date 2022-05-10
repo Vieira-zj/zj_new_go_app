@@ -66,6 +66,8 @@
 
 ```text
 - goc_report_root/
+  - gocplugin.json
+  - module_repo_map.json
   - sqlite.db
   - public/report/
     - module_x/
@@ -172,14 +174,12 @@ curl http://127.0.0.1:8089/ping | jq .
 curl -i http://127.0.0.1:8089/nonexist
 ```
 
-------
+### Group: cover total
 
-Get service cover data:
-
-- `/cover/list`: get list of services cover info.
+- `/cover/total/list`: get list of services cover info.
 
 ```sh
-curl http://127.0.0.1:8089/cover/list | jq .
+curl http://127.0.0.1:8089/cover/total/list | jq .
 ```
 
 - `/cover/total/latest`: get latest service cover total.
@@ -196,9 +196,7 @@ curl -XPOST http://127.0.0.1:8089/cover/total/history -H "Content-Type:applicati
   -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
 ```
 
-------
-
-Sync service cover data and create report:
+### Group: cover operation
 
 - `/cover/sync`: sync service cover results, generate report, and returns cover total.
 
@@ -213,13 +211,18 @@ curl -XPOST http://127.0.0.1:8089/cover/sync -H "Content-Type:application/json" 
 
 - `/cover/clear`: clear service cover data and set total cover to 0.
 
-------
+```sh
+curl -XPOST http://127.0.0.1:8089/cover/clear -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
+```
+
+### Group: cover report
 
 - `/cover/report/list`: list service cover report files name.
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/report/list -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "rpt_type":"html", "limit":1}'
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "rpt_type":"html", "limit":3}' | jq .
 ```
 
 - `/cover/report/raw`: get service cover raw data.
@@ -233,12 +236,17 @@ curl -XPOST http://127.0.0.1:8089/cover/report/raw -H "Content-Type:application/
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/report/func -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a", "rpt_name": "staging_th_apa_goc_echoserver_master_b63d82705a_20220510_141351"}' \
+  -o 'cover_report.func'
+
+# get latest cover func report
+curl -XPOST http://127.0.0.1:8089/cover/report/func -H "Content-Type:application/json" \
   -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o 'cover_report.func'
 ```
 
 - `/static/report/{srv_name}/{html_report_file}.html`: get latest cover html report.
 
-Open in chrome: <http://127.0.0.1:8089/static/report/apa_goc_echoserver/staging_th_apa_goc_echoserver_master_b63d82705a_20220507_183451.html>
+Open in chrome: <http://127.0.0.1:8089/static/report/apa_goc_echoserver/staging_th_apa_goc_echoserver_master_b63d82705a_20220510_142936.html>
 
 - `/cover/report/history`: get history cover func/html report.
 

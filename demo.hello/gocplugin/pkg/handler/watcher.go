@@ -115,7 +115,7 @@ func FetchAndSaveSrvCoverHandler(c *gin.Context) {
 		sendErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
-	sendMessageResp(c, "Fetch and save service cover success.")
+	sendSuccessResp(c, "Fetch and save service cover success")
 }
 
 func getSavedCoverDirPath(srvName string) string {

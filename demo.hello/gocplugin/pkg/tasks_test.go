@@ -51,7 +51,7 @@ func TestGetSrvCoverTask(t *testing.T) {
 
 func TestCheckoutSrvRepo(t *testing.T) {
 	// run: go test -timeout 300s -run ^TestSyncSrvRepo$ demo.hello/gocplugin/pkg -v -count=1
-	if err := mockLoadConfig("/tmp/test"); err != nil {
+	if err := mockInitConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -84,7 +84,7 @@ func TestCreateSrvCoverReportTask(t *testing.T) {
 
 func TestGetSrvCoverAndCreateReportTask(t *testing.T) {
 	// run: go test -timeout 300s -run ^TestGetSrvCoverAndCreateReportTask$ demo.hello/gocplugin/pkg -v -count=1
-	if err := mockLoadConfig("/tmp/test"); err != nil {
+	if err := mockInitConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -104,7 +104,7 @@ func TestGetSrvCoverAndCreateReportTask(t *testing.T) {
 //
 
 func TestGetSavedCovFileNameWithSuffix(t *testing.T) {
-	if err := mockLoadConfig("/tmp/test"); err != nil {
+	if err := mockInitConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
 	}
 

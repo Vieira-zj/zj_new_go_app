@@ -154,14 +154,14 @@ func (in *GocSrvCoverDBInstance) UpdateCovFileOfLatestSrvCoverRow(meta SrvCoverM
 func (in *GocSrvCoverDBInstance) UpdateCovFileOfLatestSrvCoverRowByDB(db *gorm.DB, meta SrvCoverMeta, covFilePath string) error {
 	row, err := in.GetLatestSrvCoverRowByDB(db, meta)
 	if err != nil {
-		return fmt.Errorf("UpdateCovFileOfLatestSrvCoverRow error: %w", err)
+		return fmt.Errorf("UpdateCovFileOfLatestSrvCoverRowByDB error: %w", err)
 	}
 
 	data := GocSrvCoverModel{
 		CovFilePath: covFilePath,
 	}
 	if result := db.Model(&GocSrvCoverModel{}).Where("id = ?", row.ID).Updates(data); result.Error != nil {
-		return fmt.Errorf("updateLatestSrvCoverRowToFalseByDB update row error: %w", result.Error)
+		return fmt.Errorf("UpdateCovFileOfLatestSrvCoverRowByDB update row error: %w", result.Error)
 	}
 	return nil
 }
@@ -175,14 +175,14 @@ func (in *GocSrvCoverDBInstance) UpdateSrvCoverTotalByCommit(total, commit strin
 		},
 	}
 	if result := in.sqliteDB.Model(&GocSrvCoverModel{}).Where("git_commit = ? and is_latest = ?", commit, true).Updates(data); result.Error != nil {
-		return fmt.Errorf("UpdateSrvCoverTotalByCommit update row error: %w", result.Error)
+		return fmt.Errorf("UpdateSrvCoverTotalByCommit error: %w", result.Error)
 	}
 	return nil
 }
 
 // AddLatestSrvCoverRow adds latest service cover row with transaction.
 func (in *GocSrvCoverDBInstance) AddLatestSrvCoverRow(row GocSrvCoverModel) error {
-	transaction := in.sqliteDB.Begin()
+	transaction := in.BeginTransaction()
 	if err := in.updateLatestSrvCoverRowToFalseByDB(transaction, row.SrvCoverMeta); err != nil {
 		transaction.Rollback()
 		return fmt.Errorf("InsertLatestSrvCoverRow error: %w", err)

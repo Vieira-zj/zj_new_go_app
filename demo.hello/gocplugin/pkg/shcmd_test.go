@@ -43,7 +43,7 @@ func TestGoToolCreateCoverFuncReport(t *testing.T) {
 }
 
 func TestGoToolCreateCoverHTMLReport(t *testing.T) {
-	if err := LoadConfig("/tmp/test/gocplugin.json"); err != nil {
+	if err := InitConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -51,7 +51,7 @@ func TestGoToolCreateCoverHTMLReport(t *testing.T) {
 	moduleDir := filepath.Join(AppConfig.RootDir, moduleName)
 	workingDir := filepath.Join(moduleDir, "repo")
 	covFile := "staging_th_apa_goc_echoserver_master_b63d82705a_20220507_173407.cov"
-	covPath := filepath.Join(moduleDir, "cover_data", covFile)
+	covPath := filepath.Join(moduleDir, ReportCoverDataDirName, covFile)
 
 	cmd := NewShCmd()
 	output, err := cmd.GoToolCreateCoverHTMLReport(workingDir, moduleName, covPath)
