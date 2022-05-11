@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -34,23 +35,75 @@ func RemoveUnhealthSrvInGocTask() error {
 	defer cancel()
 	services, err := goc.ListRegisterServices(ctx)
 	if err != nil {
-		return fmt.Errorf("RemoveUnhealthServicesFromGocSvrList error: %w", err)
+		return fmt.Errorf("RemoveUnhealthSrvInGocTask error: %w", err)
 	}
 
 	for _, addrs := range services {
 		for _, addr := range addrs {
-			if !isAttachSrvOK(addr) {
+			if ok, err := isPodOK(addr); !ok {
 				if _, err := goc.DeleteRegisterServiceByAddr(ctx, addr); err != nil {
-					return fmt.Errorf("RemoveUnhealthServicesFromGocSvrList error: %w", err)
+					return fmt.Errorf("RemoveUnhealthSrvInGocTask error: %w", err)
 				}
+				log.Printf("Remove unhealth service from goc list: srv_ip=%s,reason=%v", addr, err)
 			}
 		}
 	}
 	return nil
 }
 
-// isAttachSrvOK checks wheather attached server is ok, and retry 4 times by default.
-func isAttachSrvOK(addr string) bool {
+type podStatusReq struct {
+	IPs []string `json:"ips"`
+}
+
+type podStatusResp struct {
+	Total int `json:"total"`
+	Data  []struct {
+		Namespace string `json:"namespace"`
+		Name      string `json:"name"`
+		IP        string `json:"ip"`
+		Value     string `json:"value"`
+	}
+}
+
+// isPodOK checks pod status from pod monitor service.
+func isPodOK(addr string) (bool, error) {
+	const httpSchema = "http://"
+	url := AppConfig.PodMonitorHost + "/list/pods/filter"
+	if strings.HasPrefix(addr, httpSchema) {
+		addr = strings.Replace(addr, httpSchema, "", 1)
+	}
+
+	req := podStatusReq{
+		IPs: []string{addr},
+	}
+	body, err := json.Marshal(&req)
+	if err != nil {
+		return false, fmt.Errorf("isPodOK Marshal error: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), Wait)
+	defer cancel()
+
+	client := utils.NewDefaultHTTPUtils()
+	resp, err := client.Post(ctx, url, map[string]string{}, string(body))
+	podStatus := podStatusResp{}
+	if err := json.Unmarshal(resp, &podStatus); err != nil {
+		return false, fmt.Errorf("isPodOK Unmarshal error: %w", err)
+	}
+
+	if podStatus.Total == 0 {
+		return false, nil
+	}
+	for _, status := range podStatus.Data {
+		if strings.ToLower(status.Value) == "running" {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// isAttachSrvOK checks wheather attached server is ok, and retry 4 times by default. (used in k8s cluster)
+func isAttachSrvOK(addr string) (bool, error) {
 	for i := 1; ; i++ {
 		err := func() (err error) {
 			ctx, cancel := context.WithTimeout(context.Background(), ShortWait)
@@ -60,12 +113,12 @@ func isAttachSrvOK(addr string) bool {
 		}()
 		if err != nil {
 			if i >= 4 {
-				return false
+				return false, err
 			}
 			log.Printf("IsAttachServerOK err: %s, retry %d", err, i)
 			time.Sleep(time.Duration(i) * time.Second)
 		} else {
-			return true
+			return true, nil
 		}
 	}
 }
@@ -335,7 +388,7 @@ func FetchAndSaveSrvCover(savedDir, srvName string) (string, error) {
 		goc := NewGocAPI()
 		b, err := goc.GetServiceProfileByName(ctx, srvName)
 		if err != nil {
-			log.Println("FetchAndSaveSrvCover error: %w", err)
+			log.Println("FetchAndSaveSrvCover error:", err)
 			return getSrvCoverFromWatcher()
 		}
 		return b, nil

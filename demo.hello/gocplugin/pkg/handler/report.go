@@ -21,6 +21,12 @@ type respSrvCoverItem struct {
 	CoverTotal string `json:"cover_total"`
 }
 
+// SyncGocListHandler .
+func SyncGocListHandler(c *gin.Context) {
+	pkg.RemoveUnhealthSrvInGocTask()
+	// TODO:
+}
+
 // GetListOfSrvCoversHandler .
 func GetListOfSrvCoversHandler(c *gin.Context) {
 	gocAPI := pkg.NewGocAPI()

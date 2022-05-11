@@ -113,7 +113,7 @@ func TestCheckoutRemoteBranch(t *testing.T) {
 }
 
 func testGetRepoURL() string {
-	if err := mockInitConfig("/tmp/test"); err != nil {
+	if err := InitConfig("/tmp/test"); err != nil {
 		panic(err)
 	}
 

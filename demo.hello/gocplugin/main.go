@@ -99,6 +99,8 @@ func runServer(r *gin.Engine) {
 }
 
 func setupServerRouter(r *gin.Engine) {
+	r.GET("/goc/list/sync", handler.SyncGocListHandler)
+
 	coverTotal := r.Group("/cover/total")
 	coverTotal.GET("/list", handler.GetListOfSrvCoversHandler)
 	coverTotal.POST("latest", handler.GetLatestSrvCoverTotalHandler)

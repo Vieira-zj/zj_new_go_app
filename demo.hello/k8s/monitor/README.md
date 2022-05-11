@@ -49,8 +49,9 @@ curl http://test.monitor.com/list/pods | jq .
 Test send notification when pod terminate or crash.
 
 ```sh
-# state
-curl "http://localhost:8081/notify?set=true"
+# set notify
+curl "http://localhost:8081/notify?open=true"
+# check notify setting
 curl http://localhost:8081/state | jq .
 
 # start a pod for test

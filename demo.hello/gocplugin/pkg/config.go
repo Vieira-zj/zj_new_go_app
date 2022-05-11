@@ -14,7 +14,7 @@ const (
 	// Wait .
 	Wait = 5 * time.Second
 	// LongWait .
-	LongWait = 8 * time.Second
+	LongWait = 10 * time.Second
 
 	// ReportCoverDataDirName .
 	ReportCoverDataDirName = "cover_data"
@@ -36,9 +36,10 @@ var (
 
 // GocPluginConfig .
 type GocPluginConfig struct {
-	RootDir   string `json:"root"`
-	GocHost   string `json:"goc_host"`
-	PublicDir string
+	RootDir        string `json:"root"`
+	PublicDir      string
+	GocCenterHost  string `json:"goc_center_host"`
+	PodMonitorHost string `json:"pod_monitor_host"`
 }
 
 // InitConfig .

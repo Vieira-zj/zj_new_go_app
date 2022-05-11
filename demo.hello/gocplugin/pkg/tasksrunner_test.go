@@ -34,7 +34,7 @@ func TestSubmitTaskToGoPool(t *testing.T) {
 
 func TestSubmitSrvCoverSyncTask(t *testing.T) {
 	// run: go test -timeout 300s -run ^TestSubmitSrvCoverSyncTask$ demo.hello/gocplugin/pkg -v -count=1
-	if err := mockInitConfig("/tmp/test"); err != nil {
+	if err := InitConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
 	}
 

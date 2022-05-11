@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-root="/tmp/test/goc_plugin_space"
+root="/tmp/test/goc_staging_space"
 
 function run_golint {
     local root_dir=$(pwd)
@@ -18,7 +18,7 @@ function init {
 }
 
 function run_goc_report {
-    go run main.go
+    go run main.go -root=${root}
 }
 
 function run_goc_watch_dog {
@@ -29,7 +29,7 @@ function clearup {
     set +e
     rm ${root}/sqlite.db
     rm -r ${root}/public
-    rm ${root}/apa_goc_echoserver/cover_data/*
+    rm ${root}/apa_echoserver/cover_data/*
     set -e
 }
 

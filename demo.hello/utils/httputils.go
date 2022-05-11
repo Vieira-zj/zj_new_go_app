@@ -103,7 +103,7 @@ type HTTPUtils struct {
 func NewDefaultHTTPUtils() *HTTPUtils {
 	once.Do(func() {
 		client = &http.Client{
-			Timeout: time.Duration(10) * time.Second,
+			Timeout: 10 * time.Second,
 		}
 		client.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},

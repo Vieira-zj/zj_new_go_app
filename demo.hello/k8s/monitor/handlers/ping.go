@@ -27,8 +27,8 @@ func Ping(c echo.Context) error {
 
 // SetNotify .
 func SetNotify(c echo.Context) error {
-	notify := c.QueryParam("set")
-	if strings.ToLower(notify) == "true" {
+	isNotify := c.QueryParam("open")
+	if strings.ToLower(isNotify) == "true" {
 		IsNotify = true
 	} else {
 		IsNotify = false

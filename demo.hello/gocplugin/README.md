@@ -112,9 +112,9 @@ goc server
 
 ```sh
 # build
-cd echo/; goc build . -o goc_echoserver
+cd echoserver/; goc build . -o goc_echoserver --center="http://127.0.0.1:7777"
 # run
-ENV=staging APPTYPE=apa REGION=th GIT_BRANCH=origin/master GIT_COMMIT=b63d82705a ./goc_echoserver -p 8081
+ENV=staging APPTYPE=apa REGION=th GIT_BRANCH=origin/master GIT_COMMIT=b63d82705a ./echoserver_goc -p 8081
 ```
 
 3. Check register services
@@ -138,7 +138,7 @@ curl -XPOST "http://localhost:8081/mirror?name=foo" -H "X-Test:Mirror" -d 'hello
 
 ## Goc API
 
-- List services
+- List register services in goc
 
 ```sh
 curl http://localhost:7777/v1/cover/list | jq .
@@ -150,7 +150,14 @@ curl http://localhost:7777/v1/cover/list | jq .
 curl -XPOST "http://localhost:7777//v1/cover/register?name=staging_th_apa_goc_echoserver_v1&address=http://127.0.0.1:49971"
 ```
 
-- Remove service from goc center
+- Get service coverage
+
+```sh
+curl -XPOST http://localhost:7777/v1/cover/profile -H "Content-Type:application/json" \
+  -d '{"service":["staging_th_apa_echoserver_goc_master_b63d82705a"]}' -o apa_goc_echoserver.cov
+```
+
+- Remove service from goc list
 
 ```sh
 curl -XPOST http://localhost:7777/v1/cover/remove -H "Content-Type:application/json" \
@@ -174,7 +181,7 @@ curl http://127.0.0.1:8089/ping | jq .
 curl -i http://127.0.0.1:8089/nonexist
 ```
 
-### Group: cover total
+### Group: Cover Total
 
 - `/cover/total/list`: get list of services cover info.
 
@@ -196,7 +203,7 @@ curl -XPOST http://127.0.0.1:8089/cover/total/history -H "Content-Type:applicati
   -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
 ```
 
-### Group: cover operation
+### Group: Cover Operations
 
 - `/cover/sync`: sync service cover results, generate report, and returns cover total.
 
@@ -216,7 +223,7 @@ curl -XPOST http://127.0.0.1:8089/cover/clear -H "Content-Type:application/json"
   -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' | jq .
 ```
 
-### Group: cover report
+### Group: Cover Report
 
 - `/cover/report/list`: list service cover report files name.
 
@@ -262,14 +269,14 @@ curl -XPOST http://127.0.0.1:8089/watcher/cover/list -H "Content-Type:applicatio
 - `/watcher/cover/get`: get service cov file, default latest one.
 
 ```sh
-# download latest cov file
-curl -XPOST http://127.0.0.1:8089/watcher/cover/get -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o profile.cov | jq .
-
 # download cov file
 cov_file="staging_th_apa_goc_echoserver_master_b63d82705a_20220422_150331.cov"
 curl -XPOST http://127.0.0.1:8089/watcher/cover/get -H "Content-Type:application/json" \
   -d "{\"srv_name\":\"staging_th_apa_goc_echoserver_master_b63d82705a\", \"cov_file_name\":\"${cov_file}\"}" -o ${cov_file} | jq .
+
+# download latest cov file
+curl -XPOST http://127.0.0.1:8089/watcher/cover/get -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_goc_echoserver_master_b63d82705a"}' -o profile.cov | jq .
 ```
 
 - `/watcher/cover/save`: fetch service cover data and save.
