@@ -11,9 +11,9 @@ func TestGetSimpleNowDatetime(t *testing.T) {
 	fmt.Println("now:", getSimpleNowDatetime())
 }
 
-func TestGetFilePathWithNewExt(t *testing.T) {
+func TestFormatFilePathWithNewExt(t *testing.T) {
 	filePath := "/tmp/test/output.txt"
-	result := GetFilePathWithNewExt(filePath, "html")
+	result := FormatFilePathWithNewExt(filePath, "html")
 	fmt.Println(result)
 }
 

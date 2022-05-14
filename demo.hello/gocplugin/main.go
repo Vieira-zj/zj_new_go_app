@@ -53,7 +53,7 @@ func main() {
 	case modeServer:
 		pkg.InitSrvCoverSyncTasksPool()
 		defer pkg.CloseSrvCoverSyncTasksPool()
-		runServer(r)
+		runRptServer(ctx, r)
 	case modeWatcher:
 		runWatcher(ctx, r)
 	default:
@@ -94,27 +94,39 @@ func initRouter() *gin.Engine {
 	return r
 }
 
-func runServer(r *gin.Engine) {
-	setupServerRouter(r)
+//
+// Report
+//
+
+func runRptServer(ctx context.Context, r *gin.Engine) {
+	setupRptServerRouter(r)
+	runRptScheduleTask(ctx)
 }
 
-func setupServerRouter(r *gin.Engine) {
-	r.GET("/goc/list/sync", handler.SyncGocListHandler)
-
+func setupRptServerRouter(r *gin.Engine) {
 	coverTotal := r.Group("/cover/total")
 	coverTotal.GET("/list", handler.GetListOfSrvCoversHandler)
 	coverTotal.POST("latest", handler.GetLatestSrvCoverTotalHandler)
 	coverTotal.POST("history", handler.GetHistorySrvCoverTotalsHandler)
 
 	cover := r.Group("/cover")
-	cover.POST("sync", handler.SyncSrvCoverHandler)
+	cover.POST("raw", handler.FetchSrvRawCoverHandler)
 	cover.POST("clear", handler.ClearSrvCoverHandler)
+	cover.POST("sync", handler.SyncSrvCoverHandler)
 
 	report := r.Group("/cover/report")
 	report.POST("list", handler.ListSrvCoverReportsHandler)
-	report.POST("raw", handler.GetSrvRawCoverHandler)
-	report.POST("func", handler.GetSrvFuncCoverReportHandler)
+	report.POST("download", handler.GetSrvCoverReportHandler)
 }
+
+func runRptScheduleTask(ctx context.Context) {
+	scheduler := pkg.NewScheduler()
+	scheduler.SyncRegisterSrvsCoverReportTask(ctx, time.Minute)
+}
+
+//
+// Watcher
+//
 
 func runWatcher(ctx context.Context, r *gin.Engine) {
 	setupWatcherRouter(r)
@@ -124,12 +136,12 @@ func runWatcher(ctx context.Context, r *gin.Engine) {
 func setupWatcherRouter(r *gin.Engine) {
 	cover := r.Group("/watcher/cover")
 	cover.POST("list", handler.ListSavedSrvCoversHandler)
-	cover.POST("get", handler.GetSrvCoverDataHandler)
-	cover.POST("save", handler.FetchAndSaveSrvCoverHandler)
+	cover.POST("download", handler.GetSrvCoverHandler)
+	cover.POST("sync", handler.FetchAndSaveSrvCoverHandler)
 }
 
 func runWatcherScheduleTask(ctx context.Context) {
 	scheduler := pkg.NewScheduler()
 	scheduler.RemoveUnhealthSrvTask(ctx, time.Hour)
-	scheduler.SyncRegisterSrvsCoverTask(ctx, time.Hour)
+	scheduler.SyncSrvsRawCoverTask(ctx, time.Hour)
 }

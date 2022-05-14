@@ -53,7 +53,7 @@ func (c *ShCmd) GoToolCreateCoverHTMLReport(workingPath, moduleName, covFile str
 }
 
 func (c *ShCmd) goToolCreateCoverReport(workingPath, moduleName, covFilePath, coverType string) (string, error) {
-	outFilePath := GetFilePathWithNewExt(covFilePath, coverType)
+	outFilePath := FormatFilePathWithNewExt(covFilePath, coverType)
 	if coverType == CoverRptTypeHTML {
 		outFileName := filepath.Base(outFilePath)
 		outDirPath := filepath.Join(AppConfig.PublicDir, moduleName)

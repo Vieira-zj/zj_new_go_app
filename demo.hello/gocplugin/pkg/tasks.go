@@ -25,8 +25,25 @@ const (
 )
 
 //
-// Task check unhealth services
+// Task: list and remove unhealth services
 //
+
+// SyncAndListRegisterSrvsTask .
+func SyncAndListRegisterSrvsTask() (map[string][]string, error) {
+	if err := RemoveUnhealthSrvInGocTask(); err != nil {
+		return nil, fmt.Errorf("SyncAndListRegisterSrvs error: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), Wait)
+	defer cancel()
+
+	gocAPI := NewGocAPI()
+	srvs, err := gocAPI.ListRegisterServices(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("SyncAndListRegisterSrvs error: %w", err)
+	}
+	return srvs, nil
+}
 
 // RemoveUnhealthSrvInGocTask removes unhealth services from goc register list.
 func RemoveUnhealthSrvInGocTask() error {
@@ -35,14 +52,14 @@ func RemoveUnhealthSrvInGocTask() error {
 	defer cancel()
 	services, err := goc.ListRegisterServices(ctx)
 	if err != nil {
-		return fmt.Errorf("RemoveUnhealthSrvInGocTask error: %w", err)
+		return fmt.Errorf("RemoveUnhealthSrvInGoc error: %w", err)
 	}
 
 	for _, addrs := range services {
 		for _, addr := range addrs {
-			if ok, err := isPodOK(addr); !ok {
+			if ok, err := isSrvOK(addr); !ok {
 				if _, err := goc.DeleteRegisterServiceByAddr(ctx, addr); err != nil {
-					return fmt.Errorf("RemoveUnhealthSrvInGocTask error: %w", err)
+					return fmt.Errorf("RemoveUnhealthSrvInGoc error: %w", err)
 				}
 				log.Printf("Remove unhealth service from goc list: srv_ip=%s,reason=%v", addr, err)
 			}
@@ -63,6 +80,13 @@ type podStatusResp struct {
 		IP        string `json:"ip"`
 		Value     string `json:"value"`
 	}
+}
+
+func isSrvOK(addr string) (bool, error) {
+	if AppConfig.Cluster == clusterK8s {
+		return isPodOK(addr)
+	}
+	return isAttachSrvOK(addr)
 }
 
 // isPodOK checks pod status from pod monitor service.
@@ -123,36 +147,8 @@ func isAttachSrvOK(addr string) (bool, error) {
 	}
 }
 
-// ErrSrvNotFoundInGoc .
-var ErrSrvNotFoundInGoc = errors.New("ErrSrvNotFoundInGoc")
-
-// IsSrvOKInGoc .
-func IsSrvOKInGoc(srvName string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), Wait)
-	defer cancel()
-
-	goc := NewGocAPI()
-	srvs, err := goc.ListRegisterServices(ctx)
-	if err != nil {
-		return fmt.Errorf("IsSrvOKInGoc error: %w", err)
-	}
-
-	for srv := range srvs {
-		if srv == srvName {
-			return nil
-		}
-	}
-	return fmt.Errorf("IsSrvOKInGoc error: %w", ErrSrvNotFoundInGoc)
-}
-
-// IsSrvFoundInWatcher .
-func IsSrvFoundInWatcher(srvName string) error {
-	// TODO:
-	return nil
-}
-
 //
-// Task sync service cover and create report
+// Task: sync service cover and create report
 //
 
 // SyncSrvCoverParam .
@@ -256,7 +252,7 @@ func saveSrvCoverInDB(row GocSrvCoverModel) error {
 }
 
 //
-// Task create service cover report
+// Task: create service cover report
 //
 
 // createSrvCoverReportTask
@@ -297,12 +293,11 @@ func checkoutSrvRepo(workingDir, srvName string) error {
 			if err != nil {
 				return err
 			}
-			log.Printf("Git clone repo [%s] with head [%s]", meta.AppName, head)
+			log.Printf("Git clone service [%s] with head [%s]", meta.AppName, head)
 			return nil
 		}(); err != nil {
 			return fmt.Errorf("checkoutSrvRepo error: %w", err)
 		}
-		return nil
 	}
 
 	repo := NewGitRepo(workingDir)
@@ -328,6 +323,7 @@ func checkoutSrvRepo(workingDir, srvName string) error {
 	}
 
 	if head != meta.GitCommit {
+		log.Printf("Checkout service [%s] with commit [%s]", meta.AppName, meta.GitCommit)
 		if err := repo.CheckoutToCommit(meta.GitCommit); err != nil {
 			return fmt.Errorf("checkoutSrvRepo error: %w", err)
 		}
@@ -336,7 +332,7 @@ func checkoutSrvRepo(workingDir, srvName string) error {
 }
 
 //
-// Task sync service coverage/profile
+// Task: sync service coverage/profile
 //
 
 // getSrvCoverTask

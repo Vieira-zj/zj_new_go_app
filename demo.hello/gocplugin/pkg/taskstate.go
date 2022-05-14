@@ -41,7 +41,7 @@ func NewSrvCoverSyncTasksState() *SrvCoverSyncTasksState {
 
 // Put .
 func (state *SrvCoverSyncTasksState) Put(srvName string, srvState int) {
-	defaultExpired := 15 * time.Minute
+	const defaultExpired = 15 * time.Minute
 	state.PutByExpired(srvName, srvState, defaultExpired)
 }
 

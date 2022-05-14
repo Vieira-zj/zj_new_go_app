@@ -13,7 +13,7 @@ func TestGetSrvModuleDir(t *testing.T) {
 }
 
 func TestIsAttachSrvOK(t *testing.T) {
-	host := "http://127.0.0.1:51025"
+	host := "http://127.0.0.1:53075"
 	if ok, err := isAttachSrvOK(host); ok {
 		fmt.Println("service ok:", ok)
 	} else {
@@ -27,6 +27,18 @@ func TestRemoveUnhealthSrvInGocTask(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println("unhealth check done")
+}
+
+func TestSyncAndListRegisterSrvsTask(t *testing.T) {
+	if err := InitConfig("/tmp/test/goc_plugin_space"); err != nil {
+		t.Fatal(err)
+	}
+
+	srvs, err := SyncAndListRegisterSrvsTask()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("register services info: %+v\n", srvs)
 }
 
 func TestFetchAndSaveSrvCover(t *testing.T) {
@@ -53,13 +65,13 @@ func TestGetSrvCoverTask(t *testing.T) {
 }
 
 func TestCheckoutSrvRepo(t *testing.T) {
-	// run: go test -timeout 300s -run ^TestSyncSrvRepo$ demo.hello/gocplugin/pkg -v -count=1
-	if err := InitConfig("/tmp/test"); err != nil {
+	// run: go test -timeout 300s -run ^TestCheckoutSrvRepo$ demo.hello/gocplugin/pkg -v -count=1
+	if err := InitConfig("/tmp/test/goc_plugin_space"); err != nil {
 		t.Fatal(err)
 	}
 
-	workingDir := "/tmp/test/apa_goc_echoserver/repo"
-	srvName := "staging_th_apa_goc_echoserver_master_845820727e"
+	workingDir := "/tmp/test/goc_plugin_space/apa_echoserver_goc/repo"
+	srvName := "staging_th_apa_echoserver_goc_master_b63d82705a"
 	if err := checkoutSrvRepo(workingDir, srvName); err != nil {
 		t.Fatal(err)
 	}

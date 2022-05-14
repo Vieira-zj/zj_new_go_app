@@ -10,7 +10,7 @@ import (
 )
 
 func TestSubmitTaskToGoPool(t *testing.T) {
-	pool := utils.NewGoPool(3, 4, 3*time.Second)
+	pool := utils.NewGoPool(3, 1, 3*time.Second)
 	pool.Start()
 	defer pool.Cancel()
 
@@ -58,4 +58,16 @@ func TestSubmitSrvCoverSyncTask(t *testing.T) {
 		t.Fatal("run test timeout")
 	}
 	fmt.Println("srv cover sync task done")
+}
+
+func TestChannel(t *testing.T) {
+	ch := make(chan struct{}, 1)
+	ch <- struct{}{}
+	fmt.Println(len(ch))
+
+	close(ch)
+	fmt.Println(len(ch))
+
+	<-ch
+	fmt.Println(len(ch))
 }

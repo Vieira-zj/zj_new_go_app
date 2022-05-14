@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-root="/tmp/test/goc_staging_space"
+root="/tmp/test/goc_plugin_space"
 
 function run_golint {
     local root_dir=$(pwd)
@@ -34,6 +34,7 @@ function clearup {
 }
 
 # run_golint
+
 # clearup
 # init
 run_goc_report

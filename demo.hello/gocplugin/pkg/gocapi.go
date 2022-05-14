@@ -52,7 +52,7 @@ func NewGocAPI() *GocAPI {
 	return gocAPI
 }
 
-// ListRegisterServices .
+// ListRegisterServices returns register services (name:ips) from goc list.
 func (goc *GocAPI) ListRegisterServices(ctx context.Context) (map[string][]string, error) {
 	url := goc.host + CoverServicesListAPI
 	resp, err := goc.http.Get(ctx, url, map[string]string{})

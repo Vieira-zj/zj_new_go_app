@@ -17,18 +17,18 @@ func PingHandler(c *gin.Context) {
 }
 
 //
-// Helper
+// Common
 //
 
 func sendSuccessResp(c *gin.Context, msg string) {
 	if len(msg) == 0 {
-		msg = "Success"
+		msg = "Success."
 	}
 	sendResp(c, http.StatusOK, msg)
 }
 
-func sendErrorResp(c *gin.Context, errCode int, err error) {
-	sendResp(c, errCode, err.Error())
+func sendErrorResp(c *gin.Context, errCode int, errMsg string) {
+	sendResp(c, errCode, errMsg)
 }
 
 func sendResp(c *gin.Context, retCode int, message string) {

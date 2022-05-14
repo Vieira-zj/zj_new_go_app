@@ -17,11 +17,11 @@ var (
 func InitSrvCoverSyncTasksPool() {
 	srvCoverSyncTasksPoolOnce.Do(func() {
 		const (
-			idleTime  = time.Minute
 			coreSize  = 10
-			queueSize = 30
+			queueSize = 100
+			idleTime  = time.Minute
 		)
-		srvCoverSyncTasksPool = utils.NewGoPool(coreSize, coreSize+queueSize, idleTime)
+		srvCoverSyncTasksPool = utils.NewGoPool(coreSize, queueSize, idleTime)
 	})
 	srvCoverSyncTasksPool.Start()
 }
@@ -35,8 +35,8 @@ func CloseSrvCoverSyncTasksPool() {
 }
 
 // SubmitSrvCoverSyncTask .
-func SubmitSrvCoverSyncTask(param SyncSrvCoverParam) <-chan interface{} {
-	const submitTimeout = time.Minute
+func SubmitSrvCoverSyncTask(param SyncSrvCoverParam) chan interface{} {
+	const submitTimeout = 3 * time.Minute
 	retCh := make(chan interface{}, 1)
 
 	if err := srvCoverSyncTasksPool.SubmitWithTimeout(func() {
@@ -44,7 +44,10 @@ func SubmitSrvCoverSyncTask(param SyncSrvCoverParam) <-chan interface{} {
 		tasksState.Put(param.SrvName, StateRunning)
 		if coverTotal, err := GetSrvCoverAndCreateReportTask(param); err != nil {
 			tasksState.Delete(param.SrvName)
-			retCh <- fmt.Errorf("Async run GetSrvCoverAndCreateReportTask error: %w", err)
+			notify := NewMatterMostNotify()
+			err := fmt.Errorf("Async run GetSrvCoverAndCreateReportTask error: %w", err)
+			notify.MustSendMessageToDefaultUser(err.Error())
+			retCh <- err
 		} else {
 			tasksState.Put(param.SrvName, StateFreshed)
 			retCh <- coverTotal
@@ -52,5 +55,6 @@ func SubmitSrvCoverSyncTask(param SyncSrvCoverParam) <-chan interface{} {
 	}, submitTimeout); err != nil {
 		retCh <- fmt.Errorf("Submit GetSrvCoverAndCreateReportTask error: %w", err)
 	}
+
 	return retCh
 }

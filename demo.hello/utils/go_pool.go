@@ -251,10 +251,10 @@ type GoPool struct {
 }
 
 // NewGoPool .
-func NewGoPool(coreSize, maxSize int, idleTime time.Duration) *GoPool {
+func NewGoPool(coreSize, queueSize int, idleTime time.Duration) *GoPool {
 	pool := &GoPool{
 		idleTime: idleTime,
-		queue:    make(chan func(), maxSize-coreSize),
+		queue:    make(chan func(), queueSize),
 		stopCh:   make(chan struct{}),
 		Worker: Worker{
 			work:      make(chan func()),

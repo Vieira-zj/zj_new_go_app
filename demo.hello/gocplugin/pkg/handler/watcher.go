@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -22,20 +23,23 @@ type watcherListSrvCoverReq struct {
 func ListSavedSrvCoversHandler(c *gin.Context) {
 	var param watcherListSrvCoverReq
 	if err := c.ShouldBindJSON(&param); err != nil {
-		sendErrorResp(c, http.StatusBadRequest, err)
+		log.Println("ListSavedSrvCoversHandler error:", err)
+		sendErrorResp(c, http.StatusBadRequest, errMsgJSONBind)
 		return
 	}
 
 	if param.Limit < 1 {
-		err := fmt.Errorf("Limit cannot be less than 1")
-		sendErrorResp(c, http.StatusBadRequest, err)
+		respErrMsg := "Limit cannot be less than 1."
+		sendErrorResp(c, http.StatusBadRequest, respErrMsg)
 		return
 	}
 
 	savedDirPath := getSavedCoverDirPath(param.SrvName)
 	fileNames, err := listFileNamesFromDir(savedDirPath, "cov", param.Limit)
 	if err != nil {
-		sendErrorResp(c, http.StatusInternalServerError, err)
+		log.Println("ListSavedSrvCoversHandler error:", err)
+		sendErrorResp(c, http.StatusInternalServerError, "List file failed.")
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": fileNames})
@@ -59,11 +63,12 @@ type watcherGetSrvCoverReq struct {
 	CovFileName string `json:"cov_file_name"`
 }
 
-// GetSrvCoverDataHandler .
-func GetSrvCoverDataHandler(c *gin.Context) {
+// GetSrvCoverHandler .
+func GetSrvCoverHandler(c *gin.Context) {
 	var param watcherGetSrvCoverReq
 	if err := c.ShouldBindJSON(&param); err != nil {
-		sendErrorResp(c, http.StatusBadRequest, err)
+		log.Println("GetSrvCoverHandler error:", err)
+		sendErrorResp(c, http.StatusBadRequest, errMsgJSONBind)
 		return
 	}
 
@@ -78,18 +83,20 @@ func GetSrvCoverDataHandler(c *gin.Context) {
 	} else {
 		covFileName, err = utils.GetLatestFileInDir(savedDirPath, "cov")
 		if err != nil {
-			sendErrorResp(c, http.StatusInternalServerError, err)
+			log.Println("GetSrvCoverHandler error:", err)
+			respErrMsg := "Get latest file in dir failed."
+			sendErrorResp(c, http.StatusInternalServerError, respErrMsg)
 			return
 		}
 	}
 
 	b, err := utils.ReadFile(filepath.Join(savedDirPath, covFileName))
 	if err != nil {
+		log.Println("GetSrvCoverHandler error:", err)
 		if errors.Is(err, os.ErrNotExist) {
-			err = fmt.Errorf("Cov file not found: %s", covFileName)
-			sendErrorResp(c, http.StatusBadRequest, err)
+			sendErrorResp(c, http.StatusBadRequest, "Cov file is not exist.")
 		} else {
-			sendErrorResp(c, http.StatusInternalServerError, err)
+			sendErrorResp(c, http.StatusInternalServerError, "Read file failed.")
 		}
 		return
 	}
@@ -100,19 +107,21 @@ func GetSrvCoverDataHandler(c *gin.Context) {
 func FetchAndSaveSrvCoverHandler(c *gin.Context) {
 	var param pkg.SyncSrvCoverParam
 	if err := c.ShouldBindJSON(&param); err != nil {
-		sendErrorResp(c, http.StatusBadRequest, err)
+		log.Println("FetchAndSaveSrvCoverHandler error:", err)
+		sendErrorResp(c, http.StatusBadRequest, errMsgJSONBind)
 		return
 	}
 
 	if len(param.Addresses) == 0 {
-		err := fmt.Errorf("Addresses is empty")
-		sendErrorResp(c, http.StatusBadRequest, err)
+		sendErrorResp(c, http.StatusBadRequest, "IP addresses is empty")
 		return
 	}
 
 	savedDirPath := getSavedCoverDirPath(param.SrvName)
 	if _, err := pkg.FetchAndSaveSrvCoverByAddr(savedDirPath, param); err != nil {
-		sendErrorResp(c, http.StatusInternalServerError, err)
+		log.Println("FetchAndSaveSrvCoverHandler error:", err)
+		respErrMsg := "Fetch and save service cover failed."
+		sendErrorResp(c, http.StatusInternalServerError, respErrMsg)
 		return
 	}
 	sendSuccessResp(c, "Fetch and save service cover success")

@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-// GetFilePathWithNewExt .
-func GetFilePathWithNewExt(filePath, newExt string) string {
+// FormatFilePathWithNewExt .
+func FormatFilePathWithNewExt(filePath, newExt string) string {
 	return strings.Replace(filePath, filepath.Ext(filePath), "."+newExt, 1)
 }
 

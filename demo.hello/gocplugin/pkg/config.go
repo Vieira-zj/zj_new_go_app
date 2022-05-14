@@ -21,10 +21,15 @@ const (
 	// WatcherCoverDataDirName .
 	WatcherCoverDataDirName = "saved_cover_data"
 
+	// CoverRptTypeRaw .
+	CoverRptTypeRaw = "cov"
 	// CoverRptTypeFunc .
 	CoverRptTypeFunc = "func"
 	// CoverRptTypeHTML .
 	CoverRptTypeHTML = "html"
+
+	clusterLocal = "local"
+	clusterK8s   = "k8s"
 )
 
 var (
@@ -36,6 +41,7 @@ var (
 
 // GocPluginConfig .
 type GocPluginConfig struct {
+	Cluster        string `json:"cluster"`
 	RootDir        string `json:"root"`
 	PublicDir      string
 	GocCenterHost  string `json:"goc_center_host"`
