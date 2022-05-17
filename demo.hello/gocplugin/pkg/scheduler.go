@@ -190,9 +190,16 @@ func syncRegisterSrvsCoverReport() error {
 				SrvName:   srv,
 				Addresses: addrs,
 			})
-			<-retCh
-			close(retCh)
-			wg.Done()
+			defer func() {
+				close(retCh)
+				wg.Done()
+			}()
+			res := <-retCh
+			if err, ok := res.(error); ok {
+				mm := NewMatterMostNotify()
+				errMsg := fmt.Sprintf("syncRegisterSrvsCoverReport error: %v", err)
+				mm.MustSendMessageToDefaultUser(errMsg)
+			}
 		}(srv, addrs)
 	}
 

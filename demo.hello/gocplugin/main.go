@@ -121,7 +121,7 @@ func setupRptServerRouter(r *gin.Engine) {
 
 func runRptScheduleTask(ctx context.Context) {
 	scheduler := pkg.NewScheduler()
-	scheduler.SyncRegisterSrvsCoverReportTask(ctx, time.Minute)
+	scheduler.SyncRegisterSrvsCoverReportTask(ctx, 30*time.Minute)
 }
 
 //

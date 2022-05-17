@@ -57,11 +57,15 @@ func RemoveUnhealthSrvInGocTask() error {
 
 	for _, addrs := range services {
 		for _, addr := range addrs {
-			if ok, err := isSrvOK(addr); !ok {
+			ok, err := isSrvOK(addr)
+			if err != nil {
+				return fmt.Errorf("RemoveUnhealthSrvInGoc error: %w", err)
+			}
+			if !ok {
 				if _, err := goc.DeleteRegisterServiceByAddr(ctx, addr); err != nil {
 					return fmt.Errorf("RemoveUnhealthSrvInGoc error: %w", err)
 				}
-				log.Printf("Remove unhealth service from goc list: srv_ip=%s,reason=%v", addr, err)
+				log.Printf("Remove unhealth service from goc list: srv_ip=%s", addr)
 			}
 		}
 	}
@@ -91,12 +95,7 @@ func isSrvOK(addr string) (bool, error) {
 
 // isPodOK checks pod status from pod monitor service.
 func isPodOK(addr string) (bool, error) {
-	const httpSchema = "http://"
-	url := AppConfig.PodMonitorHost + "/list/pods/filter"
-	if strings.HasPrefix(addr, httpSchema) {
-		addr = strings.Replace(addr, httpSchema, "", 1)
-	}
-
+	addr = formatURLAddress(addr)
 	req := podStatusReq{
 		IPs: []string{addr},
 	}
@@ -109,6 +108,7 @@ func isPodOK(addr string) (bool, error) {
 	defer cancel()
 
 	client := utils.NewDefaultHTTPUtils()
+	url := AppConfig.PodMonitorHost + "/list/pods/filter"
 	resp, err := client.Post(ctx, url, map[string]string{}, string(body))
 	podStatus := podStatusResp{}
 	if err := json.Unmarshal(resp, &podStatus); err != nil {
@@ -124,6 +124,19 @@ func isPodOK(addr string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+// formatURLAddress removes url schema and port from address.
+func formatURLAddress(addr string) string {
+	const httpSchema = "http://"
+	if strings.HasPrefix(addr, httpSchema) {
+		addr = strings.Replace(addr, httpSchema, "", 1)
+	}
+
+	if strings.Contains(addr, ":") {
+		addr = strings.Split(addr, ":")[0]
+	}
+	return addr
 }
 
 // isAttachSrvOK checks wheather attached server is ok, and retry 4 times by default. (used in k8s cluster)
@@ -205,6 +218,10 @@ func reuseLastCoverResults(covFile string, meta SrvCoverMeta) (string, error) {
 		transaction.Rollback()
 		return "", fmt.Errorf("reuseLastCoverResults error: %w", err)
 	}
+	if err := renameLastSrvHTMLCoverResults(meta.AppName, oldCovFile, covFile); err != nil {
+		transaction.Rollback()
+		return "", fmt.Errorf("reuseLastCoverResults error: %w", err)
+	}
 
 	if result := transaction.Commit(); result.Error != nil {
 		return "", fmt.Errorf("reuseLastCoverResults commit error: %w", result.Error)
@@ -225,13 +242,25 @@ func updateCovFileOfLastSrvCoverRowInDB(db *gorm.DB, covFilePath string, meta Sr
 }
 
 func renameLastSrvCoverResults(src, dst string) error {
-	srcName := getFilePathWithoutExt(src)
-	dstName := getFilePathWithoutExt(dst)
+	srcPath := getFilePathWithoutExt(src)
+	dstPath := getFilePathWithoutExt(dst)
 	for _, ext := range [1]string{".func"} {
-		fmt.Println("rename:", srcName+ext, dstName+ext)
-		if err := os.Rename(srcName+ext, dstName+ext); err != nil {
+		log.Println("rename:", srcPath+ext, dstPath+ext)
+		if err := os.Rename(srcPath+ext, dstPath+ext); err != nil {
 			return fmt.Errorf("renameLastSrvCoverResults error: %w", err)
 		}
+	}
+	return nil
+}
+
+func renameLastSrvHTMLCoverResults(appName, src, dst string) error {
+	const ext = ".html"
+	srcName := filepath.Base(getFilePathWithoutExt(src)) + ext
+	dstName := filepath.Base(getFilePathWithoutExt(dst)) + ext
+	srcPath := filepath.Join(AppConfig.PublicDir, appName, srcName)
+	dstPath := filepath.Join(AppConfig.PublicDir, appName, dstName)
+	if err := os.Rename(srcPath, dstPath); err != nil {
+		return fmt.Errorf("renameLastSrvHTMLCoverResults error: %w", err)
 	}
 	return nil
 }

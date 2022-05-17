@@ -118,8 +118,8 @@ func (*GocSrvCoverDBInstance) getLatestSrvCoverRowsByDB(db *gorm.DB, meta SrvCov
 // GetLimitedHistorySrvCoverRows .
 func (in *GocSrvCoverDBInstance) GetLimitedHistorySrvCoverRows(meta SrvCoverMeta, limit int) ([]GocSrvCoverModel, error) {
 	var rows []GocSrvCoverModel
-	condition := "env = ? and region = ? and app_name = ?"
-	if result := in.sqliteDB.Where(condition, meta.Env, meta.Region, meta.AppName).Order("id desc").Limit(limit).Find(&rows); result.Error != nil {
+	condition := "env = ? and region = ? and app_name = ? and is_latest = ?"
+	if result := in.sqliteDB.Where(condition, meta.Env, meta.Region, meta.AppName, true).Order("id desc").Limit(limit).Find(&rows); result.Error != nil {
 		return nil, fmt.Errorf("GetLimitedHistorySrvCoverRows query error: %w", result.Error)
 	}
 	return rows, nil

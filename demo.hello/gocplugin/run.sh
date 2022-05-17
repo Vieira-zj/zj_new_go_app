@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-root="/tmp/test/goc_plugin_space"
+root="/tmp/test/goc_staging_space"
 
 function run_golint {
     local root_dir=$(pwd)

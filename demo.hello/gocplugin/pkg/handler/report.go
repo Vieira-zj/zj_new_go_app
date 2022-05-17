@@ -132,9 +132,10 @@ func GetHistorySrvCoverTotalsHandler(c *gin.Context) {
 		return
 	}
 
+	const defaultLimit = 10
 	dbInstance := pkg.NewGocSrvCoverDBInstance()
 	meta := pkg.GetSrvMetaFromName(param.SrvName)
-	rows, err := dbInstance.GetLimitedHistorySrvCoverRows(meta, 10)
+	rows, err := dbInstance.GetLimitedHistorySrvCoverRows(meta, defaultLimit)
 	if err != nil {
 		log.Println("GetHistorySrvCoverTotalsHandler error:", err)
 		respErrMsg := "Get history service cover in db failed."
@@ -270,21 +271,21 @@ func SyncSrvCoverHandler(c *gin.Context) {
 		return
 	}
 
-	srvStatus, err := getSrvStatus(req.SrvName)
+	addrs, err := getSrvIPAddresses(req.SrvName)
 	if err != nil {
 		log.Println("SyncSrvCoverHandler error:", err)
 		sendErrorResp(c, http.StatusInternalServerError, errMsgGetSrvStatus)
 		return
 	}
 
-	if srvStatus == srvStatusOffline {
+	if len(addrs) == 0 {
 		coverTotal, err := getLatestSrvCoverTotalInDB(req.SrvName)
 		if err != nil {
 			log.Println("SyncSrvCoverHandler error:", err)
 			sendErrorResp(c, http.StatusInternalServerError, errMsgGetLatestSrvCovInDB)
 			return
 		}
-		sendSrvCoverTotalResp(c, srvStatus, coverTotal)
+		sendSrvCoverTotalResp(c, srvStatusOffline, coverTotal)
 		return
 	}
 
@@ -310,7 +311,7 @@ func SyncSrvCoverHandler(c *gin.Context) {
 
 	retCh := pkg.SubmitSrvCoverSyncTask(pkg.SyncSrvCoverParam{
 		SrvName:   req.SrvName,
-		Addresses: req.Addresses,
+		Addresses: addrs,
 	})
 	select {
 	case res := <-retCh:
@@ -456,17 +457,29 @@ func getSrvStatus(srvName string) (string, error) {
 }
 
 func isSrvExistInGocList(srvName string) (bool, error) {
-	srvs, err := pkg.SyncAndListRegisterSrvsTask()
+	addrs, err := getSrvIPAddresses(srvName)
 	if err != nil {
-		return false, fmt.Errorf("IsSrvOKInGoc error: %w", err)
+		return false, err
 	}
 
-	for srv := range srvs {
-		if srv == srvName {
-			return true, nil
-		}
+	if len(addrs) > 0 {
+		return true, nil
 	}
 	return false, nil
+}
+
+func getSrvIPAddresses(srvName string) ([]string, error) {
+	srvs, err := pkg.SyncAndListRegisterSrvsTask()
+	if err != nil {
+		return nil, fmt.Errorf("IsSrvOKInGoc error: %w", err)
+	}
+
+	for srv, addrs := range srvs {
+		if srv == srvName {
+			return addrs, nil
+		}
+	}
+	return []string{}, nil
 }
 
 // IsSrvExistInWatcher .

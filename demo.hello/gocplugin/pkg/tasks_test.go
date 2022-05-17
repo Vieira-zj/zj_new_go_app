@@ -3,6 +3,7 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"testing"
 )
 
@@ -21,7 +22,42 @@ func TestIsAttachSrvOK(t *testing.T) {
 	}
 }
 
+func TestIsPodOK(t *testing.T) {
+	if err := InitConfig("/tmp/test/goc_staging_space"); err != nil {
+		t.Fatal(err)
+	}
+
+	ok, err := isPodOK("http://100.79.49.20:32911")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("pod ok:", ok)
+
+	ok, err = isPodOK("100.79.56.6")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("pod ok:", ok)
+}
+
+func TestIsSrvOK(t *testing.T) {
+	if err := InitConfig("/tmp/test/goc_staging_space"); err != nil {
+		t.Fatal(err)
+	}
+
+	addr := "http://100.79.49.20:32911"
+	ok, err := isSrvOK(addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("service ok:", ok)
+}
+
 func TestRemoveUnhealthSrvInGocTask(t *testing.T) {
+	if err := InitConfig("/tmp/test/goc_staging_space"); err != nil {
+		t.Fatal(err)
+	}
+
 	AppConfig.GocCenterHost = testGocLocalHost
 	if err := RemoveUnhealthSrvInGocTask(); err != nil {
 		t.Fatal(err)
@@ -30,7 +66,7 @@ func TestRemoveUnhealthSrvInGocTask(t *testing.T) {
 }
 
 func TestSyncAndListRegisterSrvsTask(t *testing.T) {
-	if err := InitConfig("/tmp/test/goc_plugin_space"); err != nil {
+	if err := InitConfig("/tmp/test/goc_staging_space"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -114,22 +150,21 @@ func TestGetSrvCoverAndCreateReportTask(t *testing.T) {
 	fmt.Println("cover total:", total)
 }
 
-func TestIsPodOK(t *testing.T) {
+func TestRenameLastSrvCoverResults(t *testing.T) {
 	if err := InitConfig("/tmp/test/goc_staging_space"); err != nil {
 		t.Fatal(err)
 	}
 
-	ok, err := isPodOK("http://100.79.56.144")
-	if err != nil {
+	dir := "/tmp/test/goc_staging_space/apa_echoserver/cover_data"
+	src := filepath.Join(dir, "staging_th_apa_echoserver_master_c32684d0b1_20220517_121525.cov")
+	dst := filepath.Join(dir, "staging_th_apa_echoserver_master_c32684d0b1_20220517_121525x.cov")
+	if err := renameLastSrvCoverResults(src, dst); err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("pod ok:", ok)
 
-	ok, err = isPodOK("100.79.56.6")
-	if err != nil {
+	if err := renameLastSrvHTMLCoverResults("apa_echoserver", src, dst); err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("pod ok:", ok)
 }
 
 //

@@ -50,8 +50,8 @@
 
 ### Todos
 
-1. 展示基于 commit 和 branch 比较的增量覆盖率结果
-2. 展示基于 commit 的历史覆盖率结果
+1. 基于 commit 和 branch 比较的增量覆盖率结果展示
+2. commit baseline 的历史覆盖率结果展示
 3. 支持单测覆盖率结果上报，及展示
 
 ## Goc Plugin Design
@@ -193,14 +193,14 @@ curl http://127.0.0.1:8089/cover/total/list | jq .
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/total/latest -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a"}' | jq .
+  -d '{"srv_name":"staging_th_apa_echoserver_master_c32684d0b1"}' | jq .
 ```
 
 - `/cover/total/history`: get history service cover totals.
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/total/history -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a"}' | jq .
+  -d '{"srv_name":"staging_th_apa_echoserver_master_c32684d0b1"}' | jq .
 ```
 
 ### Group: Cover Operations
@@ -216,18 +216,18 @@ curl -XPOST http://127.0.0.1:8089/cover/report/raw -H "Content-Type:application/
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/sync -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a"}' | jq .
+  -d '{"srv_name":"staging_th_apa_echoserver_master_c32684d0b1"}' | jq .
 
 # force sync
 curl -XPOST http://127.0.0.1:8089/cover/sync -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a", "is_force":true}' | jq .
+  -d '{"srv_name":"staging_th_apa_echoserver_master_c32684d0b1", "is_force":true}' | jq .
 ```
 
 - `/cover/clear`: clear service cover data, and set total cover to 0.
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/clear -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a"}' | jq .
+  -d '{"srv_name":"staging_th_apa_echoserver_master_c32684d0b1"}' | jq .
 ```
 
 ### Group: Cover Report
@@ -236,23 +236,24 @@ curl -XPOST http://127.0.0.1:8089/cover/clear -H "Content-Type:application/json"
 
 ```sh
 curl -XPOST http://127.0.0.1:8089/cover/report/list -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a", "rpt_type":"html", "limit":3}' | jq .
+  -d '{"srv_name":"staging_th_apa_echoserver_master_c32684d0b1", "rpt_type":"html", "limit":3}' | jq .
 ```
 
 - `/cover/report/download`: get latest cover raw or func report.
 
 ```sh
+# get raw cover data
 curl -XPOST http://127.0.0.1:8089/cover/report/download -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a", "rpt_name":"staging_th_apa_echoserver_goc_master_b63d82705a_20220514_155803", "rpt_type":"cov"}' -o 'cover_report.cov'
+  -d '{"srv_name":"staging_th_apa_echoserver_master_c32684d0b1", "rpt_name":"staging_th_apa_echoserver_master_c32684d0b1_20220517_180312", "rpt_type":"cov"}' -o 'cover_report.cov'
 
-# get latest cover func report
-curl -XPOST http://127.0.0.1:8089/cover/report/func -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a"}' -o 'cover_report.func'
+# get cover func report
+curl -XPOST http://127.0.0.1:8089/cover/report/download -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_echoserver_master_c32684d0b1", "rpt_name":"staging_th_apa_echoserver_master_c32684d0b1_20220517_180312", "rpt_type":"func"}' -o 'cover_report.func'
 ```
 
 - `/static/report/{srv_name}/{html_report_file}.html`: get latest cover html report.
 
-Open in chrome: <http://127.0.0.1:8089/static/report/apa_echoserver_goc/staging_th_apa_echoserver_goc_master_b63d82705a_20220514_155803.html>
+Open in chrome: <http://127.0.0.1:8089/static/report/apa_echoserver/staging_th_apa_echoserver_master_c32684d0b1_20220517_180312.html>
 
 - `/cover/report/history`: get history cover func/html report.
 

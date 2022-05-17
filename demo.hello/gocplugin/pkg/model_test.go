@@ -56,11 +56,11 @@ func TestGetLatestSrvCoverRowNotFound(t *testing.T) {
 
 func TestGetLatestSrvCoverRowMoreThanOneErr(t *testing.T) {
 	AppConfig.RootDir = "/tmp/test"
-	instance := NewGocSrvCoverDBInstance()
-
 	srvName := "staging_th_apa_goc_echoserver_master_518e0a570c"
 	meta := GetSrvMetaFromName(srvName)
-	_, err := instance.GetLatestSrvCoverRow(meta)
+
+	dbInstance := NewGocSrvCoverDBInstance()
+	_, err := dbInstance.GetLatestSrvCoverRow(meta)
 	fmt.Println("error:", err)
 	if !errors.Is(err, ErrMoreThanOneSrvCoverLatestRow) {
 		t.Fatal("assert err is ErrMoreThanOneSrvCoverLatestRow failed")
@@ -68,12 +68,12 @@ func TestGetLatestSrvCoverRowMoreThanOneErr(t *testing.T) {
 }
 
 func TestGetLimitedHistorySrvCoverRows(t *testing.T) {
-	AppConfig.RootDir = "/tmp/test"
-	instance := NewGocSrvCoverDBInstance()
-
-	srvName := "staging_th_apa_goc_echoserver_master_518e0a570c"
+	AppConfig.RootDir = "/tmp/test/goc_staging_space"
+	srvName := "staging_th_apa_echoserver_master_c32684d0b1"
 	meta := GetSrvMetaFromName(srvName)
-	rows, err := instance.GetLimitedHistorySrvCoverRows(meta, 2)
+
+	dbInstance := NewGocSrvCoverDBInstance()
+	rows, err := dbInstance.GetLimitedHistorySrvCoverRows(meta, 3)
 	if err != nil {
 		t.Fatal(err)
 	}
