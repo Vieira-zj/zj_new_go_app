@@ -31,7 +31,7 @@ const (
 // SyncAndListRegisterSrvsTask .
 func SyncAndListRegisterSrvsTask() (map[string][]string, error) {
 	if err := RemoveUnhealthSrvInGocTask(); err != nil {
-		return nil, fmt.Errorf("SyncAndListRegisterSrvs error: %w", err)
+		return nil, fmt.Errorf("SyncAndListRegisterSrvsTask error: %w", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), Wait)
@@ -40,7 +40,7 @@ func SyncAndListRegisterSrvsTask() (map[string][]string, error) {
 	gocAPI := NewGocAPI()
 	srvs, err := gocAPI.ListRegisterServices(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("SyncAndListRegisterSrvs error: %w", err)
+		return nil, fmt.Errorf("SyncAndListRegisterSrvsTask error: %w", err)
 	}
 	return srvs, nil
 }
@@ -52,18 +52,18 @@ func RemoveUnhealthSrvInGocTask() error {
 	defer cancel()
 	services, err := goc.ListRegisterServices(ctx)
 	if err != nil {
-		return fmt.Errorf("RemoveUnhealthSrvInGoc error: %w", err)
+		return fmt.Errorf("RemoveUnhealthSrvInGocTask error: %w", err)
 	}
 
 	for _, addrs := range services {
 		for _, addr := range addrs {
 			ok, err := isSrvOK(addr)
 			if err != nil {
-				return fmt.Errorf("RemoveUnhealthSrvInGoc error: %w", err)
+				return fmt.Errorf("RemoveUnhealthSrvInGocTask error: %w", err)
 			}
 			if !ok {
 				if _, err := goc.DeleteRegisterServiceByAddr(ctx, addr); err != nil {
-					return fmt.Errorf("RemoveUnhealthSrvInGoc error: %w", err)
+					return fmt.Errorf("RemoveUnhealthSrvInGocTask error: %w", err)
 				}
 				log.Printf("Remove unhealth service from goc list: srv_ip=%s", addr)
 			}

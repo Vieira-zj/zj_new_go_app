@@ -58,7 +58,6 @@ func TestRemoveUnhealthSrvInGocTask(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	AppConfig.GocCenterHost = testGocLocalHost
 	if err := RemoveUnhealthSrvInGocTask(); err != nil {
 		t.Fatal(err)
 	}

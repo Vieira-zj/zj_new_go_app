@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"demo.hello/gocplugin/pkg"
 	"demo.hello/utils"
@@ -35,7 +36,8 @@ func ListSavedSrvCoversHandler(c *gin.Context) {
 	}
 
 	savedDirPath := getSavedCoverDirPath(param.SrvName)
-	fileNames, err := listFileNamesFromDir(savedDirPath, "cov", param.Limit)
+	meta := pkg.GetSrvMetaFromName(param.SrvName)
+	fileNames, err := listFileNamesFromDir(savedDirPath, "cov", meta.GitCommit, param.Limit)
 	if err != nil {
 		log.Println("ListSavedSrvCoversHandler error:", err)
 		sendErrorResp(c, http.StatusInternalServerError, "List file failed.")
@@ -45,17 +47,27 @@ func ListSavedSrvCoversHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": fileNames})
 }
 
-func listFileNamesFromDir(dirPath, fileExt string, limit int) ([]string, error) {
+func listFileNamesFromDir(dirPath, fileExt, filter string, limit int) ([]string, error) {
 	fileNames, err := utils.ListFilesInDir(dirPath, fileExt)
 	if err != nil {
 		return nil, fmt.Errorf("listFileNamesFromDir error: %w", err)
 	}
-	sort.Strings(fileNames)
 
-	if len(fileNames) < limit {
-		limit = len(fileNames)
+	filterFileNames := fileNames
+	if len(filter) > 0 {
+		filterFileNames = make([]string, 0, len(fileNames))
+		for _, name := range fileNames {
+			if strings.Contains(name, filter) {
+				filterFileNames = append(filterFileNames, name)
+			}
+		}
 	}
-	return fileNames[len(fileNames)-limit:], nil
+	sort.Strings(filterFileNames)
+
+	if len(filterFileNames) < limit {
+		limit = len(filterFileNames)
+	}
+	return filterFileNames[len(filterFileNames)-limit:], nil
 }
 
 type watcherGetSrvCoverReq struct {

@@ -365,7 +365,7 @@ func ListSrvCoverReportsHandler(c *gin.Context) {
 		listDirPath = filepath.Join(pkg.AppConfig.PublicDir, meta.AppName)
 	}
 
-	names, err := listFileNamesFromDir(listDirPath, req.RptType, req.Limit)
+	names, err := listFileNamesFromDir(listDirPath, req.RptType, meta.GitCommit, req.Limit)
 	if err != nil {
 		log.Println("ListSrvCoverReportsHandler error:", err)
 		sendErrorResp(c, http.StatusInternalServerError, "List file failed.")
