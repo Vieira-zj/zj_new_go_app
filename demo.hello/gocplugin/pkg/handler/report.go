@@ -371,8 +371,16 @@ func ListSrvCoverReportsHandler(c *gin.Context) {
 		sendErrorResp(c, http.StatusInternalServerError, "List file failed.")
 		return
 	}
+	if len(names) == 0 {
+		sendErrorResp(c, http.StatusBadRequest, "No reports found.")
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"code": 0, "reports": names})
+	retNames := make([]string, 0, len(names))
+	for _, name := range names {
+		retNames = append(retNames, filepath.Join(meta.AppName, name))
+	}
+	c.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "reports": retNames})
 }
 
 type getSrvFuncCoverRptReq struct {

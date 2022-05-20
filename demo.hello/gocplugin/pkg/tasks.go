@@ -47,9 +47,9 @@ func SyncAndListRegisterSrvsTask() (map[string][]string, error) {
 
 // RemoveUnhealthSrvInGocTask removes unhealth services from goc register list.
 func RemoveUnhealthSrvInGocTask() error {
-	goc := NewGocAPI()
 	ctx, cancel := context.WithTimeout(context.Background(), ShortWait)
 	defer cancel()
+	goc := NewGocAPI()
 	services, err := goc.ListRegisterServices(ctx)
 	if err != nil {
 		return fmt.Errorf("RemoveUnhealthSrvInGocTask error: %w", err)
@@ -62,7 +62,12 @@ func RemoveUnhealthSrvInGocTask() error {
 				return fmt.Errorf("RemoveUnhealthSrvInGocTask error: %w", err)
 			}
 			if !ok {
-				if _, err := goc.DeleteRegisterServiceByAddr(ctx, addr); err != nil {
+				if err := func() (err error) {
+					localCtx, cancel := context.WithTimeout(context.Background(), ShortWait)
+					defer cancel()
+					_, err = goc.DeleteRegisterServiceByAddr(localCtx, addr)
+					return
+				}(); err != nil {
 					return fmt.Errorf("RemoveUnhealthSrvInGocTask error: %w", err)
 				}
 				log.Printf("Remove unhealth service from goc list: srv_ip=%s", addr)
@@ -315,7 +320,7 @@ func checkoutSrvRepo(workingDir, srvName string) error {
 				return fmt.Errorf("checkoutSrvRepo repo url not found: [%s]", meta.AppName)
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 			defer cancel()
 
 			head, err := GitClone(ctx, repoURL, workingDir)
@@ -505,27 +510,39 @@ func GetSrvModuleDir(srvName string) string {
 
 // GetSrvMetaFromName .
 func GetSrvMetaFromName(name string) SrvCoverMeta {
-	// input name example:
-	// staging_th_apa_goc_echoserver_master_518e0a570c
 	items := strings.Split(name, "_")
-	size := len(items)
-	compItems := make([]string, 0, 4)
-	for i := 2; i < size-2; i++ {
-		compItems = append(compItems, items[i])
+	env := items[0]
+	region := items[1]
+	gitCommit := items[len(items)-1]
+
+	filterItems := make([]string, 0, len(items)-3)
+	for idx := 0; idx < len(items); idx++ {
+		if idx == 0 || idx == 1 || idx == (len(items)-1) {
+			continue
+		}
+		filterItems = append(filterItems, items[idx])
 	}
 
-	branch := items[size-2]
-	if strings.Contains(branch, "/") {
-		brItems := strings.Split(branch, "/")
-		branch = brItems[len(brItems)-1]
+	branchIdx := 0
+	for i := 0; i < len(filterItems); i++ {
+		if filterItems[i] == "master" || filterItems[i] == "staging" {
+			branchIdx = i
+			break
+		}
 	}
+	if branchIdx == 0 {
+		log.Println("GetSrvMetaFromName error: get branch index failed.")
+		return SrvCoverMeta{}
+	}
+	appName := strings.Join(filterItems[:branchIdx], "_")
+	gitBranch := strings.Join(filterItems[branchIdx:], "_")
 
 	return SrvCoverMeta{
-		Env:       items[0],
-		Region:    items[1],
-		AppName:   strings.Join(compItems, "_"),
-		GitBranch: branch,
-		GitCommit: items[size-1],
+		Env:       env,
+		Region:    region,
+		AppName:   appName,
+		GitBranch: gitBranch,
+		GitCommit: gitCommit,
 	}
 }
 

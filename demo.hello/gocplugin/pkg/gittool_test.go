@@ -3,42 +3,82 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 )
 
-//
-// run: go test -timeout 10s -run ^TestCheckoutToCommit$ demo.hello/gocplugin/pkg -v -count=1
-//
-
-var (
-	testRepoPath = "/tmp/test/echoserver"
-)
-
 func TestGetLastDirName(t *testing.T) {
-	fmt.Println(filepath.Base(testRepoPath))
+	repoPath, _, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(filepath.Base(repoPath))
 }
 
+// run: go test -timeout 1800s -run ^TestGitClone$ demo.hello/gocplugin/pkg -v -count=1
 func TestGitClone(t *testing.T) {
-	url := testGetRepoURL()
-	fmt.Println("repo url:", url)
-	commitID, err := GitClone(context.Background(), url, testRepoPath)
+	repoPath, repoURL, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println("repo url:", repoURL)
+	commitID, err := GitClone(context.Background(), repoURL, repoPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println("repo head:", commitID)
 }
 
+// run: go test -timeout 30s -run ^TestFetch$ demo.hello/gocplugin/pkg -v -count=1
 func TestFetch(t *testing.T) {
-	repo := NewGitRepo(testRepoPath)
+	repoPath, _, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := NewGitRepo(repoPath)
 	if err := repo.Fetch(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 }
 
+// run: go test -timeout 30s -run ^TestCheckoutRemoteBranch$ demo.hello/gocplugin/pkg -v -count=1
+func TestCheckoutRemoteBranch(t *testing.T) {
+	repoPath, _, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := NewGitRepo(repoPath)
+	commitID, err := repo.CheckoutRemoteBranch(context.Background(), "staging_for_cover")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("checkout remote branch:", commitID)
+}
+
+// run: go test -timeout 30s -run ^TestPull$ demo.hello/gocplugin/pkg -v -count=1
 func TestPull(t *testing.T) {
-	repo := NewGitRepo(testRepoPath)
-	head, err := repo.Pull(context.Background(), "rm_staging_copied")
+	// error: ssh: handshake failed
+	// fix: git clone repo by https instead of ssh
+	repoPath, _, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	branch := "staging_for_cover"
+	repo := NewGitRepo(repoPath)
+	ok, err := repo.IsBranchExist(branch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatalf("branch [%s] is not found", branch)
+	}
+
+	head, err := repo.Pull(context.Background(), branch)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +86,12 @@ func TestPull(t *testing.T) {
 }
 
 func TestGetRepoHeadCommitID(t *testing.T) {
-	repo := NewGitRepo(testRepoPath)
+	repoPath, _, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := NewGitRepo(repoPath)
 	head, err := repo.getRepoHeadCommitShortID()
 	if err != nil {
 		t.Fatal(err)
@@ -55,7 +100,12 @@ func TestGetRepoHeadCommitID(t *testing.T) {
 }
 
 func TestGetBranchFullName(t *testing.T) {
-	repo := NewGitRepo(testRepoPath)
+	repoPath, _, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := NewGitRepo(repoPath)
 	for _, branch := range []string{"master"} {
 		name, err := repo.GetBranchFullName(branch)
 		if err != nil {
@@ -66,8 +116,13 @@ func TestGetBranchFullName(t *testing.T) {
 }
 
 func TestGetBranchCommit(t *testing.T) {
+	repoPath, _, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	branch := "rm_staging_copied"
-	repo := NewGitRepo(testRepoPath)
+	repo := NewGitRepo(repoPath)
 	commitID, err := repo.GetBranchCommit(branch)
 	if err != nil {
 		t.Fatal(err)
@@ -76,7 +131,12 @@ func TestGetBranchCommit(t *testing.T) {
 }
 
 func TestGetRemoteBranchFullName(t *testing.T) {
-	repo := NewGitRepo(testRepoPath)
+	repoPath, _, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := NewGitRepo(repoPath)
 	for _, branch := range []string{"release", "rm_staging_test"} {
 		name, err := repo.GetRemoteBranchFullName(branch)
 		if err != nil {
@@ -86,16 +146,27 @@ func TestGetRemoteBranchFullName(t *testing.T) {
 	}
 }
 
+// run: go test -timeout 10s -run ^TestCheckoutToCommit$ demo.hello/gocplugin/pkg -v -count=1
 func TestCheckoutToCommit(t *testing.T) {
-	repo := NewGitRepo(testRepoPath)
+	repoPath, _, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := NewGitRepo(repoPath)
 	if err := repo.CheckoutToCommit("a6023e5e"); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestCheckoutBranch(t *testing.T) {
+	repoPath, _, err := testGetRepoPathAndURL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	branch := "rm_staging_copied"
-	repo := NewGitRepo(testRepoPath)
+	repo := NewGitRepo(repoPath)
 	head, err := repo.CheckoutBranch(branch)
 	if err != nil {
 		t.Fatal(err)
@@ -103,24 +174,31 @@ func TestCheckoutBranch(t *testing.T) {
 	fmt.Printf("checkout branch [%s]: %s\n", branch, head)
 }
 
-func TestCheckoutRemoteBranch(t *testing.T) {
-	repo := NewGitRepo(testRepoPath)
-	commitID, err := repo.CheckoutRemoteBranch(context.Background(), "rm_staging_test")
+func TestIsBranchExist(t *testing.T) {
+	repoPath, _, err := testGetRepoPathAndURL()
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("checkout remote branch:", commitID)
+
+	repo := NewGitRepo(repoPath)
+	ok, err := repo.IsBranchExist("staging_for_cover")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("branch exist:", ok)
 }
 
-func testGetRepoURL() string {
-	if err := InitConfig("/tmp/test"); err != nil {
-		panic(err)
+func testGetRepoPathAndURL() (string, string, error) {
+	root := filepath.Join(os.Getenv("HOME"), "Downloads/data/goc_staging_space")
+	if err := InitConfig(root); err != nil {
+		return "", "", err
 	}
 
-	srvName := "echoserver"
+	srvName := "srvName"
 	val, ok := ModuleToRepoMap[srvName]
 	if !ok {
-		panic(fmt.Sprintf("service [%s] is not found", srvName))
+		err := fmt.Errorf("service [%s] is not found in map", srvName)
+		return "", "", err
 	}
-	return val
+	return filepath.Join(root, srvName, "repo"), val, nil
 }

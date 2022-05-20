@@ -181,9 +181,12 @@ func TestGetSavedCovFileNameWithSuffix(t *testing.T) {
 }
 
 func TestGetSrvMetaFromName(t *testing.T) {
-	name := "staging_th_apa_goc_echoserver_master_518e0a570c"
-	meta := GetSrvMetaFromName(name)
-	fmt.Printf("service meta data: %+v\n", meta)
+	for _, name := range [2]string{
+		"staging_th_apa_goc_echoserver_master_518e0a570c",
+		"staging_th_is_is-giro_staging_for_cover_8e370087c3b"} {
+		meta := GetSrvMetaFromName(name)
+		fmt.Printf("service meta data: %+v\n", meta)
+	}
 }
 
 func TestPodStatusRespUnmarshal(t *testing.T) {

@@ -236,8 +236,8 @@ func (r *GitRepo) getBranch(branch string) (string, string, error) {
 		return "", "", fmt.Errorf("getBranch iterator refs error: %w", err)
 	}
 
-	if name == "" {
-		err = git.ErrBranchNotFound
+	if len(name) == 0 {
+		return "", "", git.ErrBranchNotFound
 	}
 	return name, commitID, nil
 }
