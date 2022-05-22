@@ -134,10 +134,13 @@ func runWatcher(ctx context.Context, r *gin.Engine) {
 }
 
 func setupWatcherRouter(r *gin.Engine) {
+	srv := r.Group("/watcher/srv")
+	srv.GET("list", handler.ListCoverAttachSrvsHandler)
+
 	cover := r.Group("/watcher/cover")
-	cover.POST("list", handler.ListSavedSrvCoversHandler)
-	cover.POST("download", handler.GetSrvCoverHandler)
-	cover.POST("sync", handler.FetchAndSaveSrvCoverHandler)
+	cover.POST("list", handler.ListSrvRawCoversHandler)
+	cover.POST("download", handler.GetSrvRawCoverHandler)
+	cover.POST("/hook/sync", handler.SyncSrvCoverHookHandler)
 }
 
 func runWatcherScheduleTask(ctx context.Context) {

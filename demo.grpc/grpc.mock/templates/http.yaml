@@ -1,0 +1,117 @@
+- key: ping
+  kind: Behavior
+  expect:
+    http:
+      method: GET
+      path: /ping
+  actions:
+    - reply_http:
+        status_code: 200
+        body: OK
+        headers:
+          Content-Type: text/xml
+
+- key: hello
+  kind: Behavior
+  expect:
+    http:
+      method: GET
+      path: /hello
+  actions:
+    - reply_http:
+        status_code: 200
+        body: >
+          { "hello": "world" }
+
+- key: slow_endpoint
+  kind: Behavior
+  expect:
+    http:
+      method: GET
+      path: /slow_endpoint
+  actions:
+    - sleep:
+        duration: 1s
+    - reply_http:
+        status_code: 200
+        body: OK
+
+- key: query_string
+  kind: Behavior
+  expect:
+    condition: '{{.HTTPQueryString | contains "foo=bar" }}'
+    http:
+      method: POST
+      path: /query_string
+  actions:
+    - reply_http:
+        status_code: 200
+        body: '{{.HTTPQueryString}}'
+
+- key: header-token-200
+  kind: Behavior
+  expect:
+    condition: '{{.HTTPHeader.Get "X-Token" | eq "t1234" | and (.HTTPHeader.Get "Y-Token" | eq "t1234")}}'
+    http:
+      method: GET
+      path: /token
+  actions:
+    - reply_http:
+        status_code: 200
+        body: OK
+
+- key: header-token-401
+  kind: Behavior
+  expect:
+    condition: '{{.HTTPHeader.Get "X-Token" | ne "t1234"}}'
+    http:
+      method: GET
+      path: /token
+  actions:
+    - reply_http:
+        status_code: 401
+        body: Invalid X-Token
+
+- key: condition-on-http-body
+  kind: Behavior
+  expect:
+    condition: '{{ .HTTPBody | jsonPath "foo" | toString | eq "123" }}'
+    http:
+      method: POST
+      path: /query_body
+  actions:
+    - reply_http:
+        status_code: 200
+        body: '{{ .HTTPBody | jsonPath "foo" }}'
+
+# AbstractBehavior
+- key: fruit-of-the-day
+  kind: AbstractBehavior
+  values:
+    fruit: potato
+  expect:
+    condition: '{{.HTTPQueryString | contains .Values.day}}'
+    http:
+      method: GET
+      path: /fruit-of-the-day
+  actions:
+    - reply_http:
+        status_code: 200
+        body: '{"fruit": "{{.Values.fruit}}"}'
+
+- key: monday-fruit
+  kind: Behavior
+  extend: fruit-of-the-day
+  values:
+    day: monday
+    fruit: apple
+
+- key: tuesday-fruit
+  kind: Behavior
+  extend: fruit-of-the-day
+  values:
+    day: tuesday
+  actions: 
+    - sleep:
+         duration: 1s
+      order: -1000

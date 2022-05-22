@@ -15,13 +15,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ListCoverAttachSrvsHandler .
+func ListCoverAttachSrvsHandler(c *gin.Context) {
+	// TODO:
+}
+
 type watcherListSrvCoverReq struct {
 	SrvName string `json:"srv_name" binding:"required"`
 	Limit   int    `json:"limit" binding:"required"`
 }
 
-// ListSavedSrvCoversHandler .
-func ListSavedSrvCoversHandler(c *gin.Context) {
+// ListSrvRawCoversHandler .
+func ListSrvRawCoversHandler(c *gin.Context) {
 	var param watcherListSrvCoverReq
 	if err := c.ShouldBindJSON(&param); err != nil {
 		log.Println("ListSavedSrvCoversHandler error:", err)
@@ -75,8 +80,8 @@ type watcherGetSrvCoverReq struct {
 	CovFileName string `json:"cov_file_name"`
 }
 
-// GetSrvCoverHandler .
-func GetSrvCoverHandler(c *gin.Context) {
+// GetSrvRawCoverHandler .
+func GetSrvRawCoverHandler(c *gin.Context) {
 	var param watcherGetSrvCoverReq
 	if err := c.ShouldBindJSON(&param); err != nil {
 		log.Println("GetSrvCoverHandler error:", err)
@@ -115,8 +120,9 @@ func GetSrvCoverHandler(c *gin.Context) {
 	sendBytes(c, b)
 }
 
-// FetchAndSaveSrvCoverHandler 服务异常退出时调用该接口去拉取服务覆盖率数据，这里同步执行代替异步。
-func FetchAndSaveSrvCoverHandler(c *gin.Context) {
+// SyncSrvCoverHookHandler fetch and save service raw cover.
+// 服务异常退出时调用该接口去拉取服务覆盖率数据，这里同步执行代替异步。
+func SyncSrvCoverHookHandler(c *gin.Context) {
 	var param pkg.SyncSrvCoverParam
 	if err := c.ShouldBindJSON(&param); err != nil {
 		log.Println("FetchAndSaveSrvCoverHandler error:", err)
