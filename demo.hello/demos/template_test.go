@@ -11,6 +11,8 @@ import (
 	"text/template"
 )
 
+/* Common */
+
 func TestTemplateString01(t *testing.T) {
 	tmpl := "my name is {{.}}"
 	parse, err := template.New("demo").Parse(tmpl)
@@ -301,7 +303,38 @@ func TestTemplateInternal(t *testing.T) {
 	fmt.Println()
 }
 
-/* go format */
+/* Pipeline */
+
+func TestTemplatePipeline(t *testing.T) {
+	parse, err := template.New("pipeline").Funcs(template.FuncMap{
+		"split": func(name string) []string {
+			return strings.Split(name, " ")
+		},
+		"title": func(subNames []string) string {
+			retSubNames := make([]string, 0, len(subNames))
+			for _, name := range subNames {
+				retSubNames = append(retSubNames, strings.ToUpper(string(name[0]))+name[1:])
+			}
+			return strings.Join(retSubNames, " ")
+		},
+		"sayHello": func(name string) string {
+			return "Hello, " + name
+		},
+	}).Parse(`pipeline: {{split .name | title | sayHello}}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type _map map[string]string
+	if err := parse.Execute(os.Stdout, _map{
+		"name": "jin zheng",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println()
+}
+
+/* Go Format */
 
 func TestFormat(t *testing.T) {
 	parse, err := template.New("format").Parse(`

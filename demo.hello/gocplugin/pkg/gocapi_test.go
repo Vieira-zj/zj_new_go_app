@@ -15,14 +15,14 @@ const (
 )
 
 func TestNewGocAPIOnce(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	for i := 0; i < 3; i++ {
 		NewGocAPI()
 	}
 }
 
 func TestListRegisterServices(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	goc := NewGocAPI()
 	svc, err := goc.ListRegisterServices(context.Background())
 	if err != nil {
@@ -32,7 +32,7 @@ func TestListRegisterServices(t *testing.T) {
 }
 
 func TestRegisterService(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	goc := NewGocAPI()
 	for i := 1; i < 3; i++ {
 		service := "test_th_apa_goc_echoserver_v1"
@@ -46,7 +46,7 @@ func TestRegisterService(t *testing.T) {
 }
 
 func TestDeleteRegisterServiceByName(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	goc := NewGocAPI()
 	service := "test_th_apa_goc_echoserver_v1"
 	resp, err := goc.DeleteRegisterServiceByName(context.Background(), service)
@@ -57,7 +57,7 @@ func TestDeleteRegisterServiceByName(t *testing.T) {
 }
 
 func TestDeleteRegisterServiceByAddr(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	goc := NewGocAPI()
 	addr := "http://127.0.0.1:49971"
 	resp, err := goc.DeleteRegisterServiceByAddr(context.Background(), addr)
@@ -69,7 +69,7 @@ func TestDeleteRegisterServiceByAddr(t *testing.T) {
 
 func TestGetServiceProfileByAddr(t *testing.T) {
 	// curl http://localhost:8081/
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	goc := NewGocAPI()
 	addr := "http://127.0.0.1:51007"
 	profile, err := goc.GetServiceProfileByAddr(context.Background(), addr)
@@ -91,7 +91,7 @@ func TestGetServiceProfileByAddr(t *testing.T) {
 }
 
 func TestGetServiceProfileByAddrNotFound(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	goc := NewGocAPI()
 	addr := "http://127.0.0.1:51027"
 	b, err := goc.GetServiceProfileByAddr(context.Background(), addr)
@@ -103,7 +103,7 @@ func TestGetServiceProfileByAddrNotFound(t *testing.T) {
 
 func TestGetServiceProfileByName(t *testing.T) {
 	// if service has multiple addresses (instance), goc will merge profile and return.
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	srvName := "staging_th_apa_goc_echoserver_master_b63d82705a"
 	goc := NewGocAPI()
 	b, err := goc.GetServiceProfileByName(context.Background(), srvName)
@@ -118,7 +118,7 @@ func TestGetServiceProfileByName(t *testing.T) {
 }
 
 func TestClearServiceProfileByAddr(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	goc := NewGocAPI()
 	addr := "http://127.0.0.1:51025"
 	resp, err := goc.ClearServiceProfileByAddr(context.Background(), addr)
@@ -129,7 +129,7 @@ func TestClearServiceProfileByAddr(t *testing.T) {
 }
 
 func TestClearProfileServiceByName(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	srvName := "staging_th_apa_goc_echoserver_master_b63d82705a"
 	goc := NewGocAPI()
 	resp, err := goc.ClearProfileServiceByName(context.Background(), srvName)
@@ -140,7 +140,7 @@ func TestClearProfileServiceByName(t *testing.T) {
 }
 
 func TestGetServiceCoverage(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	goc := NewGocAPI()
 	services, err := goc.ListRegisterServices(context.Background())
 	if err != nil {

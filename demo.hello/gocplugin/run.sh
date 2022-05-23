@@ -1,6 +1,9 @@
 #!/bin/bash
 set -eu
 
+# local test
+# root="/tmp/test/goc_test_space" 
+# staging test
 root="${HOME}/Downloads/data/goc_staging_space"
 
 function run_golint {
@@ -17,12 +20,8 @@ function init {
     cp config/* ${root}
 }
 
-function run_goc_report {
+function run_goc_plugin {
     go run main.go -root=${root}
-}
-
-function run_goc_watch_dog {
-    go run main.go -mode=watcher
 }
 
 function clearup {
@@ -37,6 +36,6 @@ function clearup {
 
 # clearup
 # init
-run_goc_report
+run_goc_plugin
 
 echo "done"

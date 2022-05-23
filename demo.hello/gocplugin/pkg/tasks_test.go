@@ -77,7 +77,7 @@ func TestSyncAndListRegisterSrvsTask(t *testing.T) {
 }
 
 func TestFetchAndSaveSrvCover(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	savedDir := "/tmp/test/goc_space"
 	param := SyncSrvCoverParam{
 		SrvName: "staging_th_apa_goc_echoserver_master_845820727e",
@@ -90,7 +90,7 @@ func TestFetchAndSaveSrvCover(t *testing.T) {
 }
 
 func TestGetSrvCoverTask(t *testing.T) {
-	AppConfig.GocCenterHost = testGocLocalHost
+	AppConfig.GocCenterIngHost = testGocLocalHost
 	srvName := "staging_th_apa_goc_echoserver_master_845820727e"
 	savePath, isUpdate, err := getSrvCoverTask(srvName)
 	if err != nil {

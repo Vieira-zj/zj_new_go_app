@@ -16,14 +16,13 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
 )
 
-/*
-Common
-*/
+/* Common */
 
 // GetRandNextInt .
 func GetRandNextInt(number int) int {
@@ -101,9 +100,26 @@ func RunFuncWithTimeout(fn RunFunc, timeout time.Duration) (interface{}, error) 
 	}
 }
 
-/*
-Datetime
-*/
+/* Regexp */
+
+// ErrRegexNotFound .
+var ErrRegexNotFound = errors.New("ErrRegexNotFound")
+
+// RegexFindAllSubString returns all the matching groups.
+func RegexFindAllSubString(regex, s string) ([]string, error) {
+	r, err := regexp.Compile(regex)
+	if err != nil {
+		return nil, err
+	}
+
+	matches := r.FindAllString(s, -1)
+	if matches == nil {
+		return nil, ErrRegexNotFound
+	}
+	return matches, nil
+}
+
+/* Datetime */
 
 // GetSimpleNowDate .
 func GetSimpleNowDate() string {
@@ -141,9 +157,7 @@ func nextWeekDay(loc *time.Location) time.Time {
 	return now
 }
 
-/*
-Encoder
-*/
+/* Encoder */
 
 // FprintJSONPrettyText .
 func FprintJSONPrettyText(w io.Writer, value interface{}) error {
@@ -208,9 +222,7 @@ func GetHashFnv32(bytes []byte) (uint32, error) {
 	return f.Sum32(), nil
 }
 
-/*
-Command
-*/
+/* Command */
 
 // GetShellPath returns sh abs path.
 func GetShellPath() string {

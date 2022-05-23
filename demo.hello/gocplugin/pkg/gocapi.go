@@ -45,7 +45,7 @@ var (
 func NewGocAPI() *GocAPI {
 	gocAPIOnce.Do(func() {
 		gocAPI = &GocAPI{
-			host: AppConfig.GocCenterHost,
+			host: getGocCenterHost(),
 			http: utils.NewDefaultHTTPUtils(),
 		}
 	})

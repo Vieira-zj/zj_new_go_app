@@ -36,7 +36,7 @@ func NewGitRepo(repoPath string) *GitRepo {
 	repoOnce.Do(func() {
 		repo, err := git.PlainOpen(repoPath)
 		if err != nil {
-			panic(err)
+			log.Fatalf("Init git repo error: %v", err)
 		}
 		gitRepo = &GitRepo{
 			name: filepath.Base(repoPath),
@@ -120,8 +120,16 @@ func (r *GitRepo) CheckoutToCommit(shortCommitID string) error {
 	if err := w.Checkout(&git.CheckoutOptions{
 		Hash: plumbing.NewHash(commitID),
 	}); err != nil {
-		return fmt.Errorf("shortCommitID checkout commit error: %w", err)
+		return fmt.Errorf("CheckoutToCommit checkout commit error: %w", err)
 	}
+
+	if err := w.Reset(&git.ResetOptions{
+		Commit: plumbing.NewHash(commitID),
+		Mode:   git.HardReset,
+	}); err != nil {
+		return fmt.Errorf("CheckoutToCommit reset branch error: %w", err)
+	}
+
 	return nil
 }
 
@@ -154,6 +162,13 @@ func (r *GitRepo) CheckoutBranch(branch string) (string, error) {
 		Branch: plumbing.ReferenceName(brName),
 	})); err != nil {
 		return "", fmt.Errorf("CheckoutBranch checkout branch error: %w", err)
+	}
+
+	if err := w.Reset(&git.ResetOptions{
+		Commit: plumbing.NewHash(commitID),
+		Mode:   git.HardReset,
+	}); err != nil {
+		return "", fmt.Errorf("CheckoutBranch reset branch error: %w", err)
 	}
 
 	head, err = r.getRepoHeadCommitShortID()

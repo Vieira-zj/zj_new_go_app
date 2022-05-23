@@ -154,18 +154,19 @@ func TestCheckoutToCommit(t *testing.T) {
 	}
 
 	repo := NewGitRepo(repoPath)
-	if err := repo.CheckoutToCommit("a6023e5e"); err != nil {
+	if err := repo.CheckoutToCommit("8fce725f646"); err != nil {
 		t.Fatal(err)
 	}
 }
 
+// run: go test -timeout 10s -run ^TestCheckoutBranch$ demo.hello/gocplugin/pkg -v -count=1
 func TestCheckoutBranch(t *testing.T) {
 	repoPath, _, err := testGetRepoPathAndURL()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	branch := "rm_staging_copied"
+	branch := "staging_for_cover"
 	repo := NewGitRepo(repoPath)
 	head, err := repo.CheckoutBranch(branch)
 	if err != nil {
@@ -194,7 +195,7 @@ func testGetRepoPathAndURL() (string, string, error) {
 		return "", "", err
 	}
 
-	srvName := "srvName"
+	srvName := "srv_name"
 	val, ok := ModuleToRepoMap[srvName]
 	if !ok {
 		err := fmt.Errorf("service [%s] is not found in map", srvName)

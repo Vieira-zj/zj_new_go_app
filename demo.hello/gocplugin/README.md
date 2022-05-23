@@ -259,6 +259,12 @@ Open in chrome: <http://127.0.0.1:8089/static/report/apa_echoserver/staging_th_a
 
 ## Goc Watch Dog API
 
+- `/watcher/srv/list`: list addresses of available service.
+
+```sh
+curl http://127.0.0.1:8089/watcher/srv/list | jq .
+```
+
 - `/watcher/cover/list`: list saved service cov file.
 
 ```sh
@@ -269,20 +275,20 @@ curl -XPOST http://127.0.0.1:8089/watcher/cover/list -H "Content-Type:applicatio
 - `/watcher/cover/download`: get service cov file, default latest one.
 
 ```sh
-# download cov file
-cov_file="staging_th_apa_echoserver_goc_master_b63d82705a_20220422_150331.cov"
+# download specified cov file
+cov_file="staging_th_apa_echoserver_goc_master_b63d82705a_20220523_155116.cov"
 curl -XPOST http://127.0.0.1:8089/watcher/cover/download -H "Content-Type:application/json" \
-  -d "{\"srv_name\":\"staging_th_apa_echoserver_goc_master_b63d82705a\", \"cov_file_name\":\"${cov_file}\"}" -o ${cov_file} | jq .
+  -d "{\"srv_name\":\"staging_th_apa_echoserver_goc_master_b63d82705a\", \"cov_file_name\":\"${cov_file}\"}" -o ${cov_file}
 
 # download latest cov file
 curl -XPOST http://127.0.0.1:8089/watcher/cover/download -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a"}' -o profile.cov | jq .
+  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a"}' -o echoserver_goc.cov | jq .
 ```
 
-- `/watcher/cover/sync`: fetch service cover data and save.
+- `/watcher/cover/hook/sync`: fetch service cover data and save.
 
 ```sh
-curl -XPOST http://127.0.0.1:8089/watcher/cover/sync -H "Content-Type:application/json" \
-  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a", "addresses":["http://127.0.0.1:62542"]}' | jq .
+curl -XPOST http://127.0.0.1:8089/watcher/cover/hook/sync -H "Content-Type:application/json" \
+  -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a"}' | jq .
 ```
 

@@ -92,10 +92,13 @@ type podStatusResp struct {
 }
 
 func isSrvOK(addr string) (bool, error) {
-	if AppConfig.Cluster == clusterK8s {
-		return isPodOK(addr)
+	if AppConfig.RunMode == RunModeWatcher {
+		return isAttachSrvOK(addr)
 	}
-	return isAttachSrvOK(addr)
+	if AppConfig.IsDebug {
+		return isAttachSrvOK(addr)
+	}
+	return isPodOK(addr)
 }
 
 // isPodOK checks pod status from pod monitor service.

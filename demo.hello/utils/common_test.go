@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -86,6 +87,26 @@ func TestRunFuncWithTimeout(t *testing.T) {
 		t.Fatal("results type error.")
 	} else {
 		fmt.Println("results:", val)
+	}
+}
+
+func TestRegexFindAllSubString(t *testing.T) {
+	regex := "the"
+	s := "the regexp, the demo."
+	matches, err := RegexFindAllSubString(regex, s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("results:", matches)
+
+	regex = "test"
+	matches, err = RegexFindAllSubString(regex, s)
+	if err != nil {
+		if errors.Is(err, ErrRegexNotFound) {
+			fmt.Println("not found")
+		} else {
+			t.Fatal(err)
+		}
 	}
 }
 

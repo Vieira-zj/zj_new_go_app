@@ -19,7 +19,7 @@ const (
 	// ReportCoverDataDirName .
 	ReportCoverDataDirName = "cover_data"
 	// WatcherCoverDataDirName .
-	WatcherCoverDataDirName = "saved_cover_data"
+	WatcherCoverDataDirName = "history_cov_files"
 
 	// CoverRptTypeRaw .
 	CoverRptTypeRaw = "cov"
@@ -28,8 +28,10 @@ const (
 	// CoverRptTypeHTML .
 	CoverRptTypeHTML = "html"
 
-	clusterLocal = "local"
-	clusterK8s   = "k8s"
+	// RunModeReport .
+	RunModeReport = "report"
+	// RunModeWatcher .
+	RunModeWatcher = "watcher"
 )
 
 var (
@@ -41,11 +43,13 @@ var (
 
 // GocPluginConfig .
 type GocPluginConfig struct {
-	Cluster        string `json:"cluster"`
-	RootDir        string `json:"root"`
-	PublicDir      string
-	GocCenterHost  string `json:"goc_center_host"`
-	PodMonitorHost string `json:"pod_monitor_host"`
+	RunMode          string `json:"run_mode"`
+	IsDebug          bool   `json:"is_debug"`
+	RootDir          string `json:"root"`
+	PublicDir        string
+	GocCenterIngHost string `json:"goc_center_ing_host"`
+	GocCenterSvcHost string `json:"goc_center_svc_host"`
+	PodMonitorHost   string `json:"pod_monitor_host"`
 }
 
 // InitConfig .
@@ -84,4 +88,12 @@ func LoadModuleToRepoMap() error {
 // GetModuleCoverDataDir .
 func GetModuleCoverDataDir(appName string) string {
 	return filepath.Join(AppConfig.RootDir, appName, ReportCoverDataDirName)
+}
+
+func getGocCenterHost() string {
+	host := AppConfig.GocCenterIngHost
+	if AppConfig.RunMode == RunModeWatcher {
+		host = AppConfig.GocCenterSvcHost
+	}
+	return host
 }

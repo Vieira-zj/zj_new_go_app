@@ -22,6 +22,7 @@ const (
 	errMsgSrvNotExist         = "Service is not exist in goc register list."
 	errMsgCheckSrvInGocList   = "Check service in goc list failed."
 	errMsgGetSrvStatus        = "Get service status failed."
+	errMsgGetSrvAddrs         = "Get service addresses failed."
 )
 
 //
@@ -274,7 +275,7 @@ func SyncSrvCoverHandler(c *gin.Context) {
 	addrs, err := getSrvIPAddresses(req.SrvName)
 	if err != nil {
 		log.Println("SyncSrvCoverHandler error:", err)
-		sendErrorResp(c, http.StatusInternalServerError, errMsgGetSrvStatus)
+		sendErrorResp(c, http.StatusInternalServerError, errMsgGetSrvAddrs)
 		return
 	}
 

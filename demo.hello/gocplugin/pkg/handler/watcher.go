@@ -15,9 +15,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListCoverAttachSrvsHandler .
-func ListCoverAttachSrvsHandler(c *gin.Context) {
-	// TODO:
+// ListAttachedSrvsHandler .
+func ListAttachedSrvsHandler(c *gin.Context) {
+	srvs, err := pkg.SyncAndListRegisterSrvsTask()
+	if err != nil {
+		log.Println("ListAttachedSrvsHandler error:", err)
+		respErrMsg := "Sync and list services from goc register list failed."
+		sendErrorResp(c, http.StatusInternalServerError, respErrMsg)
+		return
+	}
+
+	avaliableAddrs := make([]string, 0, len(srvs))
+	for _, addrs := range srvs {
+		avaliableAddrs = append(avaliableAddrs, addrs...)
+	}
+	c.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "addresses": avaliableAddrs})
 }
 
 type watcherListSrvCoverReq struct {
@@ -29,7 +41,7 @@ type watcherListSrvCoverReq struct {
 func ListSrvRawCoversHandler(c *gin.Context) {
 	var param watcherListSrvCoverReq
 	if err := c.ShouldBindJSON(&param); err != nil {
-		log.Println("ListSavedSrvCoversHandler error:", err)
+		log.Println("ListSrvRawCoversHandler error:", err)
 		sendErrorResp(c, http.StatusBadRequest, errMsgJSONBind)
 		return
 	}
@@ -44,15 +56,23 @@ func ListSrvRawCoversHandler(c *gin.Context) {
 	meta := pkg.GetSrvMetaFromName(param.SrvName)
 	fileNames, err := listFileNamesFromDir(savedDirPath, "cov", meta.GitCommit, param.Limit)
 	if err != nil {
-		log.Println("ListSavedSrvCoversHandler error:", err)
+		if errors.Is(err, os.ErrNotExist) {
+			sendErrorResp(c, http.StatusBadRequest, "Service cov file not found.")
+			return
+		}
+		log.Println("ListSrvRawCoversHandler error:", err)
 		sendErrorResp(c, http.StatusInternalServerError, "List file failed.")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": fileNames})
+	c.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "cover_files:": fileNames})
 }
 
 func listFileNamesFromDir(dirPath, fileExt, filter string, limit int) ([]string, error) {
+	if !utils.IsDirExist(dirPath) {
+		return nil, os.ErrNotExist
+	}
+
 	fileNames, err := utils.ListFilesInDir(dirPath, fileExt)
 	if err != nil {
 		return nil, fmt.Errorf("listFileNamesFromDir error: %w", err)
@@ -75,16 +95,16 @@ func listFileNamesFromDir(dirPath, fileExt, filter string, limit int) ([]string,
 	return filterFileNames[len(filterFileNames)-limit:], nil
 }
 
-type watcherGetSrvCoverReq struct {
+type watcherGetSrvRawCoverReq struct {
 	SrvName     string `json:"srv_name" binding:"required"`
 	CovFileName string `json:"cov_file_name"`
 }
 
 // GetSrvRawCoverHandler .
 func GetSrvRawCoverHandler(c *gin.Context) {
-	var param watcherGetSrvCoverReq
-	if err := c.ShouldBindJSON(&param); err != nil {
-		log.Println("GetSrvCoverHandler error:", err)
+	var req watcherGetSrvRawCoverReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Println("GetSrvRawCoverHandler error:", err)
 		sendErrorResp(c, http.StatusBadRequest, errMsgJSONBind)
 		return
 	}
@@ -94,13 +114,13 @@ func GetSrvRawCoverHandler(c *gin.Context) {
 		err         error
 	)
 
-	savedDirPath := getSavedCoverDirPath(param.SrvName)
-	if len(param.CovFileName) > 0 {
-		covFileName = param.CovFileName
+	savedDirPath := getSavedCoverDirPath(req.SrvName)
+	if len(req.CovFileName) > 0 {
+		covFileName = req.CovFileName
 	} else {
 		covFileName, err = utils.GetLatestFileInDir(savedDirPath, "cov")
 		if err != nil {
-			log.Println("GetSrvCoverHandler error:", err)
+			log.Println("GetSrvRawCoverHandler error:", err)
 			respErrMsg := "Get latest file in dir failed."
 			sendErrorResp(c, http.StatusInternalServerError, respErrMsg)
 			return
@@ -109,7 +129,7 @@ func GetSrvRawCoverHandler(c *gin.Context) {
 
 	b, err := utils.ReadFile(filepath.Join(savedDirPath, covFileName))
 	if err != nil {
-		log.Println("GetSrvCoverHandler error:", err)
+		log.Println("GetSrvRawCoverHandler error:", err)
 		if errors.Is(err, os.ErrNotExist) {
 			sendErrorResp(c, http.StatusBadRequest, "Cov file is not exist.")
 		} else {
@@ -125,24 +145,38 @@ func GetSrvRawCoverHandler(c *gin.Context) {
 func SyncSrvCoverHookHandler(c *gin.Context) {
 	var param pkg.SyncSrvCoverParam
 	if err := c.ShouldBindJSON(&param); err != nil {
-		log.Println("FetchAndSaveSrvCoverHandler error:", err)
+		log.Println("SyncSrvCoverHookHandler error:", err)
 		sendErrorResp(c, http.StatusBadRequest, errMsgJSONBind)
 		return
 	}
 
-	if len(param.Addresses) == 0 {
-		sendErrorResp(c, http.StatusBadRequest, "IP addresses is empty")
+	ok, err := isSrvExistInGocList(param.SrvName)
+	if err != nil {
+		log.Println("SyncSrvCoverHookHandler error:", err)
+		sendErrorResp(c, http.StatusInternalServerError, errMsgCheckSrvInGocList)
+		return
+	}
+	if !ok {
+		sendErrorResp(c, http.StatusBadRequest, errMsgSrvNotExist)
 		return
 	}
 
 	savedDirPath := getSavedCoverDirPath(param.SrvName)
-	if _, err := pkg.FetchAndSaveSrvCoverByAddr(savedDirPath, param); err != nil {
-		log.Println("FetchAndSaveSrvCoverHandler error:", err)
-		respErrMsg := "Fetch and save service cover failed."
+	if !utils.IsDirExist(savedDirPath) {
+		if err := utils.MakeDir(savedDirPath); err != nil {
+			log.Println("SyncSrvCoverHookHandler error:", err)
+			sendErrorResp(c, http.StatusInternalServerError, "Make dir failed.")
+			return
+		}
+	}
+
+	if _, err := pkg.FetchAndSaveSrvCover(savedDirPath, param.SrvName); err != nil {
+		log.Println("SyncSrvCoverHookHandler error:", err)
+		respErrMsg := "Sync service cover failed."
 		sendErrorResp(c, http.StatusInternalServerError, respErrMsg)
 		return
 	}
-	sendSuccessResp(c, "Fetch and save service cover success")
+	sendSuccessResp(c, "Sync service raw cover success.")
 }
 
 func getSavedCoverDirPath(srvName string) string {

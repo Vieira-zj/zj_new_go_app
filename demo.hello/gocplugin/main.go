@@ -16,22 +16,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	modeServer  = "server"
-	modeWatcher = "watcher"
-)
-
 var (
 	rootDir string
-	mode    string
-	addr    string
+	port    string
 	help    bool
 )
 
 func init() {
 	flag.StringVar(&rootDir, "root", "/tmp/test/goc_plugin_space", "Goc plugin working root dir path.")
-	flag.StringVar(&mode, "mode", "server", "Goc plugin run mode: server, watcher.")
-	flag.StringVar(&addr, "addr", "8089", "Goc report server address.")
+	flag.StringVar(&port, "port", "8089", "Goc plugin server address.")
 	flag.BoolVar(&help, "h", false, "help.")
 }
 
@@ -49,19 +42,19 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 	r := initRouter()
-	switch mode {
-	case modeServer:
+	switch pkg.AppConfig.RunMode {
+	case pkg.RunModeReport:
 		pkg.InitSrvCoverSyncTasksPool()
 		defer pkg.CloseSrvCoverSyncTasksPool()
 		runRptServer(ctx, r)
-	case modeWatcher:
+	case pkg.RunModeWatcher:
 		runWatcher(ctx, r)
 	default:
-		log.Fatalln("Invalid run mode:", mode)
+		log.Fatalln("Invalid run mode:", pkg.AppConfig.RunMode)
 	}
 
 	go func() {
-		if err := r.Run(":" + addr); err != nil {
+		if err := r.Run(":" + port); err != nil {
 			log.Fatalln(err)
 		}
 	}()
@@ -135,7 +128,7 @@ func runWatcher(ctx context.Context, r *gin.Engine) {
 
 func setupWatcherRouter(r *gin.Engine) {
 	srv := r.Group("/watcher/srv")
-	srv.GET("list", handler.ListCoverAttachSrvsHandler)
+	srv.GET("list", handler.ListAttachedSrvsHandler)
 
 	cover := r.Group("/watcher/cover")
 	cover.POST("list", handler.ListSrvRawCoversHandler)
