@@ -16,6 +16,20 @@ func TestGetLastDirName(t *testing.T) {
 	fmt.Println(filepath.Base(repoPath))
 }
 
+func TestNewGitRepo(t *testing.T) {
+	for _, path := range [2]string{
+		"/tmp/test/goc_test_space/apa_echoserver_goc/repo",
+		filepath.Join(os.Getenv("HOME"), "Downloads/data/goc_staging_space/apa_echoserver/repo"),
+	} {
+		repo := NewGitRepo(path)
+		head, err := repo.getRepoHeadCommitShortID()
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("head hash:", head)
+	}
+}
+
 // run: go test -timeout 1800s -run ^TestGitClone$ demo.hello/gocplugin/pkg -v -count=1
 func TestGitClone(t *testing.T) {
 	repoPath, repoURL, err := testGetRepoPathAndURL()
@@ -52,7 +66,7 @@ func TestCheckoutRemoteBranch(t *testing.T) {
 	}
 
 	repo := NewGitRepo(repoPath)
-	commitID, err := repo.CheckoutRemoteBranch(context.Background(), "staging_for_cover")
+	commitID, err := repo.CheckoutRemoteBranch(context.Background(), "master_for_test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +82,7 @@ func TestPull(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	branch := "staging_for_cover"
+	branch := "master_for_test"
 	repo := NewGitRepo(repoPath)
 	ok, err := repo.IsBranchExist(branch)
 	if err != nil {
@@ -85,7 +99,7 @@ func TestPull(t *testing.T) {
 	fmt.Println("pull:", head)
 }
 
-func TestGetRepoHeadCommitID(t *testing.T) {
+func TestGetRepoHeadCommitShortID(t *testing.T) {
 	repoPath, _, err := testGetRepoPathAndURL()
 	if err != nil {
 		t.Fatal(err)
@@ -121,7 +135,7 @@ func TestGetBranchCommit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	branch := "rm_staging_copied"
+	branch := "master_for_test"
 	repo := NewGitRepo(repoPath)
 	commitID, err := repo.GetBranchCommit(branch)
 	if err != nil {
@@ -190,12 +204,13 @@ func TestIsBranchExist(t *testing.T) {
 }
 
 func testGetRepoPathAndURL() (string, string, error) {
-	root := filepath.Join(os.Getenv("HOME"), "Downloads/data/goc_staging_space")
+	// root := filepath.Join(os.Getenv("HOME"), "Downloads/data/goc_staging_space")
+	root := "/tmp/test/goc_test_space"
 	if err := InitConfig(root); err != nil {
 		return "", "", err
 	}
 
-	srvName := "srv_name"
+	srvName := "apa_echoserver_goc"
 	val, ok := ModuleToRepoMap[srvName]
 	if !ok {
 		err := fmt.Errorf("service [%s] is not found in map", srvName)

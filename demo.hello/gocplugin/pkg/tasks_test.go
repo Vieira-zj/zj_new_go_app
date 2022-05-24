@@ -99,21 +99,21 @@ func TestGetSrvCoverTask(t *testing.T) {
 	fmt.Printf("save_path=%s, is_update=%v\n", savePath, isUpdate)
 }
 
+// run: go test -timeout 300s -run ^TestCheckoutSrvRepo$ demo.hello/gocplugin/pkg -v -count=1
 func TestCheckoutSrvRepo(t *testing.T) {
-	// run: go test -timeout 300s -run ^TestCheckoutSrvRepo$ demo.hello/gocplugin/pkg -v -count=1
-	if err := InitConfig("/tmp/test/goc_plugin_space"); err != nil {
+	if err := InitConfig("/tmp/test/goc_test_space"); err != nil {
 		t.Fatal(err)
 	}
 
-	workingDir := "/tmp/test/goc_plugin_space/apa_echoserver_goc/repo"
-	srvName := "staging_th_apa_echoserver_goc_master_b63d82705a"
+	workingDir := "/tmp/test/goc_test_space/apa_echoserver_goc/repo"
+	srvName := "staging_th_apa_echoserver_goc_master_for_test_af5ebeec7d"
 	if err := checkoutSrvRepo(workingDir, srvName); err != nil {
 		t.Fatal(err)
 	}
 }
 
+// run: go test -timeout 300s -run ^TestCreateSrvCoverReportTask$ demo.hello/gocplugin/pkg -v -count=1
 func TestCreateSrvCoverReportTask(t *testing.T) {
-	// run: go test -timeout 300s -run ^TestCreateSrvCoverReportTask$ demo.hello/gocplugin/pkg -v -count=1
 	AppConfig.RootDir = "/tmp/test"
 	instance := NewGocSrvCoverDBInstance()
 
@@ -132,8 +132,8 @@ func TestCreateSrvCoverReportTask(t *testing.T) {
 	fmt.Printf("last cover total: %s\n", total)
 }
 
+// run: go test -timeout 300s -run ^TestGetSrvCoverAndCreateReportTask$ demo.hello/gocplugin/pkg -v -count=1
 func TestGetSrvCoverAndCreateReportTask(t *testing.T) {
-	// run: go test -timeout 300s -run ^TestGetSrvCoverAndCreateReportTask$ demo.hello/gocplugin/pkg -v -count=1
 	if err := InitConfig("/tmp/test"); err != nil {
 		t.Fatal(err)
 	}

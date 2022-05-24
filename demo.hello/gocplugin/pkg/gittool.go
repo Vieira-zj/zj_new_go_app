@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -20,11 +19,6 @@ import (
 // Refer: https://github.com/go-git/go-git/tree/master/_examples
 //
 
-var (
-	gitRepo  *GitRepo
-	repoOnce sync.Once
-)
-
 // GitRepo .
 type GitRepo struct {
 	name string
@@ -33,17 +27,14 @@ type GitRepo struct {
 
 // NewGitRepo .
 func NewGitRepo(repoPath string) *GitRepo {
-	repoOnce.Do(func() {
-		repo, err := git.PlainOpen(repoPath)
-		if err != nil {
-			log.Fatalf("Init git repo error: %v", err)
-		}
-		gitRepo = &GitRepo{
-			name: filepath.Base(repoPath),
-			repo: repo,
-		}
-	})
-	return gitRepo
+	repo, err := git.PlainOpen(repoPath)
+	if err != nil {
+		log.Fatalf("Init git repo error: %v", err)
+	}
+	return &GitRepo{
+		name: filepath.Base(repoPath),
+		repo: repo,
+	}
 }
 
 // Fetch .
@@ -82,6 +73,7 @@ func (r *GitRepo) Pull(ctx context.Context, branch string) (string, error) {
 		return "", fmt.Errorf("Pull get worktree error: %w", err)
 	}
 
+	log.Printf("Start to pull branch [%s]", branch)
 	if err = w.PullContext(ctx, &git.PullOptions{
 		RemoteName:    "origin",
 		ReferenceName: plumbing.ReferenceName(branchName),
@@ -135,19 +127,6 @@ func (r *GitRepo) CheckoutToCommit(shortCommitID string) error {
 
 // CheckoutBranch .
 func (r *GitRepo) CheckoutBranch(branch string) (string, error) {
-	commitID, err := r.GetBranchCommit(branch)
-	if err != nil {
-		return "", fmt.Errorf("CheckoutBranch error: %w", err)
-	}
-	head, err := r.getRepoHeadCommitShortID()
-	if err != nil {
-		return "", fmt.Errorf("CheckoutBranch error: %w", err)
-	}
-	if commitID[:10] == head {
-		log.Println("Already on branch:", branch)
-		return head, nil
-	}
-
 	w, err := r.repo.Worktree()
 	if err != nil {
 		return "", fmt.Errorf("CheckoutBranch get worktree error: %w", err)
@@ -157,25 +136,24 @@ func (r *GitRepo) CheckoutBranch(branch string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("CheckoutBranch error: %w", err)
 	}
-
 	if err := w.Checkout((&git.CheckoutOptions{
 		Branch: plumbing.ReferenceName(brName),
 	})); err != nil {
 		return "", fmt.Errorf("CheckoutBranch checkout branch error: %w", err)
 	}
 
+	headRef, err := r.repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("CheckoutBranch get head ref error: %w", err)
+	}
 	if err := w.Reset(&git.ResetOptions{
-		Commit: plumbing.NewHash(commitID),
+		Commit: headRef.Hash(),
 		Mode:   git.HardReset,
 	}); err != nil {
 		return "", fmt.Errorf("CheckoutBranch reset branch error: %w", err)
 	}
 
-	head, err = r.getRepoHeadCommitShortID()
-	if err != nil {
-		return "", fmt.Errorf("CheckoutBranch error: %w", err)
-	}
-	return head, nil
+	return headRef.Hash().String()[:10], nil
 }
 
 // CheckoutRemoteBranch creates a new branch to track remote branch.

@@ -360,10 +360,10 @@ func checkoutSrvRepo(workingDir, srvName string) error {
 	}
 
 	if head != meta.GitCommit {
-		log.Printf("Checkout service [%s] with commit [%s]", meta.AppName, meta.GitCommit)
 		if err := repo.CheckoutToCommit(meta.GitCommit); err != nil {
 			return fmt.Errorf("checkoutSrvRepo error: %w", err)
 		}
+		log.Printf("Checkout service [%s] with commit [%s]", meta.AppName, meta.GitCommit)
 	}
 	return nil
 }
@@ -516,7 +516,11 @@ func GetSrvMetaFromName(name string) SrvCoverMeta {
 	items := strings.Split(name, "_")
 	env := items[0]
 	region := items[1]
+
 	gitCommit := items[len(items)-1]
+	if len(gitCommit) > 10 {
+		gitCommit = gitCommit[:10]
+	}
 
 	filterItems := make([]string, 0, len(items)-3)
 	for idx := 0; idx < len(items); idx++ {
