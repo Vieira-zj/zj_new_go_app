@@ -35,8 +35,8 @@ type respSrvCoverItem struct {
 	CoverTotal string `json:"cover_total"`
 }
 
-// GetListOfSrvCoversHandler .
-func GetListOfSrvCoversHandler(c *gin.Context) {
+// ListOfSrvCoversHandler .
+func ListOfSrvCoversHandler(c *gin.Context) {
 	srvs, err := pkg.SyncAndListRegisterSrvsTask()
 	if err != nil {
 		log.Println("GetListOfSrvCoversHandler error:", err)

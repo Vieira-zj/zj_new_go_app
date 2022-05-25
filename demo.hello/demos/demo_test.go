@@ -1126,6 +1126,8 @@ func TestDemo38(t *testing.T) {
 
 	i := 0
 	tick := time.NewTicker(500 * time.Millisecond)
+	defer tick.Stop()
+
 outer:
 	for {
 		select {
@@ -1570,6 +1572,83 @@ func TestDemo53(t *testing.T) {
 	// 在编译阶段检查接口实现
 	var _ io.Reader = (*MyReader)(nil)
 	fmt.Println("verify interface imply")
+}
+
+func TestDemo54(t *testing.T) {
+	ch1 := make(chan int)
+	ch2 := make(chan int)
+
+	go func() {
+		for val := range ch1 {
+			time.Sleep(10 * time.Millisecond)
+			fmt.Println("get value from ch1:", val)
+		}
+	}()
+	go func() {
+		for val := range ch2 {
+			time.Sleep(10 * time.Millisecond)
+			fmt.Println("get value from ch2:", val)
+		}
+	}()
+
+	go func() {
+		for i := 0; i < 10; i++ {
+			// select chan, 当 ch1 和 ch2 都可用时, 执行顺序随机
+			select {
+			case ch1 <- i:
+				fmt.Println("pull value to ch1")
+			case ch2 <- i:
+				fmt.Println("pull value to ch2")
+			}
+			time.Sleep(200 * time.Millisecond)
+		}
+	}()
+
+	time.Sleep(5 * time.Second)
+	fmt.Println("Done")
+}
+
+func TestDemo55(t *testing.T) {
+	ch1 := make(chan int)
+	ch2 := make(chan int)
+
+	go func() {
+		for val := range ch1 {
+			time.Sleep(10 * time.Millisecond)
+			fmt.Println("get value from ch1:", val)
+		}
+	}()
+	go func() {
+		for val := range ch2 {
+			time.Sleep(10 * time.Millisecond)
+			fmt.Println("get value from ch2:", val)
+		}
+	}()
+
+	go func() {
+		tick := time.NewTicker(time.Second)
+		defer tick.Stop()
+
+		for i := 0; i < 10; i++ {
+			// select chan, 当 ch1 和 ch2 都可用时, 使用 tick 实现优先执行 ch1
+			tick.Reset(time.Second)
+			select {
+			case ch1 <- i:
+				fmt.Println("pull value to ch1")
+			case <-tick.C:
+				select {
+				case ch1 <- i:
+					fmt.Println("pull value to ch1")
+				case ch2 <- i:
+					fmt.Println("pull value to ch2")
+				}
+			}
+			time.Sleep(300 * time.Millisecond)
+		}
+	}()
+
+	time.Sleep(5 * time.Second)
+	fmt.Println("Done")
 }
 
 func TestDemo95(t *testing.T) {

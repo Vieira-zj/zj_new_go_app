@@ -164,7 +164,7 @@ func testGoRoutinePoolWithCancel(t *testing.T, pool GoRoutinePool) {
 GoPool
 */
 
-func TestGoPool(t *testing.T) {
+func TestGoPool01(t *testing.T) {
 	fn := func(text string) {
 		time.Sleep(time.Second)
 		fmt.Println("hello", text)
@@ -197,5 +197,28 @@ func TestGoPool(t *testing.T) {
 	pool.Stop(10)
 	time.Sleep(time.Second)
 	close(done)
+	fmt.Println("done")
+}
+
+func TestGoPool02(t *testing.T) {
+	// test use existing worker prior to start a new worker
+	fn := func(text string) {
+		time.Sleep(time.Second)
+		fmt.Println("hello", text)
+	}
+
+	pool := NewGoPool(3, 2, 5*time.Second)
+	for i := 0; i < 5; i++ {
+		tmp := i
+		if err := pool.Submit(func() {
+			fn(strconv.Itoa(tmp))
+		}); err != nil {
+			fmt.Printf("submit [%d] error: %v\n", i, err)
+		}
+		time.Sleep(3 * time.Second)
+	}
+
+	pool.Stop(10)
+	time.Sleep(time.Second)
 	fmt.Println("done")
 }

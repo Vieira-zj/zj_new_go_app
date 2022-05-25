@@ -19,7 +19,7 @@ func InitSrvCoverSyncTasksPool() {
 		const (
 			coreSize  = 10
 			queueSize = 100
-			idleTime  = time.Minute
+			idleTime  = 3 * time.Minute
 		)
 		srvCoverSyncTasksPool = utils.NewGoPool(coreSize, queueSize, idleTime)
 	})

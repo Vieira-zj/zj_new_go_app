@@ -98,7 +98,7 @@ func runRptServer(ctx context.Context, r *gin.Engine) {
 
 func setupRptServerRouter(r *gin.Engine) {
 	coverTotal := r.Group("/cover/total")
-	coverTotal.GET("/list", handler.GetListOfSrvCoversHandler)
+	coverTotal.GET("/list", handler.ListOfSrvCoversHandler)
 	coverTotal.POST("latest", handler.GetLatestSrvCoverTotalHandler)
 	coverTotal.POST("history", handler.GetHistorySrvCoverTotalsHandler)
 
@@ -114,7 +114,7 @@ func setupRptServerRouter(r *gin.Engine) {
 
 func runRptScheduleTask(ctx context.Context) {
 	scheduler := pkg.NewScheduler()
-	scheduler.SyncRegisterSrvsCoverReportTask(ctx, 30*time.Minute)
+	scheduler.SyncRegisterSrvsCoverReportTask(ctx, 4*time.Hour)
 }
 
 //

@@ -306,19 +306,30 @@ func (pool *GoPool) run() {
 		}
 	}()
 
+	waitTime := 3 * time.Second
+	tick := time.NewTicker(waitTime)
+	defer tick.Stop()
+
 	for task := range pool.queue {
+		tick.Reset(waitTime)
 		select {
+		// use existing worker prior to start a new worker (by use tick)
 		// if ch "work" or "semaphore" is closed when get task, panic here
 		case pool.work <- task:
-		case pool.semaphore <- struct{}{}:
-			go pool.worker(task)
+		case <-tick.C:
+			select {
+			case pool.work <- task:
+			case pool.semaphore <- struct{}{}:
+				go pool.worker(task)
+			}
 		}
 	}
 }
 
 func (pool *GoPool) worker(task func()) {
 	workerID := time.Now().Nanosecond()
-	fmt.Printf("[worker %d]: init\n", workerID)
+	prefix := fmt.Sprintf("[worker %d]:", workerID)
+	fmt.Println(prefix, "init")
 	defer func() {
 		<-pool.semaphore
 	}()
@@ -329,17 +340,18 @@ func (pool *GoPool) worker(task func()) {
 	localTask := task
 	for {
 		localTask()
+		fmt.Println(prefix, "finish task")
+		tick.Reset(pool.idleTime)
 		select {
 		case <-pool.stopCh:
-			fmt.Printf("[worker %d]: stop\n", workerID)
+			fmt.Println(prefix, "cancelled")
 			return
 		case <-tick.C:
 			// if there is no more tasks for N sec, then worker exit
-			fmt.Printf("[worker %d]: idle and exit\n", workerID)
+			fmt.Println(prefix, "idle and exit")
 			return
 		case localTask = <-pool.work:
-			fmt.Printf("[worker %d]: fetch task\n", workerID)
-			tick.Reset(pool.idleTime)
+			fmt.Println(prefix, "fetch task")
 		}
 	}
 }
