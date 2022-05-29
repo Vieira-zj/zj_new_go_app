@@ -48,6 +48,20 @@
 - Force refresh
 - Clear cover
 
+#### Goc Portal Demo
+
+- Cover report portal
+
+![img](static/Cover_report_portal_main.png)
+
+- Func cover report
+
+![img](static/Func_cover_report.png)
+
+- Html cover report
+
+![img](static/Html_cover_report.png)
+
 ### Todos
 
 1. 基于 commit 和 branch 比较的增量覆盖率结果展示
@@ -97,7 +111,7 @@
 
 使用 key `env + region + app_name + git_commit` 标识一个服务的覆盖率数据，有多条数据，但 `is_latest=y` 的数据只会有1条。
 
-## Local Test
+## Local Test Env Prepare
 
 1. Build and start goc server
 
@@ -136,7 +150,7 @@ curl -i http://localhost:8081/ping
 curl -XPOST "http://localhost:8081/mirror?name=foo" -H "X-Test:Mirror" -d 'hello' | jq .
 ```
 
-## Goc API
+## Goc Rest API
 
 - List register services in goc
 
@@ -170,7 +184,7 @@ curl -XPOST http://localhost:7777/v1/cover/remove -H "Content-Type:application/j
 curl http://127.0.0.1:51025/v1/cover/coverage
 ```
 
-## Goc Report API
+## Goc Report Rest API
 
 Server health check:
 
@@ -257,7 +271,7 @@ Open in chrome: <http://127.0.0.1:8089/static/report/apa_echoserver/staging_th_a
 
 - `/cover/report/history`: get history cover func/html report.
 
-## Goc Watch Dog API
+## Goc Watch Dog Rest API
 
 - `/watcher/srv/list`: list addresses of available service.
 
