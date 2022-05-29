@@ -35,16 +35,15 @@ func sendResp(c *gin.Context, retCode int, message string) {
 	c.JSON(retCode, gin.H{"code": retCode, "message": message})
 }
 
-func sendSrvCoverTotalResp(c *gin.Context, srvStatus, coverTotal string) {
+func sendSyncSrvCoverResp(c *gin.Context, item respSrvCoverSubItem) {
 	msg := "Sync service cover success"
-	if srvStatus == srvStatusOffline {
+	if item.SrvStatus == srvStatusOffline {
 		msg = "Service is offline, return history cover value"
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"code":        http.StatusOK,
-		"message":     msg,
-		"srv_status":  srvStatus,
-		"cover_total": coverTotal,
+		"code":    http.StatusOK,
+		"message": msg,
+		"data":    item,
 	})
 }
 

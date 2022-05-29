@@ -7,8 +7,8 @@ import (
 	"demo.hello/utils"
 )
 
-func TestGetSimpleNowDatetime(t *testing.T) {
-	fmt.Println("now:", getSimpleNowDatetime())
+func TestGetSimpleDatetimeForNow(t *testing.T) {
+	fmt.Println("now:", getSimpleDatetimeForNow())
 }
 
 func TestFormatFilePathWithNewExt(t *testing.T) {

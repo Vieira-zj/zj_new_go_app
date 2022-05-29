@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+// GetSimpleDatetime .
+func GetSimpleDatetime(t time.Time) string {
+	return t.Format("2006-01-02 15:04:05")
+}
+
 // FormatFilePathWithNewExt .
 func FormatFilePathWithNewExt(filePath, newExt string) string {
 	return strings.Replace(filePath, filepath.Ext(filePath), "."+newExt, 1)
@@ -24,7 +29,7 @@ func getParamFromEnv(key string) string {
 	return value
 }
 
-func getSimpleNowDatetime() string {
+func getSimpleDatetimeForNow() string {
 	return time.Now().Format("20060102_150405")
 }
 

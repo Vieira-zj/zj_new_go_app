@@ -38,7 +38,10 @@ func TestGetLatestSrvCoverRow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Printf("row: id=%d, is_latest=%v, cover_total=%s\n", row.ID, row.IsLatest, row.CoverTotal.String)
+	cTime := GetSimpleDatetime(row.CreatedAt)
+	uTime := GetSimpleDatetime(row.UpdatedAt)
+	fmt.Printf("row: id=%d, is_latest=%v, cover_total=%s, created_at=%s, update_at=%s\n",
+		row.ID, row.IsLatest, row.CoverTotal.String, cTime, uTime)
 }
 
 func TestGetLatestSrvCoverRowNotFound(t *testing.T) {

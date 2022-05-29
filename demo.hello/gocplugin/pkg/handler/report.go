@@ -23,16 +23,24 @@ const (
 	errMsgCheckSrvInGocList   = "Check service in goc list failed."
 	errMsgGetSrvStatus        = "Get service status failed."
 	errMsgGetSrvAddrs         = "Get service addresses failed."
+
+	srvStatusOnline  = "online"
+	srvStatusOffline = "offline"
 )
 
 //
 // Cover Total
 //
 
-type respSrvCoverItem struct {
-	pkg.SyncSrvCoverParam
+type respSrvCoverSubItem struct {
 	SrvStatus  string `json:"srv_status"`
 	CoverTotal string `json:"cover_total"`
+	UpdatedAt  string `json:"updated_at"`
+}
+
+type respSrvCoverItem struct {
+	pkg.SyncSrvCoverParam
+	respSrvCoverSubItem
 }
 
 // ListOfSrvCoversHandler .
@@ -48,7 +56,7 @@ func ListOfSrvCoversHandler(c *gin.Context) {
 	srvCoverItems := make([]respSrvCoverItem, 0, len(srvs))
 	for srvName, addrs := range srvs {
 		var item respSrvCoverItem
-		if item.CoverTotal, err = getLatestSrvCoverTotalInDB(srvName); err != nil {
+		if item.CoverTotal, item.UpdatedAt, err = getLatestSrvCoverTotalInDB(srvName); err != nil {
 			log.Println("GetListOfSrvCoversHandler error:", err)
 			sendErrorResp(c, http.StatusInternalServerError, errMsgGetLatestSrvCovInDB)
 			return
@@ -60,11 +68,6 @@ func ListOfSrvCoversHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "count": len(srvCoverItems), "data": srvCoverItems})
 }
-
-const (
-	srvStatusOnline  = "online"
-	srvStatusOffline = "offline"
-)
 
 // GetLatestSrvCoverTotalHandler .
 func GetLatestSrvCoverTotalHandler(c *gin.Context) {
@@ -82,7 +85,7 @@ func GetLatestSrvCoverTotalHandler(c *gin.Context) {
 		return
 	}
 
-	coverTotal, err := getLatestSrvCoverTotalInDB(param.SrvName)
+	coverTotal, updatedAt, err := getLatestSrvCoverTotalInDB(param.SrvName)
 	if err != nil {
 		log.Println("GetLatestSrvCoverTotalHandler error:", err)
 		sendErrorResp(c, http.StatusInternalServerError, errMsgGetLatestSrvCovInDB)
@@ -90,31 +93,36 @@ func GetLatestSrvCoverTotalHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"code":        http.StatusOK,
-		"srv_status":  srvStatus,
-		"cover_total": coverTotal,
+		"code": http.StatusOK,
+		"data": respSrvCoverSubItem{
+			SrvStatus:  srvStatus,
+			CoverTotal: coverTotal,
+			UpdatedAt:  updatedAt,
+		},
 	})
 }
 
-func getLatestSrvCoverTotalInDB(srvName string) (string, error) {
+const emptyDate = "null"
+
+func getLatestSrvCoverTotalInDB(srvName string) (string, string, error) {
 	dbInstance := pkg.NewGocSrvCoverDBInstance()
 	meta := pkg.GetSrvMetaFromName(srvName)
 	row, err := dbInstance.GetLatestSrvCoverRow(meta)
 	if err != nil {
 		if errors.Is(err, pkg.ErrSrvCoverLatestRowNotFound) {
-			return pkg.ZeroCoverTotal, nil
+			return pkg.ZeroCoverTotal, emptyDate, nil
 		}
-		return "", fmt.Errorf("getLatestSrvCoverTotal error: %w", err)
+		return "", emptyDate, fmt.Errorf("getLatestSrvCoverTotal error: %w", err)
 	}
 
-	return row.CoverTotal.String, nil
+	return row.CoverTotal.String, pkg.GetSimpleDatetime(row.UpdatedAt), nil
 }
 
-type respSrvCoverTotalItem struct {
-	ID         uint
-	Addresses  []string
-	Commit     string
-	CoverTotal string
+type respHistorySrvCoverItem struct {
+	Addresses  []string `json:"addresses"`
+	Commit     string   `json:"commit"`
+	CoverTotal string   `json:"cover_total"`
+	UpdatedAt  string   `json:"updated_at"`
 }
 
 // GetHistorySrvCoverTotalsHandler .
@@ -144,23 +152,23 @@ func GetHistorySrvCoverTotalsHandler(c *gin.Context) {
 		return
 	}
 
-	srvCoverTotals := make([]respSrvCoverTotalItem, 0, len(rows))
+	srvCoverTotals := make([]respHistorySrvCoverItem, 0, len(rows))
 	for _, row := range rows {
-		item := respSrvCoverTotalItem{
-			ID:         row.ID,
+		item := respHistorySrvCoverItem{
 			Addresses:  strings.Split(row.Addrs, ","),
 			Commit:     row.GitCommit,
 			CoverTotal: row.CoverTotal.String,
+			UpdatedAt:  pkg.GetSimpleDatetime(row.UpdatedAt),
 		}
 		srvCoverTotals = append(srvCoverTotals, item)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"code":             http.StatusOK,
-		"srv_name":         meta.AppName,
-		"srv_status":       srvStatus,
-		"count":            len(srvCoverTotals),
-		"srv_cover_totals": srvCoverTotals,
+		"code":       http.StatusOK,
+		"srv_name":   meta.AppName,
+		"srv_status": srvStatus,
+		"count":      len(srvCoverTotals),
+		"data":       srvCoverTotals,
 	})
 }
 
@@ -280,13 +288,16 @@ func SyncSrvCoverHandler(c *gin.Context) {
 	}
 
 	if len(addrs) == 0 {
-		coverTotal, err := getLatestSrvCoverTotalInDB(req.SrvName)
+		item := respSrvCoverSubItem{
+			SrvStatus: srvStatusOffline,
+		}
+		item.CoverTotal, item.UpdatedAt, err = getLatestSrvCoverTotalInDB(req.SrvName)
 		if err != nil {
 			log.Println("SyncSrvCoverHandler error:", err)
 			sendErrorResp(c, http.StatusInternalServerError, errMsgGetLatestSrvCovInDB)
 			return
 		}
-		sendSrvCoverTotalResp(c, srvStatusOffline, coverTotal)
+		sendSyncSrvCoverResp(c, item)
 		return
 	}
 
@@ -300,11 +311,14 @@ func SyncSrvCoverHandler(c *gin.Context) {
 			if req.IsForce {
 				break
 			}
-			if coverTotal, err := getLatestSrvCoverTotalInDB(req.SrvName); err != nil {
+			item := respSrvCoverSubItem{
+				SrvStatus: srvStatusOnline,
+			}
+			if item.CoverTotal, item.UpdatedAt, err = getLatestSrvCoverTotalInDB(req.SrvName); err != nil {
 				log.Println("SyncSrvCoverHandler error:", err)
 				sendErrorResp(c, http.StatusInternalServerError, errMsgGetLatestSrvCovInDB)
 			} else {
-				sendSrvCoverTotalResp(c, srvStatusOnline, coverTotal)
+				sendSyncSrvCoverResp(c, item)
 			}
 			return
 		}
@@ -317,7 +331,11 @@ func SyncSrvCoverHandler(c *gin.Context) {
 	select {
 	case res := <-retCh:
 		if coverTotal, ok := res.(string); ok {
-			sendSrvCoverTotalResp(c, srvStatusOnline, coverTotal)
+			sendSyncSrvCoverResp(c, respSrvCoverSubItem{
+				SrvStatus:  srvStatusOnline,
+				CoverTotal: coverTotal,
+				UpdatedAt:  pkg.GetSimpleDatetime(time.Now()),
+			})
 		} else if err, ok := res.(error); ok {
 			log.Println("SyncSrvCoverHandler error:", err)
 			respErrMsg := "Sync service cover task failed."

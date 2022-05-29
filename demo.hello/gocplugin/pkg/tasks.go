@@ -554,7 +554,7 @@ func GetSrvMetaFromName(name string) SrvCoverMeta {
 }
 
 func getSavedCovFileNameWithSuffix(srvName, suffix string) string {
-	now := getSimpleNowDatetime()
+	now := getSimpleDatetimeForNow()
 	if len(suffix) > 0 {
 		return fmt.Sprintf("%s_%s_%s.cov", srvName, now, suffix)
 	}
