@@ -125,6 +125,44 @@ func TestIsWeekDay(t *testing.T) {
 	fmt.Println("isweekday:", IsWeekDay(now))
 }
 
+type testDumpData struct {
+	ID     int         `json:"id" yaml:"ident"`
+	Config string      `json:"cfg" yaml:"config"`
+	Data   interface{} `json:"data" yaml:"data"`
+}
+
+func TestDumpJSON(t *testing.T) {
+	dumpData := testDumpData{
+		ID:     1,
+		Config: "env=test,type=json",
+		Data:   "test dump json",
+	}
+	outPath := "/tmp/test/dump.json"
+	if err := DumpJSON(dumpData, outPath); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("dump done")
+}
+
+func TestDumpYAML(t *testing.T) {
+	dumpData := testDumpData{
+		ID:     2,
+		Config: "env=test,type=yaml",
+		Data: []struct {
+			Name string `yaml:"name"`
+			Age  int    `yaml:"age"`
+		}{
+			{Name: "foo", Age: 30},
+			{Name: "bar", Age: 36},
+		},
+	}
+	outPath := "/tmp/test/dump.yaml"
+	if err := DumpYAML(dumpData, outPath); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("dump done")
+}
+
 func TestFprintJSONPrettyText(t *testing.T) {
 	p := struct {
 		Name string `json:"name"`

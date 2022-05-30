@@ -16,10 +16,13 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 /* Common */
@@ -158,6 +161,46 @@ func nextWeekDay(loc *time.Location) time.Time {
 }
 
 /* Encoder */
+
+// DumpJSON .
+func DumpJSON(structObj interface{}, path string) error {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+
+	out, err := os.Create(absPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	outBuf := bufio.NewWriter(out)
+	defer outBuf.Flush()
+
+	return FprintJSONPrettyText(outBuf, structObj)
+}
+
+// DumpYAML .
+func DumpYAML(structObj interface{}, path string) error {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+
+	out, err := os.Create(absPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	outBuf := bufio.NewWriter(out)
+	defer outBuf.Flush()
+
+	encoder := yaml.NewEncoder(outBuf)
+	encoder.SetIndent(2)
+	return encoder.Encode(structObj)
+}
 
 // FprintJSONPrettyText .
 func FprintJSONPrettyText(w io.Writer, value interface{}) error {

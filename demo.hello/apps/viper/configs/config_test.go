@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 func TestReadYamlConfig(t *testing.T) {

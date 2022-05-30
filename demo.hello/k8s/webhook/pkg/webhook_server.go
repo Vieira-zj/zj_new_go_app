@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	v1 "k8s.io/api/apps/v1"

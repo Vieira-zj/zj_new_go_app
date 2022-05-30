@@ -27,7 +27,7 @@ import (
 
 	"github.com/bep/debounce"
 	"golang.org/x/tools/imports"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func TestDemo01(t *testing.T) {
