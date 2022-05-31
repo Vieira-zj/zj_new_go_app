@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,6 +40,7 @@ type respSrvCoverSubItem struct {
 }
 
 type respSrvCoverItem struct {
+	Idx string `json:"index"`
 	pkg.SyncSrvCoverParam
 	respSrvCoverSubItem
 }
@@ -61,6 +63,7 @@ func ListOfSrvCoversHandler(c *gin.Context) {
 			sendErrorResp(c, http.StatusInternalServerError, errMsgGetLatestSrvCovInDB)
 			return
 		}
+		item.Idx = strconv.Itoa(len(srvCoverItems) + 1)
 		item.SrvName = srvName
 		item.Addresses = addrs
 		item.SrvStatus = srvStatusOnline
@@ -119,6 +122,7 @@ func getLatestSrvCoverTotalInDB(srvName string) (string, string, error) {
 }
 
 type respHistorySrvCoverItem struct {
+	Idx        string   `json:"index"`
 	Addresses  []string `json:"addresses"`
 	Commit     string   `json:"commit"`
 	CoverTotal string   `json:"cover_total"`
@@ -153,8 +157,9 @@ func GetHistorySrvCoverTotalsHandler(c *gin.Context) {
 	}
 
 	srvCoverTotals := make([]respHistorySrvCoverItem, 0, len(rows))
-	for _, row := range rows {
+	for idx, row := range rows {
 		item := respHistorySrvCoverItem{
+			Idx:        strconv.Itoa(idx),
 			Addresses:  strings.Split(row.Addrs, ","),
 			Commit:     row.GitCommit,
 			CoverTotal: row.CoverTotal.String,
