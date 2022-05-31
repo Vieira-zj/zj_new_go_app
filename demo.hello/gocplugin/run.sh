@@ -20,8 +20,15 @@ function init {
     cp config/* ${root}
 }
 
+function build_goc_plugin {
+    echo 'build'
+    go build -o bin/gocplugin .
+}
+
 function run_goc_plugin {
-    go run main.go -root=${root}
+    echo 'run'
+    # go run main.go -root=${root}
+    bin/gocplugin -root=${root}
 }
 
 function clearup {
@@ -36,6 +43,7 @@ function clearup {
 
 # clearup
 # init
+# build_goc_plugin
 run_goc_plugin
 
 echo "done"

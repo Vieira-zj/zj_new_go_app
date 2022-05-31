@@ -13,6 +13,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/storage"
 )
 
 //
@@ -85,6 +86,11 @@ func (r *GitRepo) Pull(ctx context.Context, branch string) (string, error) {
 	}); err != nil {
 		if errors.Is(err, git.NoErrAlreadyUpToDate) {
 			log.Printf("Pull branch [%s]: %s", branch, err.Error())
+			return commitID, nil
+		}
+		if errors.Is(err, storage.ErrReferenceHasChanged) {
+			// TOFIX: https://github.com/src-d/go-git/issues/1230
+			log.Printf("Pull branch [%s] error: %s", branch, err.Error())
 			return commitID, nil
 		}
 		return "", fmt.Errorf("Pull pull branch [%s] error: %w", branch, err)
