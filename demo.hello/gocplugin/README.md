@@ -62,12 +62,6 @@
 
 ![img](static/Html_cover_report.png)
 
-### Todos
-
-1. 基于 commit 和 branch 比较的增量覆盖率结果展示
-2. commit baseline 的历史覆盖率结果展示
-3. 支持单测覆盖率结果上报，及展示
-
 ## Goc Plugin Design
 
 ### 服务架构
@@ -195,7 +189,7 @@ curl http://127.0.0.1:8089/ping | jq .
 curl -i http://127.0.0.1:8089/nonexist
 ```
 
-### Group: Cover Total
+### API Group: Cover Total
 
 - `/cover/total/list`: get list of services cover info.
 
@@ -217,7 +211,7 @@ curl -XPOST http://127.0.0.1:8089/cover/total/history -H "Content-Type:applicati
   -d '{"srv_name":"staging_th_apa_echoserver_master_6cd6e61317"}' | jq .
 ```
 
-### Group: Cover Operations
+### API Group: Cover Operations
 
 - `/cover/raw`: get service cover raw data from goc.
 
@@ -244,7 +238,7 @@ curl -XPOST http://127.0.0.1:8089/cover/clear -H "Content-Type:application/json"
   -d '{"srv_name":"staging_th_apa_echoserver_master_c32684d0b1"}' | jq .
 ```
 
-### Group: Cover Report
+### API Group: Cover Report
 
 - `/cover/report/list`: list service cover report files name.
 
@@ -305,4 +299,67 @@ curl -XPOST http://127.0.0.1:8089/watcher/cover/download -H "Content-Type:applic
 curl -XPOST http://127.0.0.1:8089/watcher/cover/hook/sync -H "Content-Type:application/json" \
   -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a"}' | jq .
 ```
+
+## Key Problems to Resolve
+
+### 覆盖率数据合并
+
+问题：合并不同版本代码的覆盖率数据数据。如 bug fix 后的覆盖率数据与上一个版本（全量回归测试）的覆盖率数据合并。
+
+#### 方案1: 基于代码行合并
+
+1. git diff 获取变化的代码行 => diff_lines
+  - diff_line struct: `{"file":"main.go", "line_no":1, "diff":"add/delete/change"}`
+  - 考虑文件 rename 的情况
+
+2. 将 cov 覆盖率数据文件（block 代码块维度）转换为代码行维度 => old_cover_lines, new_cover_lines
+  - cover_line struct: `{"file":"main.go", "line_no":1, "line_content":"", "cover":1}`
+
+3. diff_lines + old_cover_lines + new_cover_lines => merged_cover_lines
+  - 代码行 delete 的情况，在 old_cover_lines 中删除
+  - 代码行 add 和 change 的情况，取 new_cover_lines 中的 line 覆盖率数据到 merged_cover_lines
+  - 代码行 nochange 的情况，匹配 old_cover_lines 与 new_cover_lines 中的代码行，合并覆盖率数据，取较高的 line 覆盖率到 merged_cover_lines
+
+4. 基于 merged_cover_lines 数据生成覆盖率报告
+
+优点：
+
+1. cover_lines 方式比较通用：
+  - js 覆盖率数据是 statement + function + branch 维度
+  - golang 覆盖率数据是 block 维度
+
+问题：
+
+1. 代码行行号变化后，如何匹配 old_cover_lines 与 new_cover_lines 中的代码行
+  - 比较 line_content?
+2. 基于 merged_cover_lines 行覆盖率数据生成 func 和 html 覆盖率报告
+
+#### 方案2: func 维度合并
+
+1. git diff 获取变化的代码文件 => diff_files
+
+2. ast 解析 diff 文件，得到变化的 func => diff_funcs
+  - 过滤空行、注释行
+  - diff_func struct: `{"file":"main.go", "func_name":"main", "diff":"add/delete/change", "position":"start_line,start_col,end_line,end_col"}`
+
+3. diff_func + old_cov + new_cov => merged_cov
+  - func delete 的情况，在 old_cov 中删除关联的 block
+  - func add 和 change 的情况，取 new_cov 中关联的 block 覆盖率数据到 merged_cov
+  - func unchange 的情况，基于 file+func_name 将 old_cov 与 new_cov 中的 block 覆盖率数据合并，取较高的覆盖率数据到 merged_cov
+
+4. go tool 生成 func 和 html 覆盖率报告
+
+优点：
+
+1. 基于 ast 分析，不被代码行行号变化影响
+2. 使用 go tool 生成覆盖率报告
+
+问题：
+
+1. 该方案只适用于 golang 覆盖率数据合并
+
+### Todos
+
+1. 基于 commit 和 branch 比较的增量覆盖率结果展示
+2. 支持单测覆盖率结果上报，及展示
 
