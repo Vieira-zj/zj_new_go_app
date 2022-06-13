@@ -2,6 +2,7 @@ package funcdiff
 
 import (
 	"log"
+	"os"
 	"sort"
 )
 
@@ -51,26 +52,28 @@ func FuncDiff(sPath, tPath string, funcName string) (bool, error) {
 	return funcSrcDiff(sPath, tPath, sInfo, tInfo)
 }
 
-func funcSrcDiff(sPath, tPath string, sInfo, tInfo *FuncInfo) (bool, error) {
-	sFuncSrc, err := GetFuncSrc(sPath, sInfo)
+func funcSrcDiff(srcPath, dstPath string, srcInfo, dstInfo *FuncInfo) (bool, error) {
+	src, err := os.ReadFile(srcPath)
 	if err != nil {
 		return false, err
 	}
-	tFuncSrc, err := GetFuncSrc(tPath, tInfo)
+	sFuncSrc := GetFuncSrc(src, srcInfo)
+
+	src, err = os.ReadFile(dstPath)
 	if err != nil {
 		return false, err
 	}
+	tFuncSrc := GetFuncSrc(src, dstInfo)
 	return !(sFuncSrc == tFuncSrc), nil
-	// TODO: handle for line with comments
 }
 
 // GoFileDiffByFunc compares diff go src file, and returns func diff info. Return true:diff, false:same
 func GoFileDiffByFunc(sPath, tPath string) (DiffEntries, error) {
-	sInfos, err := GetFileAllFuncInfos(sPath)
+	sInfos, err := GetFuncInfos(sPath)
 	if err != nil {
 		return nil, err
 	}
-	tInfos, err := GetFileAllFuncInfos(tPath)
+	tInfos, err := GetFuncInfos(tPath)
 	if err != nil {
 		return nil, err
 	}
@@ -112,11 +115,11 @@ type DiffEntryExt struct {
 
 // GoFileDiffByFuncExt compares diff go src file, and returns func diff info for add, del, change and same.
 func GoFileDiffByFuncExt(sPath, tPath string) ([]DiffEntryExt, error) {
-	sFuncInfos, err := GetFileAllFuncInfos(sPath)
+	sFuncInfos, err := GetFuncInfos(sPath)
 	if err != nil {
 		return nil, err
 	}
-	tFuncInfos, err := GetFileAllFuncInfos(tPath)
+	tFuncInfos, err := GetFuncInfos(tPath)
 	if err != nil {
 		return nil, err
 	}

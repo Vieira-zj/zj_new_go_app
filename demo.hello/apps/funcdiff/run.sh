@@ -2,17 +2,17 @@
 set -e
 
 cur_dir=$(pwd)
-go_repo="${HOME}/Downloads/tmps/go_repo_test"
-tmp_dir="/tmp/test"
 diff_files=""
 
 function func_diff_test() {
-    go run main.go -e -s ${tmp_dir}/b8acc5_test1.go -t ${tmp_dir}/e09a77_test1.go
+    local test_dir="${HOME}/Downloads/go_space"
+    go run main.go -s ${test_dir}/src1/main.go -t ${test_dir}/src2/main.go
 }
 
 function get_diff_files() {
     local commit1="b8acc5"
     local commit2="e09a77"
+    local go_repo="${HOME}/Downloads/tmps/go_repo_test"
 
     cd ${go_repo}
     for fpath in $(git diff $commit1 $commit2 --name-only); do
