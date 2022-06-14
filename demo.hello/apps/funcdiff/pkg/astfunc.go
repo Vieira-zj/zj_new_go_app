@@ -2,10 +2,12 @@ package funcdiff
 
 import (
 	"errors"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"demo.hello/utils"
@@ -13,11 +15,13 @@ import (
 
 // FuncInfo .
 type FuncInfo struct {
-	Package             string
-	FuncName            string
-	StartLine, StartCol int
-	EndLine, EndCol     int
-	StmtCount           int
+	Path      string `json:"pkg_path"`
+	Name      string `json:"name"`
+	StartLine int    `json:"start_line"`
+	StartCol  int    `json:"start_col"`
+	EndLine   int    `json:"end_line"`
+	EndCol    int    `json:"end_col"`
+	StmtCount int    `json:"stmt_count"`
 }
 
 //
@@ -26,10 +30,10 @@ type FuncInfo struct {
 
 // FuncVisit .
 type FuncVisit struct {
-	fset  *token.FileSet
-	found bool
-	pkg   string
-	Info  *FuncInfo
+	fset     *token.FileSet
+	found    bool
+	path     string
+	funcInfo *FuncInfo
 }
 
 // Visit implements ast.Visitor interface.
@@ -39,18 +43,24 @@ func (v *FuncVisit) Visit(n ast.Node) ast.Visitor {
 	}
 
 	if fn, ok := n.(*ast.FuncDecl); ok {
-		if fn.Name.Name == v.Info.FuncName {
+		if fn.Name.Name == v.funcInfo.Name {
 			v.found = true
 			start := v.fset.Position(fn.Pos())
 			end := v.fset.Position(fn.End())
-			v.Info = &FuncInfo{
-				Package:   v.pkg,
+			funcInfo := &FuncInfo{
+				Path:      v.path,
+				Name:      fn.Name.Name,
 				StartLine: start.Line,
 				StartCol:  start.Column,
 				EndLine:   end.Line,
 				EndCol:    end.Column,
 				StmtCount: len(fn.Body.List),
 			}
+			if fn.Recv != nil && len(fn.Recv.List) > 0 {
+				recv := fn.Recv.List[0].Names[0].Name
+				funcInfo.Name = fmt.Sprintf("(%s)%s", recv, funcInfo.Name)
+			}
+			v.funcInfo = funcInfo
 		}
 	}
 	return v
@@ -64,19 +74,24 @@ func GetFuncInfo(filePath, funcName string) (*FuncInfo, error) {
 		return nil, err
 	}
 
+	rPath, err := getRelativePath(filePath, root.Name.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	visit := &FuncVisit{
 		fset: fset,
-		pkg:  root.Name.Name,
-		Info: &FuncInfo{
-			FuncName: funcName,
+		path: rPath,
+		funcInfo: &FuncInfo{
+			Name: funcName,
 		},
 	}
 	ast.Walk(visit, root)
-	return visit.Info, nil
+	return visit.funcInfo, nil
 }
 
 // GetFuncSrc returns func source between start line:col and end line:col.
-func GetFuncSrc(src []byte, info *FuncInfo) string {
+func GetFuncSrc(src []byte, info *FuncInfo) []byte {
 	var res []byte
 	line := 1
 	col := 1
@@ -96,7 +111,7 @@ func GetFuncSrc(src []byte, info *FuncInfo) string {
 		}
 		col++
 	}
-	return string(res)
+	return res
 }
 
 //
@@ -105,9 +120,9 @@ func GetFuncSrc(src []byte, info *FuncInfo) string {
 
 // AllFuncsVisit .
 type AllFuncsVisit struct {
-	fset  *token.FileSet
-	pkg   string
-	Infos []*FuncInfo
+	fset      *token.FileSet
+	path      string
+	funcInfos []*FuncInfo
 }
 
 // Visit implements ast.Visitor interface.
@@ -119,34 +134,43 @@ func (v *AllFuncsVisit) Visit(n ast.Node) ast.Visitor {
 	if fn, ok := n.(*ast.FuncDecl); ok {
 		start := v.fset.Position(fn.Pos())
 		end := v.fset.Position(fn.End())
-		info := &FuncInfo{
-			Package:   v.pkg,
-			FuncName:  fn.Name.Name,
+		funcInfo := &FuncInfo{
+			Path:      v.path,
+			Name:      fn.Name.Name,
 			StartLine: start.Line,
 			StartCol:  start.Column,
 			EndLine:   end.Line,
 			EndCol:    end.Column,
 			StmtCount: len(fn.Body.List),
 		}
-		v.Infos = append(v.Infos, info)
+		if fn.Recv != nil && len(fn.Recv.List) > 0 {
+			recv := fn.Recv.List[0].Names[0].Name
+			funcInfo.Name = fmt.Sprintf("(%s)%s", recv, funcInfo.Name)
+		}
+		v.funcInfos = append(v.funcInfos, funcInfo)
 	}
 	return v
 }
 
 // GetFuncInfos returns all funcs info of go file.
-func GetFuncInfos(path string) ([]*FuncInfo, error) {
+func GetFuncInfos(filePath string) ([]*FuncInfo, error) {
 	fset := token.NewFileSet()
-	root, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
+	root, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
+	if err != nil {
+		return nil, err
+	}
+
+	rPath, err := getRelativePath(filePath, root.Name.Name)
 	if err != nil {
 		return nil, err
 	}
 
 	visit := &AllFuncsVisit{
 		fset: fset,
-		pkg:  root.Name.Name,
+		path: rPath,
 	}
 	ast.Walk(visit, root)
-	return visit.Infos, nil
+	return visit.funcInfos, nil
 }
 
 //
@@ -175,6 +199,7 @@ func FormatGoFile(src, dst string) error {
 			}
 			newLine = strings.Replace(newLine, comment, "", 1)
 			newLine = strings.Trim(newLine, " ")
+			newLine = strings.Trim(newLine, "\t")
 			comments = comments[1:]
 		}
 		if len(newLine) > 0 {
@@ -212,7 +237,30 @@ func GetComments(path string) ([]string, error) {
 	return comments, nil
 }
 
-func runGoFmt(path string) error {
-	_, err := utils.RunShellCmd("gofmt", "-w", path)
+func runGoFmt(filePath string) error {
+	_, err := utils.RunShellCmd("gofmt", "-w", filePath)
 	return err
+}
+
+func getRelativePath(path, pkgName string) (string, error) {
+	pkg, err := getGoPackage(filepath.Dir(path))
+	if err != nil {
+		return "", err
+	}
+	if pkgName != "main" && !strings.HasSuffix(pkg, pkgName) {
+		return "", fmt.Errorf("Package name inconsistent")
+	}
+	return filepath.Join(pkg, filepath.Base(path)), nil
+}
+
+func getGoPackage(dirPath string) (string, error) {
+	sh := utils.GetShellPath()
+	res, err := utils.RunShellCmd(sh, "-c", fmt.Sprintf("cd %s && go list .", dirPath))
+	if err != nil {
+		return "", err
+	}
+
+	res = strings.Trim(res, "\n")
+	res = strings.Trim(res, " ")
+	return res, nil
 }

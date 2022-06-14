@@ -1,19 +1,91 @@
 package funcdiff
 
 import (
-	"log"
+	"bytes"
+	"fmt"
 	"os"
 	"sort"
+	"strings"
 )
+
+//
+// Diff specified func of .go file.
+//
+
+const (
+	resultDiff = "diff"
+	resultSame = "same"
+
+	diffTypeAdd    = "add"
+	diffTypeChange = "change"
+	diffTypeRemove = "remove"
+	diffTypeSame   = "same"
+)
+
+var diffResultAndTypeMap = map[string]string{
+	resultDiff: diffTypeChange,
+	resultSame: diffTypeSame,
+}
 
 // DiffEntry func diff result entry.
 type DiffEntry struct {
-	FuncName string
-	IsDiff   bool
+	SrcFnInfo *FuncInfo `json:"src_func_info,omitempty"`
+	DstFnInfo *FuncInfo `json:"dst_func_info,omitempty"`
+	Result    string    `json:"result"`
 }
 
+// FuncDiff compares func between src and dst .go files, and return diff, same
+func FuncDiff(srcPath, dstPath string, funcName string) (*DiffEntry, error) {
+	srcFuncInfo, err := GetFuncInfo(srcPath, funcName)
+	if err != nil {
+		return nil, err
+	}
+	dstFuncInfo, err := GetFuncInfo(dstPath, funcName)
+	if err != nil {
+		return nil, err
+	}
+
+	diffEntry := &DiffEntry{
+		SrcFnInfo: srcFuncInfo,
+		DstFnInfo: dstFuncInfo,
+	}
+	if srcFuncInfo.StmtCount != dstFuncInfo.StmtCount {
+		diffEntry.Result = resultDiff
+		return diffEntry, nil
+	}
+
+	srcBody, err := os.ReadFile(srcPath)
+	if err != nil {
+		return nil, err
+	}
+	dstBody, err := os.ReadFile(dstPath)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := funcSrcDiff(srcBody, dstBody, srcFuncInfo, dstFuncInfo)
+	if err != nil {
+		return nil, err
+	}
+	diffEntry.Result = result
+	return diffEntry, nil
+}
+
+func funcSrcDiff(srcBody, dstBody []byte, srcFuncInfo, dstFuncInfo *FuncInfo) (string, error) {
+	srcFuncBody := GetFuncSrc(srcBody, srcFuncInfo)
+	dstFuncBody := GetFuncSrc(dstBody, dstFuncInfo)
+	if len(srcFuncBody) == len(dstFuncBody) && bytes.Equal(srcFuncBody, dstFuncBody) {
+		return resultSame, nil
+	}
+	return resultDiff, nil
+}
+
+//
+// Diff funcs of .go file.
+//
+
 // DiffEntries list of DiffEntry.
-type DiffEntries []DiffEntry
+type DiffEntries []*DiffEntry
 
 // Swap implements sort interface.
 func (entries DiffEntries) Swap(i, j int) {
@@ -26,166 +98,113 @@ func (entries DiffEntries) Len() int {
 }
 
 func (entries DiffEntries) Less(i, j int) bool {
-	return entries[i].IsDiff
+	return entries[i].Result[0] > entries[j].Result[0]
 }
 
-/*
-Return modified funcs for current pr:
-1. Get changed files from git commits
-2. Compare funcs for diff version of changed file
-*/
-
-// FuncDiff compares same func from diff src files. Return true:diff, false:same
-func FuncDiff(sPath, tPath string, funcName string) (bool, error) {
-	sInfo, err := GetFuncInfo(sPath, funcName)
-	if err != nil {
-		return false, err
-	}
-	tInfo, err := GetFuncInfo(tPath, funcName)
-	if err != nil {
-		return false, err
-	}
-	if sInfo.StmtCount != tInfo.StmtCount {
-		log.Printf("func total statements diff: %s[%d] and %s[%d]\n", sPath, sInfo.StmtCount, tPath, tInfo.StmtCount)
-		return false, nil
-	}
-	return funcSrcDiff(sPath, tPath, sInfo, tInfo)
-}
-
-func funcSrcDiff(srcPath, dstPath string, srcInfo, dstInfo *FuncInfo) (bool, error) {
-	src, err := os.ReadFile(srcPath)
-	if err != nil {
-		return false, err
-	}
-	sFuncSrc := GetFuncSrc(src, srcInfo)
-
-	src, err = os.ReadFile(dstPath)
-	if err != nil {
-		return false, err
-	}
-	tFuncSrc := GetFuncSrc(src, dstInfo)
-	return !(sFuncSrc == tFuncSrc), nil
-}
-
-// GoFileDiffByFunc compares diff go src file, and returns func diff info. Return true:diff, false:same
-func GoFileDiffByFunc(sPath, tPath string) (DiffEntries, error) {
-	sInfos, err := GetFuncInfos(sPath)
+// GoFileDiffFunc compares func bewteen src and dst .go files, and returns func diff info.
+func GoFileDiffFunc(srcPath, dstPath string) (DiffEntries, error) {
+	srcFuncInfos, err := GetFuncInfos(srcPath)
 	if err != nil {
 		return nil, err
 	}
-	tInfos, err := GetFuncInfos(tPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(sInfos) < len(tInfos) {
-		sPath, tPath = tPath, sPath
-		sInfos, tInfos = tInfos, sInfos
-	}
-
-	ret := make(DiffEntries, len(sInfos))
-	for idx, sInfo := range sInfos {
-		diffResult := true
-		for _, tInfo := range tInfos {
-			if sInfo.FuncName == tInfo.FuncName && sInfo.StmtCount == tInfo.StmtCount {
-				if diffResult, err = funcSrcDiff(sPath, tPath, sInfo, tInfo); err != nil {
-					return nil, err
-				}
-			}
-		}
-		ret[idx] = DiffEntry{
-			FuncName: sInfo.FuncName,
-			IsDiff:   diffResult,
-		}
-	}
-	sort.Sort(ret)
-	return ret, nil
-}
-
-/*
-func diff extend
-*/
-
-// DiffEntryExt func diff result entry. (TODO: use map instead of struct for high perf in iterator.)
-type DiffEntryExt struct {
-	FuncName string
-	// DiffType: add, del, change and same
-	DiffType string
-}
-
-// GoFileDiffByFuncExt compares diff go src file, and returns func diff info for add, del, change and same.
-func GoFileDiffByFuncExt(sPath, tPath string) ([]DiffEntryExt, error) {
-	sFuncInfos, err := GetFuncInfos(sPath)
-	if err != nil {
-		return nil, err
-	}
-	tFuncInfos, err := GetFuncInfos(tPath)
+	dstFuncInfos, err := GetFuncInfos(dstPath)
 	if err != nil {
 		return nil, err
 	}
 
 	// 交集
-	sameFuncInfos := make([]*FuncInfo, 0, len(sFuncInfos))
-	for _, sInfo := range sFuncInfos {
-		for _, tInfo := range tFuncInfos {
-			if sInfo.FuncName == tInfo.FuncName {
-				sameFuncInfos = append(sameFuncInfos, sInfo)
-				break
-			}
-		}
-	}
+	sameFuncInfos := getSameFuncInfos(srcFuncInfos, dstFuncInfos)
 
+	var retDiffEntries DiffEntries
+	retDiffEntries = make([]*DiffEntry, 0, len(srcFuncInfos))
 	// 差集 get del funcs
-	retDiffEntries := make([]DiffEntryExt, 0, len(tFuncInfos))
-	delDiffEntries := getDiffEntriesOfSlice(sFuncInfos, sameFuncInfos, "del")
+	delDiffEntries := getDiffEntries(srcFuncInfos, sameFuncInfos, diffTypeRemove)
 	retDiffEntries = append(retDiffEntries, delDiffEntries...)
 	// 差集 get add funcs
-	addDiffEntries := getDiffEntriesOfSlice(tFuncInfos, sameFuncInfos, "add")
+	addDiffEntries := getDiffEntries(dstFuncInfos, sameFuncInfos, diffTypeAdd)
 	retDiffEntries = append(retDiffEntries, addDiffEntries...)
 
-	// get change funcs
-	for _, sInfo := range sameFuncInfos {
-		diff := false
-		for _, tInfo := range tFuncInfos {
-			if sInfo.FuncName == tInfo.FuncName && sInfo.StmtCount == tInfo.StmtCount {
-				if diff, err = funcSrcDiff(sPath, tPath, sInfo, tInfo); err != nil {
+	srcBody, err := os.ReadFile(srcPath)
+	if err != nil {
+		return nil, err
+	}
+	dstBody, err := os.ReadFile(dstPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// 交集 get change funcs
+	for _, dstFuncInfo := range dstFuncInfos {
+		if dstFuncInfo.Name == "main" {
+			continue
+		}
+		if srcFuncInfo, ok := sameFuncInfos[dstFuncInfo.Name]; ok {
+			result := resultDiff
+			if srcFuncInfo.StmtCount == dstFuncInfo.StmtCount {
+				if result, err = funcSrcDiff(srcBody, dstBody, srcFuncInfo, dstFuncInfo); err != nil {
 					return nil, err
 				}
 			}
-		}
-		if diff {
-			retDiffEntries = append(retDiffEntries, DiffEntryExt{
-				FuncName: sInfo.FuncName,
-				DiffType: "change",
-			})
-		} else {
-			retDiffEntries = append(retDiffEntries, DiffEntryExt{
-				FuncName: sInfo.FuncName,
-				DiffType: "same",
-			})
+			diffEntry := &DiffEntry{
+				SrcFnInfo: srcFuncInfo,
+				DstFnInfo: dstFuncInfo,
+				Result:    diffResultAndTypeMap[result],
+			}
+			retDiffEntries = append(retDiffEntries, diffEntry)
 		}
 	}
 
+	sort.Sort(retDiffEntries)
 	return retDiffEntries, nil
 }
 
-func getDiffEntriesOfSlice(sFuncInfos []*FuncInfo, baseFuncInfos []*FuncInfo, diffType string) []DiffEntryExt {
-	retDiffEntries := make([]DiffEntryExt, 0)
-	for _, sInfo := range sFuncInfos {
-		found := false
-		for _, info := range baseFuncInfos {
-			if sInfo.FuncName == info.FuncName {
-				found = true
+func getSameFuncInfos(srcFuncInfos, dstFuncInfos []*FuncInfo) map[string]*FuncInfo {
+	sameFuncInfos := make(map[string]*FuncInfo, len(srcFuncInfos))
+	for _, srcFuncInfo := range srcFuncInfos {
+		for _, dstFuncInfo := range dstFuncInfos {
+			if srcFuncInfo.Name == dstFuncInfo.Name {
+				sameFuncInfos[srcFuncInfo.Name] = srcFuncInfo
 				break
 			}
 		}
-		if !found {
-			retDiffEntries = append(retDiffEntries, DiffEntryExt{
-				FuncName: sInfo.FuncName,
-				DiffType: diffType,
-			})
+	}
+	return sameFuncInfos
+}
+
+func getDiffEntries(funcInfos []*FuncInfo, baseFuncInfos map[string]*FuncInfo, diffType string) DiffEntries {
+	retDiffEntries := make([]*DiffEntry, 0, 16)
+	for _, funcInfo := range funcInfos {
+		if _, ok := baseFuncInfos[funcInfo.Name]; !ok {
+			diffEntry := &DiffEntry{
+				Result: diffType,
+			}
+			if diffType == diffTypeRemove {
+				diffEntry.SrcFnInfo = funcInfo
+			} else {
+				diffEntry.DstFnInfo = funcInfo
+			}
+			retDiffEntries = append(retDiffEntries, diffEntry)
 		}
 	}
-
 	return retDiffEntries
+}
+
+//
+// Pretty print.
+//
+
+func prettySprintDiffEntry(entry *DiffEntry) string {
+	lines := make([]string, 0, 3)
+	if entry.SrcFnInfo != nil {
+		lines = append(lines, "src: "+prettySprintFuncInfo(entry.SrcFnInfo))
+	}
+	if entry.DstFnInfo != nil {
+		lines = append(lines, "dst: "+prettySprintFuncInfo(entry.DstFnInfo))
+	}
+	lines = append(lines, "diff: "+entry.Result)
+	return strings.Join(lines, "\n")
+}
+
+func prettySprintFuncInfo(info *FuncInfo) string {
+	return fmt.Sprintf("[%s:%s] [%d:%d,%d:%d]", info.Path, info.Name, info.StartLine, info.StartCol, info.EndLine, info.EndCol)
 }
