@@ -31,6 +31,7 @@ go 1.16
 1. Format go files
   - filter out empty and comments line
   - go format
+
 2. Diff funcs between src and dst go files, and output:
 
 ```text

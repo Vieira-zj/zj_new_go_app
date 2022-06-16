@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var testRootDir = filepath.Join(os.Getenv("HOME"), "Downloads/tmps/go_funcdiff_space")
+var testRootDir = filepath.Join(os.Getenv("GO_PROJECT_ROOT"), "apps/funcdiff/test")
 
 func TestFuncsDiff(t *testing.T) {
 	// pre-step: format go file

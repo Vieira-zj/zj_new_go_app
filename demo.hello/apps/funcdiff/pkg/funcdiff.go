@@ -87,18 +87,10 @@ func funcSrcDiff(srcBody, dstBody []byte, srcFuncInfo, dstFuncInfo *FuncInfo) (s
 // DiffEntries list of DiffEntry.
 type DiffEntries []*DiffEntry
 
-// Swap implements sort interface.
-func (entries DiffEntries) Swap(i, j int) {
-	entries[i], entries[j] = entries[j], entries[i]
-}
-
-// Len implements sort interface.
-func (entries DiffEntries) Len() int {
-	return len(entries)
-}
-
-func (entries DiffEntries) Less(i, j int) bool {
-	return entries[i].Result[0] > entries[j].Result[0]
+func (e DiffEntries) Swap(i, j int) { e[i], e[j] = e[j], e[i] }
+func (e DiffEntries) Len() int      { return len(e) }
+func (e DiffEntries) Less(i, j int) bool {
+	return e[i].Result[0] > e[j].Result[0]
 }
 
 // GoFileDiffFunc compares func bewteen src and dst .go files, and returns func diff info.
@@ -115,8 +107,7 @@ func GoFileDiffFunc(srcPath, dstPath string) (DiffEntries, error) {
 	// 交集
 	sameFuncInfos := getSameFuncInfos(srcFuncInfos, dstFuncInfos)
 
-	var retDiffEntries DiffEntries
-	retDiffEntries = make([]*DiffEntry, 0, len(srcFuncInfos))
+	retDiffEntries := make([]*DiffEntry, 0, len(srcFuncInfos))
 	// 差集 get del funcs
 	delDiffEntries := getDiffEntries(srcFuncInfos, sameFuncInfos, diffTypeRemove)
 	retDiffEntries = append(retDiffEntries, delDiffEntries...)
@@ -154,7 +145,7 @@ func GoFileDiffFunc(srcPath, dstPath string) (DiffEntries, error) {
 		}
 	}
 
-	sort.Sort(retDiffEntries)
+	sort.Sort(DiffEntries(retDiffEntries))
 	return retDiffEntries, nil
 }
 
