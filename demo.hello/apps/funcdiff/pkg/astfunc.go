@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,8 +29,7 @@ type FuncInfo struct {
 // Walks specified func of go file.
 //
 
-// FuncVisit .
-type FuncVisit struct {
+type specFuncVisit struct {
 	fset     *token.FileSet
 	found    bool
 	path     string
@@ -37,7 +37,7 @@ type FuncVisit struct {
 }
 
 // Visit implements ast.Visitor interface.
-func (v *FuncVisit) Visit(n ast.Node) ast.Visitor {
+func (v *specFuncVisit) Visit(n ast.Node) ast.Visitor {
 	if n == nil || v.found {
 		return v
 	}
@@ -79,7 +79,7 @@ func GetFuncInfo(filePath, funcName string) (*FuncInfo, error) {
 		return nil, err
 	}
 
-	visit := &FuncVisit{
+	visit := &specFuncVisit{
 		fset: fset,
 		path: rPath,
 		funcInfo: &FuncInfo{
@@ -115,41 +115,95 @@ func GetFuncSrc(src []byte, info *FuncInfo) []byte {
 }
 
 //
-// Walks all funcs of go file.
+// Walks each func of go file.
 //
 
-// AllFuncsVisit .
-type AllFuncsVisit struct {
+type funcVisit struct {
 	fset      *token.FileSet
 	path      string
 	funcInfos []*FuncInfo
 }
 
 // Visit implements ast.Visitor interface.
-func (v *AllFuncsVisit) Visit(n ast.Node) ast.Visitor {
+func (v *funcVisit) Visit(n ast.Node) ast.Visitor {
 	if n == nil {
 		return v
 	}
 
 	if fn, ok := n.(*ast.FuncDecl); ok {
+		funcInfo := v.parseFuncDecl(fn)
+		v.funcInfos = append(v.funcInfos, funcInfo)
+	} else if fn, ok := n.(*ast.FuncLit); ok {
+		funcInfo, err := v.parseFuncLit(fn)
+		if err != nil {
+			log.Println(err)
+			return v
+		}
+		log.Println("ignore anonymous func:", prettySprintFuncInfo(funcInfo))
+	}
+	return v
+}
+
+func (v *funcVisit) parseFuncDecl(fn *ast.FuncDecl) *FuncInfo {
+	start := v.fset.Position(fn.Pos())
+	end := v.fset.Position(fn.End())
+	funcInfo := &FuncInfo{
+		Path:      v.path,
+		Name:      fn.Name.Name,
+		StartLine: start.Line,
+		StartCol:  start.Column,
+		EndLine:   end.Line,
+		EndCol:    end.Column,
+		StmtCount: len(fn.Body.List),
+	}
+	if fn.Recv != nil && len(fn.Recv.List) > 0 {
+		recv := fn.Recv.List[0].Names[0].Name
+		funcInfo.Name = fmt.Sprintf("(%s)%s", recv, funcInfo.Name)
+	}
+	return funcInfo
+}
+
+func (v *funcVisit) parseFuncLit(fn *ast.FuncLit) (*FuncInfo, error) {
+	randID, err := utils.GetRandString(8)
+	if err != nil {
+		return nil, err
+	}
+
+	start := v.fset.Position(fn.Pos())
+	end := v.fset.Position(fn.End())
+	funcInfo := &FuncInfo{
+		Path:      v.path,
+		Name:      "anonymous_" + randID,
+		StartLine: start.Line,
+		StartCol:  start.Column,
+		EndLine:   end.Line,
+		EndCol:    end.Column,
+		StmtCount: len(fn.Body.List),
+	}
+	return funcInfo, nil
+}
+
+func (v *funcVisit) parseFuncLitFromAssignStmt(assign *ast.AssignStmt) *FuncInfo {
+	if fn, ok := assign.Rhs[0].(*ast.FuncLit); ok {
+		name := "anonymous_"
+		if ident, ok := assign.Lhs[0].(*ast.Ident); ok {
+			name = name + ident.Name
+		}
+
 		start := v.fset.Position(fn.Pos())
 		end := v.fset.Position(fn.End())
 		funcInfo := &FuncInfo{
 			Path:      v.path,
-			Name:      fn.Name.Name,
+			Name:      name,
 			StartLine: start.Line,
 			StartCol:  start.Column,
 			EndLine:   end.Line,
 			EndCol:    end.Column,
 			StmtCount: len(fn.Body.List),
 		}
-		if fn.Recv != nil && len(fn.Recv.List) > 0 {
-			recv := fn.Recv.List[0].Names[0].Name
-			funcInfo.Name = fmt.Sprintf("(%s)%s", recv, funcInfo.Name)
-		}
-		v.funcInfos = append(v.funcInfos, funcInfo)
+		return funcInfo
 	}
-	return v
+	return nil
 }
 
 // GetFuncInfos returns all funcs info of go file.
@@ -165,7 +219,7 @@ func GetFuncInfos(filePath string) ([]*FuncInfo, error) {
 		return nil, err
 	}
 
-	visit := &AllFuncsVisit{
+	visit := &funcVisit{
 		fset: fset,
 		path: rPath,
 	}

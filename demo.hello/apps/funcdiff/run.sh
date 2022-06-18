@@ -3,16 +3,16 @@ set -eu
 
 root_dir="${GO_PROJECT_ROOT}"
 
-function clear_format_files {
-    set +e
-    rm ${root_dir}/src1/main_format.go
-    rm ${root_dir}/src2/main_format.go
+function run_go_test {
+    local go_pkg="demo.hello/apps/funcdiff/pkg"
+    local case="TestFormatGoFile"
+    go test -timeout 10s -run ^${case}$ ${go_pkg} -v -count=1
 }
 
 function run_go_test_cover {
-    local go_pkgs="demo.hello/apps/funcdiff/test/src1"
+    local go_pkg="demo.hello/apps/funcdiff/test/src1"
     local out_cov="/tmp/test/profile.cov"
-    go test -v -timeout 10s ${go_pkgs} -cover -coverprofile ${out_cov}
+    go test -v -timeout 10s ${go_pkg} -cover -coverprofile ${out_cov}
 }
 
 function get_diff_files {
@@ -33,8 +33,9 @@ function get_diff_files {
     done
 }
 
-# clear_format_files
-run_go_test_cover
+# run_go_test
+# run_go_test_cover
+
 # get_diff_files
 
 echo "funcs diff done"
