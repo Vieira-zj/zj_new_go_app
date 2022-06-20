@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
@@ -13,7 +14,7 @@ import (
 	"testing"
 )
 
-func TestScanner(t *testing.T) {
+func TestTokenScanner(t *testing.T) {
 	src := []byte(`package main
 import "fmt"
 //comment
@@ -36,28 +37,52 @@ func main() {
 	}
 }
 
-func TestParserAST(t *testing.T) {
+func TestASTParser(t *testing.T) {
 	src := []byte(`/*comment0*/
 package main
 import "fmt"
-//comment1
-/*comment2*/
 func main() {
+	//comment1
+	/*comment2*/
 	fmt.Println("Hello, world!")
 }
 `)
 
 	fset := token.NewFileSet()
+	// 0 - ignore comments
 	f, err := parser.ParseFile(fset, "", src, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	ast.Print(fset, f)
+	fmt.Println()
+
+	// inpsect one nomiated node and print source
+	ast.Inspect(f, func(n ast.Node) bool {
+		if fn, ok := n.(*ast.FuncDecl); ok {
+			if err := format.Node(os.Stdout, fset, fn.Body); err != nil {
+				t.Fatal(err)
+			}
+			fmt.Println()
+		}
+		return true
+	})
+
+	// ast output src to file
+	path := "/tmp/test/ast_output.go"
+	out, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := format.Node(out, fset, f); err != nil {
+		t.Fatal(err)
+	}
 }
 
-func TestInspectAST(t *testing.T) {
+func TestASTInspect(t *testing.T) {
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "./source/source1.go", nil, parser.ParseComments)
+	f, err := parser.ParseFile(fset, "./example/source1.go", nil, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,16 +92,18 @@ func TestInspectAST(t *testing.T) {
 	ast.Inspect(f, func(n ast.Node) bool {
 		if ret, ok := n.(*ast.ReturnStmt); ok {
 			fmt.Printf("return statement found on line %v:\n", fset.Position(ret.Pos()))
-			printer.Fprint(os.Stdout, fset, ret)
+			if err := printer.Fprint(os.Stdout, fset, ret); err != nil {
+				t.Fatal(err)
+			}
 			fmt.Println()
 		}
 		return true
 	})
 }
 
-type Visitor int
+type TestVisitor int
 
-func (v Visitor) Visit(n ast.Node) ast.Visitor {
+func (v TestVisitor) Visit(n ast.Node) ast.Visitor {
 	if n == nil {
 		return nil
 	}
@@ -85,31 +112,27 @@ func (v Visitor) Visit(n ast.Node) ast.Visitor {
 }
 
 func TestASTWalk(t *testing.T) {
+	// 使用 visitor 递归打印所有的 token 节点
+	src := []byte("package main; var a = 3")
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "", "package main; var a = 3", parser.ParseComments)
+	f, err := parser.ParseFile(fset, "", src, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// 使用visitor, 递归地打印所有的token节点
-	v := new(Visitor)
+	v := new(TestVisitor)
 	ast.Walk(v, f)
 }
 
-func init() {
-	GFixedFunc = make(map[string]Fixed)
-}
-
-func TestFindAllMethod(t *testing.T) {
-	// 查找方法
-	file := "./source/source1.go"
+func TestAstParseMethods(t *testing.T) {
+	path := "./example/source1.go"
 	fset := token.NewFileSet()
-
-	f, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
+	f, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	// 查找方法
 	ast.Inspect(f, func(n ast.Node) bool {
 		if v, ok := n.(*ast.FuncDecl); ok {
 			fmt.Print("method: ")
@@ -143,16 +166,17 @@ func TestFindAllMethod(t *testing.T) {
 
 func getFieldType(fset *token.FileSet, field *ast.Field) (string, error) {
 	var fType bytes.Buffer
-	err := printer.Fprint(&fType, fset, field.Type)
-	if err != nil {
+	if err := printer.Fprint(&fType, fset, field.Type); err != nil {
 		return "", err
 	}
 	return fType.String(), nil
 }
 
 func TestFindAllCase(t *testing.T) {
+	GFixedFunc = make(map[string]Fixed)
+
 	// 查找调用了 context.WithCancel 函数，并且入参为 nil
-	file := "./source/source2.go"
+	file := "./example/source2.go"
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
 	if err != nil {
@@ -166,5 +190,64 @@ func TestFindAllCase(t *testing.T) {
 		Package: f.Name.Name,
 	}
 	ast.Walk(find, f)
-	fmt.Printf("GFixedFunc: %+v", GFixedFunc)
+
+	fmt.Println("\nGFixedFunc:")
+	for name, fn := range GFixedFunc {
+		fmt.Printf("name:%s, func:%+v", name, fn)
+	}
+}
+
+/*
+Generate go source code by ast.
+
+src:
+func test4a(a string) {
+	context.WithCancel(nil)
+}
+func main() {
+	test4a("hello")
+}
+
+generate dst:
+func test4a(ctx context.Context, a string) {
+	context.WithCancel(ctx)
+}
+func main() {
+	ctx := context.Background()
+	test4a(ctx, "hello")
+}
+*/
+
+func TestASTGenerateCode(t *testing.T) {
+	src := `package main
+import "fmt"
+func test4a(a string) {
+	context.WithCancel(nil)
+}
+func main() {
+	test4a("hello")
+}
+`
+
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "", src, parser.ParseComments)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	v := &GeneVisit{
+		fset:    fset,
+		Package: f.Name.Name,
+	}
+	ast.Walk(v, f)
+
+	buf := new(bytes.Buffer)
+	if err := format.Node(buf, fset, f); err != nil {
+		t.Fatal(err)
+	}
+
+	path := "/tmp/test/ast_genrate_src.go"
+	if err := formatAndGenerateGoFile(path, buf.Bytes()); err != nil {
+		t.Fatal(err)
+	}
 }

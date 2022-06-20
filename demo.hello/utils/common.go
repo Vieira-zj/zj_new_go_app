@@ -13,6 +13,7 @@ import (
 	"hash/fnv"
 	"io"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -148,7 +149,7 @@ func IsWeekDay(t time.Time) bool {
 	case time.Saturday, time.Sunday:
 		return false
 	}
-	fmt.Println("Unrecognized day of the week:", t.Weekday().String())
+	log.Println("Unrecognized day of the week:", t.Weekday().String())
 	panic("Explicit Panic to avoid compiler error: missing return at end of function")
 }
 
@@ -282,6 +283,7 @@ func GetShellPath() string {
 // RunShellCmd runs a shell command and returns output.
 func RunShellCmd(name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
+	log.Println("run cmd:", cmd.String())
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return "", err
@@ -298,8 +300,15 @@ func RunShellCmd(name string, args ...string) (string, error) {
 		return "", err
 	}
 
-	err = cmd.Wait()
-	if err != nil {
+	timer := time.AfterFunc(time.Second, func() {
+		if err := cmd.Process.Kill(); err != nil {
+			log.Printf("cmd [%s] process kill error: %v", name, err)
+			return
+		}
+	})
+	defer timer.Stop()
+
+	if err := cmd.Wait(); err != nil {
 		return "", err
 	}
 	return string(output), nil
@@ -317,7 +326,7 @@ func RunShellCmdInBg(name string, args ...string) error {
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-	fmt.Printf("cmd process started with pid: %d\n", cmd.Process.Pid)
+	log.Printf("cmd process pid: %d\n", cmd.Process.Pid)
 
 	go func() {
 		br := bufio.NewReader(stdout)
@@ -327,7 +336,7 @@ func RunShellCmdInBg(name string, args ...string) error {
 				if err == io.EOF {
 					return
 				}
-				fmt.Println("buffer read failed:", err)
+				log.Println("buffer read failed:", err)
 				return
 			}
 			fmt.Printf("%s\n", b)
@@ -342,6 +351,6 @@ func RunShellCmdInBg(name string, args ...string) error {
 		}
 		return fmt.Errorf("process exited accidentally: %v", err)
 	}
-	fmt.Println("process stopped")
+	log.Println("process stopped")
 	return nil
 }

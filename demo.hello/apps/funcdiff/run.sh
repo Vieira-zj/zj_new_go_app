@@ -38,4 +38,4 @@ function get_diff_files {
 
 # get_diff_files
 
-echo "funcs diff done"
+echo "funcdiff done"

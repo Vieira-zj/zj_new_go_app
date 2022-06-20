@@ -204,3 +204,5 @@ func linkProfileBlocksToFunc(profile *Profile, funcInfo *FuncInfo) *FuncCovEntry
 }
 
 /* Merge Func Cov Entries */
+
+// TODO:
