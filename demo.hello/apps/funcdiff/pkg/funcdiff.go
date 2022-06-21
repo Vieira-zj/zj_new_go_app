@@ -3,13 +3,12 @@ package pkg
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 )
 
 //
-// Diff specified func of .go file.
+// Diff a func of .go file.
 //
 
 const (
@@ -34,50 +33,44 @@ type DiffEntry struct {
 	Result    string    `json:"result"`
 }
 
-// FuncDiff compares func between src and dst .go files, and return diff, same
-func FuncDiff(srcPath, dstPath string, funcName string) (*DiffEntry, error) {
-	srcFuncInfo, err := GetFuncInfo(srcPath, funcName)
+// funcDiff compares func between src and dst .go files, and return diff, same
+func funcDiff(srcPath, dstPath string, funcName string) (*DiffEntry, error) {
+	srcFuncInfo, err := GetFuncInfo(srcPath, nil, funcName)
 	if err != nil {
 		return nil, err
 	}
-	dstFuncInfo, err := GetFuncInfo(dstPath, funcName)
+	dstFuncInfo, err := GetFuncInfo(dstPath, nil, funcName)
 	if err != nil {
 		return nil, err
 	}
 
+	result := diffFuncSrc(srcFuncInfo, dstFuncInfo)
 	diffEntry := &DiffEntry{
 		SrcFnInfo: srcFuncInfo,
 		DstFnInfo: dstFuncInfo,
+		Result:    result,
 	}
-	if srcFuncInfo.StmtCount != dstFuncInfo.StmtCount {
-		diffEntry.Result = resultDiff
-		return diffEntry, nil
-	}
-
-	srcBody, err := os.ReadFile(srcPath)
-	if err != nil {
-		return nil, err
-	}
-	dstBody, err := os.ReadFile(dstPath)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := funcSrcDiff(srcBody, dstBody, srcFuncInfo, dstFuncInfo)
-	if err != nil {
-		return nil, err
-	}
-	diffEntry.Result = result
 	return diffEntry, nil
 }
 
-func funcSrcDiff(srcBody, dstBody []byte, srcFuncInfo, dstFuncInfo *FuncInfo) (string, error) {
+func diffFuncSrc(srcFuncInfo, dstFuncInfo *FuncInfo) string {
+	if srcFuncInfo.StmtCount == dstFuncInfo.StmtCount {
+		src := deleteEmptyLinesInText([]byte(srcFuncInfo.Source))
+		dst := deleteEmptyLinesInText([]byte(dstFuncInfo.Source))
+		if len(src) == len(dst) && strings.EqualFold(src, dst) {
+			return resultSame
+		}
+	}
+	return resultDiff
+}
+
+func diffFuncSrcDeprecated(srcBody, dstBody []byte, srcFuncInfo, dstFuncInfo *FuncInfo) string {
 	srcFuncBody := GetFuncSrc(srcBody, srcFuncInfo)
 	dstFuncBody := GetFuncSrc(dstBody, dstFuncInfo)
 	if len(srcFuncBody) == len(dstFuncBody) && bytes.Equal(srcFuncBody, dstFuncBody) {
-		return resultSame, nil
+		return resultSame
 	}
-	return resultDiff, nil
+	return resultDiff
 }
 
 //
@@ -93,13 +86,13 @@ func (e DiffEntries) Less(i, j int) bool {
 	return e[i].Result[0] > e[j].Result[0]
 }
 
-// GoFileDiffFunc compares func bewteen src and dst .go files, and returns func diff info.
-func GoFileDiffFunc(srcPath, dstPath string) (DiffEntries, error) {
-	srcFuncInfos, err := GetFuncInfos(srcPath)
+// funcDiffForGoFiles compares func bewteen src and dst .go files, and returns func diff info.
+func funcDiffForGoFiles(srcPath, dstPath string) (DiffEntries, error) {
+	srcFuncInfos, err := GetFuncInfos(srcPath, nil)
 	if err != nil {
 		return nil, err
 	}
-	dstFuncInfos, err := GetFuncInfos(dstPath)
+	dstFuncInfos, err := GetFuncInfos(dstPath, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -115,27 +108,13 @@ func GoFileDiffFunc(srcPath, dstPath string) (DiffEntries, error) {
 	addDiffEntries := getDiffEntries(dstFuncInfos, sameFuncInfos, diffTypeAdd)
 	retDiffEntries = append(retDiffEntries, addDiffEntries...)
 
-	srcBody, err := os.ReadFile(srcPath)
-	if err != nil {
-		return nil, err
-	}
-	dstBody, err := os.ReadFile(dstPath)
-	if err != nil {
-		return nil, err
-	}
-
 	// 交集 get change funcs
 	for _, dstFuncInfo := range dstFuncInfos {
 		if dstFuncInfo.Name == "main" {
 			continue
 		}
 		if srcFuncInfo, ok := sameFuncInfos[dstFuncInfo.Name]; ok {
-			result := resultDiff
-			if srcFuncInfo.StmtCount == dstFuncInfo.StmtCount {
-				if result, err = funcSrcDiff(srcBody, dstBody, srcFuncInfo, dstFuncInfo); err != nil {
-					return nil, err
-				}
-			}
+			result := diffFuncSrc(srcFuncInfo, dstFuncInfo)
 			diffEntry := &DiffEntry{
 				SrcFnInfo: srcFuncInfo,
 				DstFnInfo: dstFuncInfo,

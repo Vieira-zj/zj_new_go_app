@@ -24,44 +24,28 @@ func TestParseProfileLine(t *testing.T) {
 
 func TestParseCovFile(t *testing.T) {
 	fpath := "/tmp/test/profile.cov"
-	res, err := parseCovFile(fpath)
+	results, err := parseCovFile(fpath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for fname, profile := range res {
+	for fname, profile := range results {
 		fmt.Printf("\nmode=%s, filename=%s\n", profile.Mode, fname)
 		for _, block := range profile.Blocks {
 			fmt.Printf("\tblock: %+v\n", block)
 		}
 	}
-}
-
-func TestParseCovFileForMerge(t *testing.T) {
-	fpath := "/tmp/test/profile_merge.cov"
-	res, err := parseCovFile(fpath)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for fname, profile := range res {
-		fmt.Printf("\nmode=%s, filename=%s\n", profile.Mode, fname)
-		for _, block := range profile.Blocks {
-			fmt.Printf("\tblock: %+v\n", block)
-		}
-	}
-
 }
 
 func TestLinkProfileBlocksToFunc(t *testing.T) {
 	srcPath := filepath.Join(testRootDir, "src1/main.go")
-	funcInfos, err := GetFuncInfos(srcPath)
+	funcInfos, err := GetFuncInfos(srcPath, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println("funcs info:")
 	for _, info := range funcInfos {
-		fmt.Println(info.Path, info.Name)
+		fmt.Println("\t", info.Path, info.Name)
 	}
 
 	fmt.Println("\nprofile:")
@@ -81,7 +65,7 @@ func TestLinkProfileBlocksToFunc(t *testing.T) {
 	for _, fnInfo := range funcInfos {
 		if profile, ok := fnProfile[fnInfo.Path]; ok {
 			funcCoverEntry := linkProfileBlocksToFunc(profile, fnInfo)
-			fmt.Println("function:", funcCoverEntry.FuncInfo.Path, funcCoverEntry.FuncInfo.Name)
+			fmt.Println(prettySprintFuncInfo(funcCoverEntry.FuncInfo))
 			fmt.Println("blocks:")
 			for _, block := range funcCoverEntry.ProfileBlocks {
 				fmt.Printf("\t%+v\n", block)

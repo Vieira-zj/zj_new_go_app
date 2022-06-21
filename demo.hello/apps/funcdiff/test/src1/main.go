@@ -11,7 +11,7 @@ type person struct {
 	age  int
 }
 
-func (p person) fnHello() string {
+func (p person) fnToString() string {
 	return fmt.Sprintf("name=%s,age=%d\n", p.name, p.age)
 }
 
@@ -27,8 +27,9 @@ func fnHello(name /* user name */, msg /* display message */ string) {
 	hello := func(name, msg string) {
 		log.Println(fmt.Sprintf("hello %s: %s", name, msg))
 	}
-	aFunc()
 	hello(name, msg)
+
+	aFunc()
 }
 
 func fnChange() {

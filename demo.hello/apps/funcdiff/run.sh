@@ -5,7 +5,7 @@ root_dir="${GO_PROJECT_ROOT}"
 
 function run_go_test {
     local go_pkg="demo.hello/apps/funcdiff/pkg"
-    local case="TestFormatGoFile"
+    local case="TestLinkProfileBlocksToFunc"
     go test -timeout 10s -run ^${case}$ ${go_pkg} -v -count=1
 }
 
@@ -33,7 +33,7 @@ function get_diff_files {
     done
 }
 
-# run_go_test
+run_go_test
 # run_go_test_cover
 
 # get_diff_files

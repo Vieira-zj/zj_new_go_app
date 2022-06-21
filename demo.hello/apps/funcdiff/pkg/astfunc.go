@@ -1,10 +1,13 @@
 package pkg
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/parser"
+	"go/printer"
 	"go/token"
 	"log"
 	"os"
@@ -23,11 +26,111 @@ type FuncInfo struct {
 	EndLine   int    `json:"end_line"`
 	EndCol    int    `json:"end_col"`
 	StmtCount int    `json:"stmt_count"`
+	Source    string `json:"source"`
 }
 
 //
-// Walks specified func of go file.
+// Inspects a func of go file.
 //
+
+// GetFuncInfo .
+func GetFuncInfo(filePath string, src []byte, funcName string) (*FuncInfo, error) {
+	fset := token.NewFileSet()
+	root, err := getASTRoot(fset, filePath, src)
+	if err != nil {
+		return nil, err
+	}
+
+	rPath, err := getRelativePath(filePath, root.Name.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	var funcInfo *FuncInfo
+	ast.Inspect(root, func(n ast.Node) bool {
+		if fn, ok := n.(*ast.FuncDecl); ok {
+			if fn.Name.Name == funcName {
+				start := fset.Position(fn.Pos())
+				end := fset.Position(fn.End())
+				funcInfo = &FuncInfo{
+					Path:      rPath,
+					Name:      fn.Name.Name,
+					StartLine: start.Line,
+					StartCol:  start.Column,
+					EndLine:   end.Line,
+					EndCol:    end.Column,
+					StmtCount: len(fn.Body.List),
+				}
+				if err := addFuncInfoRecv(fset, fn, funcInfo); err != nil {
+					log.Println(err.Error())
+				}
+				if err := addFuncInfoSource(fset, fn, funcInfo); err != nil {
+					log.Println(err.Error())
+				}
+				return false
+			}
+		}
+		return true
+	})
+
+	return funcInfo, nil
+}
+
+func getASTRoot(fset *token.FileSet, filePath string, src []byte) (*ast.File, error) {
+	var (
+		root *ast.File
+		err  error
+	)
+	if len(filePath) > 0 {
+		root, err = parser.ParseFile(fset, filePath, nil, parser.ParseComments)
+	} else if len(src) > 0 {
+		root, err = parser.ParseFile(fset, "", src, parser.ParseComments)
+	} else {
+		return nil, fmt.Errorf("Invalid param [filePath] or [src]")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return root, nil
+}
+
+func addFuncInfoRecv(fset *token.FileSet, fn *ast.FuncDecl, funcInfo *FuncInfo) error {
+	if fn.Recv != nil && len(fn.Recv.List) > 0 {
+		recv := fn.Recv.List[0]
+		recvType, err := getASTFieldType(fset, recv)
+		if err != nil {
+			return fmt.Errorf("get rev field [%s] type error: %v", recv.Names[0], err)
+		}
+		funcInfo.Name = fmt.Sprintf("(%s %s) %s", recv.Names[0], recvType, funcInfo.Name)
+	}
+	return nil
+}
+
+func addFuncInfoSource(fset *token.FileSet, fn *ast.FuncDecl, funcInfo *FuncInfo) error {
+	source, err := getFuncBodySource(fset, fn.Body)
+	if err != nil {
+		return fmt.Errorf("get func [%s] body source error: %v", fn.Name.Name, err)
+	}
+	funcInfo.Source = source
+	return nil
+}
+
+func getFuncBodySource(fset *token.FileSet, body *ast.BlockStmt) (string, error) {
+	buf := new(bytes.Buffer)
+	if err := format.Node(buf, fset, body); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func getASTFieldType(fset *token.FileSet, field *ast.Field) (string, error) {
+	var buf bytes.Buffer
+	if err := printer.Fprint(&buf, fset, field.Type); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
 
 type specFuncVisit struct {
 	fset     *token.FileSet
@@ -66,8 +169,8 @@ func (v *specFuncVisit) Visit(n ast.Node) ast.Visitor {
 	return v
 }
 
-// GetFuncInfo returns func info: start line:col, end line:col, and total statements.
-func GetFuncInfo(filePath, funcName string) (*FuncInfo, error) {
+// GetFuncInfoDeprecated returns func info: start line:col, end line:col, and total statements.
+func GetFuncInfoDeprecated(filePath, funcName string) (*FuncInfo, error) {
 	fset := token.NewFileSet()
 	root, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {
@@ -156,9 +259,11 @@ func (v *funcVisit) parseFuncDecl(fn *ast.FuncDecl) *FuncInfo {
 		EndCol:    end.Column,
 		StmtCount: len(fn.Body.List),
 	}
-	if fn.Recv != nil && len(fn.Recv.List) > 0 {
-		recv := fn.Recv.List[0].Names[0].Name
-		funcInfo.Name = fmt.Sprintf("(%s)%s", recv, funcInfo.Name)
+	if err := addFuncInfoRecv(v.fset, fn, funcInfo); err != nil {
+		log.Println(err.Error())
+	}
+	if err := addFuncInfoSource(v.fset, fn, funcInfo); err != nil {
+		log.Println(err.Error())
 	}
 	return funcInfo
 }
@@ -207,9 +312,9 @@ func (v *funcVisit) parseFuncLitFromAssignStmt(assign *ast.AssignStmt) *FuncInfo
 }
 
 // GetFuncInfos returns all funcs info of go file.
-func GetFuncInfos(filePath string) ([]*FuncInfo, error) {
+func GetFuncInfos(filePath string, src []byte) ([]*FuncInfo, error) {
 	fset := token.NewFileSet()
-	root, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
+	root, err := getASTRoot(fset, filePath, src)
 	if err != nil {
 		return nil, err
 	}
@@ -228,12 +333,12 @@ func GetFuncInfos(filePath string) ([]*FuncInfo, error) {
 }
 
 //
-// Format .go files.
+// Format .go file.
 //
 
-// FormatGoFile filters out empty and comment lines for .go files.
-func FormatGoFile(src, dst string) error {
-	comments, err := GetComments(src)
+// formatGoFile filters out empty and comment lines for .go files.
+func formatGoFile(src, dst string) error {
+	comments, err := getCommentsInGoFile(src)
 	if err != nil {
 		return err
 	}
@@ -243,7 +348,7 @@ func FormatGoFile(src, dst string) error {
 		return err
 	}
 
-	var outLines []string
+	outLines := make([]string, 0, len(lines))
 	for _, line := range lines {
 		newLine := line
 		for len(comments) > 0 {
@@ -254,6 +359,7 @@ func FormatGoFile(src, dst string) error {
 			newLine = strings.Replace(newLine, comment, "", 1)
 			newLine = strings.Trim(newLine, " ")
 			newLine = strings.Trim(newLine, "\t")
+			newLine = strings.Trim(newLine, "\n")
 			comments = comments[1:]
 		}
 		if len(newLine) > 0 {
@@ -274,8 +380,7 @@ func FormatGoFile(src, dst string) error {
 	return runGoFmt(dst)
 }
 
-// GetComments .
-func GetComments(path string) ([]string, error) {
+func getCommentsInGoFile(path string) ([]string, error) {
 	fset := token.NewFileSet()
 	root, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 	if err != nil {
@@ -292,7 +397,7 @@ func GetComments(path string) ([]string, error) {
 }
 
 func runGoFmt(filePath string) error {
-	_, err := utils.RunShellCmd("gofmt", "-w", filePath)
+	_, err := utils.RunShellCmd("go", "fmt", filePath)
 	return err
 }
 
@@ -317,4 +422,19 @@ func getGoPackage(dirPath string) (string, error) {
 	res = strings.Trim(res, "\n")
 	res = strings.Trim(res, " ")
 	return res, nil
+}
+
+func deleteEmptyLinesInText(src []byte) string {
+	lines := strings.Split(string(src), "\n")
+	outLines := make([]string, 0, len(lines))
+	for _, line := range lines {
+		newLine := strings.Trim(line, " ")
+		newLine = strings.Trim(newLine, "\t")
+		newLine = strings.Trim(newLine, "\n")
+		if len(newLine) > 0 {
+			outLines = append(outLines, line)
+		}
+	}
+
+	return strings.Join(outLines, "\n")
 }
