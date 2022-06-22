@@ -111,6 +111,18 @@ func TestMergeProfiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	_, srcProfileMode, err := getProfileNameAndMode(srcFnProfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dstProfileName, dstProfileMode, err := getProfileNameAndMode(dstFnProfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if srcProfileMode != dstProfileMode {
+		t.Fatal(fmt.Errorf("profile mode is not inconsistent"))
+	}
+
 	// step2. diff func
 	diffEntries, err := funcDiffForGoFiles(srcPath, dstPath)
 	if err != nil {
@@ -147,9 +159,7 @@ func TestMergeProfiles(t *testing.T) {
 
 	fmt.Println("\ndiff entries:")
 	for _, entry := range diffEntries {
-		if entry.SrcFuncProfileEntry != nil {
-			fmt.Println(prettySprintDiffEntry(entry))
-		}
+		fmt.Println(prettySprintDiffEntry(entry))
 	}
 
 	fmt.Println("\nunlinked blocks:")
@@ -164,16 +174,6 @@ func TestMergeProfiles(t *testing.T) {
 	}
 
 	// step4. merge profiles, and write cov file
-	var (
-		profileName string
-		profileMode string
-	)
-	for _, profile := range dstFnProfile {
-		profileName = profile.FileName
-		profileMode = profile.Mode
-		break
-	}
-
 	mergedBlocks, err := mergeProfileForDiffEntries(diffEntries)
 	if err != nil {
 		t.Fatal(err)
@@ -181,12 +181,14 @@ func TestMergeProfiles(t *testing.T) {
 	mergedBlocks = append(mergedBlocks, unLinkedBlocks...)
 	sort.Sort(blocksByStartPos(mergedBlocks))
 
-	mergedPath := filepath.Join(filepath.Dir(dstPath), "profile_merged.cov")
 	profile := &Profile{
-		FileName: profileName,
-		Mode:     profileMode,
+		FileName: dstProfileName,
+		Mode:     dstProfileMode,
 		Blocks:   mergedBlocks,
 	}
+	fmt.Println("write profile count:", len(profile.Blocks))
+
+	mergedPath := filepath.Join(filepath.Dir(dstPath), "profile_merged.cov")
 	if err := writeCovFile(mergedPath, []*Profile{profile}); err != nil {
 		t.Fatal(err)
 	}

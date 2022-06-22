@@ -304,59 +304,37 @@ curl -XPOST http://127.0.0.1:8089/watcher/cover/hook/sync -H "Content-Type:appli
 
 ### 覆盖率数据合并
 
-问题：合并不同版本代码的覆盖率数据数据。如 bug fix 后的覆盖率数据与上一个版本（全量回归测试）的覆盖率数据合并。
+背景：合并不同版本代码的覆盖率数据数据。如 bug fix 后的覆盖率数据与上一个版本（全量回归测试）的覆盖率数据合并。
 
-#### 方案1: 基于代码行合并
+#### 方案1: line 维度数据合并
 
-1. git diff 获取变化的代码行 => diff_lines
-  - diff_line struct: `{"file":"main.go", "line_no":1, "diff":"add/delete/change"}`
-  - 考虑文件 rename 的情况
+1. 通过 `git` 获取 diff line 数据
+2. 匹配 src_line 和 dst_line
+3. 解析 `profile.cov` 获取 line_cover 覆盖率数据
+4. 关联 line 与 line_cover
+5. line 维度执行覆盖率数据合并
 
-2. 将 cov 覆盖率数据文件（block 代码块维度）转换为代码行维度 => old_cover_lines, new_cover_lines
-  - cover_line struct: `{"file":"main.go", "line_no":1, "line_content":"", "cover":1}`
+#### 方案2: block 维度数据合并
 
-3. diff_lines + old_cover_lines + new_cover_lines => merged_cover_lines
-  - 代码行 delete 的情况，在 old_cover_lines 中删除
-  - 代码行 add 和 change 的情况，取 new_cover_lines 中的 line 覆盖率数据到 merged_cover_lines
-  - 代码行 nochange 的情况，匹配 old_cover_lines 与 new_cover_lines 中的代码行，合并覆盖率数据，取较高的 line 覆盖率到 merged_cover_lines
+1. 通过 `git` 获取 diff file 数据
+2. 基于 `ast` 解析出 diff func 数据
+3. 匹配 src_func 和 dst_func
+4. 解析 `profile.cov` 获取 block 覆盖率数据
+5. 关联 func 与 blocks
+6. block 维度执行覆盖率数据合并
 
-4. 基于 merged_cover_lines 数据生成覆盖率报告
+合并规则：
 
-优点：
+- same file
+  - 合并 src 和 dst block 覆盖率（取较大 cover 值）
 
-1. cover_lines 方式比较通用：
-  - js 覆盖率数据是 statement + function + branch 维度
-  - golang 覆盖率数据是 block 维度
+- diff file
+  - add func: 取 dst 中的覆盖率数据
+  - change func: 取 dst 中的覆盖率数据
+  - delele func: 不需要处理
+  - same func: - 合并 src 和 dst block 覆盖率（取较大 cover 值）
 
-问题：
-
-1. 代码行行号变化后，如何匹配 old_cover_lines 与 new_cover_lines 中的代码行
-  - 比较 line_content?
-2. 基于 merged_cover_lines 行覆盖率数据生成 func 和 html 覆盖率报告
-
-#### 方案2: func 维度合并
-
-1. git diff 获取变化的代码文件 => diff_files
-
-2. ast 解析 diff 文件，得到变化的 func => diff_funcs
-  - 过滤空行、注释行
-  - diff_func struct: `{"file":"main.go", "func_name":"main", "diff":"add/delete/change", "position":"start_line,start_col,end_line,end_col"}`
-
-3. diff_func + old_cov + new_cov => merged_cov
-  - func delete 的情况，在 old_cov 中删除关联的 block
-  - func add 和 change 的情况，取 new_cov 中关联的 block 覆盖率数据到 merged_cov
-  - func unchange 的情况，基于 file+func_name 将 old_cov 与 new_cov 中的 block 覆盖率数据合并，取较高的覆盖率数据到 merged_cov
-
-4. go tool 生成 func 和 html 覆盖率报告
-
-优点：
-
-1. 基于 ast 分析，不被代码行行号变化影响
-2. 使用 go tool 生成覆盖率报告
-
-问题：
-
-1. 该方案只适用于 golang 覆盖率数据合并
+golang 适用于方案 2.
 
 ### Todos
 

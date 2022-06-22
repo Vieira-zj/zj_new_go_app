@@ -13,3 +13,7 @@ func TestFnToString(t *testing.T) {
 	}
 	p.fnToString()
 }
+
+func TestFnConditional(t *testing.T) {
+	fnConditional(false)
+}

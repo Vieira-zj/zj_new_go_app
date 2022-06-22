@@ -11,7 +11,12 @@ import (
 
 /* Read profile from .cov file. */
 
-const profileModePrefix = "mode: "
+const (
+	profileModePrefix = "mode: "
+	// profile mode
+	profileModeSet   = "set"
+	profileModeCount = "count"
+)
 
 // ProfileBlock .
 type ProfileBlock struct {
@@ -164,7 +169,7 @@ func mergeBlocksByStartPos(mode string, blocks []ProfileBlock) ([]ProfileBlock, 
 			if cur.NumStmt != prev.NumStmt {
 				return nil, fmt.Errorf("inconsistent NumStmt for block: %+v", cur)
 			}
-			if mode == "set" {
+			if mode == profileModeSet {
 				blocks[j-1].Count |= cur.Count
 			} else {
 				blocks[j-1].Count += cur.Count
@@ -176,6 +181,13 @@ func mergeBlocksByStartPos(mode string, blocks []ProfileBlock) ([]ProfileBlock, 
 	}
 
 	return blocks[:j], nil
+}
+
+func getProfileNameAndMode(fnProfile map[string]*Profile) (string, string, error) {
+	for _, profile := range fnProfile {
+		return profile.FileName, profile.Mode, nil
+	}
+	return "", "", fmt.Errorf("get profile mode is not exist")
 }
 
 /* Write profile to .cov file. */
@@ -242,8 +254,9 @@ func mergeProfileForDiffEntries(diffEntries []*DiffEntry) ([]ProfileBlock, error
 		if diffEntry.Result == diffTypeAdd || diffEntry.Result == diffTypeChange {
 			retBlocks = append(retBlocks, diffEntry.DstFuncProfileEntry.ProfileBlocks...)
 		} else if diffEntry.Result == diffTypeSame {
-			blocks, err := mergeProfileBlocks(
-				diffEntry.SrcFuncProfileEntry.ProfileBlocks, diffEntry.DstFuncProfileEntry.ProfileBlocks)
+			srcBlocks := diffEntry.SrcFuncProfileEntry.ProfileBlocks
+			dstBlocks := diffEntry.DstFuncProfileEntry.ProfileBlocks
+			blocks, err := mergeProfileBlocks(srcBlocks, dstBlocks)
 			if err != nil {
 				return nil, err
 			}
@@ -259,13 +272,13 @@ func mergeProfileBlocks(srcBlocks, dstBlocks []ProfileBlock) ([]ProfileBlock, er
 		return nil, fmt.Errorf("src and dst blocks numbers are not equal")
 	}
 
-	retBlocks := make([]ProfileBlock, 0, len(srcBlocks))
+	mergedBlocks := make([]ProfileBlock, 0, len(srcBlocks))
 	for i := 0; i < len(srcBlocks); i++ {
 		block := dstBlocks[i]
-		if srcBlocks[i].Count > dstBlocks[i].Count {
+		if srcBlocks[i].Count > block.Count {
 			block.Count = srcBlocks[i].Count
 		}
-		retBlocks = append(retBlocks, block)
+		mergedBlocks = append(mergedBlocks, block)
 	}
-	return retBlocks, nil
+	return mergedBlocks, nil
 }

@@ -98,6 +98,15 @@ func (e DiffEntries) Less(i, j int) bool {
 
 // funcDiffForGoFiles compares func bewteen src and dst .go files, and returns func diff info.
 func funcDiffForGoFiles(srcPath, dstPath string) (DiffEntries, error) {
+	if len(srcPath) == 0 {
+		// TODO: case add
+		return nil, nil
+	}
+	if len(dstPath) == 0 {
+		// TODO: case delete
+		return nil, nil
+	}
+
 	srcFuncInfos, err := GetFuncInfos(srcPath, nil)
 	if err != nil {
 		return nil, err
