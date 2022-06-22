@@ -1,0 +1,17 @@
+mode: set
+demo.hello/apps/funcdiff/test/src1/main.go:14.37,16.2 1 0
+demo.hello/apps/funcdiff/test/src1/main.go:18.20,20.2 1 1
+demo.hello/apps/funcdiff/test/src1/main.go:22.70,23.19 1 1
+demo.hello/apps/funcdiff/test/src1/main.go:27.2,27.34 1 1
+demo.hello/apps/funcdiff/test/src1/main.go:30.2,32.9 2 1
+demo.hello/apps/funcdiff/test/src1/main.go:23.19,25.3 1 0
+demo.hello/apps/funcdiff/test/src1/main.go:27.34,29.3 1 1
+demo.hello/apps/funcdiff/test/src1/main.go:35.17,37.2 1 1
+demo.hello/apps/funcdiff/test/src1/main.go:39.14,41.2 1 1
+demo.hello/apps/funcdiff/test/src1/main.go:43.57,45.10 1 1
+demo.hello/apps/funcdiff/test/src1/main.go:45.10,47.3 1 1
+demo.hello/apps/funcdiff/test/src1/main.go:47.8,48.10 1 0
+demo.hello/apps/funcdiff/test/src1/main.go:48.10,49.36 1 0
+demo.hello/apps/funcdiff/test/src1/main.go:52.4,52.30 1 0
+demo.hello/apps/funcdiff/test/src1/main.go:49.36,50.15 1 0
+demo.hello/apps/funcdiff/test/src1/main.go:57.13,59.2 1 0

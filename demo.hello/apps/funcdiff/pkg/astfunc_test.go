@@ -91,8 +91,8 @@ func TestGetFuncInfo02(t *testing.T) {
 
 func TestGetFuncInfos(t *testing.T) {
 	// NOTE: go file must be in a go project for ast parser
-	// path := filepath.Join(testRootDir, "src1/main.go")
-	path := filepath.Join("/tmp/test/go_project", "main_format.go")
+	path := filepath.Join(testRootDir, "src1/main.go")
+	// path := filepath.Join("/tmp/test/go_project", "main_format.go")
 	infos, err := GetFuncInfos(path, nil)
 	if err != nil {
 		t.Fatal(err)

@@ -407,7 +407,7 @@ func getRelativePath(path, pkgName string) (string, error) {
 		return "", err
 	}
 	if pkgName != "main" && !strings.HasSuffix(pkg, pkgName) {
-		return "", fmt.Errorf("Package name inconsistent")
+		return "", fmt.Errorf("Package name inconsistent: [%s]:[%s]", pkg, pkgName)
 	}
 	return filepath.Join(pkg, filepath.Base(path)), nil
 }

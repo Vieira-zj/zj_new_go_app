@@ -26,11 +26,17 @@ var diffResultAndTypeMap = map[string]string{
 	resultSame: diffTypeSame,
 }
 
+// FuncProfileEntry .
+type FuncProfileEntry struct {
+	FuncInfo      *FuncInfo      `json:"func_info"`
+	ProfileBlocks []ProfileBlock `json:"profile_blocks"`
+}
+
 // DiffEntry func diff result entry.
 type DiffEntry struct {
-	SrcFnInfo *FuncInfo `json:"src_func_info,omitempty"`
-	DstFnInfo *FuncInfo `json:"dst_func_info,omitempty"`
-	Result    string    `json:"result"`
+	SrcFuncProfileEntry *FuncProfileEntry `json:"src_func_profile_entry,omitempty"`
+	DstFuncProfileEntry *FuncProfileEntry `json:"dst_func_profile_entry,omitempty"`
+	Result              string            `json:"result"`
 }
 
 // funcDiff compares func between src and dst .go files, and return diff, same
@@ -46,9 +52,13 @@ func funcDiff(srcPath, dstPath string, funcName string) (*DiffEntry, error) {
 
 	result := diffFuncSrc(srcFuncInfo, dstFuncInfo)
 	diffEntry := &DiffEntry{
-		SrcFnInfo: srcFuncInfo,
-		DstFnInfo: dstFuncInfo,
-		Result:    result,
+		SrcFuncProfileEntry: &FuncProfileEntry{
+			FuncInfo: srcFuncInfo,
+		},
+		DstFuncProfileEntry: &FuncProfileEntry{
+			FuncInfo: dstFuncInfo,
+		},
+		Result: result,
 	}
 	return diffEntry, nil
 }
@@ -116,9 +126,13 @@ func funcDiffForGoFiles(srcPath, dstPath string) (DiffEntries, error) {
 		if srcFuncInfo, ok := sameFuncInfos[dstFuncInfo.Name]; ok {
 			result := diffFuncSrc(srcFuncInfo, dstFuncInfo)
 			diffEntry := &DiffEntry{
-				SrcFnInfo: srcFuncInfo,
-				DstFnInfo: dstFuncInfo,
-				Result:    diffResultAndTypeMap[result],
+				SrcFuncProfileEntry: &FuncProfileEntry{
+					FuncInfo: srcFuncInfo,
+				},
+				DstFuncProfileEntry: &FuncProfileEntry{
+					FuncInfo: dstFuncInfo,
+				},
+				Result: diffResultAndTypeMap[result],
 			}
 			retDiffEntries = append(retDiffEntries, diffEntry)
 		}
@@ -149,9 +163,9 @@ func getDiffEntries(funcInfos []*FuncInfo, baseFuncInfos map[string]*FuncInfo, d
 				Result: diffType,
 			}
 			if diffType == diffTypeRemove {
-				diffEntry.SrcFnInfo = funcInfo
+				diffEntry.SrcFuncProfileEntry = &FuncProfileEntry{FuncInfo: funcInfo}
 			} else {
-				diffEntry.DstFnInfo = funcInfo
+				diffEntry.DstFuncProfileEntry = &FuncProfileEntry{FuncInfo: funcInfo}
 			}
 			retDiffEntries = append(retDiffEntries, diffEntry)
 		}
@@ -164,17 +178,31 @@ func getDiffEntries(funcInfos []*FuncInfo, baseFuncInfos map[string]*FuncInfo, d
 //
 
 func prettySprintDiffEntry(entry *DiffEntry) string {
-	lines := make([]string, 0, 3)
-	if entry.SrcFnInfo != nil {
-		lines = append(lines, "src: "+prettySprintFuncInfo(entry.SrcFnInfo))
+	retLines := make([]string, 0, 16)
+	if entry.SrcFuncProfileEntry != nil {
+		lines := prettyFuncProfileEntry(entry.SrcFuncProfileEntry, "src")
+		retLines = append(retLines, lines...)
 	}
-	if entry.DstFnInfo != nil {
-		lines = append(lines, "dst: "+prettySprintFuncInfo(entry.DstFnInfo))
+	if entry.DstFuncProfileEntry != nil {
+		lines := prettyFuncProfileEntry(entry.DstFuncProfileEntry, "dst")
+		retLines = append(retLines, lines...)
 	}
-	lines = append(lines, "diff: "+entry.Result)
-	return strings.Join(lines, "\n")
+	retLines = append(retLines, "diff: "+entry.Result+"\n")
+	return strings.Join(retLines, "\n")
+}
+
+func prettyFuncProfileEntry(entry *FuncProfileEntry, tag string) []string {
+	lines := make([]string, 0, 16)
+	lines = append(lines, tag+": "+prettySprintFuncInfo(entry.FuncInfo))
+	if entry.ProfileBlocks != nil {
+		for _, block := range entry.ProfileBlocks {
+			lines = append(lines, "\t"+fmt.Sprintf("%+v", block))
+		}
+	}
+	return lines
 }
 
 func prettySprintFuncInfo(info *FuncInfo) string {
-	return fmt.Sprintf("[%s:%s] [%d:%d,%d:%d]", info.Path, info.Name, info.StartLine, info.StartCol, info.EndLine, info.EndCol)
+	return fmt.Sprintf("[%s:%s] [%d:%d,%d:%d]",
+		info.Path, info.Name, info.StartLine, info.StartCol, info.EndLine, info.EndCol)
 }

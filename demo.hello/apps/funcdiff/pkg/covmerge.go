@@ -9,13 +9,16 @@ import (
 	"strings"
 )
 
-/* Profile Struct */
+/* Read profile from .cov file. */
+
+const profileModePrefix = "mode: "
 
 // ProfileBlock .
 type ProfileBlock struct {
 	StartLine, StartCol int
 	EndLine, EndCol     int
 	NumStmt, Count      int
+	isLink              bool
 }
 
 // Profile .
@@ -87,11 +90,10 @@ func parseCovFile(fpath string) (map[string]*Profile, error) {
 }
 
 func parseModeLine(line string) (string, error) {
-	const prefix = "mode: "
-	if !strings.HasPrefix(line, prefix) || line == prefix {
+	if !strings.HasPrefix(line, profileModePrefix) || line == profileModePrefix {
 		return "", fmt.Errorf("invalid mode: %v", line)
 	}
-	return line[len(prefix):], nil
+	return line[len(profileModePrefix):], nil
 }
 
 // line format: name.go:line.column,line.column numberOfStatements count
@@ -176,33 +178,94 @@ func mergeBlocksByStartPos(mode string, blocks []ProfileBlock) ([]ProfileBlock, 
 	return blocks[:j], nil
 }
 
-/* Func Cov Struct */
+/* Write profile to .cov file. */
 
-// FuncCovEntry .
-type FuncCovEntry struct {
-	FuncInfo      *FuncInfo
-	ProfileBlocks []ProfileBlock
+func writeCovFile(filePath string, profiles []*Profile) error {
+	outLines := make([]string, 0, 16)
+	header := profileModePrefix + profiles[0].Mode
+	outLines = append(outLines, header)
+
+	for _, profile := range profiles {
+		lines := buildFileProfileLines(profile)
+		outLines = append(outLines, lines...)
+	}
+
+	content := strings.Join(outLines, "\n")
+	return os.WriteFile(filePath, []byte(content), 0644)
 }
 
-func linkProfileBlocksToFunc(profile *Profile, funcInfo *FuncInfo) *FuncCovEntry {
-	linkedBlocks := make([]ProfileBlock, 0, 16)
+func buildFileProfileLines(profile *Profile) []string {
+	retLines := make([]string, 0, len(profile.Blocks))
 	for _, block := range profile.Blocks {
+		line := buildProfileLine(profile.FileName, block)
+		retLines = append(retLines, line)
+	}
+	return retLines
+}
+
+func buildProfileLine(fpath string, block ProfileBlock) string {
+	return fmt.Sprintf("%s:%d.%d,%d.%d %d %d",
+		fpath, block.StartLine, block.StartCol, block.EndLine, block.EndCol, block.NumStmt, block.Count)
+}
+
+/* Func Cov Struct */
+
+func linkProfileBlocksToFunc(entry *FuncProfileEntry, profile *Profile) {
+	linkedBlocks := make([]ProfileBlock, 0, 16)
+	funcInfo := entry.FuncInfo
+	for i := 0; i < len(profile.Blocks); i++ {
+		block := profile.Blocks[i]
 		if (block.StartLine > funcInfo.EndLine) ||
 			(block.StartLine == funcInfo.EndLine && block.StartCol > funcInfo.EndCol) {
 			continue
 		}
 		if (block.StartLine > funcInfo.StartLine) ||
 			((block.StartLine == funcInfo.StartLine) && (block.StartCol > funcInfo.StartCol)) {
+			profile.Blocks[i].isLink = true
 			linkedBlocks = append(linkedBlocks, block)
 		}
 	}
-
-	return &FuncCovEntry{
-		FuncInfo:      funcInfo,
-		ProfileBlocks: linkedBlocks,
-	}
+	entry.ProfileBlocks = linkedBlocks
 }
 
 /* Merge Func Cov Entries */
 
-// TODO:
+// mergeProfiles: 1.diff func; 2.link profile blocks to func; 3.merge profiles, and write cov file
+func mergeProfiles(entry *FuncProfileEntry, covPath string) error {
+	// TODO:
+	return nil
+}
+
+func mergeProfileForDiffEntries(diffEntries []*DiffEntry) ([]ProfileBlock, error) {
+	retBlocks := make([]ProfileBlock, 0, 16)
+	for _, diffEntry := range diffEntries {
+		if diffEntry.Result == diffTypeAdd || diffEntry.Result == diffTypeChange {
+			retBlocks = append(retBlocks, diffEntry.DstFuncProfileEntry.ProfileBlocks...)
+		} else if diffEntry.Result == diffTypeSame {
+			blocks, err := mergeProfileBlocks(
+				diffEntry.SrcFuncProfileEntry.ProfileBlocks, diffEntry.DstFuncProfileEntry.ProfileBlocks)
+			if err != nil {
+				return nil, err
+			}
+			retBlocks = append(retBlocks, blocks...)
+		}
+	}
+
+	return retBlocks, nil
+}
+
+func mergeProfileBlocks(srcBlocks, dstBlocks []ProfileBlock) ([]ProfileBlock, error) {
+	if len(srcBlocks) != len(dstBlocks) {
+		return nil, fmt.Errorf("src and dst blocks numbers are not equal")
+	}
+
+	retBlocks := make([]ProfileBlock, 0, len(srcBlocks))
+	for i := 0; i < len(srcBlocks); i++ {
+		block := dstBlocks[i]
+		if srcBlocks[i].Count > dstBlocks[i].Count {
+			block.Count = srcBlocks[i].Count
+		}
+		retBlocks = append(retBlocks, block)
+	}
+	return retBlocks, nil
+}

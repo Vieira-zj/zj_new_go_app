@@ -1,0 +1,7 @@
+demo.hello/apps/funcdiff/test/src1/main.go:14:	fnToString	0.0%
+demo.hello/apps/funcdiff/test/src1/main.go:22:	fnHello		83.3%
+demo.hello/apps/funcdiff/test/src1/main.go:35:	fnChange	100.0%
+demo.hello/apps/funcdiff/test/src1/main.go:39:	fnDel		100.0%
+demo.hello/apps/funcdiff/test/src1/main.go:43:	fnConditional	33.3%
+demo.hello/apps/funcdiff/test/src1/main.go:57:	main		0.0%
+total:						(statements)	56.2%
