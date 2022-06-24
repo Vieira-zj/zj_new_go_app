@@ -97,7 +97,7 @@ func TestLinkProfileBlocksToFunc(t *testing.T) {
 }
 
 func TestMergeProfiles01(t *testing.T) {
-	// case: merge profile for change file
+	// case: merge profile for a change file
 	srcPath := filepath.Join(testRootDir, "src1/main.go")
 	dstPath := filepath.Join(testRootDir, "src2/main.go")
 
@@ -112,19 +112,20 @@ func TestMergeProfiles01(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	profileMode, err := getProfileMode(dstFnProfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	dstFilePath, mergedBlocks, err := mergeProfiles(srcPath, dstPath, srcFnProfile, dstFnProfile)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	profile, ok := dstFnProfile[dstFilePath]
-	if !ok {
-		t.Fatal(fmt.Errorf("profile is not found for filepath: [%s]", dstFilePath))
-	}
 	profiles := []*Profile{
 		{
 			FileName: dstFilePath,
-			Mode:     profile.Mode,
+			Mode:     profileMode,
 			Blocks:   mergedBlocks,
 		},
 	}
@@ -156,11 +157,12 @@ func TestMergeProfiles02(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	profiles := make([]*Profile, 0, 2)
-	for srcPath, dstPath := range map[string]string{
+	diffFiles := map[string]string{
 		getPath("src1/main.go"):     getPath("src2/main.go"),
 		getPath("src1/nochange.go"): getPath("src2/nochange.go"),
-	} {
+	}
+	profiles := make([]*Profile, 0, len(diffFiles))
+	for srcPath, dstPath := range diffFiles {
 		dstFilePath, mergedBlocks, err := mergeProfiles(srcPath, dstPath, srcFnProfile, dstFnProfile)
 		if err != nil {
 			t.Fatal(err)

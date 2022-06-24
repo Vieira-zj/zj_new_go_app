@@ -211,6 +211,15 @@ func (r *GitRepo) GetBranchFullName(branch string) (string, error) {
 	return name, err
 }
 
+// GetCommit .
+func (r *GitRepo) GetCommit(hash string) (*object.Commit, error) {
+	fullHash, err := r.getFullCommitID(hash)
+	if err != nil {
+		return nil, err
+	}
+	return object.GetCommit(r.repo.Storer, plumbing.NewHash(fullHash))
+}
+
 // GetBranchCommit .
 func (r *GitRepo) GetBranchCommit(branch string) (string, error) {
 	_, commitID, err := r.getBranch(branch)

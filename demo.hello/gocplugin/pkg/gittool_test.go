@@ -203,6 +203,36 @@ func TestIsBranchExist(t *testing.T) {
 	fmt.Println("branch exist:", ok)
 }
 
+func TestGetCommit(t *testing.T) {
+	// show diff files between commits
+	repoPath := "/tmp/test/git_space"
+	repo := NewGitRepo(repoPath)
+
+	srcCommit, err := repo.GetCommit("a1765a336")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dstCommit, err := repo.GetCommit("59d198249")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	patch, err := srcCommit.Patch(dstCommit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, fpatch := range patch.FilePatches() {
+		from, to := fpatch.Files()
+		if from != nil {
+			fmt.Println("from:", from.Path())
+		}
+		if to != nil {
+			fmt.Println("to:", to.Path())
+		}
+		fmt.Println()
+	}
+}
+
 func testGetRepoPathAndURL() (string, string, error) {
 	// root := filepath.Join(os.Getenv("HOME"), "Downloads/data/goc_staging_space")
 	root := "/tmp/test/goc_test_space"

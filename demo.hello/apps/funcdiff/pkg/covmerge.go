@@ -239,7 +239,7 @@ func linkProfileBlocksToFunc(entry *FuncProfileEntry, profile *Profile) {
 		if (block.StartLine > funcInfo.StartLine) ||
 			((block.StartLine == funcInfo.StartLine) && (block.StartCol > funcInfo.StartCol)) {
 			profile.Blocks[i].isLink = true
-			linkedBlocks = append(linkedBlocks, block)
+			linkedBlocks = append(linkedBlocks, profile.Blocks[i])
 		}
 	}
 	entry.ProfileBlocks = linkedBlocks

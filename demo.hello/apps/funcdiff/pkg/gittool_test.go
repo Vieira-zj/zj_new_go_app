@@ -1,5 +1,26 @@
 package pkg
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
-func TestGetDiffFilesByCommits(t *testing.T) {}
+func TestGetDiffFilesByCommits(t *testing.T) {
+	isDebug = true
+	repoPath := "/tmp/test/git_space"
+
+	for srcHash, dstHash := range map[string]string{
+		"ee2b84b71": "693130c64",
+		"693130c64": "a1765a336",
+		"a1765a336": "59d198249",
+	} {
+		diffs, err := getDiffFilesByCommits(repoPath, "master", srcHash, dstHash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("\ndiff files:")
+		for _, diff := range diffs {
+			fmt.Printf("diff: %+v\n", diff)
+		}
+	}
+}
