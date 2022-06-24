@@ -3,7 +3,6 @@ package pkg
 import (
 	"fmt"
 	"path/filepath"
-	"sort"
 	"testing"
 )
 
@@ -26,12 +25,12 @@ func TestParseProfileLine(t *testing.T) {
 func TestParseCovFile(t *testing.T) {
 	// read cov
 	fpath := "/tmp/test/profile.cov"
-	results, err := parseCovFile(fpath)
+	profiles, err := parseCovFile(fpath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for fname, profile := range results {
+	for fname, profile := range profiles {
 		fmt.Printf("\nmode=%s, filename=%s\n", profile.Mode, fname)
 		for _, block := range profile.Blocks {
 			fmt.Printf("\tblock: %+v\n", block)
@@ -39,13 +38,15 @@ func TestParseCovFile(t *testing.T) {
 	}
 
 	// write cov
-	outProfiles := make([]*Profile, 0, len(results))
-	for _, profile := range results {
+	outProfiles := make([]*Profile, 0, len(profiles))
+	for _, profile := range profiles {
 		outProfiles = append(outProfiles, profile)
 	}
 
 	outPath := "/tmp/test/out_profile.cov"
-	writeCovFile(outPath, outProfiles)
+	if err := writeProfilesToCovFile(outPath, outProfiles); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestLinkProfileBlocksToFunc(t *testing.T) {
@@ -95,11 +96,11 @@ func TestLinkProfileBlocksToFunc(t *testing.T) {
 	}
 }
 
-func TestMergeProfiles(t *testing.T) {
+func TestMergeProfiles01(t *testing.T) {
+	// case: merge profile for change file
 	srcPath := filepath.Join(testRootDir, "src1/main.go")
 	dstPath := filepath.Join(testRootDir, "src2/main.go")
 
-	// step1. parse profile
 	covPath := filepath.Join(filepath.Dir(srcPath), "profile.cov")
 	srcFnProfile, err := parseCovFile(covPath)
 	if err != nil {
@@ -111,85 +112,68 @@ func TestMergeProfiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, srcProfileMode, err := getProfileNameAndMode(srcFnProfile)
+	dstFilePath, mergedBlocks, err := mergeProfiles(srcPath, dstPath, srcFnProfile, dstFnProfile)
 	if err != nil {
 		t.Fatal(err)
 	}
-	dstProfileName, dstProfileMode, err := getProfileNameAndMode(dstFnProfile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if srcProfileMode != dstProfileMode {
-		t.Fatal(fmt.Errorf("profile mode is not inconsistent"))
-	}
 
-	// step2. diff func
-	diffEntries, err := funcDiffForGoFiles(srcPath, dstPath)
-	if err != nil {
-		t.Fatal(err)
+	profile, ok := dstFnProfile[dstFilePath]
+	if !ok {
+		t.Fatal(fmt.Errorf("profile is not found for filepath: [%s]", dstFilePath))
 	}
-	fmt.Println("\nfunc diff:")
-	for _, entry := range diffEntries {
-		fmt.Println(prettySprintDiffEntry(entry))
+	profiles := []*Profile{
+		{
+			FileName: dstFilePath,
+			Mode:     profile.Mode,
+			Blocks:   mergedBlocks,
+		},
 	}
-
-	// step3. link profile blocks to func
-	for _, entry := range diffEntries {
-		if entry.Result == diffTypeAdd {
-			fpath := entry.DstFuncProfileEntry.FuncInfo.Path
-			profile := dstFnProfile[fpath]
-			linkProfileBlocksToFunc(entry.DstFuncProfileEntry, profile)
-		} else if entry.Result == diffTypeRemove {
-			fpath := entry.SrcFuncProfileEntry.FuncInfo.Path
-			profile := srcFnProfile[fpath]
-			linkProfileBlocksToFunc(entry.SrcFuncProfileEntry, profile)
-		} else if entry.Result == diffTypeSame || entry.Result == diffTypeChange {
-			// src
-			fpath := entry.SrcFuncProfileEntry.FuncInfo.Path
-			srcProfile := srcFnProfile[fpath]
-			linkProfileBlocksToFunc(entry.SrcFuncProfileEntry, srcProfile)
-			// dst
-			fpath = entry.DstFuncProfileEntry.FuncInfo.Path
-			dstProfile := dstFnProfile[fpath]
-			linkProfileBlocksToFunc(entry.DstFuncProfileEntry, dstProfile)
-		} else {
-			t.Fatal(fmt.Errorf("invalid entry diff result"))
-		}
-	}
-
-	fmt.Println("\ndiff entries:")
-	for _, entry := range diffEntries {
-		fmt.Println(prettySprintDiffEntry(entry))
-	}
-
-	fmt.Println("\nunlinked blocks:")
-	unLinkedBlocks := make([]ProfileBlock, 0, 8)
-	for _, profile := range dstFnProfile {
-		for _, block := range profile.Blocks {
-			if !block.isLink {
-				fmt.Printf("\t%+v\n", block)
-				unLinkedBlocks = append(unLinkedBlocks, block)
-			}
-		}
-	}
-
-	// step4. merge profiles, and write cov file
-	mergedBlocks, err := mergeProfileForDiffEntries(diffEntries)
-	if err != nil {
-		t.Fatal(err)
-	}
-	mergedBlocks = append(mergedBlocks, unLinkedBlocks...)
-	sort.Sort(blocksByStartPos(mergedBlocks))
-
-	profile := &Profile{
-		FileName: dstProfileName,
-		Mode:     dstProfileMode,
-		Blocks:   mergedBlocks,
-	}
-	fmt.Println("write profile count:", len(profile.Blocks))
-
 	mergedPath := filepath.Join(filepath.Dir(dstPath), "profile_merged.cov")
-	if err := writeCovFile(mergedPath, []*Profile{profile}); err != nil {
+	if err := writeProfilesToCovFile(mergedPath, profiles); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMergeProfiles02(t *testing.T) {
+	// case: merge profile for same and change files
+	getPath := func(key string) string {
+		return filepath.Join(testRootDir, key)
+	}
+
+	covPath := filepath.Join(testRootDir, "src1/profile.cov")
+	srcFnProfile, err := parseCovFile(covPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	covPath = filepath.Join(testRootDir, "src2/profile.cov")
+	dstFnProfile, err := parseCovFile(covPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	dstProfileMode, err := getProfileMode(dstFnProfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	profiles := make([]*Profile, 0, 2)
+	for srcPath, dstPath := range map[string]string{
+		getPath("src1/main.go"):     getPath("src2/main.go"),
+		getPath("src1/nochange.go"): getPath("src2/nochange.go"),
+	} {
+		dstFilePath, mergedBlocks, err := mergeProfiles(srcPath, dstPath, srcFnProfile, dstFnProfile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		profiles = append(profiles, &Profile{
+			FileName: dstFilePath,
+			Mode:     dstProfileMode,
+			Blocks:   mergedBlocks,
+		},
+		)
+	}
+
+	if err := writeProfilesToCovFile(getPath("src2/profile_merged.cov"), profiles); err != nil {
 		t.Fatal(err)
 	}
 }

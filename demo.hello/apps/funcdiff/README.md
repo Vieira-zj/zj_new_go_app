@@ -48,7 +48,6 @@
 2. go 覆盖率工具链是基于 block 维度，使用 line 维度后不能复用
 3. 合并数据精准度问题
   - 当 func 变化后，该 func 中包含代码行的覆盖率都应该设置为 0
-  - 上下游的 func 代码覆盖率是否应该设置为 0 ?
 
 ### 方案2: func 维度合并
 
@@ -83,6 +82,8 @@
 问题：
 
 1. 该方案只适用于 golang 覆盖率数据合并
+2. 合并数据精准度问题
+  - 上下游的 func 代码覆盖率是否应该设置为 0
 
 ## 方案2 - Demo
 
@@ -227,7 +228,7 @@ demo.hello/apps/funcdiff/test/src1/main.go:14:  fnToString  0.0%     => same
 demo.hello/apps/funcdiff/test/src1/main.go:22:  fnHello   83.3%      => same
 demo.hello/apps/funcdiff/test/src1/main.go:35:  fnChange  100.0%     => change
 demo.hello/apps/funcdiff/test/src1/main.go:39:  fnDel   100.0%       => delete, not include in merged results
-demo.hello/apps/funcdiff/test/src1/main.go:43:  fnConditional 33.3%  => cover true cond
+demo.hello/apps/funcdiff/test/src1/main.go:43:  fnConditional 33.3%  => run true cond
 demo.hello/apps/funcdiff/test/src1/main.go:57:  main    0.0%         => exclude main
 total:            (statements)  56.2%
 ```
@@ -238,7 +239,7 @@ Dst func report:
 demo.hello/apps/funcdiff/test/src2/main.go:12:  fnHello   0.0%       => same
 demo.hello/apps/funcdiff/test/src2/main.go:25:  fnAdd   100.0%       => add
 demo.hello/apps/funcdiff/test/src2/main.go:31:  fnChange  0.0%       => change
-demo.hello/apps/funcdiff/test/src2/main.go:35:  fnConditional 66.7%  => cover false cond
+demo.hello/apps/funcdiff/test/src2/main.go:35:  fnConditional 66.7%  => run false cond
 demo.hello/apps/funcdiff/test/src2/main.go:54:  fnToString  100.0%   => same
 demo.hello/apps/funcdiff/test/src2/main.go:58:  main    0.0%         => exclude main
 total:            (statements)  44.4%

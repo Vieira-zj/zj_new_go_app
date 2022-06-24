@@ -273,6 +273,14 @@ func TestReadLinesFile(t *testing.T) {
 	}
 }
 
+func TestAppendToFile(t *testing.T) {
+	path := "/tmp/test/merged_profile.cov"
+	content := []byte("append line test\n")
+	if err := AppendToFile(path, content); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestWriteContentToFile(t *testing.T) {
 	filePath := "/tmp/test/output.txt"
 	content := `one, this is a test.

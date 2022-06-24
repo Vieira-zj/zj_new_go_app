@@ -3,6 +3,7 @@ package pkg
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"sort"
 	"strconv"
@@ -183,16 +184,20 @@ func mergeBlocksByStartPos(mode string, blocks []ProfileBlock) ([]ProfileBlock, 
 	return blocks[:j], nil
 }
 
-func getProfileNameAndMode(fnProfile map[string]*Profile) (string, string, error) {
-	for _, profile := range fnProfile {
-		return profile.FileName, profile.Mode, nil
+func getProfileMode(fnProfile map[string]*Profile) (string, error) {
+	if len(fnProfile) == 0 {
+		return "", fmt.Errorf("profile is empty")
 	}
-	return "", "", fmt.Errorf("get profile mode is not exist")
+
+	for _, profile := range fnProfile {
+		return profile.Mode, nil
+	}
+	return "", fmt.Errorf("no profile mode found")
 }
 
 /* Write profile to .cov file. */
 
-func writeCovFile(filePath string, profiles []*Profile) error {
+func writeProfilesToCovFile(filePath string, profiles []*Profile) error {
 	outLines := make([]string, 0, 16)
 	header := profileModePrefix + profiles[0].Mode
 	outLines = append(outLines, header)
@@ -242,10 +247,67 @@ func linkProfileBlocksToFunc(entry *FuncProfileEntry, profile *Profile) {
 
 /* Merge Func Cov Entries */
 
-// mergeProfiles: 1.diff func; 2.link profile blocks to func; 3.merge profiles, and write cov file
-func mergeProfiles(entry *FuncProfileEntry, covPath string) error {
-	// TODO:
-	return nil
+// mergeProfiles: 1.diff func; 2.link profile blocks to func; 3.merge profiles
+func mergeProfiles(srcPath, dstPath string, srcFnProfile, dstFnProfile map[string]*Profile) (string, []ProfileBlock, error) {
+	// 1.diff func
+	diffEntries, err := funcDiffForGoFiles(srcPath, dstPath)
+	if err != nil {
+		return "", nil, err
+	}
+
+	dstFilePath := ""
+	for _, entry := range diffEntries {
+		if entry.DstFuncProfileEntry != nil {
+			dstFilePath = entry.DstFuncProfileEntry.FuncInfo.Path
+			break
+		}
+	}
+
+	// 2.link profile blocks to func
+	for _, entry := range diffEntries {
+		if entry.Result == diffTypeAdd {
+			fpath := entry.DstFuncProfileEntry.FuncInfo.Path
+			profile := dstFnProfile[fpath]
+			linkProfileBlocksToFunc(entry.DstFuncProfileEntry, profile)
+		} else if entry.Result == diffTypeRemove {
+			fpath := entry.SrcFuncProfileEntry.FuncInfo.Path
+			profile := srcFnProfile[fpath]
+			linkProfileBlocksToFunc(entry.SrcFuncProfileEntry, profile)
+		} else if entry.Result == diffTypeSame || entry.Result == diffTypeChange {
+			// src
+			fpath := entry.SrcFuncProfileEntry.FuncInfo.Path
+			srcProfile := srcFnProfile[fpath]
+			linkProfileBlocksToFunc(entry.SrcFuncProfileEntry, srcProfile)
+			// dst
+			fpath = entry.DstFuncProfileEntry.FuncInfo.Path
+			dstProfile := dstFnProfile[fpath]
+			linkProfileBlocksToFunc(entry.DstFuncProfileEntry, dstProfile)
+		} else {
+			return "", nil, fmt.Errorf("invalid entry diff result")
+		}
+	}
+
+	log.Println("Diff entries:")
+	for _, entry := range diffEntries {
+		fmt.Println(prettySprintDiffEntry(entry))
+	}
+
+	unLinkedBlocks := make([]ProfileBlock, 0, 8)
+	for _, block := range dstFnProfile[dstFilePath].Blocks {
+		if !block.isLink {
+			unLinkedBlocks = append(unLinkedBlocks, block)
+		}
+	}
+
+	// 3.merge profiles
+	mergedBlocks, err := mergeProfileForDiffEntries(diffEntries)
+	if err != nil {
+		return "", nil, err
+	}
+	mergedBlocks = append(mergedBlocks, unLinkedBlocks...)
+	sort.Sort(blocksByStartPos(mergedBlocks))
+
+	return dstFilePath, mergedBlocks, nil
 }
 
 func mergeProfileForDiffEntries(diffEntries []*DiffEntry) ([]ProfileBlock, error) {

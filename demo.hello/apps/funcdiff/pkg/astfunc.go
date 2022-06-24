@@ -357,9 +357,7 @@ func formatGoFile(src, dst string) error {
 				break
 			}
 			newLine = strings.Replace(newLine, comment, "", 1)
-			newLine = strings.Trim(newLine, " ")
-			newLine = strings.Trim(newLine, "\t")
-			newLine = strings.Trim(newLine, "\n")
+			newLine = stringTrim(newLine)
 			comments = comments[1:]
 		}
 		if len(newLine) > 0 {
@@ -418,23 +416,28 @@ func getGoPackage(dirPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	res = strings.Trim(res, "\n")
-	res = strings.Trim(res, " ")
-	return res, nil
+	return stringTrim(res), nil
 }
 
 func deleteEmptyLinesInText(src []byte) string {
 	lines := strings.Split(string(src), "\n")
 	outLines := make([]string, 0, len(lines))
 	for _, line := range lines {
-		newLine := strings.Trim(line, " ")
-		newLine = strings.Trim(newLine, "\t")
-		newLine = strings.Trim(newLine, "\n")
+		newLine := stringTrim(line)
 		if len(newLine) > 0 {
 			outLines = append(outLines, line)
 		}
 	}
 
 	return strings.Join(outLines, "\n")
+}
+
+func stringTrim(text string) string {
+	if len(text) == 0 {
+		return text
+	}
+	trimText := strings.Trim(text, " ")
+	trimText = strings.Trim(trimText, "\t")
+	trimText = strings.Trim(trimText, "\n")
+	return trimText
 }

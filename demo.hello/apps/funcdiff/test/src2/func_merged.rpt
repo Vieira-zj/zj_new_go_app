@@ -1,7 +1,9 @@
-demo.hello/apps/funcdiff/test/src2/main.go:12:	fnHello		83.3%
-demo.hello/apps/funcdiff/test/src2/main.go:25:	fnAdd		100.0%
-demo.hello/apps/funcdiff/test/src2/main.go:31:	fnChange	0.0%
-demo.hello/apps/funcdiff/test/src2/main.go:35:	fnConditional	83.3%
-demo.hello/apps/funcdiff/test/src2/main.go:54:	fnToString	100.0%
-demo.hello/apps/funcdiff/test/src2/main.go:58:	main		0.0%
-total:						(statements)	77.8%
+demo.hello/apps/funcdiff/test/src2/main.go:12:		fnHello		83.3%
+demo.hello/apps/funcdiff/test/src2/main.go:25:		fnAdd		100.0%
+demo.hello/apps/funcdiff/test/src2/main.go:31:		fnChange	0.0%
+demo.hello/apps/funcdiff/test/src2/main.go:35:		fnConditional	83.3%
+demo.hello/apps/funcdiff/test/src2/main.go:54:		fnToString	100.0%
+demo.hello/apps/funcdiff/test/src2/main.go:58:		main		0.0%
+demo.hello/apps/funcdiff/test/src2/nochange.go:6:	noChange	100.0%
+demo.hello/apps/funcdiff/test/src2/nochange.go:11:	noChangeCond	100.0%
+total:							(statements)	84.0%

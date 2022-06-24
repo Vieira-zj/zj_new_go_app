@@ -5,7 +5,7 @@ root_dir="${GO_PROJECT_ROOT}"
 
 function run_go_test {
     local go_pkg="demo.hello/apps/funcdiff/pkg"
-    local case="TestMergeProfiles"
+    local case="TestMergeProfiles02"
     go test -timeout=10s -run ^${case}$ ${go_pkg} -v -count=1
 }
 
@@ -14,7 +14,7 @@ function run_go_test_cover {
     local go_pkg="demo.hello/apps/funcdiff/${sub_dir}"
     local out_cov="./${sub_dir}/profile.cov"
     # covermode: set, count
-    go test -v -timeout=10s ${go_pkg} -cover -covermode=set -coverprofile=${out_cov}
+    go test -v -timeout=10s ${go_pkg} -cover -covermode=count -coverprofile=${out_cov}
 }
 
 function run_cover_func_report {
@@ -44,7 +44,7 @@ function get_diff_files {
 
 # run_go_test
 # run_go_test_cover
-run_cover_func_report
+# run_cover_func_report
 
 # get_diff_files
 

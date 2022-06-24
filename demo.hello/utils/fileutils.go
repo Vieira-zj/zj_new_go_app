@@ -308,6 +308,20 @@ func ReadLinesFile(filePath string) ([]string, error) {
 	return retLines, nil
 }
 
+// AppendToFile appends text to file if file exist, or create a new file.
+func AppendToFile(filePath string, text []byte) error {
+	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	buf := bufio.NewWriter(f)
+	defer buf.Flush()
+	_, err = buf.Write(text)
+	return err
+}
+
 // WriteLinesToFile .
 func WriteLinesToFile(filePath string, outLines []string) error {
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
