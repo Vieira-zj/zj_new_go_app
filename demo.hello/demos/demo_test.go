@@ -1651,6 +1651,36 @@ func TestDemo55(t *testing.T) {
 	fmt.Println("Done")
 }
 
+func TestDemo56(t *testing.T) {
+	// sync.Cond
+	locker := new(sync.Mutex)
+	cond := sync.NewCond(locker)
+
+	for i := 0; i < 5; i++ {
+		local := i
+		go func() {
+			cond.L.Lock()
+			defer cond.L.Unlock()
+			fmt.Printf("goroutine [%d] start and wait\n", local)
+			cond.Wait()
+			fmt.Printf("goroutine [%d] resume and run\n", local)
+			time.Sleep(time.Second)
+		}()
+	}
+
+	for i := 0; i < 2; i++ {
+		time.Sleep(time.Second)
+		fmt.Println("Signal...")
+		cond.Signal()
+	}
+	time.Sleep(3 * time.Second)
+	fmt.Println("Broadcast...")
+	cond.Broadcast()
+
+	time.Sleep(3 * time.Second)
+	fmt.Println("done")
+}
+
 func TestDemo95(t *testing.T) {
 	// 可变参数
 	myPrint := func(args ...string) {
