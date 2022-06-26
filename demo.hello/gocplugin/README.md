@@ -62,6 +62,8 @@
 
 ![img](static/Html_cover_report.png)
 
+------
+
 ## Goc Plugin Design
 
 ### 服务架构
@@ -144,6 +146,8 @@ curl -i http://localhost:8081/ping
 curl -XPOST "http://localhost:8081/mirror?name=foo" -H "X-Test:Mirror" -d 'hello' | jq .
 ```
 
+------
+
 ## Goc Rest API
 
 - List register services in goc
@@ -177,6 +181,8 @@ curl -XPOST http://localhost:7777/v1/cover/remove -H "Content-Type:application/j
 ```sh
 curl http://127.0.0.1:51025/v1/cover/coverage
 ```
+
+------
 
 ## Goc Report Rest API
 
@@ -265,6 +271,8 @@ Open in chrome: <http://127.0.0.1:8089/static/report/apa_echoserver/staging_th_a
 
 - `/cover/report/history`: get history cover func/html report.
 
+------
+
 ## Goc Watch Dog Rest API
 
 - `/watcher/srv/list`: list addresses of available service.
@@ -300,39 +308,44 @@ curl -XPOST http://127.0.0.1:8089/watcher/cover/hook/sync -H "Content-Type:appli
   -d '{"srv_name":"staging_th_apa_echoserver_goc_master_b63d82705a"}' | jq .
 ```
 
+------
+
 ## Key Problems to Resolve
 
 ### 覆盖率数据合并
 
-背景：合并不同版本代码的覆盖率数据数据。如 bug fix 后的覆盖率数据与上一个版本（全量回归测试）的覆盖率数据合并。
+合并不同版本代码的覆盖率数据。如 bug fix 后的覆盖率数据与上一个版本（全量回归测试）的数据合并。
 
 #### 方案1: line 维度数据合并
 
-1. 通过 `git` 获取 diff line 数据
+1. 通过 git 获取 diff line
 2. 匹配 src_line 和 dst_line
 3. 解析 `profile.cov` 获取 line_cover 覆盖率数据
-4. 关联 line 与 line_cover
-5. line 维度执行覆盖率数据合并
+4. 把 line_cover 与 line 关联
+5. 覆盖率数据合并，将 src_line 和 dst_line 关联的 line_cover 数据合并
 
 #### 方案2: block 维度数据合并
 
-1. 通过 `git` 获取 diff file 数据
-2. 基于 `ast` 解析出 diff func 数据
-3. 匹配 src_func 和 dst_func
-4. 解析 `profile.cov` 获取 block 覆盖率数据
-5. 关联 func 与 blocks
-6. block 维度执行覆盖率数据合并
+1. 通过 git 获取 diff file
+2. 基于 `ast` 解析出 src_file 与 dst_file 的 diff func
+  - 匹配 src_func 和 dst_func
+3. 解析 `profile.cov` 获取 block_cover 覆盖率数据
+4. 把 block_cover 与 func 关联
+5. 覆盖率数据合并，将 src_func 和 dst_func 关联的 block_cover 数据合并
 
-合并规则：
+覆盖率合并规则：
 
 - same file
-  - 合并 src 和 dst block 覆盖率（取较大 cover 值）
+  - 合并 src 和 dst block 覆盖率数据，取较大 cover 值
 
 - diff file
-  - add func: 取 dst 中的覆盖率数据
-  - change func: 取 dst 中的覆盖率数据
-  - delele func: 不需要处理
-  - same func: - 合并 src 和 dst block 覆盖率（取较大 cover 值）
+  - add file
+  - remove file
+  - change file
+    - add func: 取 dst block 覆盖率数据
+    - change func: 取 dst block 覆盖率数据
+    - delele func: 不需要处理
+    - same func: 合并 src 和 dst block 覆盖率，取较大 cover 值
 
 golang 适用于方案 2.
 

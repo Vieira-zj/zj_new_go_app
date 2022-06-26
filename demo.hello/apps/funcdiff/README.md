@@ -3,38 +3,33 @@
 1. Diff fucns between src and dst `.go` files. (same files by diff commits)
 
 2. Combine `.cov` files of diff version code base on funcs diff results.
-  - 合并不同版本代码的覆盖率数据数据。如 bug fix 后的覆盖率数据与上一个版本（全量回归测试）的覆盖率数据合并。
+  - 合并不同版本代码的覆盖率数据。如 bug fix 后的覆盖率数据与上一个版本（全量回归测试）的数据合并。
 
 ## Coverage Profile 合并方案
 
 ### 方案1: 基于 line 维度合并
 
-1. git 获取 diff line => same_lines, diff_lines
-
-2. 匹配 src_line 和 dst_line, 构建 diff_entry => same_entries, diff_entries
-  - line struct: `{"file":"path/main.go", "position":1, "content":"..."}`
-  - entry struct: `{"src_line":{...}, "dst_line":{...}, "diff":"same/add/delete/change"}`
+1. git 获取 diff line (=> diff_lines)
+  - diff 结果中，部分 line 只有行号变化
   - 考虑文件 rename 的情况
-  - 由于 add/delete 的原因，部分代码只有行号变化
 
-3. 解析 `profile.cov` 文件（block 代码块维度），将 profile 转换为代码行维度的覆盖率数据
-  - cover struct: `{"position":{...}, "count":0}`
+2. 匹配 src_line 和 dst_line, 构建 diff_entry (=> diff_entries)
+  - line: `{"file":"path/main.go", "index":1, "content":"..."}`
+  - diff_entry: `{"src_line":{...}, "dst_line":{...}, "diff":"same/add/delete/change"}`
 
-4. 将 line 与 cover 数据关联 => same_cover_entries, diff_cover_entries
-  - 通过 file+position 关联数据
-  - cover_line struct: `{"file":"path/main.go", "position":1, "content":"...", "cover":{...}}`
-  - entry struct: `{"src_cover_line":{...}, "dst_cover_line":{...}, "diff":"same/add/delete/change"}`
+3. 解析 `profile.cov` 文件（包含 block 维度的代码覆盖率数据），将 block profile 转换为 line 覆盖率数据
+  - line_cover: `{"file":"path/main.go", "index":1, "count":0}`
 
-5. 合并 same_cover_entries 中的覆盖率数据 => merged_profile_for_same
-  - 合并 src_cover_line 和 dst_cover_line 覆盖率数据，取较大的 cover 值
+4. 基于 file+index 将 line 与 line_cover 关联 (=> diff_cover_entries)
+  - line_cover: `{"file":"path/main.go", "index":1, "content":"...", "cover":0}`
+  - diff_entry: `{"src_line_cover":{...}, "dst_line_cover":{...}, "diff":"same/add/delete/change"}`
 
-6. 合并 diff_cover_entries 中的覆盖率数据 => merged_profile_for_diff
-  - 合并规则
-    - line delete: 不需要处理
-    - line add/change: 取 dst_cover_line 中的覆盖率数据
-    - line onchange: 合并 src_cover_line 和 dst_cover_line 覆盖率数据，取较大的 cover 值
+5. 合并 line 覆盖率数据 (=> merged_profile_for_diff)
+  - delete: 不需要处理
+  - add/change: 取 dst_line_cover 中的覆盖率数据
+  - onchange: 合并 src_line_cover 和 dst_line_cover 覆盖率数据，取较大的 cover 值
 
-7. merged_profile_for_same + merged_profile_for_diff 得到合并的覆盖率数据 => merged_profile
+6. profile_for_same + merged_profile_for_diff 得到合并的覆盖率数据 (=> merged_profile)
 
 优点：
 
@@ -47,36 +42,33 @@
 1. 解析生成 line 维度的数据较复杂
 2. go 覆盖率工具链是基于 block 维度，使用 line 维度后不能复用
 3. 合并数据精准度问题
-  - 当 func 变化后，该 func 中包含代码行的覆盖率都应该设置为 0
+  - 当 func 变化后，该 func 中所包含代码行的覆盖率都应该设置为 0 (ut 维度)
 
 ### 方案2: func 维度合并
 
-1. git 获取 diff file => nochange_files, diff_files
+1. git 获取 diff file (=> diff_files)
+  - file add/delete
+  - file same
+  - file change
 
-2. ast 解析 diff 文件，得到 diff func 数据 => nochange_entries, diff_entries
-  - 基于 filepath + funcname 匹配 func
-  - func struct: `{"file":"path/main.go", "func_name":"main", "position":"start_line,start_col,end_line,end_col"}`
-  - entry struct: `{"src_func":{...}, dst_func:{...}, "diff":"same/add/delete/change"}`
-  - 过滤空行、注释行
+2. ast 解析 diff 文件，基于 filepath + funcname 匹配 func, 得到 diff func => (diff_entries)
+  - func: `{"file":"path/main.go", "func_name":"main", "position":{start_line,start_col,end_line,end_col}}`
+  - diff_entry: `{"src_func":{...}, "dst_func":{...}, "diff":"same/add/delete/change"}`
 
-3. 解析 `profile.cov` 文件，将 block 与 func 关联 => nochange_entries, diff_entries
-  - cover_func struct: `{"file":"path/main.go", "func_name":"main", "position":"start_line,start_col,end_line,end_col"}, "cover_blocks":[...]`
-  - entry struct: `{"src_cover_func":"{...}", "dst_cover_func":"{...}", "diff":"same/add/delete/change"}`
+3. 解析 `profile.cov` 文件，将 block 覆盖率数据与 func 关联 (=> diff_entries)
+  - func_cover: `{"file":"path/main.go", "func_name":"main", "position":{start_line,start_col,end_line,end_col}, "cover_blocks":[...]`}
+  - diff_entry: `{"src_func_cover":{...}, "dst_func_cover":{...}, "diff":"same/add/delete/change"}`
 
-4. nochange_entries 合并覆盖率数据 => nochange_merged_profile
-  - 合并 block 覆盖率数据，取较大的 cover 值
+4. 合并 block 覆盖率数据 (=> merged_profile_for_diff)
+  - func delete: 不需要处理
+  - func add/change: 取 dst_func_cover 中 block 覆盖率数据
+  - func same: 合并 src_func_cover 和 dst_func_cover 的 block 覆盖率数据，取较大的 cover 值
 
-5. diff_entries 合并覆盖率数据 => diff_merged_profile
-  - 合并规则
-    - case func delete: 不需要处理
-    - case func add/change: 取 dst_cover_func 中 block 覆盖率数据
-    - case func nochange: 合并 src_cover_func 和 dst_cover_func 的 block 覆盖率数据，取较大的 cover 值
-
-6. nochange_merged_profile + diff_merged_profile 得到合并的覆盖率数据 => merged_profile
+5. profile_for_same + merged_profile_for_diff 得到合并的覆盖率数据 (=> merged_profile)
 
 优点：
 
-1. 基于 ast 解析，不受 line 行号变化影响
+1. 基于 ast 解析，不需要考虑 line 行号变化的情况
 2. 复用 go 覆盖率工具链，如使用 go tool 生成 func 和 html 覆盖率报告
 
 问题：
@@ -85,7 +77,9 @@
 2. 合并数据精准度问题
   - 上下游的 func 代码覆盖率是否应该设置为 0
 
-## 方案2 - Demo
+------
+
+## Func 维度覆盖率合并 Demo
 
 Case: run func diff and profile merge for a diff go file.
 
