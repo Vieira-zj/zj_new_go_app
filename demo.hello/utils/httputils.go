@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	neturl "net/url"
+	"sync"
 	"time"
 )
 
@@ -92,7 +93,10 @@ func GetRemoteHostIPs(url string) ([]string, error) {
 HTTP
 */
 
-var client *http.Client
+var (
+	client   *http.Client
+	httpOnce sync.Once
+)
 
 // HTTPUtils a http client utils.
 type HTTPUtils struct {
@@ -101,7 +105,7 @@ type HTTPUtils struct {
 
 // NewDefaultHTTPUtils creates a http util with default client.
 func NewDefaultHTTPUtils() *HTTPUtils {
-	once.Do(func() {
+	httpOnce.Do(func() {
 		client = &http.Client{
 			Timeout: 10 * time.Second,
 		}
@@ -117,7 +121,7 @@ func NewDefaultHTTPUtils() *HTTPUtils {
 
 // NewHTTPUtils creates a http util instance.
 func NewHTTPUtils(isKeepAlives bool) *HTTPUtils {
-	once.Do(func() {
+	httpOnce.Do(func() {
 		// http client 默认是长链接
 		var httpTransport *http.Transport
 		if isKeepAlives {

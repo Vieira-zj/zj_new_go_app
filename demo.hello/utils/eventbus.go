@@ -30,14 +30,14 @@ type EventBusServer struct {
 }
 
 var (
-	once      sync.Once
-	_eventbus *EventBusServer
+	eventbusOnce sync.Once
+	_eventbus    *EventBusServer
 )
 
 // NewEventBusServer .
 // if poolSize = 0, it creates new goroutine for each callback instread of using go pool.
 func NewEventBusServer(poolSize, queueSize int) *EventBusServer {
-	once.Do(func() {
+	eventbusOnce.Do(func() {
 		var goPool *GoPool
 		if poolSize > 0 {
 			goPool = NewGoPool(poolSize, 0, 8*time.Second)

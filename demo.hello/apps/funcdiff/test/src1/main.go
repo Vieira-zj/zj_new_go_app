@@ -46,9 +46,11 @@ func fnConditional(cond bool /* test bool condition */) {
 		log.Println("cond: true")
 	} else {
 		func() { // anonymous func
-			if err := recover(); err != nil {
-				panic(err)
-			}
+			defer func() {
+				if err := recover(); err != nil {
+					panic(err)
+				}
+			}()
 			log.Println("cond: false")
 		}()
 	}
