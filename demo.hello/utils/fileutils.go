@@ -19,8 +19,8 @@ import (
 // IO utils
 //
 
-// GetCurRunPath returns the current run abs path.
-func GetCurRunPath() string {
+// GetCurWorkPath returns the current working path.
+func GetCurWorkPath() string {
 	dir, _ := filepath.Split(os.Args[0])
 	return dir
 }

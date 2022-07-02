@@ -19,6 +19,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -27,6 +28,13 @@ import (
 )
 
 /* Common */
+
+// SprintWithPaddingRight .
+func SprintWithPaddingRight(text, padding string, length int) string {
+	format := fmt.Sprintf("%%-%ds", length)
+	ret := fmt.Sprintf(format, text)
+	return strings.ReplaceAll(ret, " ", padding)
+}
 
 // GetRandNextInt .
 func GetRandNextInt(number int) int {
@@ -139,6 +147,36 @@ func GetSimpleNowDatetime() string {
 func FormatDateTimeAsDate(t time.Time) string {
 	year, month, day := t.Date()
 	return fmt.Sprintf("%d-%02d-%02d", year, month, day)
+}
+
+// GetTimeFromTimestamp .
+func GetTimeFromTimestamp(timestamp string) (time.Time, error) {
+	if len(timestamp) < 10 {
+		return time.Time{}, fmt.Errorf("Timestamp length should be >= 10")
+	}
+
+	var (
+		sec, nsec   string
+		tsec, tnsec int64
+		err         error
+	)
+
+	sec = timestamp[:10]
+	if len(timestamp) > 10 {
+		nsec = SprintWithPaddingRight(timestamp[10:], "0", 9)
+	}
+
+	tsec, err = strconv.ParseInt(sec, 10, 64)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if len(nsec) > 0 {
+		tnsec, err = strconv.ParseInt(nsec, 10, 64)
+		if err != nil {
+			return time.Time{}, err
+		}
+	}
+	return time.Unix(tsec, tnsec), nil
 }
 
 // IsWeekDay .

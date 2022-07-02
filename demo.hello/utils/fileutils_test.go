@@ -14,6 +14,19 @@ import (
 	"time"
 )
 
+func TestFilePathUtils(t *testing.T) {
+	path := "/tmp//test/"
+	newPath := filepath.Clean(path)
+	fmt.Println("clean path:", newPath)
+
+	path = ".//fileutils.go"
+	newPath, err := filepath.Abs(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("abs path:", newPath)
+}
+
 func TestGetFileExt(t *testing.T) {
 	ext := filepath.Ext("fileutils.go")
 	fmt.Println("file ext:", ext)
@@ -26,18 +39,29 @@ func TestGetFileExt(t *testing.T) {
 	fmt.Println("suffix:", suffix)
 }
 
-func TestGetCurRunPath(t *testing.T) {
-	fmt.Println("run path:", GetCurRunPath())
+func TestGetCurWorkPath(t *testing.T) {
+	curPath, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("cur path:", curPath)
+	fmt.Println("run path:", GetCurWorkPath())
 }
 
 func TestIsExist(t *testing.T) {
-	for _, filePath := range [2]string{"/tmp/test/results.txt", "/tmp/test/data.txt"} {
+	for _, filePath := range [2]string{
+		"/tmp/test/results.txt",
+		"/tmp/test/data.txt",
+	} {
 		fmt.Println("file exist:", IsExist(filePath))
 	}
 }
 
 func TestHasPermission(t *testing.T) {
-	for _, filePath := range [2]string{"/tmp/test/results.txt", "/tmp/test/data.txt"} {
+	for _, filePath := range [2]string{
+		"/tmp/test/results.txt",
+		"/tmp/test/data.txt",
+	} {
 		if IsExist(filePath) {
 			fmt.Println("has permission:", HasPermission(filePath))
 		}
@@ -45,7 +69,10 @@ func TestHasPermission(t *testing.T) {
 }
 
 func TestMakeDir(t *testing.T) {
-	for _, dirPath := range [2]string{"/tmp/test", "/tmp/test/foo/bar"} {
+	for _, dirPath := range [2]string{
+		"/tmp/test",
+		"/tmp/test/foo/bar",
+	} {
 		if err := MakeDir(dirPath); err != nil {
 			fmt.Println(err)
 		} else {

@@ -7,9 +7,21 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"strconv"
 	"testing"
 	"time"
 )
+
+func TestPrintWithPadding(t *testing.T) {
+	fmt.Printf("'%6d'\n", 123)
+	fmt.Printf("'%-6d'\n", 123)
+	fmt.Printf("'%06d'\n", 123)
+
+	for _, text := range []string{"123", "1234567"} {
+		res := SprintWithPaddingRight(text, "0", 6)
+		fmt.Printf("'%s'\n", res)
+	}
+}
 
 func TestGetRandNextInt(t *testing.T) {
 	for _, i := range [5]int{10, 30, 50, 80, 100} {
@@ -117,6 +129,23 @@ func TestGetSimpleNowDatetime(t *testing.T) {
 
 func TestFormatDateTimeAsDate(t *testing.T) {
 	fmt.Println("current date:", FormatDateTimeAsDate(time.Now()))
+}
+
+func TestGetTimeFromTimestamp(t *testing.T) {
+	now := time.Now()
+	fmt.Println("now:", now)
+
+	for _, ts := range []string{
+		strconv.FormatInt(now.Unix(), 10),
+		strconv.FormatInt(now.UnixNano(), 10),
+		"1656506627778",
+	} {
+		ti, err := GetTimeFromTimestamp(ts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Println("datetime:", ti)
+	}
 }
 
 func TestIsWeekDay(t *testing.T) {
