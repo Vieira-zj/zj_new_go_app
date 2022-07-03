@@ -1,0 +1,7 @@
+{
+    "window.zoomLevel": 0,
+    "go.inferGopath": false,
+    "go.goroot": "/usr/local/go",
+    "go.gopath": "/Users/jinzheng/Workspaces/.go",
+    "go.testFlags": ["-v", "-count=1"]
+}
