@@ -3,16 +3,16 @@ package service2
 import (
 	"context"
 
-	"go1_1711_demo/ioc-demo/autowire_grpc_client/api"
+	"go1_1711_demo/ioc.demo/autowire_grpc_client/api"
 )
 
 // +ioc:autowire=true
 // +ioc:autowire:type=singleton
-type Impl2 struct {
+type Impl1 struct {
 	HelloServiceClient api.HelloServiceClient `grpc:"hello-service"`
 }
 
-func (i *Impl2) Hello(name string) string {
+func (i *Impl1) Hello(name string) string {
 	rsp, err := i.HelloServiceClient.SayHello(context.Background(), &api.HelloRequest{
 		Name: name,
 	})

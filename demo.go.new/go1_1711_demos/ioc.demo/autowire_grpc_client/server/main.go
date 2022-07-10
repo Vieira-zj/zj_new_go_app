@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 
-	"go1_1711_demo/ioc-demo/autowire_grpc_client/api"
+	"go1_1711_demo/ioc.demo/autowire_grpc_client/api"
 
 	"google.golang.org/grpc"
 )
