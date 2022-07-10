@@ -10,7 +10,15 @@ import (
 	"strconv"
 	"testing"
 	"time"
+	"unicode"
 )
+
+func TestChar(t *testing.T) {
+	for _, c := range "Foo123" {
+		r := rune(c)
+		fmt.Printf("char: %c, isdigit: %v, islower: %v\n", c, unicode.IsDigit(r), unicode.IsLower(r))
+	}
+}
 
 func TestPrintWithPadding(t *testing.T) {
 	fmt.Printf("'%6d'\n", 123)
