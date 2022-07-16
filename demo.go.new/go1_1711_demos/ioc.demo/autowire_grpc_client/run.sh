@@ -12,11 +12,22 @@ function run_server {
 }
 
 function run_client {
-    cd cmd; go run main.go
+    cd cmd; go run .
+}
+
+function list {
+    iocli list
+}
+
+function watch {
+    iocli watch go1_1711_demo/ioc.demo/autowire_grpc_client/cmd/service2.Impl2 Hello
 }
 
 # proto_gen
 # run_server
-# run_client
+run_client
+
+# list
+# watch
 
 echo "done"

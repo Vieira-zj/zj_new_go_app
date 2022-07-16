@@ -1,0 +1,14 @@
+autowire:
+  normal:
+    go1_1711_demo/ioc.demo/autowire_redis_client/sdk.Redis:
+      db1-redis:
+        param:
+          address: localhost:6379
+          db: 1
+      db2-redis:
+        param:
+          address: localhost:6379
+          db: 2
+      param:
+        address: localhost:6379
+        db: 0

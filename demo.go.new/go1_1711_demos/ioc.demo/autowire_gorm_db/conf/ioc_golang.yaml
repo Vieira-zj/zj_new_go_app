@@ -1,0 +1,10 @@
+autowire:
+  normal:
+    go1_1711_demo/ioc.demo/autowire_gorm_db/sdk.GORMDB:
+      my-mysql:
+        param:
+          host: "127.0.0.1"
+          port: 3306
+          username: "root"
+          password: ""
+          dbname: "test"

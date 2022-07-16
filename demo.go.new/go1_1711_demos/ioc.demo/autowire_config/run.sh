@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# desc: yaml ioc
+# desc: yaml config ioc.
 
 function gen {
     iocli gen
