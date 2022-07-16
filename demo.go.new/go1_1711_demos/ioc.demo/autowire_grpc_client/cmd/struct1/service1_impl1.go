@@ -8,6 +8,7 @@ import (
 
 // +ioc:autowire=true
 // +ioc:autowire:type=singleton
+
 type Struct1 struct {
 	HelloServiceClient api.HelloServiceClient `grpc:"hello-service"`
 }

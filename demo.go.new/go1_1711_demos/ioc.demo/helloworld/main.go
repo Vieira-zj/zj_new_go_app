@@ -17,7 +17,7 @@ type App struct {
 	// inject main.ServiceImpl2 pointer to Service interface with proxy wrapper
 	ServiceImpl2 Service `singleton:"main.ServiceImpl2"`
 
-	// inject ServiceImpl1 pointer to Service1 's own interface with proxy wrapper
+	// inject ServiceImpl1 pointer to Service1's own interface with proxy wrapper
 	// this interface belongs to ServiceImpl1, there is no need to mark 'main.ServiceImpl1' in tag
 	Service1OwnInterface ServiceImpl1IOCInterface `singleton:""`
 

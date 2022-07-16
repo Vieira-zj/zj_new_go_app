@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/alibaba/ioc-golang/config"
 
@@ -42,29 +43,31 @@ func init() {
 type App struct {
 	HelloServiceClient api.HelloServiceClient `grpc:"hello-service"`
 
-	ExampleService1Impl1 service1.Service1 `singleton:"go1_1711_demo/ioc-demo/autowire_grpc_client/cmd/service1.Impl1"`
-	ExampleService2Impl1 service2.Service2 `singleton:"go1_1711_demo/ioc-demo/autowire_grpc_client/cmd/service2.Impl1"`
-	ExampleService2Impl2 service2.Service2 `singleton:"go1_1711_demo/ioc-demo/autowire_grpc_client/cmd/service2.Impl2"`
+	ExampleService1Impl1 service1.Service1 `singleton:"go1_1711_demo/ioc.demo/autowire_grpc_client/cmd/service1.Impl1"`
+	ExampleService2Impl1 service2.Service2 `singleton:"go1_1711_demo/ioc.demo/autowire_grpc_client/cmd/service2.Impl1"`
+	ExampleService2Impl2 service2.Service2 `singleton:"go1_1711_demo/ioc.demo/autowire_grpc_client/cmd/service2.Impl2"`
 
 	ExampleStruct1 *struct1.Struct1 `singleton:""`
 }
 
 func (a *App) Run() {
-	name := "laurence"
-	rsp, err := a.HelloServiceClient.SayHello(context.Background(), &api.HelloRequest{
-		Name: name,
-	})
-	if err != nil {
-		panic(err)
+	for {
+		time.Sleep(3 * time.Second)
+		name := "laurence"
+		rsp, err := a.HelloServiceClient.SayHello(context.Background(), &api.HelloRequest{
+			Name: name,
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("App call grpc get: " + rsp.Reply)
+
+		fmt.Println("ExampleService1Impl1 call grpc get:" + a.ExampleService1Impl1.Hello(name+"_service1_impl1"))
+		fmt.Println("ExampleService2Impl1 call grpc get:" + a.ExampleService2Impl1.Hello(name+"_service2_impl1"))
+		fmt.Println("ExampleService2Impl2 call grpc get:" + a.ExampleService2Impl2.Hello(name+"_service2_impl2"))
+		fmt.Println("ExampleStruct1 call grpc get:" + a.ExampleStruct1.Hello(name+"_struct"))
 	}
-
-	fmt.Println("App call grpc get: " + rsp.Reply)
-
-	fmt.Println("ExampleService1Impl1 call grpc get:" + a.ExampleService1Impl1.Hello(name+"_service1_impl1"))
-	fmt.Println("ExampleService2Impl1 call grpc get:" + a.ExampleService2Impl1.Hello(name+"_service2_impl1"))
-	fmt.Println("ExampleService2Impl2 call grpc get:" + a.ExampleService2Impl2.Hello(name+"_service2_impl2"))
-
-	fmt.Println("ExampleStruct1 call grpc get:" + a.ExampleStruct1.Hello(name+"_struct"))
 }
 
 func main() {
@@ -73,10 +76,10 @@ func main() {
 		config.WithConfigName("ioc_golang")); err != nil {
 		panic(err)
 	}
+
 	app, err := GetAppSingleton()
 	if err != nil {
 		panic(err)
 	}
-
 	app.Run()
 }
