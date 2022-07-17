@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# desc: grpc client aop by ioc.
+# desc: grpc ioc.
 
 function proto_gen {
     cd api; protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ./hello.proto
@@ -25,7 +25,7 @@ function watch {
 
 # proto_gen
 # run_server
-run_client
+# run_client
 
 # list
 # watch

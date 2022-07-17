@@ -5,18 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/alibaba/ioc-golang/config"
-
 	"go1_1711_demo/ioc.demo/autowire_grpc_client/api"
 	"go1_1711_demo/ioc.demo/autowire_grpc_client/cmd/service1"
 	"go1_1711_demo/ioc.demo/autowire_grpc_client/cmd/service2"
 	"go1_1711_demo/ioc.demo/autowire_grpc_client/cmd/struct1"
 
-	googleGRPC "google.golang.org/grpc"
-
 	"github.com/alibaba/ioc-golang"
 	"github.com/alibaba/ioc-golang/autowire"
+	"github.com/alibaba/ioc-golang/config"
 	"github.com/alibaba/ioc-golang/extension/autowire/grpc"
+	googleGRPC "google.golang.org/grpc"
 )
 
 func init() {
