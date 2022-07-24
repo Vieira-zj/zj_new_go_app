@@ -40,12 +40,11 @@ var (
 		})
 )
 
+// test: curl http://127.0.0.1:9100/metrics | grep golang
+
 func main() {
 	http.Handle("/metrics", promhttp.Handler())
-	prometheus.MustRegister(counter)
-	prometheus.MustRegister(gauge)
-	prometheus.MustRegister(histogram)
-	prometheus.MustRegister(summary)
+	prometheus.MustRegister(counter, gauge, histogram, summary)
 
 	go func() {
 		rand.Seed(time.Now().Unix())
