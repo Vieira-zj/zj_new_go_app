@@ -147,5 +147,5 @@ func PrometheusHandler(c *gin.Context) {
 	end := time.Now()
 	d := end.Sub(start).Milliseconds()
 	path := c.Request.URL.Path
-	pkg.GaugeVecApiDuration.WithLabelValues(path).Set(float64(d))
+	pkg.HistogramVecApiDuration.WithLabelValues(path).Observe(float64(d))
 }

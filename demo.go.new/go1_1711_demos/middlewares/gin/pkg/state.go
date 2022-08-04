@@ -3,10 +3,11 @@ package pkg
 import "github.com/prometheus/client_golang/prometheus"
 
 var (
-	GaugeVecApiDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	HistogramVecApiDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "GinMonitor",
 		Name:      "apiDuration",
 		Help:      "api耗时单位ms",
+		Buckets:   []float64{30.0, 50.0, 100.0, 200.0, 300.0},
 	}, []string{"path"})
 
 	GaugeVecApiMethod = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -23,5 +24,5 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(GaugeVecApiDuration, GaugeVecApiMethod, GaugeVecApiError)
+	prometheus.MustRegister(HistogramVecApiDuration, GaugeVecApiMethod, GaugeVecApiError)
 }
