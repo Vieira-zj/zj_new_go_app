@@ -1,6 +1,8 @@
 package demos
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -23,6 +25,26 @@ func TestChar(t *testing.T) {
 
 	s := "中cn"
 	t.Logf("size=%d", len(s))
+}
+
+func TestMarshalFunc(t *testing.T) {
+	// json.Marshal unsupported type: func()
+	type caller struct {
+		Name string `json:"name"`
+		Fn   func() `json:"func"`
+	}
+
+	c := &caller{
+		Name: "helloworld",
+		Fn: func() {
+			fmt.Println("helloworld")
+		},
+	}
+	b, err := json.Marshal(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("caller: %s\n", b)
 }
 
 func TestRunBatchByGoroutine(t *testing.T) {
@@ -61,4 +83,43 @@ outer:
 		}
 	}
 	t.Log("done")
+}
+
+func TestGoroutineExit(t *testing.T) {
+	// NOTE: sub goroutine is still running when root goroutine exit
+	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
+
+	retCh := make(chan struct{})
+	go func() {
+		// context here, make sure sub goroutine is cancelled when root goroutine exit
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		go func() {
+			tick := time.Tick(time.Second)
+			for {
+				select {
+				case <-ctx.Done():
+					fmt.Println("sub goroutine:", ctx.Err())
+					return
+				case <-tick:
+					fmt.Println("sub goroutine run...")
+				}
+			}
+		}()
+		for i := 0; i < 5; i++ {
+			time.Sleep(time.Second)
+			fmt.Println("root goroutine run...")
+		}
+
+		// <-retCh
+		close(retCh)
+	}()
+
+	t.Log("main wait...")
+	<-retCh
+	t.Log("root goroutine finish")
+	time.Sleep(3 * time.Second)
+	t.Log("main done")
 }
