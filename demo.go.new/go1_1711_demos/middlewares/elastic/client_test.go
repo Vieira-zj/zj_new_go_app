@@ -13,7 +13,11 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
-const indexTag = "index_zz_test"
+const (
+	indexBaseName   = "index-zz-test-tab-000001"
+	indexPattern    = "index-zz-test-tab-*"
+	indexWriteAlias = "index-zz-test-tab-write"
+)
 
 func ElasticInitForTest() *elastic.Client {
 	hosts := strings.Split(os.Getenv("ES_HOSTS"), ",")
@@ -30,7 +34,7 @@ func TestPingElastic(t *testing.T) {
 	}
 	fmt.Printf("Elasticsearch version: %s\n", ver)
 
-	isExist, err := esClient.IndexExists(indexTag).Do(context.Background())
+	isExist, err := esClient.IndexExists(indexBaseName).Do(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +46,9 @@ func TestElasticCreateIndex(t *testing.T) {
 {
 	"settings": {
 		"number_of_shards": 1,
-		"number_of_replicas": 0
+		"number_of_replicas": 0,
+		"max_result_window": 100000,
+		"refresh_interval": "30s"
 	},
 	"mappings": {
 		"properties": {
@@ -64,7 +70,7 @@ func TestElasticCreateIndex(t *testing.T) {
 `
 
 	esClient := ElasticInitForTest()
-	createIndex, err := esClient.CreateIndex(indexTag).Body(mapping).Do(context.Background())
+	createIndex, err := esClient.CreateIndex(indexBaseName).Body(mapping).Do(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +78,7 @@ func TestElasticCreateIndex(t *testing.T) {
 		t.Fatal(fmt.Errorf("Create index not acknowledged"))
 	}
 
-	res, err := esClient.ClusterHealth().Index(indexTag).Do(context.Background())
+	res, err := esClient.ClusterHealth().Index(indexBaseName).Do(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,26 +93,26 @@ type indexMapping struct {
 	Created  time.Time `json:"created,omitempty"`
 }
 
-func TestElasticAddRecord(t *testing.T) {
+func TestElasticAddDocs(t *testing.T) {
 	esClient := ElasticInitForTest()
 	record1 := indexMapping{User: "foo", Message: "Take Five", Identify: 0}
-	put1, err := esClient.Index().Index(indexTag).Id("1").BodyJson(record1).Do(context.Background())
+	put1, err := esClient.Index().Index(indexPattern).Id("1").BodyJson(record1).Do(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("Indexed data %s to index %s, type %s\n", put1.Id, put1.Index, put1.Type)
 
 	record2 := `{"user": "bar", "message": "It's a Raggy Waltz"}`
-	put2, err := esClient.Index().Index(indexTag).Id("2").BodyString(record2).Do(context.Background())
+	put2, err := esClient.Index().Index(indexPattern).Id("2").BodyString(record2).Do(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("Indexed data %s to index %s, type %s\n", put2.Id, put2.Index, put2.Type)
 }
 
-func TestElasticGetByIndex(t *testing.T) {
+func TestElasticQueryByIndexID(t *testing.T) {
 	esClient := ElasticInitForTest()
-	get, err := esClient.Get().Index(indexTag).Id("1").Do(context.Background())
+	get, err := esClient.Get().Index(indexPattern).Id("1").Do(context.Background())
 	if err != nil {
 		switch {
 		case elastic.IsNotFound(err):
@@ -122,26 +128,35 @@ func TestElasticGetByIndex(t *testing.T) {
 	fmt.Printf("Got document %s in version %d from index %s, type %s\n", get.Id, get.Version, get.Index, get.Type)
 }
 
-func TestElasticSearch(t *testing.T) {
+func TestElasticSearchByTerm(t *testing.T) {
 	esClient := ElasticInitForTest()
-	_, err := esClient.Refresh().Index(indexTag).Do(context.Background())
+	_, err := esClient.Refresh().Index(indexPattern).Do(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Search with a term query
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+
+	// Term and Match query
+	// https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-term-query.html
+	//
+	// By default, Elasticsearch changes the values of text fields as part of analysis.
+	// This can make finding exact matches for text field values difficult. To search text field values, use the match query instead.
+	//
+	// matchQuery := elastic.NewMatchQuery("user", "bar-foo")
+
+	// search with a term query
 	termQuery := elastic.NewTermQuery("user", "foo")
 	searchResult, err := esClient.Search().
-		Index(indexTag).         // search in index "index_zz_test"
-		Query(termQuery).        // specify the query
-		Sort("user", true).      // sort by "user" field, ascending
-		From(0).Size(10).        // take documents 0-9
-		Pretty(true).            // pretty print request and response JSON
-		Do(context.Background()) // execute
+		Index(indexPattern). // search in index pattern "index-zz-test-tab-*"
+		Query(termQuery).    // specify the query
+		Sort("user", true).  // sort by "user" field, ascending
+		From(0).Size(15).    // take documents 0-9 (default size 10)
+		Pretty(true).Do(ctx) // pretty print request and response JSON
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	fmt.Printf("Query took %d milliseconds\n", searchResult.TookInMillis)
 
 	var data indexMapping
@@ -166,7 +181,7 @@ func TestElasticSearch(t *testing.T) {
 
 func TestElasticDeleteIndex(t *testing.T) {
 	esClient := ElasticInitForTest()
-	deleteIndex, err := esClient.DeleteIndex(indexTag).Do(context.Background())
+	deleteIndex, err := esClient.DeleteIndex(indexBaseName).Do(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,12 +191,45 @@ func TestElasticDeleteIndex(t *testing.T) {
 	fmt.Println("Delete index done")
 }
 
-// Rollover Index
+/*
+Rollover Index
 
-func TestElasticCreateAlias(t *testing.T) {
-	aliasName := ""
+Kibana:
+1. create lifecycle policy: zz-test-logs-policy
+  - phase: hot, warm, cold
+  - hot phase: days, size, number of docs
+2. create index template: index-zz-test-tab-tmpl
+  - define settings, mappings
+  - NOTE: do not define alias here
+3. bind lifecycle (rollover) policy with index template
+  - select newly created template
+  - set alias for rollover index: index-zz-test-tab-write
+    - it add settings: "rollover_alias": "index-zz-test-tab-write"
+4. create index search pattern: index-zz-test-tab-*
+
+Golang:
+1. create index and write alias:
+ - index: index-zz-test-tab-000001
+ - alias: index-zz-test-tab-write
+2. upload data to index by write alias: index-zz-test-tab-write
+3. search doc by index pattern: index-zz-test-tab-*
+*/
+
+func TestElasticAddEmptyIndexWithAlias(t *testing.T) {
 	esClient := ElasticInitForTest()
-	addAction := elastic.NewAliasAddAction(aliasName).Index(indexTag).IsWriteIndex(true)
+	resp, err := esClient.CreateIndex(indexBaseName).Do(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !resp.Acknowledged {
+		t.Fatal(fmt.Errorf("Create index not acknowledged"))
+	}
+
+	addAction := elastic.NewAliasAddAction(indexWriteAlias).Index(indexBaseName).IsWriteIndex(true)
+	if err := addAction.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
 	createAlias, err := esClient.Alias().Action(addAction).Do(context.Background())
 	if err != nil {
 		t.Fatal(err)
@@ -198,10 +246,12 @@ func TestElasticCreateRollover(t *testing.T) {
 		"max_docs": int64(10000),
 		"max_size": "5gb",
 	}
-	resp, err := esClient.RolloverIndex(indexTag).Conditions(conditions).Do(context.Background())
+	resp, err := esClient.RolloverIndex(indexWriteAlias).Conditions(conditions).Do(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// here, results is not acknowledged, and we create rollover index on kibana instead
 	if !resp.Acknowledged {
 		t.Fatal(fmt.Errorf("Create rollover policy not acknowledged"))
 	}
