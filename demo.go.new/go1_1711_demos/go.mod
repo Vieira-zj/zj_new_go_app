@@ -5,10 +5,12 @@ go 1.17
 require (
 	github.com/alibaba/ioc-golang v0.0.0-20220703065958-9345d9a84600
 	github.com/alibaba/ioc-golang/extension v0.0.0-20220703065958-9345d9a84600
+	github.com/gin-gonic/gin v1.8.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/prometheus/client_golang v1.12.2
+	github.com/robfig/cron/v3 v3.0.1
 	go.uber.org/zap v1.21.0
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
@@ -28,7 +30,6 @@ require (
 	github.com/dubbogo/gost v1.11.25 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.8.1 // indirect
 	github.com/glory-go/monkey v1.0.3 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
