@@ -8,7 +8,7 @@ import (
 )
 
 //
-// Demo: process with register middlewares
+// Demo: process with register middlewares / plugins
 //
 
 type handler func(context.Context)
