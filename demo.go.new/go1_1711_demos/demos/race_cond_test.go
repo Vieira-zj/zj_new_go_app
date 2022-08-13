@@ -8,7 +8,9 @@ import (
 	"time"
 )
 
-// Data Race Condition
+//
+// Demo: data race condition
+//
 
 func TestArrayCopy(t *testing.T) {
 	// 元素为值传递

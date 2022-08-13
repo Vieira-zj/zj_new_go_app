@@ -11,6 +11,15 @@ import (
 	"time"
 )
 
+// run multiple tests:
+// go test -timeout 30s -run "TestChar|TestStructToMap" go1_1711_demo/demos -v -count=1
+func TestMain(m *testing.M) {
+	fmt.Println("test before")
+	code := m.Run()
+	fmt.Printf("return code: %d\n", code)
+	fmt.Println("test after")
+}
+
 func TestChar(t *testing.T) {
 	c := fmt.Sprintf("%c", 119)
 	t.Logf("str=%s, len=%d", c, len(c))
