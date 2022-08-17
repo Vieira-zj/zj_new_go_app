@@ -4,11 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/url"
 	"reflect"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // run multiple tests:
@@ -53,9 +58,7 @@ func TestMarshalFunc(t *testing.T) {
 		},
 	}
 	b, err := json.Marshal(c)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	fmt.Printf("caller: %s\n", b)
 }
 
@@ -93,6 +96,13 @@ func TestStructToMap(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Printf("dst map:\n%s\n", b)
+}
+
+func TestURLDecode(t *testing.T) {
+	path := "/nice%20ports%2C/Tri%6Eity.txt%2ebak"
+	res, err := url.PathUnescape(path)
+	assert.NoError(t, err)
+	t.Log("decode path:", res)
 }
 
 func TestContextWithValue(t *testing.T) {
@@ -136,6 +146,77 @@ func TestContinueInSelect(t *testing.T) {
 		}
 	}
 	t.Log("done")
+}
+
+// Demo: Sort Slice of Structs
+
+type person struct {
+	name string
+	age  int
+	sex  string
+}
+
+type sortByPersonFields []person
+
+func (e sortByPersonFields) Swap(i, j int) { e[i], e[j] = e[j], e[i] }
+func (e sortByPersonFields) Len() int      { return len(e) }
+func (e sortByPersonFields) Less(i, j int) bool {
+	eleX := e[i]
+	eleY := e[j]
+	if eleX.sex != eleY.sex {
+		return eleX.sex < eleY.sex
+	}
+	if eleX.age != eleY.age {
+		return eleX.age < eleY.age
+	}
+	return eleX.name < eleY.name
+}
+
+func TestSortSliceOfStructs01(t *testing.T) {
+	// sort by: sex asc, age asc, name asc
+	persons := []person{
+		{name: "zh", age: 24, sex: "female"},
+		{name: "foo", age: 30, sex: "male"},
+		{name: "yx", age: 36, sex: "female"},
+		{name: "jx", age: 27, sex: "female"},
+		{name: "zht", age: 24, sex: "female"},
+		{name: "bar", age: 33, sex: "male"},
+		{name: "ja", age: 24, sex: "female"},
+	}
+
+	sort.Sort(sortByPersonFields(persons))
+	for _, p := range persons {
+		log.Println("sorted persons:", p.sex, p.age, p.name)
+	}
+}
+
+func TestSortSliceOfStructs02(t *testing.T) {
+	// sort by: sex desc, age asc, name desc
+	persons := []person{
+		{name: "zh", age: 24, sex: "female"},
+		{name: "foo", age: 30, sex: "male"},
+		{name: "yx", age: 36, sex: "female"},
+		{name: "jx", age: 27, sex: "female"},
+		{name: "zht", age: 24, sex: "female"},
+		{name: "bar", age: 33, sex: "male"},
+		{name: "ja", age: 24, sex: "female"},
+	}
+
+	sort.Slice(persons, func(i, j int) bool {
+		eleX := persons[i]
+		eleY := persons[j]
+		if eleX.sex != eleY.sex {
+			return eleX.sex > eleY.sex
+		}
+		if eleX.age != eleY.age {
+			return eleX.age < eleY.age
+		}
+		return eleX.name > eleY.name
+	})
+
+	for _, p := range persons {
+		log.Println("sorted persons:", p.sex, p.age, p.name)
+	}
 }
 
 // Demo: get func name and run by reflect
