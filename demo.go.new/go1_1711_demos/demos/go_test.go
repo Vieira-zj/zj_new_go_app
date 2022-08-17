@@ -148,7 +148,7 @@ func TestContinueInSelect(t *testing.T) {
 	t.Log("done")
 }
 
-// Demo: Sort Slice of Structs
+// Demo: sort slice of structs
 
 type person struct {
 	name string
@@ -217,6 +217,88 @@ func TestSortSliceOfStructs02(t *testing.T) {
 	for _, p := range persons {
 		log.Println("sorted persons:", p.sex, p.age, p.name)
 	}
+}
+
+// Demo: group by requests (type dict)
+
+type dict map[string]interface{}
+
+func groupByRequests(results map[string]int, reqs []dict) error {
+	for {
+		if len(reqs) == 0 {
+			return nil
+		}
+		if len(reqs) == 1 {
+			curReq := reqs[0]
+			b, err := json.Marshal(curReq)
+			if err != nil {
+				return err
+			}
+			results[string(b)] = 1
+			return nil
+		}
+
+		count := 1
+		curReq := reqs[0]
+		notMatchedReqs := make([]dict, 0, 16)
+		for _, req := range reqs[1:] {
+			if isDictEqualByFields(curReq, req) {
+				count += 1
+			} else {
+				notMatchedReqs = append(notMatchedReqs, req)
+			}
+		}
+		b, err := json.Marshal(curReq)
+		if err != nil {
+			return err
+		}
+		results[string(b)] = count
+
+		reqs = notMatchedReqs
+	}
+}
+
+// isDictEqualByFields only compares dict fields of 1st level.
+func isDictEqualByFields(src, dst interface{}) bool {
+	srcDict, ok := src.(dict)
+	if !ok {
+		return false
+	}
+	dstDict, ok := dst.(dict)
+	if !ok {
+		return false
+	}
+
+	if len(srcDict) != len(dstDict) {
+		return false
+	}
+
+	for k := range srcDict {
+		if _, ok := dstDict[k]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func TestGroupByRequests(t *testing.T) {
+	reqs := []dict{
+		{"uid": 1221654048},
+		{"uid": 1221654049},
+		{"sp_uid": 1221724968},
+		{"uid": 1221654048, "otp_token": "111111"},
+		{"uid": 1221654050},
+		{"uid": 1221654051},
+		{"sp_uid": 1221724967},
+	}
+
+	results := make(map[string]int, 4)
+	err := groupByRequests(results, reqs)
+	assert.NoError(t, err)
+	for req, count := range results {
+		t.Logf("%s:%d", req, count)
+	}
+	t.Log("groupby done")
 }
 
 // Demo: get func name and run by reflect
