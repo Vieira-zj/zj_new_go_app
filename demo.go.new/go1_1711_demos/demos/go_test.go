@@ -6,10 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"reflect"
-	"runtime"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -299,49 +296,6 @@ func TestGroupByRequests(t *testing.T) {
 		t.Logf("%s:%d", req, count)
 	}
 	t.Log("groupby done")
-}
-
-// Demo: get func name and run by reflect
-
-type caller func(string)
-
-func sayHello(name string) {
-	fmt.Println("Hello:", name)
-}
-
-func exec(c interface{}, params ...interface{}) {
-	typeOf := reflect.TypeOf(c)
-	fmt.Println("type:", typeOf.Kind())
-	if typeOf.Kind() != reflect.Func {
-		fmt.Println("not caller")
-		return
-	}
-
-	// get func name
-	valueOf := reflect.ValueOf(c)
-	name := runtime.FuncForPC(valueOf.Pointer()).Name()
-	pkgName, funcName := getFuncName(name)
-	fmt.Printf("exec: pkg=%s, func=%s()\n", pkgName, funcName)
-
-	// run func()
-	paramValues := make([]reflect.Value, 0, len(params))
-	for _, param := range params {
-		paramValues = append(paramValues, reflect.ValueOf(param))
-	}
-	valueOf.Call(paramValues)
-
-	_, ok := valueOf.Interface().(caller)
-	fmt.Println("is caller:", ok)
-}
-
-func getFuncName(fullName string) (pkgName, funcName string) {
-	items := strings.Split(fullName, ".")
-	return items[0], items[1]
-}
-
-func TestGetFuncNameByReflect(t *testing.T) {
-	exec(sayHello, "foo")
-	t.Log("done")
 }
 
 // Demo: goroutine
