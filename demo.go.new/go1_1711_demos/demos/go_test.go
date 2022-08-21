@@ -13,13 +13,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//
 // run multiple tests:
 // go test -timeout 30s -run "TestChar|TestStructToMap" go1_1711_demo/demos -v -count=1
+//
+
 func TestMain(m *testing.M) {
 	fmt.Println("test before")
 	code := m.Run()
 	fmt.Printf("return code: %d\n", code)
 	fmt.Println("test after")
+}
+
+func TestURLDecode(t *testing.T) {
+	path := "/nice%20ports%2C/Tri%6Eity.txt%2ebak"
+	res, err := url.PathUnescape(path)
+	assert.NoError(t, err)
+	t.Log("decode path:", res)
 }
 
 func TestChar(t *testing.T) {
@@ -95,13 +105,6 @@ func TestStructToMap(t *testing.T) {
 	fmt.Printf("dst map:\n%s\n", b)
 }
 
-func TestURLDecode(t *testing.T) {
-	path := "/nice%20ports%2C/Tri%6Eity.txt%2ebak"
-	res, err := url.PathUnescape(path)
-	assert.NoError(t, err)
-	t.Log("decode path:", res)
-}
-
 func TestContextWithValue(t *testing.T) {
 	type person struct {
 		name string
@@ -143,6 +146,109 @@ func TestContinueInSelect(t *testing.T) {
 		}
 	}
 	t.Log("done")
+}
+
+// Demo: iterator
+
+func TestArrayIterator(t *testing.T) {
+	s := [3]int{1, 2, 3}
+	for i := 0; i < len(s); i++ {
+		s[i]++
+		t.Logf("elem: %p, %v\n", &s[i], s[i])
+	}
+	t.Log(s)
+
+	// copy value of s to v
+	for _, v := range s {
+		v++
+		t.Logf("elem: %p, %v\n", &v, v)
+	}
+	t.Log(s)
+}
+
+func TestSliceIterator(t *testing.T) {
+	s := []int{1, 2, 3}
+	for i := 0; i < len(s); i++ {
+		s[i]++
+		t.Logf("elem: %p, %v\n", &s[i], s[i])
+	}
+	t.Log(s)
+
+	// copy value of s to v
+	for _, v := range s {
+		v++
+		t.Logf("elem: %p, %v\n", &v, v)
+	}
+	t.Log(s)
+}
+
+func TestMapIterator(t *testing.T) {
+	m := map[string]int{
+		"one":   0,
+		"two":   1,
+		"three": 2,
+	}
+	for k := range m {
+		m[k]++
+	}
+	t.Logf("%+v", m)
+
+	for k, v := range m {
+		v++
+		t.Logf("key:%p,%5s | value:%p,%d", &k, k, &v, v)
+	}
+	t.Logf("%+v", m)
+}
+
+// Demo: param ref
+
+func TestArrayParamRef(t *testing.T) {
+	// array elem is pass by cpoied value
+	updateSlice := func(s [3]int) {
+		for i := 0; i < 3; i++ {
+			s[i]++
+		}
+		t.Logf("#2: %p, %p, %v", &s, &s[0], s)
+	}
+
+	s := [3]int{1, 2, 3}
+	t.Logf("#1: %p, %p, %v", &s, &s[0], s)
+	updateSlice(s)
+	t.Logf("#3: %p, %p, %v", &s, &s[0], s)
+}
+
+func TestSliceParamRef(t *testing.T) {
+	// slice elem is pass by ref
+	updateSlice := func(s []int) {
+		for i := 0; i < len(s); i++ {
+			s[i]++
+		}
+		t.Logf("#2: %p, %p, %v", &s, &s[0], s)
+	}
+
+	s := []int{1, 2, 3}
+	t.Logf("#1: %p, %p, %v", &s, &s[0], s)
+	updateSlice(s)
+	t.Logf("#2: %p, %p, %v", &s, &s[0], s)
+}
+
+func TestMapParamRef(t *testing.T) {
+	// map value is pass by ref
+	updateMap := func(m map[string]int) {
+		for k := range m {
+			m[k]++
+		}
+		t.Logf("#2: %p, %+v", &m, m)
+	}
+
+	m := map[string]int{
+		"one":   0,
+		"two":   1,
+		"three": 2,
+	}
+	t.Logf("#1: %p, %+v", &m, m)
+	updateMap(m)
+	t.Logf("#3: %p, %+v", &m, m)
 }
 
 // Demo: sort slice of structs
@@ -280,12 +386,12 @@ func isDictEqualByFields(src, dst interface{}) bool {
 
 func TestGroupByRequests(t *testing.T) {
 	reqs := []dict{
-		{"uid": 1221654048},
-		{"uid": 1221654049},
+		{"uid": 1221654048, "name": "ab"},
+		{"uid": 1221654049, "name": "cd"},
 		{"sp_uid": 1221724968},
 		{"uid": 1221654048, "otp_token": "111111"},
-		{"uid": 1221654050},
-		{"uid": 1221654051},
+		{"uid": 1221654050, "name": "xy"},
+		{"uid": 1221654051, "name": "xz"},
 		{"sp_uid": 1221724967},
 	}
 

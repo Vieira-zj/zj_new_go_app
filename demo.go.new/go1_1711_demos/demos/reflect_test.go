@@ -12,7 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//
 // Demo: get func name and run by reflect
+//
 
 type caller func(string)
 
@@ -55,7 +57,9 @@ func TestGetFuncNameByReflect(t *testing.T) {
 	t.Log("done")
 }
 
+//
 // Demo: function proxy by reflect
+//
 
 type personInterface interface {
 	String() string
@@ -90,39 +94,49 @@ func (p *personProxy) SayHello(tag string) {
 	p.SayHello_(tag)
 }
 
-func buildPersonProxy(impl interface{}) (interface{}, error) {
-	implTypeOf := reflect.TypeOf(impl)
-	if implTypeOf.Kind() == reflect.Ptr {
-		implTypeOf = reflect.ValueOf(impl).Elem().Type()
+func createProxy(impl, proxy interface{}) (interface{}, error) {
+	if _, _, err := checkParam(impl); err != nil {
+		return nil, err
 	}
-	if implTypeOf.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("parameter must be struct")
+	valueOf, typeOf, err := checkParam(proxy)
+	if err != nil {
+		return nil, err
 	}
 
-	proxy := &personProxy{} // must be point here
-	valueOf := reflect.ValueOf(proxy).Elem()
-	typeOf := valueOf.Type()
-	for i := 0; i < valueOf.NumField(); i++ {
-		fieldTypeOf := typeOf.Field(i)
+	for i := 0; i < valueOf.NumField(); i++ { // use struct here, get fields
+		fieldTypeOf := typeOf.Field(i) // fieldTypeOf: field type info (name,type) when define struct
 		fmt.Printf("walk field: type=%s,name=%s\n", fieldTypeOf.Type.Kind(), fieldTypeOf.Name)
 		if !strings.HasSuffix(fieldTypeOf.Name, "_") {
 			continue
 		}
 
-		fieldValueOf := valueOf.Field(i)
+		fieldValueOf := valueOf.Field(i) // fieldValueOf: field value info (name,value) when init struct
 		if fieldValueOf.Kind() == reflect.Func && fieldValueOf.IsValid() && fieldValueOf.CanSet() {
 			fmt.Printf("wrap func: %s()\n", fieldTypeOf.Name)
 			funcName := strings.TrimSuffix(fieldTypeOf.Name, "_")
-			valueOf := reflect.ValueOf(impl)
-			f := valueOf.MethodByName(funcName) // get impl func
-			if f.IsNil() {
+			implFunc := reflect.ValueOf(impl).MethodByName(funcName) // use pointer here, get impl func
+			if implFunc.IsNil() {
 				return nil, fmt.Errorf("impl func name is not found: %s", funcName)
 			}
-			fieldValueOf.Set(reflect.MakeFunc(fieldTypeOf.Type, wrapFunctionWithDebug(f)))
+			fieldValueOf.Set(reflect.MakeFunc(fieldTypeOf.Type, wrapFunctionWithDebug(implFunc)))
 		}
 	}
 
 	return proxy, nil
+}
+
+func checkParam(param interface{}) (reflect.Value, reflect.Type, error) {
+	typeOf := reflect.TypeOf(param)
+	if typeOf.Kind() != reflect.Ptr {
+		return reflect.Value{}, nil, fmt.Errorf("parameter must be pointer")
+	}
+
+	valueOf := reflect.ValueOf(param).Elem()
+	typeOf = valueOf.Type()
+	if typeOf.Kind() != reflect.Struct {
+		return reflect.Value{}, nil, fmt.Errorf("pointer must be ref to struct")
+	}
+	return valueOf, typeOf, nil
 }
 
 // wrapFunctionWithDebug adds debug info when run function.
@@ -156,13 +170,10 @@ func printFuncInOutValues(values []reflect.Value, tag string) {
 	}
 }
 
-func TestBuildPersonProxy(t *testing.T) {
+func TestCreateProxyForPerson(t *testing.T) {
 	rand.Seed(time.Now().Unix())
-	impl := &personImpl{
-		Name: "foo",
-		Age:  31,
-	}
-	proxy, err := buildPersonProxy(impl)
+	impl := &personImpl{Name: "foo", Age: 31}
+	proxy, err := createProxy(impl, &personProxy{})
 	assert.NoError(t, err)
 
 	p, ok := proxy.(personInterface)
