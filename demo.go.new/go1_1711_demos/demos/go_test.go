@@ -456,6 +456,26 @@ func TestGroupByRequests(t *testing.T) {
 
 // Demo: goroutine
 
+func TestSelectCase(t *testing.T) {
+	ch := make(chan int, 1)
+	go func() {
+		time.Sleep(2 * time.Second)
+		ch <- 1
+		close(ch)
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Log(ctx.Err())
+	case val, ok := <-ch:
+		t.Log("chan value:", ok, val)
+	}
+	t.Log("done")
+}
+
 func TestRunBatchByGoroutine(t *testing.T) {
 	resultCh := make(chan int)
 	errCh := make(chan error)

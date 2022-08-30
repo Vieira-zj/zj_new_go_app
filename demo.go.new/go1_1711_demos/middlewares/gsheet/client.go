@@ -114,7 +114,7 @@ func (gSheets *GSheets) AppendByRange(ctx context.Context, param GsheetsParam, v
 }
 
 // fix ACCESS_TOKEN_SCOPE_INSUFFICIENT: use scopeReadWrite instead of scopeReadOnly, and re-create token.json
-func (gSheets *GSheets) CreateSpreadSheet(ctx context.Context, spreadSheetTitle, sheetTitle string) (string, error) {
+func (gSheets *GSheets) CreateSpreadSheet(ctx context.Context, spreadSheetTitle, sheetTitle string) (string, int64, error) {
 	spreadSheet := &sheets.Spreadsheet{
 		Properties: &sheets.SpreadsheetProperties{
 			Title: spreadSheetTitle,
@@ -127,12 +127,12 @@ func (gSheets *GSheets) CreateSpreadSheet(ctx context.Context, spreadSheetTitle,
 			},
 		},
 	}
-	sheet, err := gSheets.srv.Spreadsheets.Create(spreadSheet).Context(ctx).Do()
+	resp, err := gSheets.srv.Spreadsheets.Create(spreadSheet).Context(ctx).Do()
 	if err != nil {
-		return "", err
+		return "", -1, err
 	}
 
-	return sheet.SpreadsheetUrl, nil
+	return resp.SpreadsheetId, resp.Sheets[0].Properties.SheetId, nil
 }
 
 func (gSheets *GSheets) CreateSheet(ctx context.Context, spreadSheetId, sheetTitle string) (int64, error) {
@@ -158,7 +158,7 @@ func (gSheets *GSheets) CreateSheet(ctx context.Context, spreadSheetId, sheetTit
 	return newSheet.Properties.SheetId, err
 }
 
-func (gSheets *GSheets) GetSpreadSheetInfo(ctx context.Context, spreadSheetId string) (*sheets.Spreadsheet, error) {
+func (gSheets *GSheets) GetSpreadSheet(ctx context.Context, spreadSheetId string) (*sheets.Spreadsheet, error) {
 	resp, err := gSheets.srv.Spreadsheets.Get(spreadSheetId).Context(ctx).Do()
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func (gSheets *GSheets) GetSpreadSheetInfo(ctx context.Context, spreadSheetId st
 }
 
 // UpdateCellsStyle: refer https://developers.google.com/sheets/api/samples/formatting
-func (gSheets *GSheets) UpdateCellsStyle(ctx context.Context, param GsheetsParam) error {
+func (gSheets *GSheets) AddStyleFoSheet(ctx context.Context, param GsheetsParam) error {
 	req1 := &sheets.Request{
 		RepeatCell: &sheets.RepeatCellRequest{
 			Range: &sheets.GridRange{
@@ -190,14 +190,28 @@ func (gSheets *GSheets) UpdateCellsStyle(ctx context.Context, param GsheetsParam
 	}
 
 	req2 := &sheets.Request{
-		UpdateSheetProperties: &sheets.UpdateSheetPropertiesRequest{
-			Properties: &sheets.SheetProperties{
-				SheetId: param.SheetId,
-				GridProperties: &sheets.GridProperties{
-					FrozenRowCount: 1,
+		RepeatCell: &sheets.RepeatCellRequest{
+			Range: &sheets.GridRange{
+				SheetId:          param.SheetId,
+				StartRowIndex:    0,
+				EndRowIndex:      1,
+				StartColumnIndex: 0,
+				EndColumnIndex:   4,
+			},
+			Cell: &sheets.CellData{
+				UserEnteredFormat: &sheets.CellFormat{
+					TextFormat: &sheets.TextFormat{
+						Bold: true,
+					},
+					BackgroundColor: &sheets.Color{
+						Red:   0.73,
+						Green: 0.35,
+						Blue:  0.41,
+						Alpha: 0.5,
+					},
 				},
 			},
-			Fields: "gridProperties.frozenRowCount",
+			Fields: "userEnteredFormat(textFormat,backgroundColor)",
 		},
 	}
 
@@ -231,8 +245,20 @@ func (gSheets *GSheets) UpdateCellsStyle(ctx context.Context, param GsheetsParam
 		},
 	}
 
+	req4 := &sheets.Request{
+		UpdateSheetProperties: &sheets.UpdateSheetPropertiesRequest{
+			Properties: &sheets.SheetProperties{
+				SheetId: param.SheetId,
+				GridProperties: &sheets.GridProperties{
+					FrozenRowCount: 1,
+				},
+			},
+			Fields: "gridProperties.frozenRowCount",
+		},
+	}
+
 	batchReq := &sheets.BatchUpdateSpreadsheetRequest{
-		Requests: []*sheets.Request{req1, req2, req3},
+		Requests: []*sheets.Request{req1, req2, req3, req4},
 	}
 	_, err := gSheets.srv.Spreadsheets.BatchUpdate(param.SpreadSheetId, batchReq).Context(ctx).Do()
 	return err
@@ -310,7 +336,12 @@ func saveToken(path string, token *oauth2.Token) {
 // Helper
 //
 
-func prettyPrintSpreadSheetMeta(spreadSheet *sheets.Spreadsheet) {
+// GetSheetUrl: format as https://docs.google.com/spreadsheets/d/{SpreadSheet_Id}/edit#gid={Sheet_Id}
+func GetSheetUrl(spreadSheetId string, sheetId int64) string {
+	return fmt.Sprintf("https://docs.google.com/spreadsheets/d/%s/edit#gid=%d", spreadSheetId, sheetId)
+}
+
+func PrettyPrintSpreadSheetMeta(spreadSheet *sheets.Spreadsheet) {
 	fmt.Printf("title=[%s],url=%s\n", spreadSheet.Properties.Title, spreadSheet.SpreadsheetUrl)
 	for _, sheet := range spreadSheet.Sheets {
 		sProperties := sheet.Properties
@@ -319,12 +350,12 @@ func prettyPrintSpreadSheetMeta(spreadSheet *sheets.Spreadsheet) {
 	}
 }
 
-func prettyPrintRespRows(rows [][]interface{}) {
+func PrettyPrintRespRows(rows [][]interface{}) {
 	for _, row := range rows {
 		fields := make([]string, 0, len(row))
 		for _, field := range row {
 			fields = append(fields, fmt.Sprintf("%v", field))
 		}
-		fmt.Println(strings.Join(fields, "||"))
+		fmt.Println(strings.Join(fields, "|-|"))
 	}
 }

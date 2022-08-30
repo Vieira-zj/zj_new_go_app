@@ -15,16 +15,15 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-// https://docs.google.com/spreadsheets/d/{SpreadSheet_Id}/edit#gid={Sheet_Id}
 var sheetIdForTest = ""
 
 func TestGSheetsCreateSpreadSheet(t *testing.T) {
 	t.Skip("Run once")
 	gsheets := NewGSheets()
 	spreadSheetTitle := "Test: create gsheet api"
-	spreadSheetUrl, err := gsheets.CreateSpreadSheet(context.Background(), spreadSheetTitle, "test-01")
+	spreadSheetId, sheetId, err := gsheets.CreateSpreadSheet(context.Background(), spreadSheetTitle, "test-01")
 	assert.NoError(t, err)
-	t.Log("spreadsheet created:", spreadSheetUrl)
+	t.Log("spreadsheet created:", GetSheetUrl(spreadSheetId, sheetId))
 }
 
 func TestGSheetsCreateSheet(t *testing.T) {
@@ -43,7 +42,7 @@ func TestGsheetsReadByRange(t *testing.T) {
 	}
 	rows, err := gsheets.ReadByRange(context.Background(), gSheetParam)
 	assert.NoError(t, err)
-	prettyPrintRespRows(rows)
+	PrettyPrintRespRows(rows)
 	t.Log("read finish")
 }
 
@@ -84,24 +83,24 @@ func TestGSheetsAppendByRange(t *testing.T) {
 	t.Log("append finish")
 }
 
-func TestGetSpreadSheetInfo(t *testing.T) {
+func TestGetSpreadSheet(t *testing.T) {
 	gsheets := NewGSheets()
-	spreadSheet, err := gsheets.GetSpreadSheetInfo(context.Background(), sheetIdForTest)
+	spreadSheet, err := gsheets.GetSpreadSheet(context.Background(), sheetIdForTest)
 	assert.NoError(t, err)
-	prettyPrintSpreadSheetMeta(spreadSheet)
+	PrettyPrintSpreadSheetMeta(spreadSheet)
 }
 
-func TestGSheetsUpdateCellsStyle(t *testing.T) {
+func TestAddStyleFoSheet(t *testing.T) {
 	gsheets := NewGSheets()
 	gSheetParam := GsheetsParam{
 		SpreadSheetId:    sheetIdForTest,
-		SheetId:          530966751,
+		SheetId:          1419638410,
 		StartRowIndex:    0,
 		EndRowIndex:      10,
 		StartColumnIndex: 0,
 		EndColumnIndex:   4,
 	}
-	err := gsheets.UpdateCellsStyle(context.Background(), gSheetParam)
+	err := gsheets.AddStyleFoSheet(context.Background(), gSheetParam)
 	assert.NoError(t, err)
-	t.Log("update cell style finish")
+	t.Log("add style finish")
 }

@@ -23,9 +23,9 @@ func gSheetTest() {
 
 	gsheets := gsheet.NewGSheets()
 	title := "Test: create gsheet api"
-	spreadSheetId, err := gsheets.CreateSpreadSheet(context.Background(), title, "test-01")
+	spreadSheetId, sheetId, err := gsheets.CreateSpreadSheet(context.Background(), title, "test-01")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println("spreadsheet created:", spreadSheetId)
+	log.Println("spreadsheet created:", gsheet.GetSheetUrl(spreadSheetId, sheetId))
 }
