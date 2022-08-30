@@ -1,30 +1,12 @@
-package utils
+package redis
 
 import (
 	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 
 	"github.com/go-redis/redis"
 )
-
-var (
-	redisClient        *redis.Client
-	NewRedisClientOnce sync.Once
-)
-
-func NewRedisClient(addr string) *redis.Client {
-	NewRedisClientOnce.Do(func() {
-		redisClient = redis.NewClient(&redis.Options{
-			Addr:     addr,
-			Password: "",
-			DB:       1,
-			PoolSize: 10,
-		})
-	})
-	return redisClient
-}
 
 // Redis Lock
 

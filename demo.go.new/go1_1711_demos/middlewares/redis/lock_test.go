@@ -1,65 +1,15 @@
-package utils
+package redis
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/go-redis/redis"
 )
-
-func RedisLocalTestInit() *redis.Client {
-	addr := "127.0.0.1:6379"
-	return NewRedisClient(addr)
-}
-
-func TestRedisConnPing(t *testing.T) {
-	client := RedisLocalTestInit()
-	res, err := client.Ping().Result()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("ping:", res)
-}
-
-func TestRedisConnSet(t *testing.T) {
-	client := RedisLocalTestInit()
-	const key = "redis.test"
-	if _, err := client.Set(key, "valtest", time.Minute).Result(); err != nil {
-		t.Fatal(err)
-	}
-	t.Log("set success")
-}
-
-func TestRedisConnGet(t *testing.T) {
-	client := RedisLocalTestInit()
-	const key = "redis.test"
-	res, err := client.Get(key).Result()
-	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			t.Log("get success: val nil")
-		} else {
-			t.Fatal(err)
-		}
-	} else {
-		t.Log("get success:", res)
-	}
-}
-
-func TestRedisConnDel(t *testing.T) {
-	client := RedisLocalTestInit()
-	const key = "redis.test"
-	if _, err := client.Del(key).Result(); err != nil {
-		t.Fatal(err)
-	}
-	t.Log("del success")
-}
 
 // run: go test -timeout 180s -run ^TestRedisLock$ go1_1711_demo/utils -v -count=1
 func TestRedisLock(t *testing.T) {
-	client := RedisLocalTestInit()
+	client := RedisClientInitForLocal()
 	key := "redis.test"
 	wg := sync.WaitGroup{}
 
