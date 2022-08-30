@@ -82,7 +82,7 @@ func NewGSheets() *GSheets {
 }
 
 func (gSheets *GSheets) ReadByRange(ctx context.Context, param GsheetsParam) ([][]interface{}, error) {
-	resp, err := gSheets.srv.Spreadsheets.Values.Get(param.SpreadSheetId, param.getFullRangeName()).Do()
+	resp, err := gSheets.srv.Spreadsheets.Values.Get(param.SpreadSheetId, param.getFullRangeName()).Context(ctx).Do()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to retrieve data from sheet: %v", err)
 	}
@@ -144,7 +144,8 @@ func (gSheets *GSheets) CreateSheet(ctx context.Context, spreadSheetId, sheetTit
 		},
 	}
 	batchReq := &sheets.BatchUpdateSpreadsheetRequest{
-		Requests:                     []*sheets.Request{req},
+		Requests: []*sheets.Request{req},
+		// use resp.UpdatedSpreadsheet
 		IncludeSpreadsheetInResponse: true,
 	}
 	resp, err := gSheets.srv.Spreadsheets.BatchUpdate(spreadSheetId, batchReq).Context(ctx).Do()
@@ -167,7 +168,7 @@ func (gSheets *GSheets) GetSpreadSheetInfo(ctx context.Context, spreadSheetId st
 
 // UpdateCellsStyle: refer https://developers.google.com/sheets/api/samples/formatting
 func (gSheets *GSheets) UpdateCellsStyle(ctx context.Context, param GsheetsParam) error {
-	req := &sheets.Request{
+	req1 := &sheets.Request{
 		RepeatCell: &sheets.RepeatCellRequest{
 			Range: &sheets.GridRange{
 				SheetId:          param.SheetId,
@@ -187,8 +188,51 @@ func (gSheets *GSheets) UpdateCellsStyle(ctx context.Context, param GsheetsParam
 			Fields: "userEnteredFormat(textFormat)",
 		},
 	}
+
+	req2 := &sheets.Request{
+		UpdateSheetProperties: &sheets.UpdateSheetPropertiesRequest{
+			Properties: &sheets.SheetProperties{
+				SheetId: param.SheetId,
+				GridProperties: &sheets.GridProperties{
+					FrozenRowCount: 1,
+				},
+			},
+			Fields: "gridProperties.frozenRowCount",
+		},
+	}
+
+	req3 := &sheets.Request{
+		UpdateBorders: &sheets.UpdateBordersRequest{
+			Range: &sheets.GridRange{
+				SheetId:          param.SheetId,
+				StartRowIndex:    param.StartRowIndex,
+				EndRowIndex:      param.EndRowIndex,
+				StartColumnIndex: param.StartColumnIndex,
+				EndColumnIndex:   param.EndColumnIndex,
+			},
+			Top: &sheets.Border{
+				Style: "SOLID",
+			},
+			Bottom: &sheets.Border{
+				Style: "SOLID",
+			},
+			Left: &sheets.Border{
+				Style: "SOLID",
+			},
+			Right: &sheets.Border{
+				Style: "SOLID",
+			},
+			InnerHorizontal: &sheets.Border{
+				Style: "SOLID",
+			},
+			InnerVertical: &sheets.Border{
+				Style: "SOLID",
+			},
+		},
+	}
+
 	batchReq := &sheets.BatchUpdateSpreadsheetRequest{
-		Requests: []*sheets.Request{req},
+		Requests: []*sheets.Request{req1, req2, req3},
 	}
 	_, err := gSheets.srv.Spreadsheets.BatchUpdate(param.SpreadSheetId, batchReq).Context(ctx).Do()
 	return err

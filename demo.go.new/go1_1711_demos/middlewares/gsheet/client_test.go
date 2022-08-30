@@ -15,8 +15,8 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-// https://docs.google.com/spreadsheets/d/1IHQpHTk52hHCYKnIk1CfEH2sVIMIV4l1QzybzZS6I0Q/edit#gid=1606719347
-var sheetIdForTest = "1IHQpHTk52hHCYKnIk1CfEH2sVIMIV4l1QzybzZS6I0Q"
+// https://docs.google.com/spreadsheets/d/{SpreadSheet_Id}/edit#gid={Sheet_Id}
+var sheetIdForTest = ""
 
 func TestGSheetsCreateSpreadSheet(t *testing.T) {
 	t.Skip("Run once")
@@ -28,9 +28,8 @@ func TestGSheetsCreateSpreadSheet(t *testing.T) {
 }
 
 func TestGSheetsCreateSheet(t *testing.T) {
-	t.Skip("Run once")
 	gsheets := NewGSheets()
-	sheetId, err := gsheets.CreateSheet(context.Background(), sheetIdForTest, "test-02")
+	sheetId, err := gsheets.CreateSheet(context.Background(), sheetIdForTest, "test-11")
 	assert.NoError(t, err)
 	t.Log("sheet created:", sheetId)
 }
@@ -54,10 +53,11 @@ func TestGSheetsWriteByRange(t *testing.T) {
 
 	gSheetParam := GsheetsParam{
 		SpreadSheetId: sheetIdForTest,
-		SheetName:     "test-02",
-		RangeName:     "A1:D5",
+		SheetName:     "test-11",
+		RangeName:     "A1:D6",
 	}
 	values := [][]interface{}{
+		{"AppName", "Path", "Request", "Count"},
 		{"app-test01", "/index", `{"msg":"hello"}`, 10},
 		{"app-test02", "/ping", `{"msg":"pong"}`, 3},
 	}
@@ -72,8 +72,8 @@ func TestGSheetsAppendByRange(t *testing.T) {
 
 	gSheetParam := GsheetsParam{
 		SpreadSheetId: sheetIdForTest,
-		SheetName:     "test-02",
-		RangeName:     "A2:D6",
+		SheetName:     "test-11",
+		RangeName:     "A1:D6",
 	}
 	values := [][]interface{}{
 		{"app-test03", "/index", `{"msg":"hello"}`, 11},
@@ -95,7 +95,7 @@ func TestGSheetsUpdateCellsStyle(t *testing.T) {
 	gsheets := NewGSheets()
 	gSheetParam := GsheetsParam{
 		SpreadSheetId:    sheetIdForTest,
-		SheetId:          1606719347,
+		SheetId:          530966751,
 		StartRowIndex:    0,
 		EndRowIndex:      10,
 		StartColumnIndex: 0,
