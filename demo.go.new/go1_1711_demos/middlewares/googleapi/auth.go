@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 //
@@ -21,6 +23,21 @@ import (
 // 3. Enable Google Sheets Api
 // 4. Create a OAuth Client Id (type:Desktop), and downlaod to credentials.json
 //
+
+func getAuthClient(authScope string) *http.Client {
+	b, err := ioutil.ReadFile(filepath.Join(os.Getenv("PRJ_PATH"), "internal", "credentials.json"))
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
+
+	config, err := google.ConfigFromJSON(b, authScope)
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	}
+
+	return getClient(config)
+
+}
 
 func getClient(config *oauth2.Config) *http.Client {
 	prjPath, ok := os.LookupEnv("PRJ_PATH")

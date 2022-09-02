@@ -3,14 +3,10 @@ package googleapi
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 )
@@ -30,19 +26,10 @@ type GDriver struct {
 
 func NewGDriver() *GDriver {
 	gDriverOnce.Do(func() {
-		b, err := ioutil.ReadFile(filepath.Join(os.Getenv("PRJ_PATH"), "internal", "credentials.json"))
-		if err != nil {
-			log.Fatalf("Unable to read client secret file: %v", err)
-		}
-
-		config, err := google.ConfigFromJSON(b, drive.DriveFileScope)
-		if err != nil {
-			log.Fatalf("Unable to parse client secret file to config: %v", err)
-		}
-
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		client := getClient(config)
+
+		client := getAuthClient(drive.DriveFileScope)
 		srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
 		if err != nil {
 			log.Fatalf("Unable to retrieve Drive client: %v", err)

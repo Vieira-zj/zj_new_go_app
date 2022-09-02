@@ -3,15 +3,11 @@ package googleapi
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
@@ -19,11 +15,6 @@ import (
 //
 // Gsheets
 //
-
-const (
-	scopeReadOnly  = "https://www.googleapis.com/auth/spreadsheets.readonly"
-	scopeReadWrite = "https://www.googleapis.com/auth/spreadsheets"
-)
 
 var (
 	gSheets     *GSheets
@@ -53,19 +44,10 @@ type GSheets struct {
 
 func NewGSheets() *GSheets {
 	gSheetsOnce.Do(func() {
-		b, err := ioutil.ReadFile(filepath.Join(os.Getenv("PRJ_PATH"), "internal", "credentials.json"))
-		if err != nil {
-			log.Fatalf("Unable to read client secret file: %v", err)
-		}
-
-		config, err := google.ConfigFromJSON(b, sheets.SpreadsheetsScope)
-		if err != nil {
-			log.Fatalf("Unable to parse client secret file to config: %v", err)
-		}
-
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		client := getClient(config)
+
+		client := getAuthClient(sheets.SpreadsheetsScope)
 		srv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
 		if err != nil {
 			log.Fatalf("Unable to retrieve Sheets client: %v", err)
