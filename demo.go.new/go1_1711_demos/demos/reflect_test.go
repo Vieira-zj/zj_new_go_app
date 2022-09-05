@@ -13,6 +13,124 @@ import (
 )
 
 //
+// Demo: reflect
+//
+
+type GetOkrDetailResp struct {
+	OkrId   int64
+	UInfo   *UserInfo
+	ObjList []*ObjInfo
+}
+
+func (resp *GetOkrDetailResp) PrettyPrint() {
+	objStrs := make([]string, 0, len(resp.ObjList))
+	for _, obj := range resp.ObjList {
+		objStrs = append(objStrs, fmt.Sprintf("id=%d,content=[%s]", obj.ObjId, obj.Content))
+	}
+	fmt.Printf("id=%d,list=[%s]\n", resp.OkrId, strings.Join(objStrs, "|"))
+}
+
+type ObjInfo struct {
+	ObjId   int64
+	Content string
+}
+
+type UserInfo struct {
+	Name         string
+	Age          int
+	IsLeader     bool
+	Salary       float64
+	privateFiled int
+}
+
+func (uInfo *UserInfo) PrettyString() string {
+	return fmt.Sprintf("name=%s,age=%d,is_leader=%v,salary=%.2f\n", uInfo.Name, uInfo.Age, uInfo.IsLeader, uInfo.Salary)
+}
+
+// NewUserInfoByReflect 利用反射创建结构体。
+func NewUserInfoByReflect(req interface{}) *UserInfo {
+	if req == nil {
+		return nil
+	}
+
+	reqType := reflect.TypeOf(req)
+	if reqType.Kind() == reflect.Ptr {
+		reqType = reqType.Elem()
+	}
+	return reflect.New(reqType).Interface().(*UserInfo)
+}
+
+// ModifyOkrDetailRespData 修改struct字段值。
+func ModifyOkrDetailRespData(req interface{}) error {
+	reqValue := reflect.ValueOf(req).Elem()
+	if !reqValue.CanSet() {
+		return fmt.Errorf("value cannot be set")
+	}
+
+	uType := reqValue.FieldByName("UInfo").Type().Elem() // UInfo 是指针类型 *UserInfo
+	uInfo := reflect.New(uType)
+	reqValue.FieldByName("UInfo").Set(uInfo)
+	return nil
+}
+
+// FilterOkrRespData 读取struct字段值，并根据条件进行过滤。
+func FilterOkrRespData(reqData interface{}, objId int64) {
+	valueOf := reflect.ValueOf(reqData).Elem()
+	for i := 0; i < valueOf.NumField(); i++ {
+		fieldValue := valueOf.Field(i)
+		if fieldValue.Kind() != reflect.Slice {
+			continue
+		}
+
+		fieldType := fieldValue.Type()                      // type: []*ObjInfo
+		sliceType := fieldType.Elem()                       // type: *ObjInfo
+		slicePtr := reflect.New(reflect.SliceOf(sliceType)) // 创建一个指向 slice 的指针
+		slice := slicePtr.Elem()
+		slice.Set(reflect.MakeSlice(reflect.SliceOf(sliceType), 0, 0))
+		for i := 0; i < fieldValue.Len(); i++ {
+			if fieldValue.Index(i).Elem().FieldByName("ObjId").Int() != objId {
+				continue
+			}
+			slice = reflect.Append(slice, fieldValue.Index(i))
+		}
+		fieldValue.Set(slice)
+	}
+}
+
+func TestReflectOkrResp(t *testing.T) {
+	// 利用反射创建一个新的对象
+	var uInfo *UserInfo
+	uInfo = NewUserInfoByReflect((*UserInfo)(nil))
+	assert.NotNil(t, uInfo)
+	fmt.Printf("new user info: %+v\n", uInfo)
+
+	uInfo = NewUserInfoByReflect(uInfo)
+	assert.NotNil(t, uInfo)
+	fmt.Printf("new user info: %+v\n", uInfo)
+	fmt.Println()
+
+	// 修改 resp 返回值里面的 user info 字段（初始化）
+	reqData1 := new(GetOkrDetailResp)
+	assert.Nil(t, reqData1.UInfo)
+	err := ModifyOkrDetailRespData(reqData1)
+	assert.NoError(t, err)
+	fmt.Printf("modified user info: %+v\n", reqData1.UInfo)
+	fmt.Println()
+
+	// 对 respData 进行过滤操作
+	reqData := &GetOkrDetailResp{OkrId: 123}
+	for i := 0; i < 10; i++ {
+		reqData.ObjList = append(reqData.ObjList, &ObjInfo{ObjId: int64(i), Content: fmt.Sprint(i)})
+	}
+	fmt.Println("before filter:")
+	reqData.PrettyPrint()
+
+	FilterOkrRespData(reqData, 6)
+	fmt.Println("after filter:")
+	reqData.PrettyPrint()
+}
+
+//
 // Demo: get func name and run by reflect
 //
 

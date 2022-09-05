@@ -20,7 +20,7 @@ import (
 //
 // 1. Open Google Cloud Console
 // 2. Create a Google Cloud Platform project
-// 3. Enable Google Sheets Api
+// 3. Enable Google Driver/Sheets Api
 // 4. Create a OAuth Client Id (type:Desktop), and downlaod to credentials.json
 //
 
