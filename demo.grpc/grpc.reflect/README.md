@@ -5,8 +5,8 @@
 
 不依赖pb文件，通过grpc反射接口实现：
 
-- 获取 proto 文件信息；
-- 获取 grpc 服务信息（用来构造 grpc 服务请求数据），包括 service, rpc method, message 元数据；
+- 从反射接口拉取 proto 文件信息；
+- 解析 proto 文件获取 grpc 服务信息（用来构造 grpc 服务请求数据），包括 service, rpc method, message 元数据；
 - 使用 grpc 服务名 + json body 数据（不依赖struct），完成 grpc 服务请求。
 
 原理：
@@ -50,15 +50,15 @@ go run main.go -addr=127.0.0.1:50051 -method=proto.Greeter.SayHello -body='{"met
 
 问题：
 
-- client需要指定 服务名、请求及响应结构体 来调用grpc服务，如果访问mock服务，需要修改`pb.go`文件代码；
-- mock服务对 请求及响应结构体 的泛化。
+- client 需要指定 服务名、请求及响应结构体 来调用 grpc 服务，如果访问 mock 服务，需要修改 `pb.go` 文件代码；
+- mock 服务对 请求及响应结构体 的泛化。
 
 ### 模板文件
 
-使用 template 模板文件 + .pb 文件 + json数据 动态生成 `mock_server.go` 文件，部署后代替原grpc服务。
+使用 template 模板文件 + .pb 文件 + json数据 动态生成 `mock_server.go` 文件，部署后代替原 grpc 服务。
 
 问题：
 
-- 只能mock一个服务，不能通用；
+- 只能 mock 一个服务，不能通用；
 - 每次使用前需要部署。
 

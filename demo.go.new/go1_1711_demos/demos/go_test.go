@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,6 +28,29 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 	fmt.Printf("return code: %d\n", code)
 	fmt.Println("test after")
+}
+
+func TestStringEqual(t *testing.T) {
+	res := strings.EqualFold("foo", "Foo")
+	t.Log("result:", res)
+}
+
+func TestRelativePath(t *testing.T) {
+	dst := filepath.Join(os.Getenv("HOME"), "Workspaces/zj_repos/zj_new_go_project/demo.go.new/go1_1711_demos")
+	relPath, err := filepath.Rel(os.Getenv("HOME"), dst)
+	assert.NoError(t, err)
+	t.Log("rel path:", relPath)
+}
+
+func TestIOReadCloser(t *testing.T) {
+	// 从 request.body reader 中读出请求数据后，使用 io.NopCloser 还原 request.body reader
+	r := strings.NewReader("io read closer test")
+	rc := io.NopCloser(r)
+	defer rc.Close()
+
+	s, err := io.ReadAll(rc)
+	assert.NoError(t, err)
+	t.Log("read:", string(s))
 }
 
 func TestURLDecode(t *testing.T) {
