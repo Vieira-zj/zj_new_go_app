@@ -2,6 +2,8 @@ package pkg
 
 import "github.com/prometheus/client_golang/prometheus"
 
+// Promethus State
+
 var (
 	HistogramVecApiDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "GinMonitor",

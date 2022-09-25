@@ -7,6 +7,7 @@ require (
 	github.com/alibaba/ioc-golang/extension v0.0.0-20220703065958-9345d9a84600
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/imdario/mergo v0.3.13
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/prometheus/client_golang v1.12.2
