@@ -1,16 +1,23 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"go1_1711_demo/middlewares/gin/pkg"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -20,6 +27,8 @@ curl -v http://127.0.0.1:8081/
 curl -v http://127.0.0.1:8081/notfound
 
 curl -v "http://127.0.0.1:8081/auth/login?name=foo"
+
+curl -XPOST "http://127.0.0.1:8081/signup" -d '{"name":"foo","age":21,"date":"2023-09-03","email":"foo@gmail.com"}'
 
 curl -v http://127.0.0.1:8081/error/user/bar
 curl -v http://127.0.0.1:8081/error/users
@@ -40,19 +49,44 @@ func main() {
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("checkDate", checkSignUpDate)
+	}
+
+	initRouter(r)
+
+	srv := &http.Server{
+		Addr:    ":8081",
+		Handler: r,
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+			log.Fatal(err)
+		}
+	}()
+
+	// kill -2 发送 syscall.SIGINT 信号，常用的 Ctrl+C 就是触发系统 SIGINT 信号
+	// kill -9 发送 syscall.SIGKILL 信号，但是不能被捕获，所以不需要添加它
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("server exit")
+}
+
+func initRouter(r *gin.Engine) {
 	r.NoMethod(HandleNotFound)
 	r.NoRoute(HandleNotFound)
 
 	r.GET("/", Ping)
+	r.POST("/signup", SignUp)
 
-	initRouter(r)
-
-	if err := r.Run(":8081"); err != nil {
-		log.Fatalln(err)
-	}
-}
-
-func initRouter(r *gin.Engine) {
 	auth := r.Group("/auth").Use(AuthHandler())
 	auth.GET("/login", Login)
 
@@ -100,6 +134,41 @@ func User(c *gin.Context) {
 
 func Users(c *gin.Context) {
 	c.Error(pkg.ServerError)
+}
+
+// Handle Param Validate
+
+type SignUpParam struct {
+	Age   uint8  `json:"age" binding:"gte=1,lte=130"`
+	Name  string `json:"name" binding:"required"`
+	Email string `json:"email" binding:"required,email"`
+	Date  string `json:"date" binding:"required,datetime=2006-01-02,checkDate"`
+}
+
+func checkSignUpDate(fl validator.FieldLevel) bool {
+	date, err := time.Parse("2006-01-02", fl.Field().String())
+	if err != nil {
+		return false
+	}
+	if date.Before(time.Now()) {
+		return false
+	}
+	return true
+}
+
+func SignUp(c *gin.Context) {
+	var s SignUpParam
+	if err := c.ShouldBindJSON(&s); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	log.Printf("sign up: name=%s, age=%d, email=%s, date=%s", s.Name, s.Age, s.Email, s.Date)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "signup success",
+	})
 }
 
 // Handle Prometheus
