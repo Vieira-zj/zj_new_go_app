@@ -131,6 +131,33 @@ func TestReflectOkrResp(t *testing.T) {
 }
 
 //
+// Demo: 从切片中过滤指定元素，不修改原切片
+//
+
+func DeleteSliceElms(s interface{}, elms ...interface{}) interface{} {
+	m := make(map[interface{}]struct{})
+	for _, e := range elms {
+		m[e] = struct{}{}
+	}
+
+	v := reflect.ValueOf(s)
+	res := reflect.MakeSlice(reflect.TypeOf(s), 0, v.Len())
+	for i := 0; i < v.Len(); i++ {
+		if _, ok := m[v.Index(i).Interface()]; !ok {
+			res = reflect.Append(res, v.Index(i))
+		}
+	}
+	return res.Interface()
+}
+
+func TestDeleteSliceElms(t *testing.T) {
+	slice := []uint64{1, 2, 3, 4, 5, 6, 7, 8, 9}
+	elms := []interface{}{uint64(1), uint64(3), uint64(5), uint64(7), uint64(9)}
+	res := DeleteSliceElms(slice, elms...)
+	t.Logf("results: %v", res)
+}
+
+//
 // Demo: get func name and run by reflect
 //
 

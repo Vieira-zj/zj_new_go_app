@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -33,6 +34,19 @@ func TestMain(m *testing.M) {
 func TestStringEqual(t *testing.T) {
 	res := strings.EqualFold("foo", "Foo")
 	t.Log("result:", res)
+}
+
+func TestStringBuilder(t *testing.T) {
+	s1, s2, s3 := "foo", "bar", "baz"
+	var builder strings.Builder
+	builder.Grow(9)
+	_, err := builder.WriteString(s1)
+	assert.NoError(t, err)
+	_, err = builder.WriteString(s2)
+	assert.NoError(t, err)
+	_, err = builder.WriteString(s3)
+	assert.NoError(t, err)
+	t.Log("results:", builder.String())
 }
 
 func TestRelativePath(t *testing.T) {
@@ -174,6 +188,26 @@ func TestContinueInSelect(t *testing.T) {
 		}
 	}
 	t.Log("done")
+}
+
+// Demo: 内存对齐
+
+type s1 struct {
+	a int8
+	b int16
+	c int32
+}
+
+type s2 struct {
+	a int8
+	c int32
+	b int16
+}
+
+func TestStructSize(t *testing.T) {
+	// 在对内存特别敏感的结构体的设计上，我们可以通过调整字段的顺序，将字段宽度从小到大由上到下排列，来减少内存的占用
+	t.Log("s1 size:", unsafe.Sizeof(s1{})) // 8
+	t.Log("s2 size:", unsafe.Sizeof(s2{})) // 12
 }
 
 // Demo: error
