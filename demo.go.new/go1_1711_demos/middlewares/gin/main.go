@@ -26,12 +26,15 @@ rest api:
 curl -v http://127.0.0.1:8081/
 curl -v http://127.0.0.1:8081/notfound
 
+curl -v http://127.0.0.1:8081/ctxval
+
 curl -v "http://127.0.0.1:8081/auth/login?name=foo"
 
 curl -XPOST "http://127.0.0.1:8081/signup" -d '{"name":"foo","age":21,"date":"2023-09-03","email":"foo@gmail.com"}'
 
 curl -v http://127.0.0.1:8081/error/user/bar
 curl -v http://127.0.0.1:8081/error/users
+
 
 api for metrics test:
 curl -v http://127.0.0.1:8081/prometheus/apia
@@ -48,6 +51,7 @@ func init() {
 func main() {
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
+	r.ContextWithFallback = true
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("checkDate", checkSignUpDate)
@@ -86,6 +90,8 @@ func initRouter(r *gin.Engine) {
 
 	r.GET("/", Ping)
 	r.POST("/signup", SignUp)
+
+	r.GET("/ctxval", ContextHandler(), GetContextValue)
 
 	auth := r.Group("/auth").Use(AuthHandler())
 	auth.GET("/login", Login)
@@ -176,7 +182,7 @@ func SignUp(c *gin.Context) {
 func PrometheusHandleA(c *gin.Context) {
 	sleep := rand.Intn(200)
 	time.Sleep(time.Duration(sleep) * time.Millisecond)
-	c.AbortWithStatusJSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "apia get ok",
 	})
@@ -185,15 +191,51 @@ func PrometheusHandleA(c *gin.Context) {
 func PrometheusHandleB(c *gin.Context) {
 	sleep := rand.Intn(300)
 	time.Sleep(time.Duration(sleep) * time.Millisecond)
-	c.AbortWithStatusJSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "apib post ok",
+	})
+}
+
+// Handle Wrap Context
+
+func GetContextValue(c *gin.Context) {
+	// condition: enable r.ContextWithFallback
+	val := c.Value("test-key")
+	if val == nil {
+		log.Println("no value in gin context")
+	}
+	log.Println("value in gin context:", val)
+
+	ctx := c.Request.Context()
+	val = ctx.Value("test-key")
+	if val == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "no value in request context",
+		})
+		return
+	}
+	log.Println("value in request context:", val)
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":      0,
+		"ctx-value": val,
 	})
 }
 
 //
 // Middleware
 //
+
+func ContextHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log.Println("wrap for reqeust context")
+		ctx := c.Request.Context()
+		newCtx := context.WithValue(ctx, "test-key", "new-value")
+		c.Request = c.Request.WithContext(newCtx)
+		c.Next()
+	}
+}
 
 // AuthHandler: auth verify handler.
 func AuthHandler() gin.HandlerFunc {
