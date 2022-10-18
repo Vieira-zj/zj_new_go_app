@@ -1,0 +1,46 @@
+syntax="proto2";
+package entry_test.echo;
+
+//commands{
+//    entry_test.echo.send(SendRequest,SendResponse)
+//    entry_test.echo.to_upper(ToUpperRequest,ToUpperResponse)
+//    entry_test.echo.rr_say_hello(
+//        RrHelloRequest,RrHelloResponse)
+//}
+
+//service echo {
+//  rpc send(SendRequest) returns (SendResponse);
+//  rpc to_upper(ToUpperRequest) returns (ToUpperResponse);
+//  rpc rr_say_hello(RrHelloRequest) returns (RrHelloResponse);
+//}
+
+message Constant {
+  enum ErrorCode {
+    //[6500000,6600000)
+    ERROR_MSG_EMPTY=6500000;
+  }
+}
+
+message SendRequest {
+    optional string messages = 1; // messsages for send
+}
+
+message SendResponse {
+    optional string messages = 1;  // messages response
+}
+
+message ToUpperRequest {
+    optional string messages = 1; // messsage for send
+}
+
+message ToUpperResponse {
+    optional string messages = 1;  // message response
+}
+
+message RrHelloRequest {
+    optional string msg = 1;
+}
+
+message RrHelloResponse {
+    optional string msg = 1;
+}
