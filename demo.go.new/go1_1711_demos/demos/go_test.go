@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 	"unsafe"
@@ -611,4 +612,23 @@ func TestGoroutineExit(t *testing.T) {
 	t.Log("root goroutine finish")
 	time.Sleep(3 * time.Second)
 	t.Log("main done")
+}
+
+func TestBarrierByWg(t *testing.T) {
+	var wg sync.WaitGroup
+	for i := 0; i < 6; i++ {
+		wg.Add(1)
+		i := i
+		go func() {
+			time.Sleep(time.Duration(i*10) * time.Millisecond)
+			t.Logf("goroutine [%d] before wait", i)
+			wg.Done()
+			wg.Wait()
+			t.Logf("goroutine [%d] after wait", i)
+		}()
+	}
+
+	// print "after wait" after all "before wait"
+	time.Sleep(3 * time.Second)
+	t.Log("barrier test done")
 }

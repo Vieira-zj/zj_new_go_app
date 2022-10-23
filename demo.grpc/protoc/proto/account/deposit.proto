@@ -1,0 +1,29 @@
+syntax = "proto3";
+ 
+package account;
+
+// 这里 go_package="path:pkg" 设置中的 path 相对于 protoc --go_out=. 设置的路径
+option go_package = "pb/account;account";
+
+import "constant.proto";
+
+service DepositService {
+    rpc Deposit(DepositRequest) returns (DepositResponse) {}
+    rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse) {}
+}
+
+message DepositRequest {
+    float amount = 1;
+}
+ 
+message DepositResponse {
+    bool ok = 1;
+}
+
+message CreateAccountRequest {
+    string account_no = 1;
+}
+
+message CreateAccountResponse {
+    Accounting.ReturnCode return_code = 1;
+}
