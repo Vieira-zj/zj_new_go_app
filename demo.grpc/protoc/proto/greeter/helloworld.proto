@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-// 这里 go_package="path:pkg" 设置中的 path 相对于 protoc --go_out=. 设置的路径
+// 这里 go_package="path:pkg" 中的 path 相对于 protoc --go_out=. 设置的路径
 option go_package = "pb/greeter;greeter";
 
 package greeter;
 
-// 这里 import "path" 设置中的 path 相对于 protoc --proto_path=. 设置的路径
-import "message/hello_msg.proto";
+// 这里 import "path" 相对于 protoc --proto_path=. 设置的路径
+import "msg/hello.proto";
 
 // The greeting service definition.
 service Greeter {
   // Sends a greeting
-  rpc SayHello (message.HelloRequest) returns (message.HelloReply) {}
+  rpc SayHello (msg.HelloRequest) returns (msg.HelloReply) {}
 }

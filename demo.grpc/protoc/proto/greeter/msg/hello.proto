@@ -3,7 +3,7 @@ syntax = "proto3";
 // 这里 go_package="path:pkg" 设置中的 path 相对于 protoc --go_out=. 设置的路径
 option go_package = "pb/greeter;greeter";
 
-package message;
+package msg;
 
 // The request message containing the user's name.
 message HelloRequest {
@@ -12,5 +12,5 @@ message HelloRequest {
 
 // The response message containing the greetings.
 message HelloReply {
-  string message = 1;
+  string content = 1;
 }

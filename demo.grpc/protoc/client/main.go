@@ -18,7 +18,7 @@ const (
 
 func main() {
 	callDepositByPb()
-	log.Println("protoc done")
+	log.Println("protoc client done")
 }
 
 //

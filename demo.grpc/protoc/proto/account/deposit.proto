@@ -2,9 +2,10 @@ syntax = "proto3";
  
 package account;
 
-// 这里 go_package="path:pkg" 设置中的 path 相对于 protoc --go_out=. 设置的路径
+// 这里 go_package="path:pkg" 中的 path 相对于 protoc --go_out=. 设置的路径
 option go_package = "pb/account;account";
 
+// 这里 import "path" 相对于 protoc --proto_path=. 设置的路径
 import "constant.proto";
 
 service DepositService {
@@ -15,7 +16,7 @@ service DepositService {
 message DepositRequest {
     float amount = 1;
 }
- 
+
 message DepositResponse {
     bool ok = 1;
 }
