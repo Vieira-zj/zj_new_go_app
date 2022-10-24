@@ -12,7 +12,7 @@ import (
 func TestParseAccountProtoFile(t *testing.T) {
 	parser := protoparse.Parser{
 		ImportPaths: []string{
-			filepath.Join(os.Getenv("PROJECT_ROOT"), "protoc/proto/account"),
+			filepath.Join(os.Getenv("PROJECT_ROOT"), "protoc/proto/account"), // 指定包含 proto 的目录
 		},
 		InferImportPaths: true,
 	}

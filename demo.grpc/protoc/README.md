@@ -2,7 +2,7 @@
 
 > 通过直接解析 proto 文件来完成 grpc 请求。
 
-## 环境定义
+## 环境
 
 1. proto 文件定义
 
@@ -49,6 +49,12 @@ protoc --proto_path=${pb_dir} --go_out=. --go-grpc_out=. ${pb_dir}/helloworld.pr
 
 注：`proto_path` 一般设置为 main proto 文件所在的目录。
 
-## 执行测试
+## 解析 proto 文件
+
+> 参考 `prase_proto_test.go` 测试。
+
+TODO:
+
+## 调用 grpc 接口
 
 TODO:
