@@ -7,6 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestPrintFormatTime(t *testing.T) {
+	ti := time.UnixMilli(1659541013325)
+	t.Log("datetime:", ti)
+	t.Log("simple date:", GetSimpleDate(ti))
+}
+
 func TestTimeParse(t *testing.T) {
 	date := "2022-10-01 00:00:00"
 	ti, err := time.Parse(DefaultTimeFormat, date)

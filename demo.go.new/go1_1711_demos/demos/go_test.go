@@ -112,6 +112,31 @@ func TestMarshalFunc(t *testing.T) {
 	fmt.Printf("caller: %s\n", b)
 }
 
+func TestMarchalStruct(t *testing.T) {
+	type Base struct {
+		Id string `json:"id"`
+	}
+	type Student struct {
+		Base
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
+
+	s := Student{
+		Base: Base{
+			Id: "001",
+		},
+		Name: "foo",
+		Age:  31,
+	}
+	s.Id = "002"
+	b, err := json.Marshal(s)
+	if err != nil {
+		assert.NoError(t, err)
+	}
+	t.Log("student:", string(b))
+}
+
 func TestStructToMap(t *testing.T) {
 	type person struct {
 		ID   uint8  `json:"id"`

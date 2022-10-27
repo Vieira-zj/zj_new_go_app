@@ -7,6 +7,13 @@ import (
 
 const DefaultTimeFormat = "2006-01-02 15:04:05"
 
+func GetPreTimeRange(preTime time.Duration) (int64, int64) {
+	now := time.Now()
+	end := now.UnixMilli()
+	start := now.Add(-preTime).UnixMilli()
+	return start, end
+}
+
 // GetStartAndEndMilliOfDate dt must be "2006-01-02" but not "2006-1-2".
 func GetStartAndEndMilliOfDate(dt string) (int64, int64, error) {
 	date := fmt.Sprintf("%s 00:00:00", dt)
