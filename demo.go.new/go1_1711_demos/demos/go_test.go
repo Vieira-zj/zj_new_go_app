@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -112,7 +113,7 @@ func TestMarshalFunc(t *testing.T) {
 	fmt.Printf("caller: %s\n", b)
 }
 
-func TestMarchalStruct(t *testing.T) {
+func TestMarshalStruct(t *testing.T) {
 	type Base struct {
 		Id string `json:"id"`
 	}
@@ -131,10 +132,27 @@ func TestMarchalStruct(t *testing.T) {
 	}
 	s.Id = "002"
 	b, err := json.Marshal(s)
-	if err != nil {
-		assert.NoError(t, err)
-	}
+	assert.NoError(t, err)
 	t.Log("student:", string(b))
+}
+
+func TestJsonUnmarshalAsInterface(t *testing.T) {
+	text := `{"env":["test", "uat"]}`
+	res := make(map[string]interface{})
+	err := json.Unmarshal([]byte(text), &res)
+	assert.NoError(t, err)
+
+	if env, ok := res["env"]; ok {
+		valueOf := reflect.ValueOf(env)
+		fmt.Println("value type:", valueOf.Type().Kind())
+		itemValueOf := valueOf.Index(0)
+		fmt.Printf("slice item value type: %s\n", itemValueOf.Type().Kind())
+		if values, ok := env.([]interface{}); ok && len(values) > 0 {
+			t.Log("1st env:", values[0])
+		}
+	} else {
+		t.Fatal("no env found")
+	}
 }
 
 func TestStructToMap(t *testing.T) {
