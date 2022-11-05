@@ -226,6 +226,7 @@ func (p *personImpl) SayHello(name string) {
 	fmt.Printf("hello: %s\n", name)
 }
 
+// personProxy proxy for personImpl which can be auto generate.
 type personProxy struct {
 	String_   func() string
 	SayHello_ func(string)

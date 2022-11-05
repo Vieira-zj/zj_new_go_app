@@ -12,7 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// use ErrGroup instead of WaitGroup
+// use ErrGroup instead of WaitGroup for async func which returns error.
 
 func TestErrGroup(t *testing.T) {
 	g := new(errgroup.Group)

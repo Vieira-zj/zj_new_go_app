@@ -33,13 +33,18 @@ func TestMain(m *testing.M) {
 	fmt.Println("test after")
 }
 
+func TestReflectTimeNow(t *testing.T) {
+	nowValueOf := reflect.ValueOf(time.Now)
+	fmt.Println(nowValueOf.Type().Kind(), nowValueOf.IsValid(), nowValueOf.CanSet())
+}
+
 func TestStringEqual(t *testing.T) {
 	res := strings.EqualFold("foo", "Foo")
 	t.Log("result:", res)
 }
 
 func TestStringBuilder(t *testing.T) {
-	s1, s2, s3 := "foo", "bar", "baz"
+	s1, s2, s3 := "foo|", "bar|", "baz"
 	var builder strings.Builder
 	builder.Grow(9)
 	_, err := builder.WriteString(s1)
