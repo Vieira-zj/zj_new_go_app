@@ -3,6 +3,7 @@ package demos
 import (
 	"context"
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,6 +12,52 @@ import (
 
 	"golang.org/x/sync/errgroup"
 )
+
+func TestWrapError(t *testing.T) {
+	err := fmt.Errorf("raw error")
+	wErr := fmt.Errorf("wrapped error: %w", err)
+	t.Log("error:", wErr)
+	t.Log("error is:", errors.Is(wErr, err))
+	t.Log("unwrap error:", errors.Unwrap(wErr))
+}
+
+func TestVerifyErrorType(t *testing.T) {
+	err := &os.PathError{
+		Path: "/tmp/test",
+		Op:   "access",
+		Err:  errors.New("path not exist"),
+	}
+	wErr := fmt.Errorf("wrapped error: %w", err)
+	t.Log("error:", wErr)
+
+	if _, ok := wErr.(*os.PathError); ok {
+		t.Log("wrapped error is os.PathError")
+	}
+
+	var p *os.PathError
+	if errors.As(wErr, &p) {
+		t.Log("wrapped error as os.PathError")
+	}
+}
+
+type CustomError struct {
+	content string
+}
+
+func (e *CustomError) Error() string {
+	return e.content
+}
+
+func TestCustomError(t *testing.T) {
+	err := &CustomError{
+		content: "system exception",
+	}
+	wErr := fmt.Errorf("wrapped error: %w", err)
+	t.Log("error:", wErr)
+
+	var tErr *CustomError
+	t.Log("error as:", errors.As(wErr, &tErr))
+}
 
 // use ErrGroup instead of WaitGroup for async func which returns error.
 

@@ -2,6 +2,7 @@ package demos
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -12,6 +13,122 @@ import (
 
 	"golang.org/x/sync/errgroup"
 )
+
+func TestSelectCase(t *testing.T) {
+	ch := make(chan int, 1)
+	go func() {
+		time.Sleep(2 * time.Second)
+		ch <- 1
+		close(ch)
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		t.Log(ctx.Err())
+	case val, ok := <-ch:
+		t.Log("chan value:", ok, val)
+	}
+	t.Log("done")
+}
+
+func TestBarrierByWg(t *testing.T) {
+	var wg sync.WaitGroup
+	for i := 0; i < 6; i++ {
+		wg.Add(1)
+		i := i
+		go func() {
+			time.Sleep(time.Duration(i*10) * time.Millisecond)
+			t.Logf("goroutine [%d] before wait", i)
+			wg.Done()
+			wg.Wait()
+			t.Logf("goroutine [%d] after wait", i)
+		}()
+	}
+
+	// print "after wait" after all "before wait"
+	time.Sleep(3 * time.Second)
+	t.Log("barrier test done")
+}
+
+func TestRunBatchByGoroutine(t *testing.T) {
+	resultCh := make(chan int)
+	errCh := make(chan error)
+	defer func() {
+		close(resultCh)
+		close(errCh)
+	}()
+
+	go func(resultCh chan int, errCh chan error) {
+		for i := 0; i < 10; i++ {
+			if i == 11 {
+				errCh <- fmt.Errorf("invalid num")
+			}
+			resultCh <- i
+			time.Sleep(time.Second)
+		}
+		// NOTE: size of resultCh should be 0, make sure all results are handle before return
+		errCh <- nil
+	}(resultCh, errCh)
+
+outer:
+	for {
+		select {
+		case result := <-resultCh:
+			if result%2 == 1 {
+				continue
+			}
+			t.Log("result:", result)
+		case err := <-errCh:
+			if err != nil {
+				t.Log("err:", err)
+			}
+			break outer
+		}
+	}
+	t.Log("done")
+}
+
+func TestGoroutineExit(t *testing.T) {
+	// NOTE: sub goroutine is still running when root goroutine exit
+	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
+
+	retCh := make(chan struct{})
+	go func() {
+		// context here, make sure sub goroutine is cancelled when root goroutine exit
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		go func() {
+			tick := time.Tick(time.Second)
+			for {
+				select {
+				case <-ctx.Done():
+					fmt.Println("sub goroutine:", ctx.Err())
+					return
+				case <-tick:
+					fmt.Println("sub goroutine run...")
+				}
+			}
+		}()
+		for i := 0; i < 5; i++ {
+			time.Sleep(time.Second)
+			fmt.Println("root goroutine run...")
+		}
+
+		// <-retCh
+		close(retCh)
+	}()
+
+	t.Log("main wait...")
+	<-retCh
+	t.Log("root goroutine finish")
+	time.Sleep(3 * time.Second)
+	t.Log("main done")
+}
 
 //
 // Demo: 无锁数据结构 atomic

@@ -12,6 +12,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestReflectFnTimeNow(t *testing.T) {
+	nowValueOf := reflect.ValueOf(time.Now)
+	fmt.Println(nowValueOf.Type().Kind(), nowValueOf.IsValid(), nowValueOf.CanSet())
+}
+
 //
 // Demo: reflect
 //

@@ -5,9 +5,30 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestRelativePath(t *testing.T) {
+	dst := filepath.Join(os.Getenv("HOME"), "Workspaces/zj_repos/zj_new_go_project/demo.go.new/go1_1711_demos")
+	relPath, err := filepath.Rel(os.Getenv("HOME"), dst)
+	assert.NoError(t, err)
+	t.Log("rel path:", relPath)
+}
+
+func TestIOReadCloser(t *testing.T) {
+	// 从 request.body reader 中读出请求数据后，使用 io.NopCloser 还原 request.body reader
+	r := strings.NewReader("io read closer test")
+	rc := io.NopCloser(r)
+	defer rc.Close()
+
+	s, err := io.ReadAll(rc)
+	assert.NoError(t, err)
+	t.Log("read:", string(s))
+}
 
 func TestReadBytes(t *testing.T) {
 	r := strings.NewReader("abcde")
