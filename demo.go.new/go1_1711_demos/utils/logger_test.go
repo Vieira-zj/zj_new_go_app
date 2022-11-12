@@ -8,6 +8,7 @@ import (
 
 func TestLoggerPrintString(t *testing.T) {
 	path := "/tmp/test/app.log"
+	t.Setenv("ENV", "test")
 	InitLogger(path)
 	Debug("it's a debug message", zap.String("env", "dev"))
 	Info("it's a info message", zap.String("env", "test"))
@@ -16,12 +17,15 @@ func TestLoggerPrintString(t *testing.T) {
 
 func TestLoggerPrintStruct(t *testing.T) {
 	path := "/tmp/test/app.log"
+	t.Setenv("ENV", "test")
 	InitLogger(path)
 
 	user := struct {
 		Name string `json:"name"`
+		Age  int    `json:"age"`
 	}{
 		Name: "foo",
+		Age:  31,
 	}
 	Info("log test for struct", zap.Any("user", user))
 }
