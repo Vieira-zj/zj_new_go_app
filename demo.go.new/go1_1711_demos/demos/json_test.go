@@ -54,6 +54,69 @@ func TestMarshalStruct(t *testing.T) {
 	t.Log("student:\n", string(b))
 }
 
+func TestMarshalForRawMsg(t *testing.T) {
+	type base struct {
+		Content string `json:"content"`
+	}
+	type super struct {
+		Base    string          `json:"base"`
+		RawBase json.RawMessage `json:"raw_base"`
+		Extern  string          `json:"extern"`
+	}
+
+	b := base{
+		Content: "hello",
+	}
+	bytes, err := json.Marshal(&b)
+	assert.NoError(t, err)
+
+	s := super{
+		Base:    string(bytes),
+		RawBase: json.RawMessage(bytes),
+		Extern:  "world",
+	}
+	bytes, err = json.MarshalIndent(&s, "", "  ")
+	assert.NoError(t, err)
+	t.Logf("json results:\n%s", bytes)
+}
+
+func TestUnmarshalForRawMsg(t *testing.T) {
+	type Color struct {
+		Type string `json:"type"`
+		// delay parsing until we know the color type
+		Value json.RawMessage `json:"value"`
+	}
+	type RGB struct {
+		R uint8
+		G uint8
+		B uint8
+	}
+	type YCbCr struct {
+		Y  uint8
+		Cb int8
+		Cr int8
+	}
+
+	b := []byte(`[
+    {"type": "YCbCr", "value":{"Y": 255, "Cb": 0, "Cr": -10}},
+    {"type": "RGB",  "value":{"R": 98, "G": 218, "B": 255}}
+]`)
+	colors := []Color{}
+	assert.NoError(t, json.Unmarshal(b, &colors))
+
+	for _, c := range colors {
+		var value interface{}
+		switch c.Type {
+		case "RGB":
+			value = RGB{}
+		case "YCbCr":
+			value = YCbCr{}
+		}
+		assert.NoError(t, json.Unmarshal(c.Value, &value))
+		t.Logf("%s:%+v", c.Type, value)
+	}
+}
+
 func TestStructToMap01(t *testing.T) {
 	type person struct {
 		ID   uint8  `json:"id"`
