@@ -31,6 +31,29 @@ func TestMarshalFunc(t *testing.T) {
 	fmt.Printf("caller: %s\n", b)
 }
 
+func TestMarshalWithType(t *testing.T) {
+	type data struct {
+		Id  int64 `json:"id,string"`
+		Age int   `json:"age,string"`
+	}
+
+	d := data{
+		Id:  1246000001606460673,
+		Age: 31,
+	}
+	b, err := json.Marshal(&d)
+	assert.NoError(t, err)
+	t.Logf("result: %s", b)
+
+	d = data{}
+	assert.NoError(t, json.Unmarshal(b, &d))
+	t.Logf("id=%d, age=%d", d.Id, d.Age)
+
+	var i map[string]interface{}
+	assert.NoError(t, json.Unmarshal(b, &i))
+	t.Logf("id=%v, age=%v", i["id"], i["age"])
+}
+
 func TestMarshalStruct(t *testing.T) {
 	type Base struct {
 		Id string `json:"id"`
@@ -239,6 +262,7 @@ func TestJsonDecode(t *testing.T) {
 	`
 
 	dec := json.NewDecoder(strings.NewReader(stream))
+	// dec.UseNumber()
 	t.Log("output:")
 	for {
 		var m Message
