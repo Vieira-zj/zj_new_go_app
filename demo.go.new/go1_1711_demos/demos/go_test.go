@@ -193,6 +193,35 @@ func TestMapParamRef(t *testing.T) {
 	t.Logf("#3: %p, %+v", &m, m)
 }
 
+// Demo: struct inherit
+
+type testParent struct {
+	Name string
+}
+
+func (p testParent) Pprint() {
+	fmt.Printf("name=%s\n", p.Name)
+}
+
+type testChild struct {
+	testParent
+	Age int
+}
+
+func (c testChild) Pstring() string {
+	c.Pprint()
+	return fmt.Sprintf("name=%s, age=%d\n", c.Name, c.Age)
+}
+
+func TestStructInherit(t *testing.T) {
+	c := testChild{
+		testParent: testParent{Name: "foo"},
+		Age:        31,
+	}
+	c.Pprint()
+	t.Log(c.Pstring())
+}
+
 // Demo: context
 
 func TestContextWithValue(t *testing.T) {
