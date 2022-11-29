@@ -1,12 +1,12 @@
-package pkg
+package protoc
 
 import (
 	"os"
 	"path/filepath"
 )
 
-// getAllProtoDirs returns 1st level of dirs which contains .proto file.
-func getAllProtoDirs(path string) ([]string, error) {
+// GetAllProtoDirs returns 1st level of dirs which contains .proto file.
+func GetAllProtoDirs(path string) ([]string, error) {
 	dirs, err := getAllSubDirs(path)
 	if err != nil {
 		return nil, err

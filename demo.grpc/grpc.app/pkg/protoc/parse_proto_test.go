@@ -1,4 +1,4 @@
-package pkg
+package protoc
 
 import (
 	"fmt"
@@ -54,7 +54,7 @@ func TestLoadMethodDescriptors01(t *testing.T) {
 		filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/account"),
 		filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/greeter"),
 	}
-	mDescs, err := loadMethodDescriptors(paths...)
+	mDescs, err := LoadMethodDescriptors(paths...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func TestLoadMethodDescriptors01(t *testing.T) {
 
 func TestLoadMethodDescriptors02(t *testing.T) {
 	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto")
-	dirPaths, err := getAllProtoDirs(path)
+	dirPaths, err := GetAllProtoDirs(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestLoadMethodDescriptors02(t *testing.T) {
 		fmt.Println(path)
 	}
 
-	mDescs, err := loadMethodDescriptors(dirPaths...)
+	mDescs, err := LoadMethodDescriptors(dirPaths...)
 	if err != nil {
 		t.Fatal(err)
 	}

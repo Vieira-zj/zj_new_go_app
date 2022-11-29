@@ -1,4 +1,4 @@
-package pkg
+package protoc
 
 import (
 	"os"
@@ -25,8 +25,8 @@ func TestBuildReqProtoMessage(t *testing.T) {
 
 	method := "/greeter.Greeter/SayHello"
 	body := `{"name":"foo"}`
-	coder := newCoder(mDescs)
-	req, err := coder.buildReqProtoMessage(method, body)
+	coder := NewCoder(mDescs)
+	req, err := coder.BuildReqProtoMessage(method, body)
 	if err != nil {
 		t.Fatal(err)
 	}

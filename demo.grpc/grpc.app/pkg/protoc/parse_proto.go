@@ -1,4 +1,4 @@
-package pkg
+package protoc
 
 import (
 	"log"
@@ -9,7 +9,7 @@ import (
 	"github.com/jhump/protoreflect/desc/protoparse"
 )
 
-func loadMethodDescriptors(paths ...string) (map[string]*desc.MethodDescriptor, error) {
+func LoadMethodDescriptors(paths ...string) (map[string]*desc.MethodDescriptor, error) {
 	retMeDescs := make(map[string]*desc.MethodDescriptor, 16)
 	parser := protoparse.Parser{
 		ImportPaths:      paths,

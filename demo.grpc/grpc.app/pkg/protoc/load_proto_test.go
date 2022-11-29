@@ -1,4 +1,4 @@
-package pkg
+package protoc
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ func TestGetAllSubDirs(t *testing.T) {
 
 func TestGetAllProtoDirs(t *testing.T) {
 	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto")
-	dirPaths, err := getAllProtoDirs(path)
+	dirPaths, err := GetAllProtoDirs(path)
 	if err != nil {
 		t.Fatal(err)
 	}

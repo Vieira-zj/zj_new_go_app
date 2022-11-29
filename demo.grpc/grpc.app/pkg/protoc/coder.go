@@ -1,4 +1,4 @@
-package pkg
+package protoc
 
 import (
 	"fmt"
@@ -15,13 +15,13 @@ type Coder struct {
 	MethodDescs map[string]*desc.MethodDescriptor
 }
 
-func newCoder(mDescs map[string]*desc.MethodDescriptor) Coder {
+func NewCoder(mDescs map[string]*desc.MethodDescriptor) Coder {
 	return Coder{
 		MethodDescs: mDescs,
 	}
 }
 
-func (c Coder) buildReqProtoMessage(method, body string) (proto.Message, error) {
+func (c Coder) BuildReqProtoMessage(method, body string) (proto.Message, error) {
 	dynMsg, err := c.newProtoMessage(method, inputMsgType)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (c Coder) buildReqProtoMessage(method, body string) (proto.Message, error) 
 	return dynMsg, nil
 }
 
-func (c Coder) newRespProtoMessage(method string) (proto.Message, error) {
+func (c Coder) NewRespProtoMessage(method string) (proto.Message, error) {
 	return c.newProtoMessage(method, outputMsgType)
 }
 
