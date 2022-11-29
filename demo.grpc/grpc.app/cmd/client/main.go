@@ -26,17 +26,19 @@ func init() {
 	os.Setenv("PROJECT_ROOT", filepath.Join(os.Getenv("HOME"), subPath))
 }
 
+// deposit grpc server: grpc.reflect/svc_bin/grpc_deposit
+
 func main() {
 	callDepositByPb()
 	callDepositByInvoke()
+	time.Sleep(time.Second)
 	callDepositByProto()
+	time.Sleep(time.Second)
 	log.Println("grpc client done")
 }
 
-// deposit grpc server: grpc.reflect/svc_bin/grpc_deposit
-
 func callDepositByPb() {
-	log.Println("call grpc api deposit by pb")
+	log.Println("call grpc api [deposit] by pb")
 	// NOTE: do not use grpc.WithBlock() here, if grpc server not start or incorrect port, it cuases block.
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", address, port), grpc.WithInsecure())
 	if err != nil {
@@ -65,7 +67,7 @@ func callDepositByPb() {
 }
 
 func callDepositByInvoke() {
-	log.Println("call grpc api deposit by invoke and pb")
+	log.Println("call grpc api [deposit] by invoke and pb")
 	req := &account.DepositRequest{
 		Amount: float32(7),
 	}
@@ -80,7 +82,8 @@ func callDepositByInvoke() {
 }
 
 func callDepositByProto() {
-	log.Println("call grpc api deposit by invoke and proto")
+	// process: load/parse proto => coder => req,resp (proto message) => grpc invoke
+	log.Println("call grpc api [deposit] by invoke and proto")
 	mds, err := loadProto()
 	if err != nil {
 		log.Fatal(err)
@@ -116,5 +119,5 @@ func loadProto() (map[string]*desc.MethodDescriptor, error) {
 	if err != nil {
 		return nil, err
 	}
-	return protoc.LoadMethodDescriptors(dirPaths...)
+	return protoc.LoadProtoFiles(dirPaths...)
 }

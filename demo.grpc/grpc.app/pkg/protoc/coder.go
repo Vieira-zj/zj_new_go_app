@@ -10,17 +10,23 @@ import (
 	"github.com/jhump/protoreflect/dynamic"
 )
 
-// Coder .
+const (
+	inputMsgType  = "input"
+	outputMsgType = "output"
+)
+
+// Coder uses deprecated proto which compitable with dynamic message.
 type Coder struct {
-	MethodDescs map[string]*desc.MethodDescriptor
+	methodDescs map[string]*desc.MethodDescriptor
 }
 
 func NewCoder(mDescs map[string]*desc.MethodDescriptor) Coder {
 	return Coder{
-		MethodDescs: mDescs,
+		methodDescs: mDescs,
 	}
 }
 
+// BuildReqProtoMessage creates grpc request (proto message) from json string.
 func (c Coder) BuildReqProtoMessage(method, body string) (proto.Message, error) {
 	dynMsg, err := c.newProtoMessage(method, inputMsgType)
 	if err != nil {
@@ -33,17 +39,13 @@ func (c Coder) BuildReqProtoMessage(method, body string) (proto.Message, error) 
 	return dynMsg, nil
 }
 
+// NewRespProtoMessage creates empty grpc response (proto message).
 func (c Coder) NewRespProtoMessage(method string) (proto.Message, error) {
 	return c.newProtoMessage(method, outputMsgType)
 }
 
-const (
-	inputMsgType  = "input"
-	outputMsgType = "output"
-)
-
 func (c Coder) newProtoMessage(method, msgType string) (proto.Message, error) {
-	md, ok := c.MethodDescs[method]
+	md, ok := c.methodDescs[method]
 	if !ok {
 		return nil, fmt.Errorf("method descriptor not found for: %s", method)
 	}

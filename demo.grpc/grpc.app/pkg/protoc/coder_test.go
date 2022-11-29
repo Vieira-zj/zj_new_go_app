@@ -10,7 +10,7 @@ import (
 )
 
 func TestBuildReqProtoMessage(t *testing.T) {
-	parser := protoparse.Parser{
+	parser := &protoparse.Parser{
 		ImportPaths: []string{
 			filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/greeter"),
 		},

@@ -5,28 +5,67 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jhump/protoreflect/desc/protoparse"
 )
 
-func TestMain(m *testing.M) {
-	subPath := "Workspaces/zj_repos/zj_new_go_project/demo.grpc"
-	os.Setenv("PROJECT_ROOT", filepath.Join(os.Getenv("HOME"), subPath))
-	m.Run()
-}
+func TestParseAccountProtoFile(t *testing.T) {
+	parser := &protoparse.Parser{
+		ImportPaths: []string{
+			filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/account"), // 指定包含 proto 的目录
+		},
+		InferImportPaths: true,
+	}
 
-func TestGetAllSubDirs(t *testing.T) {
-	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto")
-	dirPaths, err := getAllSubDirs(path)
+	fileName := "deposit.proto"
+	mDescs, err := parseProtoFile(parser, fileName)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	t.Log("all sub dirs:")
-	for _, path := range dirPaths {
-		fmt.Println(path)
+	t.Log("load:", fileName)
+	for _, mDesc := range mDescs {
+		t.Log("method:", mDesc.GetName())
 	}
 }
 
-func TestGetAllProtoDirs(t *testing.T) {
+func TestParseGreeterProtoFile(t *testing.T) {
+	parser := &protoparse.Parser{
+		ImportPaths: []string{
+			filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/greeter"),
+		},
+		InferImportPaths: true,
+	}
+
+	fileName := "helloworld.proto"
+	mDescs, err := parseProtoFile(parser, fileName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("load:", fileName)
+	for _, mDesc := range mDescs {
+		t.Log("method:", mDesc.GetName())
+	}
+}
+
+func TestLoadProtoFiles01(t *testing.T) {
+	paths := []string{
+		filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/account"),
+		filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/greeter"),
+	}
+	mDescs, err := LoadProtoFiles(paths...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("methods desc:")
+	for key, md := range mDescs {
+		t.Log(key, md.GetName())
+	}
+}
+
+func TestLoadProtoFiles02(t *testing.T) {
 	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto")
 	dirPaths, err := GetAllProtoDirs(path)
 	if err != nil {
@@ -36,5 +75,15 @@ func TestGetAllProtoDirs(t *testing.T) {
 	t.Log("proto dirs:")
 	for _, path := range dirPaths {
 		fmt.Println(path)
+	}
+
+	mDescs, err := LoadProtoFiles(dirPaths...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("methods desc:")
+	for key, md := range mDescs {
+		t.Log(key, md.GetName())
 	}
 }

@@ -1,57 +1,63 @@
 package protoc
 
 import (
+	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/desc/protoparse"
 )
 
-// GetAllProtoDirs returns 1st level of dirs which contains .proto file.
-func GetAllProtoDirs(path string) ([]string, error) {
-	dirs, err := getAllSubDirs(path)
-	if err != nil {
-		return nil, err
+// LoadProtoFiles parses .proto files in paths, and loads method descriptors.
+func LoadProtoFiles(paths ...string) (map[string]*desc.MethodDescriptor, error) {
+	retMeDescs := make(map[string]*desc.MethodDescriptor, 16)
+	parser := &protoparse.Parser{
+		ImportPaths:      paths,
+		InferImportPaths: true,
 	}
 
-	retDirs := make([]string, 0, 4)
-	for _, dir := range dirs {
-		ok, err := isProtoDir(dir)
+	for _, path := range paths {
+		entries, err := os.ReadDir(path)
 		if err != nil {
 			return nil, err
 		}
-		if ok {
-			retDirs = append(retDirs, dir)
+		for _, entry := range entries {
+			fname := entry.Name()
+			if filepath.Ext(fname) == ".proto" {
+				log.Println("parse proto file:", fname)
+				mDescs, err := parseProtoFile(parser, fname)
+				if err != nil {
+					return nil, err
+				}
+				for k, md := range mDescs {
+					if _, ok := retMeDescs[k]; ok {
+						return nil, fmt.Errorf("duplicated method descriptor: %s", k)
+					}
+					retMeDescs[k] = md
+				}
+			}
 		}
 	}
-	return retDirs, nil
+	return retMeDescs, nil
 }
 
-func getAllSubDirs(path string) ([]string, error) {
-	dirPaths := make([]string, 0, 4)
-	if err := filepath.Walk(path, func(fpath string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if fi.IsDir() {
-			dirPaths = append(dirPaths, fpath)
-		}
-		return nil
-	}); err != nil {
+func parseProtoFile(parser *protoparse.Parser, fname string) (map[string]*desc.MethodDescriptor, error) {
+	fileDescs, err := parser.ParseFiles(fname)
+	if err != nil {
 		return nil, err
 	}
 
-	return dirPaths, nil
-}
+	mDescs := map[string]*desc.MethodDescriptor{}
+	fileDesc := fileDescs[0]
+	for _, service := range fileDesc.GetServices() {
+		srvName := service.GetFullyQualifiedName()
+		for _, method := range service.GetMethods() {
+			key := "/" + srvName + "/" + method.GetName()
+			mDescs[key] = method
 
-func isProtoDir(path string) (bool, error) {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return false, err
-	}
-
-	for _, entry := range entries {
-		if filepath.Ext(entry.Name()) == ".proto" {
-			return true, nil
 		}
 	}
-	return false, nil
+	return mDescs, nil
 }
