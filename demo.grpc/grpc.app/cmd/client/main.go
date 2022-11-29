@@ -39,8 +39,15 @@ func main() {
 
 func callDepositByPb() {
 	log.Println("call grpc api [deposit] by pb")
-	// NOTE: do not use grpc.WithBlock() here, if grpc server not start or incorrect port, it cuases block.
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", address, port), grpc.WithInsecure())
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// when use grpc.WithBlock() without context here, if grpc server not start or incorrect port, it cuases block.
+	opts := []grpc.DialOption{
+		grpc.WithInsecure(),
+		grpc.WithBlock(),
+	}
+	conn, err := grpc.DialContext(ctx, fmt.Sprintf("%s:%s", address, port), opts...)
 	if err != nil {
 		log.Fatalf("Did not connect: %v", err)
 	}
@@ -69,7 +76,7 @@ func callDepositByPb() {
 func callDepositByInvoke() {
 	log.Println("call grpc api [deposit] by invoke and pb")
 	req := &account.DepositRequest{
-		Amount: float32(7),
+		Amount: float32(7.1),
 	}
 	resp := &account.DepositResponse{}
 
@@ -93,13 +100,13 @@ func callDepositByProto() {
 	}
 
 	method := "/account.DepositService/Deposit"
-	body := `{"amount": 10}`
+	body := `{"amount": 10.03}`
 	coder := protoc.NewCoder(mds)
 	req, err := coder.BuildReqProtoMessage(method, body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("req:", req.String())
+	log.Println("deposit req:", req.String())
 
 	resp, err := coder.NewRespProtoMessage(method)
 	if err != nil {
@@ -110,7 +117,7 @@ func callDepositByProto() {
 	if err = application.GrpcCall(context.Background(), target, method, req, resp); err != nil {
 		log.Fatal(err)
 	}
-	log.Println("resp:", resp.String())
+	log.Println("deposit resp:", resp.String())
 }
 
 func loadProto() (map[string]*desc.MethodDescriptor, error) {

@@ -51,7 +51,7 @@ protoc --proto_path=${pb_dir} --go_out=. --go-grpc_out=. ${pb_dir}/helloworld.pr
 
 ## 解析 proto 文件
 
-> 参考 `prase_proto_test.go` 测试。
+> 参考 `load_proto_test.go` 测试。
 
 TODO:
 

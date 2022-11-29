@@ -61,5 +61,6 @@ func (c Coder) newProtoMessage(method, msgType string) (proto.Message, error) {
 	}
 
 	log.Printf("create new proto message for: %s", msgDesc.GetName())
+	// dynamic message 不兼容 proto v2
 	return dynamic.NewMessage(msgDesc), nil
 }

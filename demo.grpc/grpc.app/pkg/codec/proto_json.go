@@ -2,8 +2,10 @@ package codec
 
 import (
 	"encoding/json"
+	"log"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/protobuf/encoding/protojson"
 	protoV2 "google.golang.org/protobuf/proto"
@@ -13,13 +15,20 @@ func init() {
 	encoding.RegisterCodec(ProtoJson{})
 }
 
+const tagProtoJson = "protojson"
+
+func WithProtoJsonCodec() grpc.CallOption {
+	return grpc.CallContentSubtype(tagProtoJson)
+}
+
 type ProtoJson struct{}
 
 func (ProtoJson) Name() string {
-	return "protojson"
+	return tagProtoJson
 }
 
 func (ProtoJson) Marshal(v interface{}) ([]byte, error) {
+	log.Println("ProtoJson.Marshal")
 	marshalOpts := protojson.MarshalOptions{
 		UseProtoNames:   true,
 		UseEnumNumbers:  true,
@@ -36,6 +45,7 @@ func (ProtoJson) Marshal(v interface{}) ([]byte, error) {
 }
 
 func (ProtoJson) Unmarshal(b []byte, v interface{}) error {
+	log.Println("ProtoJson.Unmarshal")
 	unmarshalOpts := protojson.UnmarshalOptions{
 		DiscardUnknown: true,
 	}
