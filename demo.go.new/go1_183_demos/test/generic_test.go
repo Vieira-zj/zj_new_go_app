@@ -88,3 +88,10 @@ func TestGetFieldInfo(t *testing.T) {
 	l := []string{"foo", "bar"}
 	fmt.Println(GetFieldInfo(l))
 }
+
+func TestKvMap(t *testing.T) {
+	m := KvMap[string, int]{}
+	m.Set("one", 1)
+	m.Set("two", 2)
+	m.Pprint()
+}

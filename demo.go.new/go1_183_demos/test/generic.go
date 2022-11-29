@@ -6,6 +6,10 @@ import (
 	"strconv"
 )
 
+//
+// Generic for method
+//
+
 // AddByReflect add fn supports for int32 and float32 by reflect.
 func AddByReflect(a, b interface{}) (interface{}, error) {
 	// here use generic [T any] instead of interface{}
@@ -90,4 +94,27 @@ func GetFieldInfo[T any /* int | string */](field T) string {
 		fValue = fmt.Sprintf("%v", valueOf.Interface())
 	}
 	return fmt.Sprintf("type=%s | value=%s", fType, fValue)
+}
+
+//
+// Generic for struct
+//
+
+type Number interface {
+	int | int32 | int64 | float32 | float64
+}
+
+type KvMap[K comparable, V Number] map[K]V
+
+func (kv KvMap[K, V]) Set(k K, v V) KvMap[K, V] {
+	if _, ok := kv[k]; !ok {
+		kv[k] = v
+	}
+	return kv
+}
+
+func (kv KvMap[K, V]) Pprint() {
+	for k, v := range kv {
+		fmt.Printf("key=%v,value=%v\n", k, v)
+	}
 }
