@@ -14,7 +14,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetAllSubDirs(t *testing.T) {
-	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "protoc/proto")
+	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto")
 	dirPaths, err := getAllSubDirs(path)
 	if err != nil {
 		t.Fatal(err)
@@ -27,7 +27,7 @@ func TestGetAllSubDirs(t *testing.T) {
 }
 
 func TestGetAllProtoDirs(t *testing.T) {
-	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "protoc/proto")
+	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto")
 	dirPaths, err := getAllProtoDirs(path)
 	if err != nil {
 		t.Fatal(err)

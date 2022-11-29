@@ -12,7 +12,7 @@ import (
 func TestParseAccountProtoFile(t *testing.T) {
 	parser := protoparse.Parser{
 		ImportPaths: []string{
-			filepath.Join(os.Getenv("PROJECT_ROOT"), "protoc/proto/account"), // 指定包含 proto 的目录
+			filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/account"), // 指定包含 proto 的目录
 		},
 		InferImportPaths: true,
 	}
@@ -32,7 +32,7 @@ func TestParseAccountProtoFile(t *testing.T) {
 func TestParseGreeterProtoFile(t *testing.T) {
 	parser := protoparse.Parser{
 		ImportPaths: []string{
-			filepath.Join(os.Getenv("PROJECT_ROOT"), "protoc/proto/greeter"),
+			filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/greeter"),
 		},
 		InferImportPaths: true,
 	}
@@ -51,8 +51,8 @@ func TestParseGreeterProtoFile(t *testing.T) {
 
 func TestLoadMethodDescriptors01(t *testing.T) {
 	paths := []string{
-		filepath.Join(os.Getenv("PROJECT_ROOT"), "protoc/proto/account"),
-		filepath.Join(os.Getenv("PROJECT_ROOT"), "protoc/proto/greeter"),
+		filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/account"),
+		filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto/greeter"),
 	}
 	mDescs, err := loadMethodDescriptors(paths...)
 	if err != nil {
@@ -66,7 +66,7 @@ func TestLoadMethodDescriptors01(t *testing.T) {
 }
 
 func TestLoadMethodDescriptors02(t *testing.T) {
-	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "protoc/proto")
+	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto")
 	dirPaths, err := getAllProtoDirs(path)
 	if err != nil {
 		t.Fatal(err)
