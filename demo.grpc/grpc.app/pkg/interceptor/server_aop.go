@@ -14,11 +14,7 @@ import (
 
 func LoggingServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		log.Println("logging server interceptor start")
-		defer func() {
-			log.Println("logging server interceptor end")
-		}()
-
+		log.Println("logging server interceptor")
 		log.Println("invoke method:", info.FullMethod)
 		resp, err := handler(ctx, req)
 		if err != nil {
@@ -37,11 +33,7 @@ func LoggingServerInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func RecoverServerInterceptor() grpc.UnaryServerInterceptor {
-	log.Println("recover server interceptor start")
-	defer func() {
-		log.Println("recover server interceptor end")
-	}()
-
+	log.Println("add recover server interceptor")
 	opt := grpc_recovery.WithRecoveryHandlerContext(RecoveryHandlerFunc())
 	return grpc_recovery.UnaryServerInterceptor(opt)
 }

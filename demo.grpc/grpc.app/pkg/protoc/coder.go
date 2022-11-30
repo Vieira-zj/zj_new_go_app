@@ -3,6 +3,7 @@ package protoc
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -15,20 +16,36 @@ const (
 	outputMsgType = "output"
 )
 
+var (
+	coder     Coder
+	coderOnce sync.Once
+)
+
 // Coder uses deprecated proto which compitable with dynamic message.
 type Coder struct {
 	methodDescs map[string]*desc.MethodDescriptor
 }
 
 func NewCoder(mDescs map[string]*desc.MethodDescriptor) Coder {
-	return Coder{
-		methodDescs: mDescs,
-	}
+	coderOnce.Do(func() {
+		coder = Coder{
+			methodDescs: mDescs,
+		}
+	})
+	return coder
 }
 
 // BuildReqProtoMessage creates grpc request (proto message) from json string.
 func (c Coder) BuildReqProtoMessage(method, body string) (proto.Message, error) {
-	dynMsg, err := c.newProtoMessage(method, inputMsgType)
+	return c.buildProtoMessage(method, body, inputMsgType)
+}
+
+func (c Coder) BuildRespProtoMessage(method, body string) (proto.Message, error) {
+	return c.buildProtoMessage(method, body, outputMsgType)
+}
+
+func (c Coder) buildProtoMessage(method, body, msgType string) (proto.Message, error) {
+	dynMsg, err := c.newProtoMessage(method, msgType)
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +59,10 @@ func (c Coder) BuildReqProtoMessage(method, body string) (proto.Message, error) 
 // NewRespProtoMessage creates empty grpc response (proto message).
 func (c Coder) NewRespProtoMessage(method string) (proto.Message, error) {
 	return c.newProtoMessage(method, outputMsgType)
+}
+
+func (c Coder) NewReqProtoMessage(method string) (proto.Message, error) {
+	return c.newProtoMessage(method, inputMsgType)
 }
 
 func (c Coder) newProtoMessage(method, msgType string) (proto.Message, error) {

@@ -27,6 +27,10 @@ func (ProtoJson) Name() string {
 	return tagProtoJson
 }
 
+func (ProtoJson) String() string {
+	return tagProtoJson
+}
+
 func (ProtoJson) Marshal(v interface{}) ([]byte, error) {
 	log.Println("ProtoJson.Marshal")
 	marshalOpts := protojson.MarshalOptions{

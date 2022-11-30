@@ -2,8 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"time"
 
 	"demo.grpc/grpc.app/pkg/codec"
@@ -34,27 +32,17 @@ func GrpcCallWithJson(ctx context.Context, target, fullMethod string, req []byte
 }
 
 func GrpcCall(ctx context.Context, target, fullMethod string, req interface{}, resp interface{}, opts ...grpc.CallOption) error {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-
-	md := &metadata.MD{}
-	opts = append(opts, grpc.Trailer(md))
-
-	var key GrpcRetCodeMsg = "code_msg"
-	ctx = context.WithValue(ctx, key, md)
-
 	conn, err := createGrpcClientConn(ctx, target)
 	if err != nil {
 		return err
 	}
-	if err = conn.Invoke(ctx, fullMethod, req, resp, opts...); err != nil {
-		return err
-	}
-	code, msg := extractErrFromMetadata(md)
-	if code != 0 {
-		return fmt.Errorf("ret_code=%d, msg=%s", code, msg)
-	}
-	return nil
+
+	md := metadata.MD{}
+	md.Set("msg", "grpc.app client")
+	newCtx := metadata.NewOutgoingContext(ctx, md)
+	return conn.Invoke(newCtx, fullMethod, req, resp, opts...)
 }
 
 func createGrpcClientConn(ctx context.Context, target string) (*grpc.ClientConn, error) {
@@ -70,15 +58,4 @@ func createGrpcClientConn(ctx context.Context, target string) (*grpc.ClientConn,
 		)),
 	}
 	return grpc.DialContext(ctx, target, opts...)
-}
-
-func extractErrFromMetadata(md *metadata.MD) (code int32, msg string) {
-	if c := md.Get("code"); len(c) > 0 {
-		codeStr, _ := strconv.Atoi(c[0])
-		code = int32(codeStr)
-	}
-	if m := md.Get("msg"); len(m) > 0 {
-		msg = m[0]
-	}
-	return
 }

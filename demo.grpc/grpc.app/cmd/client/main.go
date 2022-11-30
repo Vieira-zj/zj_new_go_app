@@ -29,11 +29,14 @@ func init() {
 // deposit grpc server: grpc.reflect/svc_bin/grpc_deposit
 
 func main() {
-	callDepositByPb()
-	callDepositByInvoke()
-	time.Sleep(time.Second)
+	if false {
+		callDepositByPb()
+		callDepositByInvoke()
+		time.Sleep(time.Second)
+	}
 	callDepositByProto()
 	time.Sleep(time.Second)
+	callSayHelloByProto()
 	log.Println("grpc client done")
 }
 
@@ -118,6 +121,29 @@ func callDepositByProto() {
 		log.Fatal(err)
 	}
 	log.Println("deposit resp:", resp.String())
+}
+
+func callSayHelloByProto() {
+	log.Println("call grpc api [sayhello] by invoke and proto")
+	method := "/greeter.Greeter/SayHello"
+	body := `{"name": "foo"}`
+	coder := protoc.NewCoder(nil)
+	req, err := coder.BuildReqProtoMessage(method, body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("sayhello req:", req.String())
+
+	resp, err := coder.NewRespProtoMessage(method)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	target := fmt.Sprintf("%s:%s", address, port)
+	if err = application.GrpcCall(context.Background(), target, method, req, resp); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("sayhello resp:", resp.String())
 }
 
 func loadProto() (map[string]*desc.MethodDescriptor, error) {
