@@ -12,6 +12,7 @@ import (
 )
 
 func init() {
+	// 注册全局 grpc codec
 	encoding.RegisterCodec(ProtoJson{})
 }
 

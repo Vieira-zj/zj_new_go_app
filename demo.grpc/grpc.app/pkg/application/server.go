@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"demo.grpc/grpc.app/pkg/interceptor"
@@ -16,10 +17,10 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var store = map[string]string{
+var mockData = map[string]string{
 	"/account.DepositService/Deposit":       `{"ok": true}`,
 	"/account.DepositService/CreateAccount": `{"return_code": 900100}`,
-	"/greeter.Greeter/SayHello":             `{"content": "from grpc app"}`,
+	"/greeter.Greeter/SayHello":             `{"content": "from grpc.app"}`,
 }
 
 func RunGrpcServer(port string) error {
@@ -40,27 +41,27 @@ func RunGrpcServer(port string) error {
 }
 
 func newGrpcServer() *grpc.Server {
-	interceptors := []grpc.UnaryServerInterceptor{
-		interceptor.RecoverServerInterceptor(),
-		interceptor.LoggingServerInterceptor(),
+	interceptors := []grpc.StreamServerInterceptor{
+		interceptor.RecoverStreamServerInterceptor(),
+		interceptor.LoggingStreamServerInterceptor(),
 	}
 
 	serverOpts := []grpc.ServerOption{
 		// use encoding.RegisterCodec instead
 		// grpc.CustomCodec(&codec.ProtoJson{}),
-		grpc.MaxRecvMsgSize(50 * 1024 * 1024),
-		grpc.UnknownServiceHandler(unKnownHandler),
-		grpc_middleware.WithUnaryServerChain(interceptors...),
+		grpc.MaxRecvMsgSize(8 * 1024 * 1024),
+		grpc.UnknownServiceHandler(unKnownSsHandler),
+		grpc_middleware.WithStreamServerChain(interceptors...),
 	}
 	return grpc.NewServer(serverOpts...)
 }
 
-func unKnownHandler(srv interface{}, serverStream grpc.ServerStream) error {
+func unKnownSsHandler(srv interface{}, serverStream grpc.ServerStream) error {
 	method, ok := grpc.MethodFromServerStream(serverStream)
 	if !ok {
 		return fmt.Errorf("get method from server stream failed")
 	}
-	log.Println("full method:", method)
+	log.Println(strings.Repeat("*", 10), "process:", method)
 
 	// handle metadata
 	md, ok := metadata.FromIncomingContext(serverStream.Context())
@@ -83,9 +84,9 @@ func unKnownHandler(srv interface{}, serverStream grpc.ServerStream) error {
 	log.Println("receive msg:", req.String())
 
 	// handle response
-	respBody, ok := store[method]
+	respBody, ok := mockData[method] // mock 逻辑
 	if !ok {
-		return fmt.Errorf("not matched resp found")
+		return fmt.Errorf("no matched resp found")
 	}
 	resp, err := coder.BuildRespProtoMessage(method, respBody)
 	if err != nil {

@@ -6,12 +6,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"demo.grpc/grpc.app/pb/account"
 	"demo.grpc/grpc.app/pkg/application"
-	"demo.grpc/grpc.app/pkg/protoc"
-	"github.com/jhump/protoreflect/desc"
 
 	"google.golang.org/grpc"
 )
@@ -29,19 +28,21 @@ func init() {
 // deposit grpc server: grpc.reflect/svc_bin/grpc_deposit
 
 func main() {
-	if false {
-		callDepositByPb()
-		callDepositByInvoke()
-		time.Sleep(time.Second)
-	}
+	callDepositByPb()
+	time.Sleep(time.Second)
+	callDepositByInvoke()
+	time.Sleep(time.Second)
+
 	callDepositByProto()
+	time.Sleep(time.Second)
+	callCreateAccountByProto()
 	time.Sleep(time.Second)
 	callSayHelloByProto()
 	log.Println("grpc client done")
 }
 
 func callDepositByPb() {
-	log.Println("call grpc api [deposit] by pb")
+	log.Println(strings.Repeat("*", 10), "call grpc api [deposit] by pb")
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -77,7 +78,7 @@ func callDepositByPb() {
 }
 
 func callDepositByInvoke() {
-	log.Println("call grpc api [deposit] by invoke and pb")
+	log.Println(strings.Repeat("*", 10), "call grpc api [deposit] by invoke and pb")
 	req := &account.DepositRequest{
 		Amount: float32(7.1),
 	}
@@ -93,18 +94,9 @@ func callDepositByInvoke() {
 
 func callDepositByProto() {
 	// process: load/parse proto => coder => req,resp (proto message) => grpc invoke
-	log.Println("call grpc api [deposit] by invoke and proto")
-	mds, err := loadProto()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for k, md := range mds {
-		log.Println("load:", k, md.GetName())
-	}
-
 	method := "/account.DepositService/Deposit"
 	body := `{"amount": 10.03}`
-	coder := protoc.NewCoder(mds)
+	coder := application.GetProtoCoder()
 	req, err := coder.BuildReqProtoMessage(method, body)
 	if err != nil {
 		log.Fatal(err)
@@ -123,11 +115,34 @@ func callDepositByProto() {
 	log.Println("deposit resp:", resp.String())
 }
 
+func callCreateAccountByProto() {
+	log.Println(strings.Repeat("*", 10), "call grpc api [createAccount] by invoke and proto")
+	method := "/account.DepositService/CreateAccount"
+	body := `{"account_no": "000011"}`
+	coder := application.GetProtoCoder()
+	req, err := coder.BuildReqProtoMessage(method, body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("createAccount req:", req.String())
+
+	resp, err := coder.NewRespProtoMessage(method)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	target := fmt.Sprintf("%s:%s", address, port)
+	if err = application.GrpcCall(context.Background(), target, method, req, resp); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("createAccount resp:", resp.String())
+}
+
 func callSayHelloByProto() {
-	log.Println("call grpc api [sayhello] by invoke and proto")
+	log.Println(strings.Repeat("*", 10), "call grpc api [sayhello] by invoke and proto")
 	method := "/greeter.Greeter/SayHello"
 	body := `{"name": "foo"}`
-	coder := protoc.NewCoder(nil)
+	coder := application.GetProtoCoder()
 	req, err := coder.BuildReqProtoMessage(method, body)
 	if err != nil {
 		log.Fatal(err)
@@ -144,13 +159,4 @@ func callSayHelloByProto() {
 		log.Fatal(err)
 	}
 	log.Println("sayhello resp:", resp.String())
-}
-
-func loadProto() (map[string]*desc.MethodDescriptor, error) {
-	path := filepath.Join(os.Getenv("PROJECT_ROOT"), "grpc.app/proto")
-	dirPaths, err := protoc.GetAllProtoDirs(path)
-	if err != nil {
-		return nil, err
-	}
-	return protoc.LoadProtoFiles(dirPaths...)
 }

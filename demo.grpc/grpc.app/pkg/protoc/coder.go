@@ -3,7 +3,6 @@ package protoc
 import (
 	"fmt"
 	"log"
-	"sync"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -16,23 +15,15 @@ const (
 	outputMsgType = "output"
 )
 
-var (
-	coder     Coder
-	coderOnce sync.Once
-)
-
 // Coder uses deprecated proto which compitable with dynamic message.
 type Coder struct {
 	methodDescs map[string]*desc.MethodDescriptor
 }
 
 func NewCoder(mDescs map[string]*desc.MethodDescriptor) Coder {
-	coderOnce.Do(func() {
-		coder = Coder{
-			methodDescs: mDescs,
-		}
-	})
-	return coder
+	return Coder{
+		methodDescs: mDescs,
+	}
 }
 
 // BuildReqProtoMessage creates grpc request (proto message) from json string.
