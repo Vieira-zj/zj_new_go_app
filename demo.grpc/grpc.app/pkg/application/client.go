@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"demo.grpc/grpc.app/pkg/codec"
@@ -34,7 +35,7 @@ func GrpcCallWithJson(ctx context.Context, target, fullMethod string, req []byte
 func GrpcCall(ctx context.Context, target, fullMethod string, req interface{}, resp interface{}, opts ...grpc.CallOption) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	conn, err := createGrpcClientConn(ctx, target)
+	conn, err := getGrpcClientConn(ctx, target)
 	if err != nil {
 		return err
 	}
@@ -43,6 +44,24 @@ func GrpcCall(ctx context.Context, target, fullMethod string, req interface{}, r
 	md.Set("msg", "grpc.app client")
 	newCtx := metadata.NewOutgoingContext(ctx, md)
 	return conn.Invoke(newCtx, fullMethod, req, resp, opts...)
+}
+
+// grpc conn pool
+
+var connPool = make(map[string]*grpc.ClientConn, 4)
+
+func getGrpcClientConn(ctx context.Context, target string) (*grpc.ClientConn, error) {
+	if conn, ok := connPool[target]; ok {
+		log.Println("reuse conn for:", target)
+		return conn, nil
+	}
+
+	conn, err := createGrpcClientConn(ctx, target)
+	if err != nil {
+		return nil, err
+	}
+	connPool[target] = conn
+	return conn, nil
 }
 
 func createGrpcClientConn(ctx context.Context, target string) (*grpc.ClientConn, error) {
