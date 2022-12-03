@@ -159,7 +159,7 @@ func TestArrayParamRef(t *testing.T) {
 	t.Logf("#3: %p, %p, %v", &s, &s[0], s)
 }
 
-func TestSliceParamRef(t *testing.T) {
+func TestSliceParamRef01(t *testing.T) {
 	// slice elem is pass by ref
 	updateSlice := func(s []int) {
 		for i := 0; i < len(s); i++ {
@@ -172,6 +172,38 @@ func TestSliceParamRef(t *testing.T) {
 	t.Logf("#1: %p, %p, %v", &s, &s[0], s)
 	updateSlice(s)
 	t.Logf("#2: %p, %p, %v", &s, &s[0], s)
+}
+
+func TestSliceParamRef02(t *testing.T) {
+	prettyPrint := func(s []int, prefix string) {
+		content := fmt.Sprintf("%s: s=%v,len=%d,cap=%d", prefix, s, len(s), cap(s))
+		t.Log(content)
+	}
+
+	// 若在函数中对该切片进行追加（append）且追加后的切片大小不超过其原始容量，此时修改切片中已有的元素，则修改会同步到实参切片中，而追加不会同步到实参切片中。
+	updateSliceWithinCap := func(s []int) {
+		s = append(s, 10)
+		s[0]++
+		prettyPrint(s, "update within cap, inner")
+	}
+
+	// 若在函数中对该切片进行追加且追加后的切片大小超过其原始容量，则修改不会同步到实参切片中，同时追加也不会同步到实参切片中。
+	updateSliceOverCap := func(s []int) {
+		s = append(s, 20)
+		s = append(s, 21)
+		s[0]++
+		prettyPrint(s, "update over cap, inner")
+	}
+
+	s := make([]int, 1, 2)
+	s[0] = 1
+	prettyPrint(s, "s src:")
+
+	updateSliceWithinCap(s)
+	prettyPrint(s, "update within cap, outer")
+
+	updateSliceOverCap(s)
+	prettyPrint(s, "update over cap, outer")
 }
 
 func TestMapParamRef(t *testing.T) {
