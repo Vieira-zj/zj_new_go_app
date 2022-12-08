@@ -25,6 +25,6 @@ func TestGetCallerInfo(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Logf("caller [%d] info: %s", i, info)
+		t.Logf("caller [%d] info: %+v", i, info)
 	}
 }

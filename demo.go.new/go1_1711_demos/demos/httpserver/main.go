@@ -140,7 +140,7 @@ func processMoitor(ctx context.Context) {
 	}
 	log.Println("start process monitor")
 
-	const interval = time.Duration(1)
+	const interval = time.Duration(5)
 	tick := time.Tick(interval * time.Second)
 	for {
 		select {
