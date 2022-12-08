@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go1_1711_demo/utils"
 	"io"
 	"reflect"
 	"strings"
@@ -75,6 +76,28 @@ func TestMarshalStruct(t *testing.T) {
 	b, err := json.MarshalIndent(s, "", "  ")
 	assert.NoError(t, err)
 	t.Log("student:\n", string(b))
+}
+
+func TestMarshalZeroValueOfStruct(t *testing.T) {
+	type Student struct {
+		ID   int    `json:"id,omitempty"`
+		Name string `json:"name"`
+	}
+
+	s := Student{Name: "foo"}
+	b, err := json.Marshal(&s)
+	assert.NoError(t, err)
+	t.Logf("student: %s", b)
+
+	result, err := utils.JsonDumps(s)
+	assert.NoError(t, err)
+	t.Logf("dumps: %s", result)
+
+	// ID 序列化为默认零值
+	s = Student{}
+	err = utils.JsonLoads(result, &s)
+	assert.NoError(t, err)
+	t.Logf("loads: %+v", s)
 }
 
 func TestMarshalForRawMsg(t *testing.T) {

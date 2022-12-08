@@ -1,10 +1,26 @@
 package utils
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
+
+func JsonDumps(obj interface{}) (string, error) {
+	buf := bytes.NewBuffer(nil)
+	err := json.NewEncoder(buf).Encode(obj)
+	return buf.String(), err
+}
+
+func JsonLoads(value string, obj interface{}) error {
+	decoder := json.NewDecoder(strings.NewReader(value))
+	decoder.DisallowUnknownFields()
+	decoder.UseNumber()
+	return decoder.Decode(obj)
+}
 
 // GetCallerInfo: Caller 函数会报告当前 Go 程序调用栈所执行的函数的文件和行号信息。参数 skip 为要上溯的栈帧数。
 func GetCallerInfo(skip int) (string, error) {
