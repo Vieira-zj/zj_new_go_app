@@ -53,6 +53,39 @@ func TestBarrierByWg(t *testing.T) {
 	t.Log("barrier test done")
 }
 
+func TestAtomicWrappedMap(t *testing.T) {
+	// panic: comparing uncomparable type map[string]int
+	// uncomparable: map, slice, func
+	m := map[string]int{
+		"count1": 0,
+		"count2": 0,
+	}
+
+	var val atomic.Value
+	val.Store(m)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			lval := val.Load()
+			lmap, _ := lval.(map[string]int)
+			key := fmt.Sprintf("count%d", i%2)
+			for x := 0; x < 1000; x++ {
+				lmap[key] += 1
+			}
+			val.CompareAndSwap(lval, lmap)
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+	for k, v := range m {
+		t.Logf("%s=%d", k, v)
+	}
+}
+
 func TestRunBatchByGoroutine(t *testing.T) {
 	resultCh := make(chan int)
 	errCh := make(chan error)
@@ -92,7 +125,7 @@ outer:
 }
 
 func TestGoroutineExit(t *testing.T) {
-	// NOTE: sub goroutine is still running when root goroutine exit
+	// NOTE: sub goroutine is still running when root goroutine exited
 	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	// defer cancel()
 

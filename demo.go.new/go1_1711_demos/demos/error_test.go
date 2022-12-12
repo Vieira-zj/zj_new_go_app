@@ -8,10 +8,28 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"golang.org/x/sync/errgroup"
 )
+
+func TestErrorsIs(t *testing.T) {
+	err1 := fmt.Errorf("custom error")
+	err2 := fmt.Errorf("custom error")
+	t.Log("is err string equal:", err1.Error() == err2.Error())
+	t.Log("is err equal:", errors.Is(err2, err1))
+
+	err2 = fmt.Errorf("wrapped: %w", err1)
+	t.Log("is wrapped err equal:", errors.Is(err2, err1)) // wrapped err as 1st arg
+
+	valueOf := reflect.ValueOf(err1)
+	if valueOf.Kind() == reflect.Ptr {
+		t.Log("err is a pointer")
+		valueOf = valueOf.Elem()
+	}
+	t.Log("type:", valueOf.Kind(), valueOf.Type().Name())
+}
 
 func TestWrapError(t *testing.T) {
 	err := fmt.Errorf("raw error")
