@@ -5,6 +5,16 @@ import (
 	"testing"
 )
 
+func TestSignature(t *testing.T) {
+	key := []byte("1f8a1b84ef9b6fb565934715254dc2")
+	data := []byte(`{"request_id":"16708278950054680fx","update_time_from":1670827884,"update_time_to":1670827885,"ts":"1670827895017"}`)
+	s, err := Signature(key, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("signature:", s)
+}
+
 func TestRuntimeCaller(t *testing.T) {
 	_, file, lineNo, ok := runtime.Caller(0)
 	if !ok {

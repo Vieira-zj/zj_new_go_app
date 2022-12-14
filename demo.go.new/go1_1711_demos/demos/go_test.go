@@ -142,6 +142,20 @@ func TestMapIterator(t *testing.T) {
 	t.Logf("%+v", m)
 }
 
+func TestTimeTickIterator(t *testing.T) {
+	tick := time.NewTicker(time.Second)
+	go func() {
+		time.Sleep(5 * time.Second)
+		tick.Stop()
+	}()
+
+	// here pending after tick stopped
+	for x := range tick.C {
+		t.Log("run by second:", x.Second())
+	}
+	t.Log("tick stopped")
+}
+
 // Demo: param ref
 
 func TestArrayParamRef(t *testing.T) {

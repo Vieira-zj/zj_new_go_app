@@ -2,6 +2,9 @@ package utils
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -20,6 +23,16 @@ func JsonLoads(value string, obj interface{}) error {
 	decoder.DisallowUnknownFields()
 	decoder.UseNumber()
 	return decoder.Decode(obj)
+}
+
+func Signature(secret, data []byte) (string, error) {
+	hash := hmac.New(sha256.New, secret)
+	if _, err := hash.Write(data); err != nil {
+		return "", err
+	}
+
+	signature := base64.StdEncoding.EncodeToString(hash.Sum(nil))
+	return signature, nil
 }
 
 type CallerInfo struct {
