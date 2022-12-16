@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/alibaba/ioc-golang v0.0.0-20220703065958-9345d9a84600
 	github.com/alibaba/ioc-golang/extension v0.0.0-20220703065958-9345d9a84600
+	github.com/evanphx/json-patch v0.5.2
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/go-redis/redis v6.15.9+incompatible
