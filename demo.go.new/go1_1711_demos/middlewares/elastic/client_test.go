@@ -145,6 +145,7 @@ func TestElasticSearchByTerm(t *testing.T) {
 	// This can make finding exact matches for text field values difficult. To search text field values, use the match query instead.
 	//
 	// matchQuery := elastic.NewMatchQuery("user", "bar-foo")
+	//
 
 	// search with a term query
 	termQuery := elastic.NewTermQuery("user", "foo")
@@ -255,4 +256,56 @@ func TestElasticCreateRollover(t *testing.T) {
 	if !resp.Acknowledged {
 		t.Fatal(fmt.Errorf("Create rollover policy not acknowledged"))
 	}
+}
+
+/*
+ES dsl bool query:
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "term": {"shape": "round"}
+        },
+        {
+          "bool": {
+            "should": [
+              {"term": {"color": "red"}},
+              {"term": {"color": "blue"}}
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
+*/
+
+func TestElasticDslBoolQuery(t *testing.T) {
+	// bool query
+	// term query for keyword field
+	matches := []elastic.Query{
+		elastic.NewTermQuery("env", "test"),
+		elastic.NewTermQuery("cid", "cn"),
+	}
+	query := elastic.NewBoolQuery().Must(matches...)
+
+	// OR sub bool query
+	// match query for full match of text field
+	shouldMatches := make([]elastic.Query, 0, 2)
+	for _, app := range []string{"app-sum-v0.1-beta", "app-min-v0.0-20221215"} {
+		shouldMatches = append(shouldMatches, elastic.NewMatchQuery("app_name", app))
+	}
+	appsQuery := elastic.NewBoolQuery().Should(shouldMatches...)
+	query.Must(appsQuery)
+
+	s, err := query.Source()
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("dsl bool query:\n%s\n", b)
 }
