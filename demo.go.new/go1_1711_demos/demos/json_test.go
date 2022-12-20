@@ -100,6 +100,22 @@ func TestMarshalZeroValueOfStruct(t *testing.T) {
 	t.Logf("loads: %+v", s)
 }
 
+func TestOutputJsonRawMsg(t *testing.T) {
+	type msgHolder struct {
+		Data    string
+		RawData json.RawMessage
+	}
+
+	data := `{"data":"hello world"}`
+	holder := msgHolder{}
+	holder.Data = data
+	holder.RawData = json.RawMessage(data)
+
+	b, err := json.MarshalIndent(&holder, "", "  ")
+	assert.NoError(t, err)
+	t.Logf("data:\n%s\n", b)
+}
+
 func TestMarshalForRawMsg(t *testing.T) {
 	type base struct {
 		Content string `json:"content"`
