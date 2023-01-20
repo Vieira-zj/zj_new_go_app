@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"testing"
 
+	newerrors "github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -31,12 +32,20 @@ func TestErrorsIs(t *testing.T) {
 	t.Log("type:", valueOf.Kind(), valueOf.Type().Name())
 }
 
-func TestWrapError(t *testing.T) {
-	err := fmt.Errorf("raw error")
-	wErr := fmt.Errorf("wrapped error: %w", err)
+func TestWrappedError(t *testing.T) {
+	rawErr := fmt.Errorf("raw error")
+	wErr := fmt.Errorf("wrapped error => %w", rawErr)
 	t.Log("error:", wErr)
-	t.Log("error is:", errors.Is(wErr, err))
-	t.Log("unwrap error:", errors.Unwrap(wErr))
+	t.Log("error is:", errors.Is(wErr, rawErr))
+
+	newErr := fmt.Errorf("new error => %w", wErr)
+	t.Log("error:", newErr)
+	t.Log("error is:", errors.Is(newErr, rawErr))
+
+	err := errors.Unwrap(newErr)
+	t.Log("unwrap error:", err)
+	err = errors.Unwrap(err)
+	t.Log("unwrap error:", err)
 }
 
 func TestVerifyErrorType(t *testing.T) {
@@ -75,6 +84,21 @@ func TestCustomError(t *testing.T) {
 
 	var tErr *CustomError
 	t.Log("error as:", errors.As(wErr, &tErr))
+}
+
+func TestWrappedErrorWithMsg(t *testing.T) {
+	rootErr := fmt.Errorf("this is a test root error")
+	wrappedErr := newerrors.Wrap(rootErr, "wrapped error")
+	newErr := newerrors.WithMessage(wrappedErr, "add message 1")
+	newErr = newerrors.WithMessage(newErr, "add message 2")
+	fmt.Println(newErr.Error())
+
+	err := newerrors.Unwrap(newErr)
+	fmt.Println("unwrapped:", err.Error())
+
+	err = newerrors.Cause(newErr)
+	t.Log("errors.Is(err, rootErr):", errors.Is(err, rootErr))
+	fmt.Println("cause:", err.Error())
 }
 
 // use ErrGroup instead of WaitGroup for async func which returns error.
