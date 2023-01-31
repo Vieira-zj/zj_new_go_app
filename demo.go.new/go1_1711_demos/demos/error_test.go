@@ -36,16 +36,21 @@ func TestWrappedError(t *testing.T) {
 	rawErr := fmt.Errorf("raw error")
 	wErr := fmt.Errorf("wrapped error => %w", rawErr)
 	t.Log("error:", wErr)
-	t.Log("error is:", errors.Is(wErr, rawErr))
+	t.Log("is raw error:", errors.Is(wErr, rawErr))
 
-	newErr := fmt.Errorf("new error => %w", wErr)
+	newErr := fmt.Errorf("new wrapped error => %w", wErr)
 	t.Log("error:", newErr)
-	t.Log("error is:", errors.Is(newErr, rawErr))
+	t.Log("is raw error:", errors.Is(newErr, rawErr))
 
 	err := errors.Unwrap(newErr)
 	t.Log("unwrap error:", err)
 	err = errors.Unwrap(err)
 	t.Log("unwrap error:", err)
+	t.Log("is raw error:", errors.Is(err, rawErr))
+
+	newErr = fmt.Errorf("new error with msg => %v", wErr)
+	t.Log("error:", newErr)
+	t.Log("is raw error:", errors.Is(newErr, rawErr)) // false
 }
 
 func TestVerifyErrorType(t *testing.T) {
@@ -92,6 +97,7 @@ func TestWrappedErrorWithMsg(t *testing.T) {
 	newErr := newerrors.WithMessage(wrappedErr, "add message 1")
 	newErr = newerrors.WithMessage(newErr, "add message 2")
 	fmt.Println(newErr.Error())
+	fmt.Println("errors.Is(newErr, rootErr):", errors.Is(newErr, rootErr))
 
 	err := newerrors.Unwrap(newErr)
 	fmt.Println("unwrapped:", err.Error())
