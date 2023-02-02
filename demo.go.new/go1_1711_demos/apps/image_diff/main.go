@@ -29,7 +29,7 @@ func main() {
 	img2 := mustLoadImage(args[1])
 
 	diffImg, passRate := DiffImage(img1, img2)
-	fmt.Println("pass rate:", passRate)
+	fmt.Println("Pass rate:", passRate)
 	mustSaveImage(diffImg, *output)
 }
 

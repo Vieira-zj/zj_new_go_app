@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -26,19 +28,20 @@ rest api:
 curl -v http://127.0.0.1:8081/
 curl -v http://127.0.0.1:8081/notfound
 
-curl -v http://127.0.0.1:8081/ctxval
+curl -XPOST http://127.0.0.1:8081/test/read -d '{"id":101, "content":"read body test"}'
+curl http://127.0.0.1:8081/test/ctxval
 
-curl -v "http://127.0.0.1:8081/auth/login?name=foo"
+curl "http://127.0.0.1:8081/auth/login?name=foo"
 
 curl -XPOST "http://127.0.0.1:8081/signup" -d '{"name":"foo","age":21,"date":"2023-09-03","email":"foo@gmail.com"}'
 
-curl -v http://127.0.0.1:8081/error/user/bar
-curl -v http://127.0.0.1:8081/error/users
+curl http://127.0.0.1:8081/error/user/bar
+curl http://127.0.0.1:8081/error/users
 
 
 api for metrics test:
-curl -v http://127.0.0.1:8081/prometheus/apia
-curl -v -XPOST http://127.0.0.1:8081/prometheus/apib
+curl http://127.0.0.1:8081/prometheus/apia
+curl -XPOST http://127.0.0.1:8081/prometheus/apib
 
 metrics api:
 curl http://127.0.0.1:8081/metrics | grep api
@@ -85,64 +88,99 @@ func main() {
 }
 
 func initRouter(r *gin.Engine) {
-	r.NoMethod(HandleNotFound)
-	r.NoRoute(HandleNotFound)
+	r.NoMethod(NotFoundHandler)
+	r.NoRoute(NotFoundHandler)
 
-	r.GET("/", Ping)
-	r.POST("/signup", SignUp)
+	r.GET("/", PingHandler)
 
-	r.GET("/ctxval", ContextHandler(), GetContextValue)
+	test := r.Group("/test")
+	test.POST("/read", ReadBodyHandler)
+	test.GET("/ctxval", ContextMiddleware(), GetContextValueHandler)
 
-	auth := r.Group("/auth").Use(AuthHandler())
-	auth.GET("/login", Login)
+	r.POST("/signup", SignUpHanler)
+	auth := r.Group("/auth").Use(AuthMiddleware())
+	auth.GET("/login", LoginHandler)
 
-	er := r.Group("error").Use(ErrHandler())
-	er.GET("/user/:name", User)
-	er.GET("/users", Users)
+	er := r.Group("error").Use(ErrMiddleware())
+	er.GET("/user/:name", UserHandler)
+	er.GET("/users", UsersHandler)
 
 	// NOTE: if state value is not triggerred, it will not show in metrics results
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// NOTE: must register middleware brefore router
-	pro := r.Group("/prometheus").Use(PrometheusHandler)
-	pro.GET("/apia", PrometheusHandleA)
-	pro.POST("/apib", PrometheusHandleB)
+	pro := r.Group("/prometheus").Use(PrometheusMiddleware)
+	pro.GET("/apia", PrometheusHandlerA)
+	pro.POST("/apib", PrometheusHandlerB)
 }
 
 //
-// Handle
+// Handler
 //
 
-func HandleNotFound(c *gin.Context) {
+func NotFoundHandler(c *gin.Context) {
 	err := pkg.NotFound
 	c.JSON(err.StatusCode, err)
 	return
 }
 
-func Ping(c *gin.Context) {
+func PingHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Pong",
 	})
 }
 
-func Login(c *gin.Context) {
+type readBody struct {
+	Id      int    `json:"id" binding:"required"`
+	Content string `json:"content"`
+}
+
+func ReadBodyHandler(c *gin.Context) {
+	body := c.Request.Body
+	bodyBytes, err := ioutil.ReadAll(body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "read request body error: " + err.Error(),
+		})
+		return
+	}
+	log.Printf("post body: %s", bodyBytes)
+	body.Close()
+
+	// reset body
+	c.Request.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
+	req := readBody{}
+	if err = c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "parse json body error: " + err.Error(),
+		})
+		return
+	}
+	log.Printf("read body: id=%d, content=[%s]", req.Id, req.Content)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "read ok",
+	})
+}
+
+func LoginHandler(c *gin.Context) {
 	log.Println("access login")
 	name := c.Query("name")
 	c.String(http.StatusOK, "welcome "+name)
 }
 
-// Handle Mock Error
+// Mock Error Handler
 
-func User(c *gin.Context) {
+func UserHandler(c *gin.Context) {
 	name := c.Param("name")
 	c.Error(fmt.Errorf(fmt.Sprintf("user name [%s] not found", name)))
 }
 
-func Users(c *gin.Context) {
+func UsersHandler(c *gin.Context) {
 	c.Error(pkg.ServerError)
 }
 
-// Handle Param Validate
+// Param Validate Handler
 
 type SignUpParam struct {
 	Age   uint8  `json:"age" binding:"gte=1,lte=130"`
@@ -162,7 +200,7 @@ func checkSignUpDate(fl validator.FieldLevel) bool {
 	return true
 }
 
-func SignUp(c *gin.Context) {
+func SignUpHanler(c *gin.Context) {
 	var s SignUpParam
 	if err := c.ShouldBindJSON(&s); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -177,9 +215,9 @@ func SignUp(c *gin.Context) {
 	})
 }
 
-// Handle Prometheus
+// Prometheus Handler
 
-func PrometheusHandleA(c *gin.Context) {
+func PrometheusHandlerA(c *gin.Context) {
 	sleep := rand.Intn(200)
 	time.Sleep(time.Duration(sleep) * time.Millisecond)
 	c.JSON(http.StatusOK, gin.H{
@@ -188,7 +226,7 @@ func PrometheusHandleA(c *gin.Context) {
 	})
 }
 
-func PrometheusHandleB(c *gin.Context) {
+func PrometheusHandlerB(c *gin.Context) {
 	sleep := rand.Intn(300)
 	time.Sleep(time.Duration(sleep) * time.Millisecond)
 	c.JSON(http.StatusOK, gin.H{
@@ -197,18 +235,20 @@ func PrometheusHandleB(c *gin.Context) {
 	})
 }
 
-// Handle Wrap Context
+// Wrap Context Handler
 
-func GetContextValue(c *gin.Context) {
+const ctxTestKey = "ctx-test-key"
+
+func GetContextValueHandler(c *gin.Context) {
 	// condition: enable r.ContextWithFallback
-	val := c.Value("test-key")
+	val := c.Value(ctxTestKey)
 	if val == nil {
 		log.Println("no value in gin context")
 	}
 	log.Println("value in gin context:", val)
 
 	ctx := c.Request.Context()
-	val = ctx.Value("test-key")
+	val = ctx.Value(ctxTestKey)
 	if val == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "no value in request context",
@@ -227,18 +267,18 @@ func GetContextValue(c *gin.Context) {
 // Middleware
 //
 
-func ContextHandler() gin.HandlerFunc {
+func ContextMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		log.Println("wrap for reqeust context")
 		ctx := c.Request.Context()
-		newCtx := context.WithValue(ctx, "test-key", "new-value")
+		newCtx := context.WithValue(ctx, ctxTestKey, "new-value")
 		c.Request = c.Request.WithContext(newCtx)
 		c.Next()
 	}
 }
 
-// AuthHandler: auth verify handler.
-func AuthHandler() gin.HandlerFunc {
+// AuthMiddleware: auth verify handler.
+func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.Query("name")
 		if !strings.EqualFold(name, "foo") {
@@ -255,8 +295,8 @@ func AuthHandler() gin.HandlerFunc {
 	}
 }
 
-// ErrHandler: gin global error handler.
-func ErrHandler() gin.HandlerFunc {
+// ErrMiddleware: gin global error handler.
+func ErrMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 		if length := len(c.Errors); length > 0 {
@@ -282,8 +322,8 @@ func ErrHandler() gin.HandlerFunc {
 	}
 }
 
-// PrometheusHandler: api monitor handler.
-func PrometheusHandler(c *gin.Context) {
+// PrometheusMiddleware: api monitor handler.
+func PrometheusMiddleware(c *gin.Context) {
 	start := time.Now()
 	method := c.Request.Method
 	pkg.GaugeVecApiMethod.WithLabelValues(method).Inc()

@@ -14,6 +14,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestJsonValid(t *testing.T) {
+	str := `{"name":"foo"}`
+	ok := json.Valid([]byte(str))
+	t.Log("is valid:", ok)
+
+	str = `"name":"foo"}`
+	ok = json.Valid([]byte(str))
+	t.Log("is valid:", ok)
+}
+
 func TestMarshalFunc(t *testing.T) {
 	// json.Marshal unsupported type: func()
 	type caller struct {
