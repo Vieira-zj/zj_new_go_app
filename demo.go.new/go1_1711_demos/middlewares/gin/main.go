@@ -28,7 +28,8 @@ rest api:
 curl -v http://127.0.0.1:8081/
 curl -v http://127.0.0.1:8081/notfound
 
-curl -XPOST http://127.0.0.1:8081/test/read -d '{"id":101, "content":"read body test"}'
+curl -XPOST http://127.0.0.1:8081/test/copybody -d '{"id":101, "content":"body test"}'
+curl "http://127.0.0.1:8081/test/abort?type=none"
 curl http://127.0.0.1:8081/test/ctxval
 
 curl "http://127.0.0.1:8081/auth/login?name=foo"
@@ -94,7 +95,8 @@ func initRouter(r *gin.Engine) {
 	r.GET("/", PingHandler)
 
 	test := r.Group("/test")
-	test.POST("/read", ReadBodyHandler)
+	test.POST("/copybody", CopyBodyHandler)
+	test.GET("/abort", logger1Middleware(), abortMiddleware(), logger2Middleware(), AbortHandler)
 	test.GET("/ctxval", ContextMiddleware(), GetContextValueHandler)
 
 	r.POST("/signup", SignUpHanler)
@@ -130,12 +132,22 @@ func PingHandler(c *gin.Context) {
 	})
 }
 
-type readBody struct {
+func LoginHandler(c *gin.Context) {
+	log.Println("access login")
+	name := c.Query("name")
+	c.String(http.StatusOK, "welcome "+name)
+}
+
+//
+// CopyBody Handler
+//
+
+type testBody struct {
 	Id      int    `json:"id" binding:"required"`
 	Content string `json:"content"`
 }
 
-func ReadBodyHandler(c *gin.Context) {
+func CopyBodyHandler(c *gin.Context) {
 	body := c.Request.Body
 	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {
@@ -149,24 +161,41 @@ func ReadBodyHandler(c *gin.Context) {
 
 	// reset body
 	c.Request.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
-	req := readBody{}
+	req := testBody{}
 	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "parse json body error: " + err.Error(),
 		})
 		return
 	}
-	log.Printf("read body: id=%d, content=[%s]", req.Id, req.Content)
+	log.Printf("read json body: id=%d, content=[%s]", req.Id, req.Content)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "read ok",
+		"message": "cpoied ok",
 	})
 }
 
-func LoginHandler(c *gin.Context) {
-	log.Println("access login")
-	name := c.Query("name")
-	c.String(http.StatusOK, "welcome "+name)
+//
+// Abort Handler
+//
+// normal:       logger1 -> abort -> logger2 -> handler -> logger2 -> abort -> logger1
+// before abort: logger1 -> abort -> loggeer1
+// after abort:  logger1 -> abort -> logger2 -> handler -> logger2 -> logger1
+//
+
+func AbortHandler(c *gin.Context) {
+	log.Println("abort handler go")
+
+	time.Sleep(100 * time.Millisecond)
+	abortType := c.Request.URL.Query().Get("type")
+	if abortType == "after" {
+		c.Error(fmt.Errorf("mock error: abort after"))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"msg": "abort handler finished",
+	})
 }
 
 // Mock Error Handler
@@ -267,6 +296,61 @@ func GetContextValueHandler(c *gin.Context) {
 // Middleware
 //
 
+func abortMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log.Println("abort middleware start")
+		abortType := c.Request.URL.Query().Get("type")
+		if abortType == "before" {
+			time.Sleep(30 * time.Millisecond)
+			c.AbortWithStatusJSON(http.StatusOK, gin.H{
+				"message": "abort before",
+			})
+			return
+		}
+
+		c.Next()
+
+		if len(c.Errors) == 1 {
+			time.Sleep(50 * time.Millisecond)
+			err := c.Errors[0]
+			c.JSON(http.StatusOK, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		log.Println("abort middleware end")
+	}
+}
+
+func logger1Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log.Println("logger1 middleware start")
+		start := time.Now()
+		log.Printf("\tmethod:%s, path:%s, query:%s", c.Request.Method, c.Request.URL.Path, c.Request.URL.RawQuery)
+		time.Sleep(50 * time.Millisecond)
+
+		c.Next()
+
+		duration := time.Since(start).Milliseconds()
+		log.Printf("\tsince: %d millisecs", duration)
+		log.Println("logger1 middleware done")
+	}
+}
+
+func logger2Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log.Println("logger2 middleware start")
+		start := time.Now()
+		log.Printf("\tabort_type:%s", c.Request.URL.Query().Get("type"))
+
+		c.Next()
+
+		duration := time.Since(start).Milliseconds()
+		log.Printf("\tsince: %d millisecs", duration)
+		log.Println("logger2 middleware done")
+	}
+}
+
 func ContextMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		log.Println("wrap for reqeust context")
@@ -285,7 +369,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			err := pkg.AuthError(fmt.Sprintf("user name [%s] not found", name))
 			log.Printf("status code: %d, message: %s", err.StatusCode, err.Msg)
 			// middleware 中如果出现错误不想继续后续接口的调用不能直接使用 return, 而是应该调用 c.Abort() 方法
-			// 因此这里要使用 c.AbortWithStatusJSON() 代替 c.JSON()
+			// 因此这里使用 c.AbortWithStatusJSON() 代替 c.JSON()
 			// c.JSON(err.StatusCode, err)
 			c.AbortWithStatusJSON(err.StatusCode, err)
 			return
@@ -299,6 +383,7 @@ func AuthMiddleware() gin.HandlerFunc {
 func ErrMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
+
 		if length := len(c.Errors); length > 0 {
 			e := c.Errors[length-1]
 			if err := e.Err; err != nil {
@@ -329,6 +414,7 @@ func PrometheusMiddleware(c *gin.Context) {
 	pkg.GaugeVecApiMethod.WithLabelValues(method).Inc()
 
 	c.Next()
+
 	end := time.Now()
 	d := end.Sub(start).Milliseconds()
 	path := c.Request.URL.Path
