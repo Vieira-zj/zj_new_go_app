@@ -275,7 +275,7 @@ type testChild struct {
 
 func (c testChild) Pstring() string {
 	c.Pprint()
-	return fmt.Sprintf("name=%s, age=%d\n", c.Name, c.Age)
+	return fmt.Sprintf("name=%s, age=%d", c.Name, c.Age)
 }
 
 func TestStructInherit(t *testing.T) {
@@ -283,6 +283,10 @@ func TestStructInherit(t *testing.T) {
 		testParent: testParent{Name: "foo"},
 		Age:        31,
 	}
+	c.Pprint()
+	t.Log(c.Pstring())
+
+	c = testChild{testParent{Name: "bar"}, 40}
 	c.Pprint()
 	t.Log(c.Pstring())
 }
@@ -312,17 +316,21 @@ func TestContextWithValue(t *testing.T) {
 	t.Logf("name=%s, age=%d", p.name, p.age)
 }
 
-func TestContinueInSelect(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+func TestExitInSelect(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	tick := time.Tick(time.Second)
+	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
+
+outer:
 	for i := 0; i < 10; i++ {
 		t.Logf("run at: %d", i)
 		select {
 		case <-ctx.Done():
 			t.Log("cancelled")
-		case <-tick:
+			break outer // set outer tag here
+		case <-tick.C:
 			if i%2 == 1 {
 				continue
 			}

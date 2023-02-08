@@ -121,6 +121,8 @@ func initRouter(r *gin.Engine) {
 //
 
 func NotFoundHandler(c *gin.Context) {
+	// c.FullPath() returns empty string here
+	log.Printf("full_path:%s, url_path:%s", c.FullPath(), c.Request.URL.Path)
 	err := pkg.NotFound
 	c.JSON(err.StatusCode, err)
 	return
