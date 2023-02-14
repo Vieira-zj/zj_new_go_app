@@ -1,5 +1,6 @@
 {
     "window.zoomLevel": 0,
+    "git.openRepositoryInParentFolders": "always",
     "go.inferGopath": false,
     "go.goroot": "/usr/local/go",
     "go.gopath": "/Users/jinzheng/Workspaces/.go",

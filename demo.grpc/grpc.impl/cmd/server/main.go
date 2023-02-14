@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"demo.grpc/grpc.app/pkg/application"
+	"demo.grpc/grpc.impl/pkg/application"
 )
 
 func init() {

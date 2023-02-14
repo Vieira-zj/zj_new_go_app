@@ -5,7 +5,7 @@ import (
 	"log"
 	"runtime/debug"
 
-	"demo.grpc/grpc.app/pkg/codec"
+	"demo.grpc/grpc.impl/pkg/codec"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

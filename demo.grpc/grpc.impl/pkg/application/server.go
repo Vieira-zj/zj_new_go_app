@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"demo.grpc/grpc.app/pkg/interceptor"
-	"demo.grpc/grpc.app/pkg/protoc"
+	"demo.grpc/grpc.impl/pkg/interceptor"
+	"demo.grpc/grpc.impl/pkg/protoc"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/jhump/protoreflect/desc"
 	"google.golang.org/grpc"

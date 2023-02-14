@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"demo.grpc/grpc.app/pkg/codec"
+	"demo.grpc/grpc.impl/pkg/codec"
 	"google.golang.org/grpc"
 )
 

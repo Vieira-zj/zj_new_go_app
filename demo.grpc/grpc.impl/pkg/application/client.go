@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"demo.grpc/grpc.app/pkg/codec"
-	"demo.grpc/grpc.app/pkg/interceptor"
+	"demo.grpc/grpc.impl/pkg/codec"
+	"demo.grpc/grpc.impl/pkg/interceptor"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"

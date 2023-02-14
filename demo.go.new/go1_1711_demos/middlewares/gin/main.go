@@ -132,6 +132,7 @@ func NotFoundHandler(c *gin.Context) {
 }
 
 func PingHandler(c *gin.Context) {
+	time.Sleep(time.Duration(rand.Intn(30)) * time.Millisecond)
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Pong",
 	})

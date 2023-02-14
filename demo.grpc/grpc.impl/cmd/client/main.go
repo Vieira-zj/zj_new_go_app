@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"demo.grpc/grpc.app/pb/account"
-	"demo.grpc/grpc.app/pkg/application"
+	"demo.grpc/grpc.impl/pb/account"
+	"demo.grpc/grpc.impl/pkg/application"
 
 	"google.golang.org/grpc"
 )
