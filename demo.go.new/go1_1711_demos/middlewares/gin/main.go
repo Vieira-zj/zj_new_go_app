@@ -25,7 +25,9 @@ import (
 
 /*
 rest api:
-curl -v http://127.0.0.1:8081/
+curl http://127.0.0.1:8081/
+curl http://127.0.0.1:8081/ping
+
 curl -v http://127.0.0.1:8081/notfound
 
 curl -XPOST http://127.0.0.1:8081/test/copybody -d '{"id":101, "content":"body test"}'
@@ -93,6 +95,7 @@ func initRouter(r *gin.Engine) {
 	r.NoRoute(NotFoundHandler)
 
 	r.GET("/", PingHandler)
+	r.GET("/ping", PingHandler)
 
 	test := r.Group("/test")
 	test.POST("/copybody", CopyBodyHandler)

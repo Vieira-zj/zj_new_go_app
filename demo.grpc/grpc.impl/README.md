@@ -12,7 +12,7 @@
 
 > TODO: 通过 reflect 反射接口来加载 proto 定义，代替从 proto 文件加载。参考 grpcurl 工具。
 
-原理：调用 grpc.ClientConn 的 Invoke 方法实现，参考 `application/client.go` 实现。
+原理：调用 grpc.ClientConn 的 Invoke 方法实现。参考 `application/client.go` 实现。
 
 ### Grpc Mocker Server
 

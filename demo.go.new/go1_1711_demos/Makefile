@@ -1,3 +1,5 @@
+VERSION := DEV-$(shell date +%s)
+
 default: debug
 
 lint:
@@ -7,6 +9,9 @@ lint:
 fmt:
 	@echo "run go format"
 	@go fmt ./...
+
+version:
+	@echo "ver: $(VERSION)"
 
 debug:
 	@go run main.go
