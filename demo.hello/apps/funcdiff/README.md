@@ -77,6 +77,20 @@
 2. 合并数据精准度问题
   - 上下游的 func 代码覆盖率是否应该设置为 0
 
+#### 难点
+
+1. diff func 过程中，如何去掉空行、注释的干扰？
+
+- 代码格式化
+  - 基于 ast 解析出 comments
+  - 遍历 src line 删除 comment
+  - 执行 "go fmt" 格式化 src
+-  diff 对比
+  - ast 解析获取 func 代码
+  - 过滤空行
+  - trim 空格
+  - 比对 src_func 和 dst_func 代码
+
 ------
 
 ## Func 维度覆盖率合并 Demo
