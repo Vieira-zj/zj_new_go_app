@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -20,8 +21,16 @@ import (
 func TestMain(m *testing.M) {
 	fmt.Println("test before")
 	code := m.Run()
-	fmt.Printf("return code: %d\n", code)
 	fmt.Println("test after")
+	fmt.Printf("test_ret_code=%d\n", code)
+}
+
+func TestSetEnvInTesting(t *testing.T) {
+	const key = "DESC"
+	t.Setenv(key, "set env in test")
+	v, ok := os.LookupEnv(key)
+	assert.True(t, ok)
+	t.Log("value:", v)
 }
 
 // Demo: 内存对齐
@@ -338,4 +347,24 @@ outer:
 		}
 	}
 	t.Log("done")
+}
+
+// Demo: handle panic from recover, and return error
+
+func PanicErrorHandleFn() (gerr error) {
+	defer func() {
+		if err := recover(); err != nil {
+			gerr = fmt.Errorf("error from recover: %v", err)
+		}
+	}()
+
+	str := "hello"
+	fmt.Println("chat at 10:", str[10])
+	return
+}
+
+func TestPanicErrorHandle(t *testing.T) {
+	err := PanicErrorHandleFn()
+	assert.NotNil(t, err)
+	t.Log("error:", err)
 }

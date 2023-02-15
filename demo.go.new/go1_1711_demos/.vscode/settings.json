@@ -1,16 +1,10 @@
 {
-    "window.zoomLevel": 0,
-    "git.openRepositoryInParentFolders": "always",
-    "go.inferGopath": false,
-    "go.goroot": "/usr/local/go",
-    "go.gopath": "/Users/jinzheng/Workspaces/.go",
-    "go.testFlags": [
-        "-v",
-        "-count=1",
-        "-timeout=15s"
-    ],
-    "go.lintTool":"golangci-lint",
-    "go.lintFlags": [
-      "--fast"
-    ]
+  "window.zoomLevel": 0,
+  "git.openRepositoryInParentFolders": "always",
+  "go.inferGopath": false,
+  "go.goroot": "/usr/local/go",
+  "go.gopath": "/Users/jinzheng/Workspaces/.go",
+  "go.testFlags": ["-v", "-count=1", "-timeout=15s"],
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--fast"]
 }

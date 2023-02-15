@@ -12,6 +12,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTypeOfBytes(t *testing.T) {
+	str := "hello"
+	typeOf := reflect.TypeOf(str)
+	t.Log("type:", typeOf.Kind())
+
+	b := 'h'
+	typeOf = reflect.TypeOf(b)
+	t.Log("type:", typeOf.Kind()) // int32
+
+	bs := []byte("hello")
+	typeOf = reflect.TypeOf(bs)
+	t.Log("type:", typeOf.Kind()) // slice
+}
+
 func TestReflectFnTimeNow(t *testing.T) {
 	nowValueOf := reflect.ValueOf(time.Now)
 	fmt.Println(nowValueOf.Type().Kind(), nowValueOf.IsValid(), nowValueOf.CanSet())
