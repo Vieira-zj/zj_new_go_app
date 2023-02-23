@@ -2,12 +2,15 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"go1_1711_demo/middlewares/gin/pkg"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -33,20 +36,6 @@ func loginHandler(c *gin.Context) {
 	log.Println("access login")
 	name := c.Query("name")
 	c.String(http.StatusOK, "welcome "+name)
-}
-
-func panicHandler(c *gin.Context) {
-	trigger := false
-	if tri, ok := c.GetQuery("trigger"); ok && tri == "true" {
-		trigger = true
-	}
-
-	if trigger {
-		log.Println("trigger panic")
-		panic("mock panic")
-	}
-
-	c.String(http.StatusOK, "no trigger panic")
 }
 
 // CopyBody Handler
@@ -87,26 +76,64 @@ func copyBodyHandler(c *gin.Context) {
 // Chunked Handler
 
 func streamHandler(c *gin.Context) {
-	w := c.Writer
-	headers := w.Header()
-	headers.Set("Transfer-Encoding", "chunked")
-	headers.Set("Content-Type", "text/html")
-	w.WriteHeader(http.StatusOK)
+	c.Header("Transfer-Encoding", "chunked")
+	c.Header("Content-Type", "text/html")
+	c.Header("X-Test-Tag", "chunked_stream_test")
 
 	// header
+	w := c.Writer
+	w.WriteHeader(http.StatusOK)
+
+	// stream body
 	w.Write([]byte("<html>\n  <body>\n"))
 	w.Flush()
 
-	// body
 	for i := 0; i < 6; i++ {
 		w.Write([]byte(fmt.Sprintf("    <h1>%d</h1>\n", i)))
 		w.Flush()
 		time.Sleep(time.Second)
 	}
 
-	// tailer
 	w.Write([]byte("  </body>\n</html>"))
 	w.Flush()
+}
+
+// Compress Gzip Handler
+
+func compressHandler(c *gin.Context) {
+	data := strings.Repeat("*", 100)
+	if encoding := c.GetHeader("Accept-Encoding"); encoding == "gzip" {
+		gWriter := gzip.NewWriter(c.Writer)
+		defer gWriter.Close()
+
+		c.Header("X-Test-Tag", "gzip_compress_test")
+		c.Writer.WriteHeader(http.StatusOK)
+
+		if _, err := io.Copy(gWriter, bytes.NewBufferString(data)); err != nil {
+			c.Writer.WriteString("error: " + err.Error())
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": data,
+	})
+}
+
+// Panic Handler for recover test
+
+func panicHandler(c *gin.Context) {
+	trigger := false
+	if tri, ok := c.GetQuery("trigger"); ok && tri == "true" {
+		trigger = true
+	}
+
+	if trigger {
+		log.Println("trigger panic")
+		panic("mock panic")
+	}
+
+	c.String(http.StatusOK, "no trigger panic")
 }
 
 //

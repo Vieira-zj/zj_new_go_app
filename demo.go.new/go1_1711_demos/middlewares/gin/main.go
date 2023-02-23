@@ -24,11 +24,12 @@ curl http://127.0.0.1:8081/ping
 
 curl -v http://127.0.0.1:8081/notfound
 
+curl -XPOST http://127.0.0.1:8081/data/copybody -d '{"id":101, "content":"body test"}'
+curl http://127.0.0.1:8081/data/stream -v
+curl http://127.0.0.1:8081/data/compress -H "Accept-Encoding: gzip" -v | gunzip
+
 curl "http://127.0.0.1:8081/test/panic?trigger=true"
 curl "http://127.0.0.1:8081/test/abort?type=none"
-
-curl -XPOST http://127.0.0.1:8081/test/copybody -d '{"id":101, "content":"body test"}'
-curl http://127.0.0.1:8081/test/stream
 
 curl http://127.0.0.1:8081/test/ctxval
 
@@ -95,12 +96,14 @@ func initRouter(r *gin.Engine) {
 	r.GET("/", pingHandler)
 	r.GET("/ping", pingHandler)
 
+	data := r.Group("data")
+	data.POST("/copybody", copyBodyHandler)
+	data.GET("/stream", streamHandler)
+	data.GET("/compress", compressHandler)
+
 	test := r.Group("/test")
 	test.GET("/panic", recoverMiddleware(), panicHandler)
 	test.GET("/abort", logger1Middleware(), abortMiddleware(), logger2Middleware(), abortHandler)
-
-	test.POST("/copybody", copyBodyHandler)
-	test.GET("/stream", streamHandler)
 
 	test.GET("/ctxval", contextMiddleware(), getContextValueHandler)
 
