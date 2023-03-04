@@ -7,10 +7,28 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
+
+// GetExecParentPath returns parent dir path for current exec bin file.
+func GetExecParentPath() (string, error) {
+	fpath, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return "", err
+	}
+
+	fAbsPath, err := filepath.Abs(fpath)
+	if err != nil {
+		return "", err
+	}
+
+	return path.Dir(fAbsPath), nil
+}
 
 func JsonDumps(obj interface{}) (string, error) {
 	buf := bytes.NewBuffer(nil)

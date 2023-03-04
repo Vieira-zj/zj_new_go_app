@@ -1,0 +1,21 @@
+package {{.PackageName}}
+
+// Auto generated go table definition from "user" table ddl.
+import "time"
+
+type {{.GoTableName}} struct {
+    {{- range .Fields }}
+    {{ .GoColumnName }} {{ .GoColumnType }} `json:"{{ .ColumnName }}"` // {{ .ColumnComment }}
+    {{- end}}
+}
+const (
+    table = "{{.TableName}}"
+    {{- range .Fields}}
+    {{.GoColumnName}} = "{{.ColumnName}}" 
+    {{- end }}
+)
+var Columns = []string{
+    {{- range .Fields}}
+    "{{.ColumnName}}",
+    {{- end }}
+}
