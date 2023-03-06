@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unsafe"
 )
 
 // GetExecParentPath returns parent dir path for current exec bin file.
@@ -73,4 +74,16 @@ func GetCallerInfo(skip int) (CallerInfo, error) {
 		File:   file,
 		LineNo: lineNo,
 	}, nil
+}
+
+// unsafe: 使用 unsafe 进行 string和[]byte转换 来提高性能
+
+func Str2bytes(s string) []byte {
+	x := (*[2]uintptr)(unsafe.Pointer(&s))
+	h := [3]uintptr{x[0], x[1], x[1]}
+	return *(*[]byte)(unsafe.Pointer(&h))
+}
+
+func Bytes2str(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }

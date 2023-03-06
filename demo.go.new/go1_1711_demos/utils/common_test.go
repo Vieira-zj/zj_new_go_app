@@ -46,3 +46,16 @@ func TestGetCallerInfo(t *testing.T) {
 		t.Logf("caller [%d] info: %+v", i, info)
 	}
 }
+
+func TestStr2bytes(t *testing.T) {
+	bs := Str2bytes("hello")
+	t.Logf("size: %d", len(bs))
+	for _, b := range bs {
+		t.Logf("%c", b)
+	}
+}
+
+func TestBytes2str(t *testing.T) {
+	s := Bytes2str([]byte{'h', 'e', 'l', 'l', 'o'})
+	t.Log("string:", s)
+}
