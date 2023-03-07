@@ -76,7 +76,7 @@ func GetCallerInfo(skip int) (CallerInfo, error) {
 	}, nil
 }
 
-// unsafe: 使用 unsafe 进行 string和[]byte转换 来提高性能
+// unsafe: 使用 unsafe 进行 string和[]byte 转换，避开内存 copy 来提高性能
 
 func Str2bytes(s string) []byte {
 	x := (*[2]uintptr)(unsafe.Pointer(&s))
