@@ -1,11 +1,12 @@
 package redis
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
 
-	"github.com/go-redis/redis"
+	redis "github.com/go-redis/redis/v8"
 )
 
 // Redis Lock
@@ -59,8 +60,8 @@ func NewRedisLock(client *redis.Client, key, id string) *RedisLock {
 	}
 }
 
-func (rl *RedisLock) Acquire(expireSecs int) (bool, error) {
-	resp, err := rl.store.Eval(lockCommand, []string{rl.key}, []string{rl.id, strconv.Itoa(expireSecs)}).Result()
+func (rl *RedisLock) Acquire(ctx context.Context, expireSecs int) (bool, error) {
+	resp, err := rl.store.Eval(ctx, lockCommand, []string{rl.key}, []string{rl.id, strconv.Itoa(expireSecs)}).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return false, nil
@@ -78,8 +79,8 @@ func (rl *RedisLock) Acquire(expireSecs int) (bool, error) {
 	return false, fmt.Errorf("unknown reply")
 }
 
-func (rl *RedisLock) Release() (bool, error) {
-	resp, err := rl.store.Eval(delCommand, []string{rl.key}, []string{rl.id}).Result()
+func (rl *RedisLock) Release(ctx context.Context) (bool, error) {
+	resp, err := rl.store.Eval(ctx, delCommand, []string{rl.key}, []string{rl.id}).Result()
 	if err != nil {
 		return false, err
 	}

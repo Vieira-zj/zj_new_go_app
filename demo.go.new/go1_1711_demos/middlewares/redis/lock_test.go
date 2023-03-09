@@ -9,7 +9,7 @@ import (
 
 // run: go test -timeout 180s -run ^TestRedisLock$ go1_1711_demo/utils -v -count=1
 func TestRedisLock(t *testing.T) {
-	client := RedisClientInitForLocal()
+	client := getRedisClientInitForLocal()
 	key := "redis.test"
 	wg := sync.WaitGroup{}
 
@@ -21,7 +21,7 @@ func TestRedisLock(t *testing.T) {
 
 		defer func() {
 			cancel()
-			res, err := lock.Release()
+			res, err := lock.Release(context.Background())
 			if err != nil {
 				t.Logf("[%s] release lock error: %v", tag, err)
 			} else if !res {
@@ -33,7 +33,7 @@ func TestRedisLock(t *testing.T) {
 		}()
 
 		// acquire lock
-		res, err := lock.Acquire(15)
+		res, err := lock.Acquire(context.Background(), 15)
 		if err != nil {
 			t.Logf("[%s] acquire lock error: %v", tag, err)
 			return
@@ -48,6 +48,7 @@ func TestRedisLock(t *testing.T) {
 		go func() {
 			const tag = "goroutine1-2"
 			tick := time.Tick(10 * time.Second)
+			lctx := context.Background()
 			for i := 0; i < 10; i++ {
 				select {
 				case <-ctx.Done():
@@ -55,7 +56,7 @@ func TestRedisLock(t *testing.T) {
 					return
 				case <-tick:
 					t.Logf("[%s] extend lock", tag)
-					res, err := lock.Acquire(15)
+					res, err := lock.Acquire(lctx, 15)
 					if err != nil {
 						t.Logf("[%s] extend lock error: %v", tag, err)
 					}
@@ -77,7 +78,7 @@ func TestRedisLock(t *testing.T) {
 		const tag = "goroutine2"
 		lock := NewRedisLock(client, key, tag)
 		defer func() {
-			res, err := lock.Release()
+			res, err := lock.Release(context.Background())
 			if err != nil {
 				t.Logf("[%s] release lock error: %v", tag, err)
 			} else if !res {
@@ -88,8 +89,9 @@ func TestRedisLock(t *testing.T) {
 			wg.Done()
 		}()
 
+		ctx := context.Background()
 		for i := 1; i < 45; i++ {
-			res, err := lock.Acquire(15)
+			res, err := lock.Acquire(ctx, 15)
 			if err == nil && res {
 				t.Logf("[%s] acuqire lock", tag)
 				time.Sleep(3 * time.Second)

@@ -3,7 +3,7 @@ package redis
 import (
 	"sync"
 
-	"github.com/go-redis/redis"
+	redis "github.com/go-redis/redis/v8"
 )
 
 var (
