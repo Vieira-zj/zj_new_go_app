@@ -12,4 +12,4 @@ go-test-fuzz:
 go-test-benchmark:
 	# go test -bench=BenchmarkConv -run=^$ -benchtime=5s -benchmem -v
 	# go test -bench=BenchmarkConvStr2bytes -run=^$ -benchtime=5s -benchmem -v
-	go test -bench=BenchmarkUnmarshal -run=^$ -benchtime=5s -benchmem -v
+	go test -bench=BenchmarkFileWrite -run=^$ -benchtime=5s -benchmem -v

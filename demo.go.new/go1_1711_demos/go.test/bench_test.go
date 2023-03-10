@@ -1,14 +1,17 @@
 package gotest
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"go1_1711_demo/utils"
 	"math/rand"
+	"os"
 	"sync"
 	"testing"
 )
 
-// benchmark: 指定容器容量
+// Benchmark: 指定容器容量
 
 func BenchmarkInitSlice(b *testing.B) {
 	var nums []int
@@ -24,7 +27,50 @@ func BenchmarkInitSliceWithCap(b *testing.B) {
 	}
 }
 
-// benchmark: 利用 unsafe 包避开内存 copy
+// Benchmark: buffer io
+
+func BenchmarkFileWrite(b *testing.B) {
+	f, err := os.Create("/tmp/test/unbuffered_test.txt")
+	if err != nil {
+		b.Fatalf("unable to create file: %v", err)
+	}
+	defer func() {
+		f.Close()
+		if err := os.Remove(f.Name()); err != nil {
+			b.Log("remove file error:", err)
+		}
+	}()
+
+	for i := 0; i < b.N; i++ {
+		if _, err := fmt.Fprintln(f, "hello world"); err != nil {
+			b.Fatal("write file error:", err)
+		}
+	}
+}
+
+func BenchmarkFileWriteWithBuf(b *testing.B) {
+	f, err := os.Create("/tmp/test/buffered_test.txt")
+	if err != nil {
+		b.Fatalf("unable to create file: %v", err)
+	}
+	defer func() {
+		f.Close()
+		if err := os.Remove(f.Name()); err != nil {
+			b.Log("remove file error:", err)
+		}
+	}()
+
+	writer := bufio.NewWriter(f)
+	defer writer.Flush()
+
+	for i := 0; i < b.N; i++ {
+		if _, err := fmt.Fprintln(writer, "hello world"); err != nil {
+			b.Fatal("write file error:", err)
+		}
+	}
+}
+
+// Benchmark: 利用 unsafe 包避开内存 copy
 
 func BenchmarkConvStr2bytes(b *testing.B) {
 	s := "testString"
@@ -64,7 +110,7 @@ func BenchmarkConvBytes2strByUnsafe(b *testing.B) {
 	_ = s
 }
 
-// benchmark: sync.Pool
+// Benchmark: sync.Pool
 
 type RealTimeRuleStruct struct {
 	Filter []*struct {
