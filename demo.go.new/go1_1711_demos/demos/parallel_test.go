@@ -29,7 +29,44 @@ func TestSelectCase(t *testing.T) {
 	case <-ctx.Done():
 		t.Log(ctx.Err())
 	case val, ok := <-ch:
-		t.Log("chan value:", ok, val)
+		if ok {
+			t.Log("chan value:", ok, val)
+		}
+	}
+	t.Log("done")
+}
+
+func TestNotifyChan(t *testing.T) {
+	sig := make(chan *string)
+
+	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
+
+	go func() {
+		time.Sleep(3 * time.Second)
+		t.Log("close chan")
+		close(sig)
+	}()
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		t.Log("send exit sig")
+		sig <- nil
+	}()
+
+outer:
+	for {
+		select {
+		case <-tick.C:
+			t.Log("wait...")
+		case _, ok := <-sig:
+			if !ok {
+				t.Log("chan closed")
+			} else {
+				t.Log("exit by sig")
+			}
+			break outer
+		}
 	}
 	t.Log("done")
 }

@@ -116,6 +116,9 @@ func TestSliceCheck(t *testing.T) {
 
 	holder.data = make([]string, 3)
 	t.Log("slice len:", len(holder.data))
+
+	s := holder.data[:0]
+	t.Log("init slice:", len(s))
 }
 
 // Demo: iterator
