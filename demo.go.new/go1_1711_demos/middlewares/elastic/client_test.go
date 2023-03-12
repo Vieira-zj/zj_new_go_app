@@ -94,6 +94,9 @@ type indexMapping struct {
 }
 
 func TestElasticAddDocs(t *testing.T) {
+	// 	往 index 中添加 document 时，注意：
+	// 1. 生成 random unique id
+	// 2. json 对象数据本身不需要 id 字段
 	esClient := ElasticInitForTest()
 	record1 := indexMapping{User: "foo", Message: "Take Five", Identify: 0}
 	put1, err := esClient.Index().Index(indexPattern).Id("1").BodyJson(record1).Do(context.Background())
