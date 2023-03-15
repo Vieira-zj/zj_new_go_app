@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/singleflight"
 )
 
 func TestSelectCase(t *testing.T) {
@@ -446,4 +448,118 @@ func TestNamedReturnCallee(t *testing.T) {
 	t.Log("result:", ret)
 	time.Sleep(time.Second)
 	t.Log("done")
+}
+
+//
+// Demo: singleflight
+//
+
+func getCacheBySingleflightDo(g *singleflight.Group, key string, id int) (string, error) {
+	ret, err, shared := g.Do(key, func() (ret interface{}, err error) {
+		fmt.Printf("[id=%d] run get cache\n", id)
+		sleep := id
+		if sleep > 3 {
+			sleep = 3
+		}
+		time.Sleep(time.Duration(sleep) * time.Second)
+		return id, nil
+	})
+	fmt.Printf("[id=%d] run get cache finish: shared=%v\n", id, shared)
+	return fmt.Sprintf("%v", ret), err
+}
+
+func TestSingleflight(t *testing.T) {
+	const (
+		key   = "singleflight"
+		count = 5
+	)
+	var (
+		wg sync.WaitGroup
+		g  singleflight.Group
+	)
+
+	wg.Add(count)
+	// id 为 x 的请求率先发起了获取缓存，其他 4 个 goroutine 并不会去执行获取缓存的逻辑（相同的 key），而是等到 id 为 x 的请求取得结果后直接使用该结果
+	for i := 0; i < count; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			fmt.Printf("[id=%d] ask cache\n", idx)
+			val, err := getCacheBySingleflightDo(&g, key, idx)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+			log.Printf("[id=%d] get cache: key=%s,value=%s", idx, key, val)
+		}(i)
+	}
+	wg.Wait()
+
+	idx := 10
+	fmt.Printf("[id=%d] ask cache\n", idx)
+	val, err := getCacheBySingleflightDo(&g, key, idx)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	log.Printf("[id=%d] get cache: key=%s,value=%s", idx, key, val)
+	t.Log("singleflight test done")
+}
+
+func getCacheBySingleflightDoChan(g *singleflight.Group, key string, id int) (string, error) {
+	retCh := g.DoChan(key, func() (ret interface{}, err error) {
+		fmt.Printf("[id=%d] run get cache\n", id)
+		sleep := id + 3
+		if id == 10 {
+			sleep = 1
+		}
+		fmt.Printf("[id=%d] sleep: %d sec\n", id, sleep)
+		time.Sleep(time.Duration(sleep) * time.Second)
+		return id, nil
+	})
+
+	// 注意：当没有设置超时时间，且第一个进入的 goroutine 执行被阻塞时，后面的 goroutine 都会被阻塞（相同的 key）
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	select {
+	case <-ctx.Done():
+		g.Forget(key)
+		return "-1", ctx.Err()
+	case ret := <-retCh:
+		fmt.Printf("[id=%d] run get cache finish: shared=%v\n", id, ret.Shared)
+		return fmt.Sprintf("%v", ret.Val), ret.Err
+	}
+}
+
+func TestSingleflightWithTimeout(t *testing.T) {
+	const key = "singleflight"
+	var (
+		wg sync.WaitGroup
+		g  singleflight.Group
+	)
+
+	// 如果第一个进入的 goroutine 执行时间大于 3s, 则 5 个 goroutine 都会报错 context deadline exceeded
+	// 当小于 3s 时，5 个 goroutine 能正常返回
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		fmt.Printf("[id=%d] ask cache\n", i)
+		go func(idx int) {
+			defer wg.Done()
+			val, err := getCacheBySingleflightDoChan(&g, key, idx)
+			if err != nil {
+				fmt.Printf("[id=%d] get cache error: %v\n", idx, err)
+				return
+			}
+			log.Printf("[id=%d] get cache: key=%s, value=%s", idx, key, val)
+		}(i)
+	}
+	wg.Wait()
+
+	// 如果上 1 次调用还没有执行完成，且超时退出后也没有 Forget(key), 则 goroutine idx=10 会继续阻塞，然后报错 context deadline exceeded
+	idx := 10
+	val, err := getCacheBySingleflightDoChan(&g, key, idx)
+	if err != nil {
+		fmt.Printf("[id=%d] get cache error: %v\n", idx, err)
+		return
+	}
+	log.Printf("[id=%d] get cache: key=%s, value=%s", idx, key, val)
+	t.Log("singleflight test done")
 }

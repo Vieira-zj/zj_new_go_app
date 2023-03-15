@@ -99,28 +99,6 @@ func TestURLDecode(t *testing.T) {
 	t.Log("decode path:", res)
 }
 
-// Demo: slice 初始值判断
-
-type TestSliceHolder struct {
-	data []string
-}
-
-func TestSliceCheck(t *testing.T) {
-	holder := TestSliceHolder{}
-	if holder.data == nil {
-		t.Log("slice is <nil>")
-	}
-	if len(holder.data) == 0 {
-		t.Log("slice len:", len(holder.data))
-	}
-
-	holder.data = make([]string, 3)
-	t.Log("slice len:", len(holder.data))
-
-	s := holder.data[:0]
-	t.Log("init slice:", len(s))
-}
-
 // Demo: iterator
 
 func TestArrayIterator(t *testing.T) {
