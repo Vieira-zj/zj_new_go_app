@@ -33,7 +33,51 @@ func TestSetEnvInTesting(t *testing.T) {
 	t.Log("value:", v)
 }
 
+// Demo: iota
+
+const (
+	// langJava = iota + 1
+	langJava = 1 << iota
+	langC
+	langGo
+)
+
+func TestIoatType(t *testing.T) {
+	lang := langGo
+	switch lang {
+	case langJava:
+		t.Logf("[%d] java", langJava)
+	case langGo:
+		t.Logf("[%d] golang", langGo)
+	case langC:
+		t.Logf("[%d] c", langC)
+	default:
+		t.Log("invalid lang")
+	}
+}
+
 // Demo: 内存对齐
+
+func TestSizeOf(t *testing.T) {
+	var i1 int
+	t.Log("int size:", unsafe.Sizeof(i1))
+	var i2 int64
+	t.Log("int64 size:", unsafe.Sizeof(i2))
+
+	c := 'a'
+	t.Log("char size:", unsafe.Sizeof(c))
+	s := "s"
+	t.Log("string size:", unsafe.Sizeof(s))
+	s = "ab"
+	t.Log("string size:", unsafe.Sizeof(s))
+
+	// 空结构体
+	t.Log("struct{}{} size:", unsafe.Sizeof(struct{}{}))
+	t.Log("[0]int{} size:", unsafe.Sizeof([0]int{}))
+
+	b := true
+	t.Log("bool size:", unsafe.Sizeof(b))
+}
 
 type s1 struct {
 	a int8
