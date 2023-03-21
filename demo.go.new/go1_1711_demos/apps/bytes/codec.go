@@ -1,11 +1,12 @@
-package utils
+package bytes
 
 import (
 	"encoding/binary"
+	"go1_1711_demo/utils"
 )
 
 //
-// 读写固定格式的 blob 数据到 bytes queue 中。
+// bytes encoding and decoding: 读写固定格式的 blob 数据到 bytes queue 中。
 //
 // blob: timestamp:8byte + hash:8byte + len(key):2byte + key + data
 //
@@ -44,7 +45,7 @@ func ReadKeyFromBlob(blob []byte) string {
 	length := binary.LittleEndian.Uint16(blob[timestampSize+hashSize:])
 	dst := make([]byte, length)
 	copy(dst, blob[HeaderSize:HeaderSize+length])
-	return Bytes2str(dst)
+	return utils.Bytes2str(dst)
 }
 
 func ReadDataFromBlob(blob []byte) []byte {
