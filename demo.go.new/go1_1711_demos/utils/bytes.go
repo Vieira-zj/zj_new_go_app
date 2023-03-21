@@ -53,3 +53,17 @@ func ReadDataFromBlob(blob []byte) []byte {
 	copy(dst, blob[HeaderSize+length:])
 	return dst
 }
+
+// GetIntBytesSize returns number of bytes for input int.
+func GetIntBytesSize(num int) int {
+	switch {
+	case num < (1<<7 - 1): // 127
+		return 1
+	case num < (1<<14 - 2): // 16382
+		return 2
+	case num < (1<<21 - 3):
+		return 3
+	default:
+		return 4
+	}
+}
