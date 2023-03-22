@@ -1,6 +1,6 @@
 VERSION := DEV-$(shell date +%s)
 
-default: debug
+default: version
 
 lint:
 	@echo "run go lint"

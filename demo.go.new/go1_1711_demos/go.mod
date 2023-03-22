@@ -20,6 +20,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil v3.20.11+incompatible
 	github.com/stretchr/testify v1.7.5
+	gitlab.com/golang-commonmark/markdown v0.0.0-20211110145824-bf3e522c626a
 	go.uber.org/zap v1.21.0
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
@@ -81,6 +82,10 @@ require (
 	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
+	gitlab.com/golang-commonmark/html v0.0.0-20191124015941-a22733972181 // indirect
+	gitlab.com/golang-commonmark/linkify v0.0.0-20191026162114-a0c2df6c8f82 // indirect
+	gitlab.com/golang-commonmark/mdurl v0.0.0-20191124015652-932350d1cb84 // indirect
+	gitlab.com/golang-commonmark/puny v0.0.0-20191124015043-9f83538fa04f // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
