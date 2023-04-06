@@ -7,7 +7,10 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strings"
 	"time"
+
+	"golang.org/x/net/html"
 )
 
 func GetHostIpAddrs() ([]string, []string, error) {
@@ -33,7 +36,7 @@ func GetHostIpAddrs() ([]string, []string, error) {
 	return localIPV4, nonLocalIPV4, nil
 }
 
-// Http
+// Http Client
 
 type HttpRequester struct {
 	client *http.Client
@@ -68,11 +71,11 @@ func NewHttpRequesterWithRoundTripper(rt http.RoundTripper) HttpRequester {
 	}
 }
 
-func (requester *HttpRequester) GetClient() *http.Client {
+func (requester HttpRequester) GetClient() *http.Client {
 	return requester.client
 }
 
-func (requester *HttpRequester) Get(ctx context.Context, url string, headers map[string]string) (*http.Response, []byte, error) {
+func (requester HttpRequester) Get(ctx context.Context, url string, headers map[string]string) (*http.Response, []byte, error) {
 	req, err := requester.createRequest(ctx, http.MethodGet, url, headers, []byte(""))
 	if err != nil {
 		return nil, nil, err
@@ -80,7 +83,7 @@ func (requester *HttpRequester) Get(ctx context.Context, url string, headers map
 	return requester.send(req)
 }
 
-func (requester *HttpRequester) Post(ctx context.Context, url string, headers map[string]string, body []byte) (*http.Response, []byte, error) {
+func (requester HttpRequester) Post(ctx context.Context, url string, headers map[string]string, body []byte) (*http.Response, []byte, error) {
 	req, err := requester.createRequest(ctx, http.MethodPost, url, headers, body)
 	if err != nil {
 		return nil, nil, err
@@ -88,7 +91,7 @@ func (requester *HttpRequester) Post(ctx context.Context, url string, headers ma
 	return requester.send(req)
 }
 
-func (*HttpRequester) createRequest(ctx context.Context, method, url string, headers map[string]string, body []byte) (*http.Request, error) {
+func (HttpRequester) createRequest(ctx context.Context, method, url string, headers map[string]string, body []byte) (*http.Request, error) {
 	var (
 		req *http.Request
 		err error
@@ -108,7 +111,7 @@ func (*HttpRequester) createRequest(ctx context.Context, method, url string, hea
 	return req, nil
 }
 
-func (requester *HttpRequester) send(req *http.Request) (*http.Response, []byte, error) {
+func (requester HttpRequester) send(req *http.Request) (*http.Response, []byte, error) {
 	resp, err := requester.client.Do(req)
 	if resp != nil {
 		defer resp.Body.Close()
@@ -122,4 +125,30 @@ func (requester *HttpRequester) send(req *http.Request) (*http.Response, []byte,
 		return resp, nil, err
 	}
 	return resp, body, nil
+}
+
+// Parse Html Response
+
+func GetHtmlLiValues(htmlText string) []string {
+	tokens := html.NewTokenizer(strings.NewReader(htmlText))
+	var (
+		vals    []string
+		isLiTag bool
+	)
+	for {
+		tokenType := tokens.Next()
+		switch tokenType {
+		case html.ErrorToken:
+			return vals
+		case html.StartTagToken:
+			t := tokens.Token()
+			isLiTag = t.Data == "li"
+		case html.TextToken:
+			t := tokens.Token()
+			if isLiTag {
+				vals = append(vals, t.Data)
+			}
+			isLiTag = false
+		}
+	}
 }

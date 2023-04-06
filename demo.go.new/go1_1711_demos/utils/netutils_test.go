@@ -32,3 +32,36 @@ func TestGetHostIpAddrs(t *testing.T) {
 	t.Log("local ips:", strings.Join(localIPs, ","))
 	t.Log("non local ips:", strings.Join(nonLocalIPs, ","))
 }
+
+func TestGetHtmlLiValues(t *testing.T) {
+	text := `<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Colour</title>
+</head>
+<body>
+
+<p>
+	A list of colours
+</p>
+
+<ul>
+	<li>red</li>
+	<li>green</li>
+	<li>blue</li>
+	<li>yellow</li>
+	<li>orange</li>
+	<li>brown</li>
+	<li>pink</li>
+</ul>
+
+<footer>
+	A footer
+</footer>
+
+</body>
+</html>`
+	liVals := GetHtmlLiValues(text)
+	t.Log("li values:", liVals)
+}

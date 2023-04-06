@@ -426,6 +426,12 @@ func TestJsonDecodeUseNumber(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, json.Number("123"), obj2)
 	t.Logf("kind:%s, value:%s", reflect.TypeOf(obj2).Kind().String(), obj2)
+
+	num, ok := obj2.(json.Number)
+	assert.True(t, ok)
+	intNum, err := num.Int64()
+	assert.NoError(t, err)
+	t.Logf("int:%d, str:%s", intNum, num.String())
 }
 
 func TestJsonMarshalForTemp(t *testing.T) {
