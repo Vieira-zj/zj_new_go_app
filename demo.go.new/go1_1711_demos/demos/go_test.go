@@ -99,24 +99,6 @@ func TestStructSize(t *testing.T) {
 
 // Demo: string
 
-func TestStringEqual(t *testing.T) {
-	res := strings.EqualFold("foo", "Foo")
-	t.Log("result:", res)
-}
-
-func TestStringBuilder(t *testing.T) {
-	s1, s2, s3 := "foo|", "bar|", "baz"
-	var builder strings.Builder
-	builder.Grow(9)
-	_, err := builder.WriteString(s1)
-	assert.NoError(t, err)
-	_, err = builder.WriteString(s2)
-	assert.NoError(t, err)
-	_, err = builder.WriteString(s3)
-	assert.NoError(t, err)
-	t.Log("results:", builder.String())
-}
-
 func TestChar(t *testing.T) {
 	c := fmt.Sprintf("%c", 119)
 	t.Logf("str=%s, len=%d", c, len(c))
@@ -134,6 +116,30 @@ func TestChar(t *testing.T) {
 
 	s := "中cn"
 	t.Logf("size=%d", len(s))
+}
+
+func TestCnStringLength(t *testing.T) {
+	s := "中国cn"
+	t.Log("length:", len(s))
+	t.Log("rune size:", len([]rune(s)))
+}
+
+func TestStringEqual(t *testing.T) {
+	res := strings.EqualFold("foo", "Foo")
+	t.Log("result:", res)
+}
+
+func TestStringBuilder(t *testing.T) {
+	s1, s2, s3 := "foo|", "bar|", "baz"
+	var builder strings.Builder
+	builder.Grow(9)
+	_, err := builder.WriteString(s1)
+	assert.NoError(t, err)
+	_, err = builder.WriteString(s2)
+	assert.NoError(t, err)
+	_, err = builder.WriteString(s3)
+	assert.NoError(t, err)
+	t.Log("results:", builder.String())
 }
 
 func TestURLDecode(t *testing.T) {

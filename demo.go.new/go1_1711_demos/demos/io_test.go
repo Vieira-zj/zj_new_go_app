@@ -3,11 +3,13 @@ package demos
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"text/tabwriter"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -114,4 +116,21 @@ func TestReadLastBytesOfFile(t *testing.T) {
 		}
 		t.Log("read line:", strings.TrimSuffix(line, "\n"))
 	}
+}
+
+func TestTabWriter(t *testing.T) {
+	var table = [][]string{
+		{"vegetables", "fruits", "rank"},
+		{"potato", "strawberry", "1"},
+		{"lettuce", "raspberry", "2"},
+		{"carrot", "apple", "3"},
+		{"broccoli", "pomegranate", "4"},
+	}
+
+	writer := tabwriter.NewWriter(os.Stdout, 0, 4, 0, '\t', 0)
+	for _, line := range table {
+		fmt.Fprintln(writer, strings.Join(line, "\t")+"\t")
+	}
+	writer.Flush()
+	t.Log("table write done")
 }
