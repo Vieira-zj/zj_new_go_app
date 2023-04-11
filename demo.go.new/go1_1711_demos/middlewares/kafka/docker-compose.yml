@@ -1,6 +1,12 @@
 version: "3"
 
-# refer: https://hub.docker.com/r/bitnami/kafka
+#
+# refer:
+# https://hub.docker.com/r/bitnami/kafka
+#
+# kafka broker config:
+# https://kafka.apache.org/documentation/#brokerconfigs
+#
 
 services:
   zookeeper:

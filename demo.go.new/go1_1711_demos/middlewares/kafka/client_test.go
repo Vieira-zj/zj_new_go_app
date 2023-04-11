@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/Shopify/sarama"
 )
@@ -10,7 +12,7 @@ import (
 // Admin
 
 func TestCreateTopic(t *testing.T) {
-	admin, err := getLocalKafkaAdminForTest()
+	admin, err := GetLocalKafkaAdminForTest()
 	if err != nil {
 		t.Fatal("Error while creating cluster admin: ", err.Error())
 	}
@@ -27,7 +29,7 @@ func TestCreateTopic(t *testing.T) {
 }
 
 func TestCreateLogTopic(t *testing.T) {
-	admin, err := getLocalKafkaAdminForTest()
+	admin, err := GetLocalKafkaAdminForTest()
 	if err != nil {
 		t.Fatal("Error while creating cluster admin: ", err.Error())
 	}
@@ -55,7 +57,7 @@ func TestCreateLogTopic(t *testing.T) {
 }
 
 func TestDeleteTopic(t *testing.T) {
-	admin, err := getLocalKafkaAdminForTest()
+	admin, err := GetLocalKafkaAdminForTest()
 	if err != nil {
 		t.Fatal("Error while creating cluster admin: ", err.Error())
 	}
@@ -67,9 +69,33 @@ func TestDeleteTopic(t *testing.T) {
 	t.Log("delete topic success")
 }
 
-func getLocalKafkaAdminForTest() (sarama.ClusterAdmin, error) {
-	brokerList := []string{"localhost:9092"}
-	config := sarama.NewConfig()
-	config.Version = sarama.V2_0_0_0
-	return sarama.NewClusterAdmin(brokerList, config)
+func TestConsumeMessages(t *testing.T) {
+	master, err := GetLocalKafkaConsumerForTest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer master.Close()
+
+	topics, err := master.Topics()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	msgCh, errCh, err := Consume(ctx, topics, master)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	go func() {
+		for msg := range msgCh {
+			t.Logf("get message: topic=%s, partition=%d, offset=%d, text=%s", msg.Topic, msg.Partition, msg.Offset, string(msg.Value))
+		}
+	}()
+
+	for err := range errCh {
+		t.Log("consume error:", err.Topic, err.Partition, err.Error())
+	}
+	t.Log("consume done")
 }

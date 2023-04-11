@@ -5,7 +5,7 @@ clearup-cluster:
 	docker-compose down
 
 start-cluster:
-	docker-compose start -d
+	docker-compose start zookeeper kafka
 
 stop-cluster:
 	docker-compose stop
