@@ -222,6 +222,110 @@ func TestGetFuncNameByReflect(t *testing.T) {
 }
 
 //
+// Demo: dyn set func
+//
+
+type StepFn func() error
+
+type TestCase struct {
+	RunSteps []StepFn
+}
+
+func (TestCase) Step1() error {
+	fmt.Println("step1 start")
+	return nil
+}
+func (TestCase) Step2() error {
+	fmt.Println("step2 start")
+	return nil
+}
+func (TestCase) Step3() error {
+	fmt.Println("step3 start")
+	return nil
+}
+func (TestCase) Step4() error {
+	fmt.Println("step4 start")
+	return nil
+}
+
+func TestRunCaseSteps(t *testing.T) {
+	testCase := TestCase{
+		RunSteps: make([]StepFn, 0, 2),
+	}
+	allSteps := map[string]StepFn{
+		"step1": testCase.Step1,
+		"step2": testCase.Step2,
+		"step3": testCase.Step3,
+	}
+
+	runSteps := []string{"step1", "step3"}
+	for _, key := range runSteps {
+		if step, ok := allSteps[key]; ok {
+			testCase.RunSteps = append(testCase.RunSteps, step)
+		}
+	}
+
+	for _, step := range testCase.RunSteps {
+		if err := step(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Log("run case done")
+}
+
+func getAllStepsFnOfCase(testCase interface{}) map[string]StepFn {
+	valueOf := reflect.ValueOf(testCase)
+	typeOf := reflect.TypeOf(testCase)
+	if typeOf.Kind() == reflect.Ptr {
+		valueOf = valueOf.Elem()
+		typeOf = valueOf.Type()
+	}
+
+	if typeOf.Kind() != reflect.Struct {
+		panic("input TestCase is not struct")
+	}
+
+	results := make(map[string]StepFn, 4)
+	for i := 0; i < valueOf.NumMethod(); i++ {
+		fieldTypeOf := typeOf.Method(i)
+		if !strings.HasPrefix(fieldTypeOf.Name, "Step") {
+			continue
+		}
+
+		fieldValueOf := valueOf.Method(i)
+		if fieldTypeOf.Type.Kind() == reflect.Func && fieldValueOf.IsValid() {
+			if val, ok := fieldValueOf.Interface().(func() error); ok {
+				results[fieldTypeOf.Name] = val
+			}
+		}
+	}
+	return results
+}
+
+func TestRunCaseWithDynSteps(t *testing.T) {
+	testCase := TestCase{
+		RunSteps: make([]StepFn, 0, 2),
+	}
+
+	allSteps := getAllStepsFnOfCase(testCase)
+	t.Log("total steps:", len(allSteps))
+
+	runSteps := []string{"Step1", "Step4"}
+	for _, key := range runSteps {
+		if step, ok := allSteps[key]; ok {
+			testCase.RunSteps = append(testCase.RunSteps, step)
+		}
+	}
+
+	for _, step := range testCase.RunSteps {
+		if err := step(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Log("run case dyn steps done")
+}
+
+//
 // Demo: function proxy by reflect
 //
 
