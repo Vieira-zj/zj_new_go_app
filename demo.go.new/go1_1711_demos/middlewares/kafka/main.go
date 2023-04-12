@@ -25,6 +25,8 @@ var (
 	tlsSkipVerify = flag.Bool("tls-skip-verify", false, "Whether to skip TLS server cert verification")
 )
 
+// Start http service to roduce sync and async messages to kafka topic.
+
 func main() {
 	flag.Parse()
 
@@ -115,7 +117,7 @@ type accessLogEntry struct {
 	Method       string  `json:"method"`
 	Host         string  `json:"host"`
 	Path         string  `json:"path"`
-	IP           string  `json:"ip"`
+	RemoteAddr   string  `json:"remote_ip"`
 	ResponseTime float64 `json:"response_time"`
 
 	encoded []byte
@@ -148,7 +150,7 @@ func (s *Server) withAccessLog(next http.Handler) http.Handler {
 			Method:       r.Method,
 			Host:         r.Host,
 			Path:         r.RequestURI,
-			IP:           r.RemoteAddr,
+			RemoteAddr:   r.RemoteAddr,
 			ResponseTime: time.Since(started).Seconds(),
 		}
 
@@ -157,7 +159,7 @@ func (s *Server) withAccessLog(next http.Handler) http.Handler {
 		// on the same partition.
 		s.AccessLogProducer.Input() <- &sarama.ProducerMessage{
 			Topic: "httpserver_access_log",
-			Key:   sarama.StringEncoder(r.RemoteAddr),
+			Key:   sarama.StringEncoder(entry.RemoteAddr),
 			Value: entry,
 		}
 	})

@@ -1,13 +1,20 @@
 # Kafka Middleware Demo
 
-## Http Server
+## Env
 
-Topics:
+Topics/ConsumerGroup for test:
 
-- `httpserver_important`: sync producer sends url.query messages.
-- `httpserver_access_log`: async producer sends http server access log messages.
+- `httpserver_important/consumer-group-test`: sync producer sends url.query messages.
+
+- `httpserver_access_log/consumer-group-access-log`: async producer sends http server access log messages by middleware.
 
 ## Kafka Cli
+
+- Kafka version
+
+```sh
+kafka-topics.sh --version
+```
 
 - Broker config info
 
@@ -32,5 +39,12 @@ kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic httpserver_a
 
 ```sh
 kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list 127.0.0.1:9092 --topic httpserver_access_log | awk -F  ":" '{sum += $3} END {print sum}'
+```
+
+- Consumer Group
+
+```sh
+kafka-consumer-groups.sh --list --bootstrap-server 127.0.0.1:9092
+kafka-consumer-groups.sh --describe --group consumer-group-access-log --bootstrap-server 127.0.0.1:9092
 ```
 
