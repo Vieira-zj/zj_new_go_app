@@ -2,7 +2,9 @@ package demos
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"math"
 	"net/url"
 	"os"
 	"strings"
@@ -95,6 +97,23 @@ func TestStructSize(t *testing.T) {
 	// 在对内存特别敏感的结构体的设计上，我们可以通过调整字段的顺序，将字段宽度从小到大由上到下排列，来减少内存的占用
 	t.Log("s1 size:", unsafe.Sizeof(s1{})) // 8
 	t.Log("s2 size:", unsafe.Sizeof(s2{})) // 12
+}
+
+// Demo: bypes
+
+func TestConvertBytesAndInt(t *testing.T) {
+	// 0111 = 7, 1000 = 8
+
+	// bytes to int
+	// b: 0000 0001 0000 0000
+	b := []byte{1, 0}
+	i := binary.BigEndian.Uint16(b)
+	t.Logf("want: %.0f, got: %d", math.Pow(2, 8), i)
+
+	// int to bytes
+	b = make([]byte, 2)
+	binary.BigEndian.PutUint16(b, 256)
+	t.Log("bytes:", b)
 }
 
 // Demo: string
