@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"time"
 )
 
@@ -13,6 +14,7 @@ var eventListeners = Listeners{
 		log.Println("SendEmail:", s)
 	},
 	"PayBills": func(s string) {
+		log.Printf("Call stack: %s", debug.Stack())
 		log.Println("PayBills:", s)
 	},
 }
