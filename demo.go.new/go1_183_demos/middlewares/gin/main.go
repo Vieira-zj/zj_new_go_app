@@ -16,20 +16,27 @@ curl -v -XPOST http://localhost:8081/user -d '{"birthday":"10/07","timezone":"As
 */
 
 func main() {
+	r := initServer()
+	if err := r.Run(":8081"); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Router
+
+func initServer() *gin.Engine {
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 
 	r.NoMethod(HandleNotFound)
 	r.NoRoute(HandleNotFound)
 
-	r.GET("/", Ping)
+	r.GET("/", HandlePing)
 
 	// validate middleware should be before CreateUser
-	r.POST("/user", ValidateJsonBody[CreateUserHttpBody](), CreateUser)
+	r.POST("/user", ValidateJsonBody[CreateUserHttpBody](), HandleCreateUser)
 
-	if err := r.Run(":8081"); err != nil {
-		log.Fatal(err)
-	}
+	return r
 }
 
 // Handle
@@ -38,7 +45,7 @@ func HandleNotFound(c *gin.Context) {
 	c.JSON(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
-func Ping(c *gin.Context) {
+func HandlePing(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Pong",
 	})
@@ -51,7 +58,7 @@ type CreateUserHttpBody struct {
 	Timezone string `json:"timezone" binding:"omitempty,timezone"`
 }
 
-func CreateUser(c *gin.Context) {
+func HandleCreateUser(c *gin.Context) {
 	httpBody := GetJsonBody[CreateUserHttpBody](c)
 	log.Printf("create user: birthday: %s, timezone: %s", httpBody.Birthday, httpBody.Timezone)
 	c.JSON(http.StatusOK, gin.H{

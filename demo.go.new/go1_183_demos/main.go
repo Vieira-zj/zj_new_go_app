@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+)
 
 func main() {
-	fmt.Println("go1.18.3 demo")
+	ver := runtime.Version()
+	fmt.Println("go version:", ver)
 }
