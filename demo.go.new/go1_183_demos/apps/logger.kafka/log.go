@@ -15,13 +15,13 @@ type Logger struct {
 	level zap.AtomicLevel
 }
 
-func NewLogger(writer io.Writer, level int8, opts ...zap.Option) Logger {
+func NewLogger(writer io.Writer, level int8, opts ...zap.Option) *Logger {
 	if writer == nil {
 		panic("the writer is nil")
 	}
 
 	atomicLevel := zap.NewAtomicLevelAt(zapcore.Level(level))
-	logger := Logger{
+	logger := &Logger{
 		cfg:   zap.NewProductionConfig(),
 		level: atomicLevel,
 	}
@@ -40,11 +40,11 @@ func NewLogger(writer io.Writer, level int8, opts ...zap.Option) Logger {
 	return logger
 }
 
-func (l Logger) Info(msg string, fields ...zap.Field) {
+func (l *Logger) Info(msg string, fields ...zap.Field) {
 	l.l.Info(msg, fields...)
 }
 
-func (l Logger) Sync() {
+func (l *Logger) Sync() {
 	l.l.Sync()
 }
 
