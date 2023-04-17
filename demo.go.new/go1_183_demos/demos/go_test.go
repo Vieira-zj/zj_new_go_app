@@ -10,6 +10,41 @@ import (
 	"demo.apps/utils"
 )
 
+// demo: ref
+
+func TestRefUpdateSlice(t *testing.T) {
+	update := func(fruits []testFruit) {
+		for idx := range fruits {
+			fruits[idx].name += "-test"
+		}
+	}
+
+	fruits := []testFruit{
+		{"apple"},
+		{"pair"},
+	}
+	t.Log("fruits:", fruits)
+	update(fruits)
+	t.Log("new fruits:", fruits)
+}
+
+func TestRefUpdateMap(t *testing.T) {
+	update := func(fruits map[string]testFruit) {
+		for key, fruit := range fruits {
+			fruit.name += "-test"
+			fruits[key] = fruit
+		}
+	}
+
+	fruits := map[string]testFruit{
+		"apple": {"apple"},
+		"pair":  {"pair"},
+	}
+	t.Log("fruits:", fruits)
+	update(fruits)
+	t.Log("new fruits:", fruits)
+}
+
 // demo: struct
 
 type testFruit struct {
@@ -75,6 +110,14 @@ func updateStudent(s testStudent) testStudent {
 	return s
 }
 
+func updateStudentRef(s *testStudent) {
+	s.setName("bar")
+	s.setAge(19)
+	s.addTag("p2")
+	s.updateBag(1, "cherry")
+	s.addScore("cn", 98)
+}
+
 func TestUpdateStruct(t *testing.T) {
 	s1 := NewTestStudent("foo", 13)
 	s1.addTag("p1")
@@ -85,14 +128,6 @@ func TestUpdateStruct(t *testing.T) {
 	t.Log("after update")
 	t.Log("s1:", s1.String())
 	t.Log("s2:", s2.String())
-}
-
-func updateStudentRef(s *testStudent) {
-	s.setName("bar")
-	s.setAge(19)
-	s.addTag("p2")
-	s.updateBag(1, "cherry")
-	s.addScore("cn", 98)
 }
 
 func TestUpdateStructRef(t *testing.T) {
