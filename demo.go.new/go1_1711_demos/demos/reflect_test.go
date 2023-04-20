@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTypeOfBytes(t *testing.T) {
+func TestReflectGetType(t *testing.T) {
 	str := "hello"
 	typeOf := reflect.TypeOf(str)
 	t.Log("type:", typeOf.Kind())
@@ -26,7 +26,13 @@ func TestTypeOfBytes(t *testing.T) {
 	t.Log("type:", typeOf.Kind()) // slice
 }
 
-func TestReflectFnTimeNow(t *testing.T) {
+func TestReflectGetPkgPath(t *testing.T) {
+	data := GetOkrDetailResp{}
+	path := reflect.TypeOf(data).PkgPath()
+	t.Log("pkg path:", path)
+}
+
+func TestReflectTimeNowFn(t *testing.T) {
 	nowValueOf := reflect.ValueOf(time.Now)
 	fmt.Println(nowValueOf.Type().Kind(), nowValueOf.IsValid(), nowValueOf.CanSet())
 }
