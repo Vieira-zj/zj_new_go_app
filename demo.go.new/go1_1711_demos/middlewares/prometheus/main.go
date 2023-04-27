@@ -40,7 +40,11 @@ var (
 		})
 )
 
-// test: curl http://127.0.0.1:9100/metrics | grep golang
+// 测试：curl http://127.0.0.1:9100/metrics | grep golang
+//
+// 由 promethus 通过该 /metrics 接口拉取（pull）数据。
+// 当使用 push gateway 中间件时，也可由 client 主动上报（push）数据。
+//
 
 func main() {
 	http.Handle("/metrics", promhttp.Handler())
