@@ -11,8 +11,6 @@ import (
 
 // Http Client
 
-var httpClient *http.Client
-
 type HttpRequester struct {
 	client *http.Client
 }

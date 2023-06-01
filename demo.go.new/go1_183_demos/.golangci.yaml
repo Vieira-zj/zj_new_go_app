@@ -1,0 +1,38 @@
+run:
+  deadline: 10m
+  skip-dirs:
+    - .git
+    - .vscode
+    - vendor
+
+linters-settings:
+  dupl:
+    threshold: 100
+  gocyclo:
+    min-complexity: 50
+  govet:
+    enable:
+      - nilness
+
+linters:
+  enable:
+    - govet
+    - unused
+    - misspell
+    - ineffassign
+    - staticcheck
+    - gosimple
+    - exportloopref
+  disable-all: true
+
+issues:
+  exclude-rules:
+    - linters:
+        - golint
+      text: ".*should not use dot dot imports"
+    - linters:
+        - staticcheck
+      text: "SA1019: fakectrlruntimeclient.NewFakeClient is deprecated"
+    - linters:
+        - staticcheck
+      text: "SA1019: t.*.TrustedOrg is deprecated: TrustedOrg functionality is deprecated and will be removed in January 2020"

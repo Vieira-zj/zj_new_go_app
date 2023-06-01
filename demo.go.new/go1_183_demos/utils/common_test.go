@@ -13,6 +13,12 @@ func TestFormatDateTime(t *testing.T) {
 	t.Log("now:", result)
 }
 
+func TestMyString(t *testing.T) {
+	s := utils.NewMyString()
+	s.SetValue("hello")
+	t.Log("value:", s.GetValue())
+}
+
 // go test -bench=BenchmarkString -run=^$ -benchtime=5s -benchmem -v
 func BenchmarkString(b *testing.B) {
 	s := ""

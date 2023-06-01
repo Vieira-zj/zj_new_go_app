@@ -15,7 +15,7 @@ func main() {
 	ver := runtime.Version()
 	fmt.Println("go version:", ver)
 
-	httpServe()
+	httpServe(false)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	<-ctx.Done()
@@ -24,7 +24,9 @@ func main() {
 	log.Println("app exit")
 }
 
-func httpServe() {
-	router := cover.InitRouter()
-	go cover.HttpServe(router)
+func httpServe(isRun bool) {
+	if isRun {
+		router := cover.InitRouter()
+		go cover.HttpServe(router)
+	}
 }

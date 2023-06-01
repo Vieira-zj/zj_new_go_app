@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"os"
 	"reflect"
 	"time"
 	"unsafe"
@@ -15,11 +16,17 @@ type MyString struct {
 	data []byte
 }
 
-func (s MyString) SetValue(value string) {
+func NewMyString() MyString {
+	return MyString{
+		data: make([]byte, 0),
+	}
+}
+
+func (s *MyString) SetValue(value string) {
 	s.data = append(s.data[:0], value...)
 }
 
-func (s MyString) SetValueBytes(value []byte) {
+func (s *MyString) SetValueBytes(value []byte) {
 	s.data = append(s.data[:0], value...)
 }
 
@@ -50,4 +57,13 @@ const timeLayout = "2006-01-02_15:04:05"
 
 func FormatDateTime(ti time.Time) string {
 	return ti.Format(timeLayout)
+}
+
+//
+// IO
+//
+
+func IsExist(path string) bool {
+	_, err := os.Stat(path)
+	return os.IsExist(err)
 }

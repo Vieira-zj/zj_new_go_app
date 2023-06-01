@@ -37,8 +37,7 @@ func TestAddByGeneric(t *testing.T) {
 type SampleSlice[T any] []T
 
 func TestGenericSlice(t *testing.T) {
-	var list SampleSlice[int]
-	list = make(SampleSlice[int], 2)
+	list := make(SampleSlice[int], 2)
 
 	list[0] = 1
 	list[1] = 2

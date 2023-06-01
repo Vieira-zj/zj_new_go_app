@@ -3,9 +3,18 @@ package demos
 import (
 	"bufio"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 )
+
+func TestOSGetwd(t *testing.T) {
+	path, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("cur path:", path)
+}
 
 func TestIOBufScan(t *testing.T) {
 	lines := make([]string, 0, 10)
