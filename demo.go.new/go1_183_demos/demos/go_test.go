@@ -1,4 +1,4 @@
-package test
+package demos
 
 import (
 	"encoding/json"
@@ -139,6 +139,37 @@ func TestUpdateStructRef(t *testing.T) {
 	updateStudentRef(&s)
 	t.Log("after update")
 	t.Logf("s [%p]: %s", &s, s.String())
+}
+
+// demo: copy of struct
+
+func TestCopyOfStruct(t *testing.T) {
+	students := make([]testStudent, 0, 2)
+	for i := 0; i < 2; i++ {
+		students = append(students, testStudent{
+			name: fmt.Sprintf("tester_%d", i),
+			age:  30 + i,
+			tags: []string{strconv.Itoa(i)},
+		})
+	}
+
+	copied := make([]testStudent, 2)
+	copy(copied, students)
+
+	for i := range copied {
+		copied[i].name = fmt.Sprintf("tester_%d_copied", i)
+		copied[i].age += 5
+		copied[i].tags[0] = fmt.Sprintf("%d_copied", i)
+	}
+
+	t.Log("src students:")
+	for _, s := range students {
+		t.Log(s.name, s.age, s.tags)
+	}
+	t.Log("dest students:")
+	for _, s := range copied {
+		t.Log(s.name, s.age, s.tags)
+	}
 }
 
 // demo: json
