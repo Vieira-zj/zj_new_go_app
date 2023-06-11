@@ -5,12 +5,51 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"testing"
 
 	"demo.apps/utils"
 )
 
+// demo: bytes & string
+
+func TestStringMultiReplace(t *testing.T) {
+	replace := strings.NewReplacer(" ", "", `\n`, "", `\t`, "")
+
+	str := `{\t"name": "foo",\n\t"age": 31,\n\t"skills:": ["java", "golang"]}`
+	result := replace.Replace(str)
+	t.Log("result:", result)
+}
+
+func TestReuseBytes(t *testing.T) {
+	b := []byte("hello")
+	t.Log(string(b))
+
+	b = b[:0] // reuse bytes
+	t.Log("size:", len(b))
+	b = append(b, []byte("foo")...)
+	t.Log(string(b))
+}
+
 // demo: ref
+
+func TestNilCompare(t *testing.T) {
+	var myNil (*byte) = nil
+
+	isNil := true
+	if !isNil {
+		str := byte(0)
+		myNil = &str
+	} else {
+		t.Log("not init")
+	}
+
+	if myNil == nil {
+		t.Log("is nil")
+	} else {
+		t.Log(("is not nil"))
+	}
+}
 
 func TestRefUpdateSlice(t *testing.T) {
 	update := func(fruits []testFruit) {
