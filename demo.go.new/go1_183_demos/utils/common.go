@@ -53,7 +53,7 @@ func String2bytes(s string) (b []byte) {
 // Datetime
 //
 
-const timeLayout = "2006-01-02_15:04:05"
+const timeLayout = "2006-01-02 15:04:05"
 
 func FormatDateTime(ti time.Time) string {
 	return ti.Format(timeLayout)
