@@ -1,17 +1,19 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"reflect"
+	"runtime"
+	"strconv"
+	"strings"
 	"time"
 	"unsafe"
 )
 
-//
 // String
-//
 
-// MyString: string demo to reuse bytes
+// MyString: string demo to reuse bytes.
 type MyString struct {
 	data []byte
 }
@@ -34,12 +36,12 @@ func (s MyString) GetValue() string {
 	return Bytes2string(s.data)
 }
 
-// unsafe convert: bytes and string
-
+// Bytes2string: unsafe convert bytes to string.
 func Bytes2string(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
+// String2bytes unsafe convert string to bytes.
 func String2bytes(s string) (b []byte) {
 	bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
 	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
@@ -49,9 +51,7 @@ func String2bytes(s string) (b []byte) {
 	return b
 }
 
-//
 // Datetime
-//
 
 const timeLayout = "2006-01-02 15:04:05"
 
@@ -59,11 +59,25 @@ func FormatDateTime(ti time.Time) string {
 	return ti.Format(timeLayout)
 }
 
-//
 // IO
-//
 
 func IsExist(path string) bool {
 	_, err := os.Stat(path)
 	return os.IsExist(err)
+}
+
+// Others
+
+func GetGoroutineID() (int, error) {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	stk := strings.TrimPrefix(string(buf[:n]), "goroutine")
+
+	idField := strings.Fields(stk)[0]
+	id, err := strconv.Atoi(idField)
+	if err != nil {
+		return -1, fmt.Errorf("cannot get goroutine id: %v", err)
+	}
+
+	return id, nil
 }

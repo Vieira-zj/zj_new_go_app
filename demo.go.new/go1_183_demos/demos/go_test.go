@@ -285,3 +285,37 @@ func TestJsonUnmarshalForRawMessage(t *testing.T) {
 	}
 	t.Log("json unmarshal with raw message, max int:", string(tmp.Num), string(tmp.Num) == strconv.Itoa(maxInt))
 }
+
+// demo: marshal custom error
+//
+// refer: http://gregtrowbridge.com/golang-json-serialization-with-interfaces/
+
+type MyError struct {
+	err string
+}
+
+func (e *MyError) Error() string {
+	return e.err
+}
+
+func (e *MyError) MarshalJSON() ([]byte, error) {
+	m := make(map[string]string)
+	m["err_msg"] = e.err
+	return json.Marshal(m)
+}
+
+func TestJsonMarshalError(t *testing.T) {
+	s := struct {
+		Id  int   `json:"id"`
+		Err error `json:"err"`
+	}{
+		Id:  1,
+		Err: &MyError{err: "mock error"},
+	}
+
+	b, err := json.Marshal(&s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("result:", string(b))
+}
