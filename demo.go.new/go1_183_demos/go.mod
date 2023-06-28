@@ -7,7 +7,9 @@ require (
 	github.com/arl/statsviz v0.5.2
 	github.com/gin-gonic/gin v1.8.0
 	github.com/golang-jwt/jwt/v5 v5.0.0-rc.2
+	github.com/samber/lo v1.38.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
+	github.com/wI2L/jsondiff v0.4.0
 	go.uber.org/zap v1.24.0
 )
 
@@ -48,6 +50,7 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
