@@ -13,6 +13,19 @@ import (
 
 // String
 
+func MultiSplitString(str string, splits []rune) []string {
+	keysDict := make(map[rune]struct{}, len(splits))
+	for _, key := range splits {
+		keysDict[key] = struct{}{}
+	}
+
+	results := strings.FieldsFunc(str, func(r rune) bool {
+		_, ok := keysDict[r]
+		return ok
+	})
+	return results
+}
+
 // MyString: string demo to reuse bytes.
 type MyString struct {
 	data []byte

@@ -64,6 +64,21 @@ func RunShellCmd(command string) (string, error) {
 	return string(output), nil
 }
 
+func RunShellCmdV2(command string) (string, error) {
+	log.Println("exec sh command:", command)
+	sh := getShellPath()
+	cmd := exec.Command(sh, "-c", command)
+	b, err := cmd.Output()
+	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			return "", fmt.Errorf("run cmd [%s] error: exit_code: %d, stderr: %s", command, ee.ExitCode(), ee.Stderr)
+		}
+		return "", err
+	}
+
+	return string(b), nil
+}
+
 func getShellPath() string {
 	path, ok := os.LookupEnv("SHELL")
 	if !ok {

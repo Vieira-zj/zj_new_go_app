@@ -20,6 +20,13 @@ func TestMyString(t *testing.T) {
 	t.Log("value:", s.GetValue())
 }
 
+func TestMultiSplitString(t *testing.T) {
+	fields := utils.MultiSplitString("a,b.c|d.e|f,g", []rune{',', '.', '|'})
+	for _, field := range fields {
+		t.Log("field:", field)
+	}
+}
+
 // go test -bench=BenchmarkString -run=^$ -benchtime=5s -benchmem -v
 func BenchmarkString(b *testing.B) {
 	s := ""
