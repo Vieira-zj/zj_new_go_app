@@ -9,8 +9,8 @@ import (
 )
 
 func TestJsonDiffWithIgnore(t *testing.T) {
-	source := `{"a":"bar", "b":"baz", "c":"foo"}`
-	target := `{"a":"rab", "d":"foo", "b":"bza"}`
+	source := `{"a":"bar", "b":"baz", "c":"foo", "d":[1,2,3]}`
+	target := `{"a":"rab", "d":"foo", "b":"bza", "d":[1,2,4]}`
 
 	// decode json numbers as json.Number instead of float64
 	decodeOption := jsondiff.UnmarshalFunc(func(b []byte, v any) error {
@@ -49,6 +49,20 @@ func TestJsonDiffWithEquivalence02(t *testing.T) {
 	target := `{"group":"xyz", "users":[{"id":2, "name":"bar"},{"id":1, "name":"foo"}]}`
 
 	patch, err := jsondiff.CompareJSON([]byte(source), []byte(target), jsondiff.Equivalent())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, op := range patch {
+		t.Logf(op.String())
+	}
+}
+
+func TestHighlightJsonDiff(t *testing.T) {
+	source := `{"a":"bar", "b":"foo", "replace":{"c":"cha"}, "move":{"x":"xyz"}}`
+	target := `{"a":"bar", "replace":{"c":"chz"}, "d":"ds", "move":{"y":"xyz"}}`
+
+	patch, err := jsondiff.CompareJSON([]byte(source), []byte(target), jsondiff.Factorize())
 	if err != nil {
 		t.Fatal(err)
 	}
