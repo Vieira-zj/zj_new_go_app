@@ -2,16 +2,17 @@ package demos
 
 import (
 	"fmt"
+	"io"
+	"net"
+	"os"
 	"reflect"
 	"strconv"
 )
 
-//
-// Generic for method
-//
+// Refer: https://github.com/smallnest/talk-about-go-generics
 
-// AddByReflect add fn supports for int32 and float32 by reflect.
-func AddByReflect(a, b interface{}) (interface{}, error) {
+// addByReflect an add fn supports for int32 and float32 by reflect.
+func addByReflect(a, b interface{}) (interface{}, error) {
 	// here use generic [T any] instead of interface{}
 	aType := reflect.TypeOf(a).Name()
 	bType := reflect.TypeOf(b).Name()
@@ -32,12 +33,24 @@ func AddByReflect(a, b interface{}) (interface{}, error) {
 	}
 }
 
-// AddByGeneric add fn supports for int32 and float32 by generic.
-func AddByGeneric[T int32 | float32](a, b T) T {
+// 泛型方法
+
+// add adds fn supports for int32 and float32 by generic.
+func add[T int32 | float32](a, b T) T {
 	return a + b
 }
 
-func InsertAt[T any](list []T, idx int, t T) ([]T, error) {
+// The special tilde ("~") symbol instructs Go that T should approximately match one of these types rather than precisely.
+// That is, it should match one of these types or a derived-type extending these.
+// Without the tilde this function will receive only the exact types declared in the constraints and no derived-types.
+func min[T ~int | ~float64](x, y T) T {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func insertAt[T any](list []T, idx int, t T) ([]T, error) {
 	l := len(list)
 	if idx < 0 {
 		idx = l + idx
@@ -56,7 +69,8 @@ func InsertAt[T any](list []T, idx int, t T) ([]T, error) {
 	return retList, nil
 }
 
-func RemoveAt[T any](list []T, idx int, t T) ([]T, error) {
+// nolint: unused
+func removeAt[T any](list []T, idx int, t T) ([]T, error) {
 	l := len(list)
 	if idx < 0 {
 		idx = l + idx
@@ -74,7 +88,7 @@ func RemoveAt[T any](list []T, idx int, t T) ([]T, error) {
 	return retList, nil
 }
 
-func GetFieldInfo[T any /* int | string */](field T) string {
+func getFieldInfo[T any /* int | string */](field T) string {
 	typeOf := reflect.TypeOf(field)
 	valueOf := reflect.ValueOf(field)
 	if typeOf.Kind() == reflect.Ptr {
@@ -96,24 +110,33 @@ func GetFieldInfo[T any /* int | string */](field T) string {
 	return fmt.Sprintf("type=%s | value=%s", fType, fValue)
 }
 
-//
-// Generic for struct
-//
+// 类型约束
 
-type Number interface {
+type myNumber interface {
 	int | int32 | int64 | float32 | float64
 }
 
-type KvMap[K comparable, V Number] map[K]V
+// nolint: unused
+type myReadWriterCloser interface {
+	*os.File | *net.TCPConn | *net.UDPConn | *net.UnixConn | *net.IPConn
 
-func (kv KvMap[K, V]) Set(k K, v V) KvMap[K, V] {
+	// 嵌入接口
+	io.Reader
+	io.Writer
+	io.Closer
+}
+
+// comparable means that the value of T supports comparison using the equality operator ("=").
+type MyKvMap[K comparable, V myNumber] map[K]V
+
+func (kv MyKvMap[K, V]) Set(k K, v V) MyKvMap[K, V] {
 	if _, ok := kv[k]; !ok {
 		kv[k] = v
 	}
 	return kv
 }
 
-func (kv KvMap[K, V]) Pprint() {
+func (kv MyKvMap[K, V]) Pprint() {
 	for k, v := range kv {
 		fmt.Printf("key=%v,value=%v\n", k, v)
 	}

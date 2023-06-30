@@ -79,7 +79,14 @@ func IsExist(path string) bool {
 	return os.IsExist(err)
 }
 
-// Others
+// Runtime
+
+func GetCallerDetails(level int) string {
+	pc, _, _, _ := runtime.Caller(level)
+	details := runtime.FuncForPC(pc)
+	f, line := details.FileLine(pc)
+	return fmt.Sprintf("%s:%d %s", f, line, details.Name())
+}
 
 func GetGoroutineID() (int, error) {
 	var buf [64]byte

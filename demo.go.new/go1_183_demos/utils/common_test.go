@@ -45,6 +45,11 @@ func BenchmarkMyString(b *testing.B) {
 	}
 }
 
+func TestGetCallerDetails(t *testing.T) {
+	details := utils.GetCallerDetails(1)
+	t.Log("details:\n", details)
+}
+
 func TestGetGoroutineID(t *testing.T) {
 	ch := make(chan int)
 	for i := 0; i < 3; i++ {
