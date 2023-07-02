@@ -1,0 +1,11 @@
+{
+  "track_total_hits": true,
+  "sort": [
+    {
+      "publish_time": {
+        "order": "desc"
+      }
+    }
+  ],
+  "size": 10
+}
