@@ -12,3 +12,9 @@ func TestHexEncode(t *testing.T) {
 	// base64: 3 bytes to 4 bytes
 	t.Log("base64 text:", utils.Base64Encode(b))
 }
+
+func TestCnStringConvert(t *testing.T) {
+	str := "this is a test！right？it's end"
+	result := utils.CnStringConvert([]byte(str))
+	t.Log("result:", string(result))
+}

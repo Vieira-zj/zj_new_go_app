@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+// use JsonPatch instead
+
 // UpdateValueByJsonPath updates value by json path (from jsondiff).
 func UpdateValueByJsonPath(obj any, path string, newVal any) error {
 	var parent, pKey any
