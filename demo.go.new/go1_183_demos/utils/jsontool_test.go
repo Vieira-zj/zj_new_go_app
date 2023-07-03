@@ -7,6 +7,20 @@ import (
 	"demo.apps/utils"
 )
 
+func TestIsValidJson(t *testing.T) {
+	for _, s := range []string{
+		`{"name":"foo"}`,
+		`["foo", "bar"]`,
+		`"bar"`,
+	} {
+		b := []byte(s)
+		result := json.Valid(b)
+		t.Log("raw result:", result)
+		result = utils.IsValidJson(b)
+		t.Log("result:", result)
+	}
+}
+
 func TestGetValueByJsonPath(t *testing.T) {
 	str := `{"a":"bar", "b":"foo", "replace":{"c":"cha"}, "move":{"x":[1,2,3]}}`
 	obj := make(map[string]any)

@@ -1,11 +1,18 @@
 package utils
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 )
+
+func IsValidJson(b []byte) bool {
+	b = bytes.Trim(b, " ")
+	return json.Valid(b) && (b[0] == '{' || b[0] == '[')
+}
 
 // use JsonPatch instead
 
