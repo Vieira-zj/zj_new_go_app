@@ -13,6 +13,18 @@ func TestHexEncode(t *testing.T) {
 	t.Log("base64 text:", utils.Base64Encode(b))
 }
 
+func TestMd5SumTest(t *testing.T) {
+	s := "hello"
+	result, err := utils.Md5Sum([]byte(s))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("md5 sum:", result)
+
+	result = utils.Md5SumV2([]byte(s))
+	t.Log("md5 sum:", result)
+}
+
 func TestCnStringConvert(t *testing.T) {
 	str := "this is a test！right？it's end"
 	result := utils.CnStringConvert([]byte(str))

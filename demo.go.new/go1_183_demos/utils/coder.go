@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -26,6 +27,21 @@ func HexEncode(b []byte) string {
 
 func Base64Encode(b []byte) string {
 	return base64.StdEncoding.EncodeToString(b)
+}
+
+func Md5Sum(b []byte) (string, error) {
+	hash := md5.New()
+	if _, err := hash.Write(b); err != nil {
+		return "", err
+	}
+
+	result := hash.Sum(nil)
+	return hex.EncodeToString(result), nil
+}
+
+func Md5SumV2(b []byte) string {
+	sum := md5.Sum(b)
+	return fmt.Sprintf("%x", sum)
 }
 
 // CnStringConvert converts cn symbols in the string to en symbols.
