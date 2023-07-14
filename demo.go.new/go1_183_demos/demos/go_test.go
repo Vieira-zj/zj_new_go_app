@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"demo.apps/utils"
 )
@@ -318,4 +320,28 @@ func TestJsonMarshalError(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log("result:", string(b))
+}
+
+// demo: goroutine
+
+func TestRecoverFromPanic(t *testing.T) {
+	ch := make(chan struct{})
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				// print stack from recover
+				fmt.Println("recover err:", r)
+				fmt.Printf("stack:\n%s", debug.Stack())
+			}
+			ch <- struct{}{}
+		}()
+		fmt.Println("goroutine run...")
+		time.Sleep(time.Second)
+		panic("mock err")
+	}()
+
+	fmt.Println("wait...")
+	<-ch
+	fmt.Println("recover demo done")
 }
