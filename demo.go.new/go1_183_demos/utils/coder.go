@@ -41,7 +41,9 @@ func Md5Sum(b []byte) (string, error) {
 
 func Md5SumV2(b []byte) string {
 	sum := md5.Sum(b)
-	return fmt.Sprintf("%x", sum)
+	// return fmt.Sprintf("%x", sum)
+	// sum[:] convert [16]byte to []byte
+	return hex.EncodeToString(sum[:])
 }
 
 // CnStringConvert converts cn symbols in the string to en symbols.
