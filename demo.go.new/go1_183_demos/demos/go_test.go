@@ -13,6 +13,16 @@ import (
 	"demo.apps/utils"
 )
 
+func TestMapCap(t *testing.T) {
+	m := make(map[int]string, 2)
+	m[1] = "one"
+	t.Logf("len=%d", len(m))
+
+	for k, v := range m {
+		t.Logf("key=%d, value=%s", k, v)
+	}
+}
+
 // demo: bytes & string
 
 func TestStringMultiReplace(t *testing.T) {
