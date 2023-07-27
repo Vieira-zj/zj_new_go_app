@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"compress/gzip"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
@@ -20,6 +21,8 @@ func JsonLoads(b []byte, s any) error {
 	decoder.UseNumber()
 	return decoder.Decode(s)
 }
+
+// hex / base64 / md5 encoder
 
 func HexEncode(b []byte) string {
 	return hex.EncodeToString(b)
@@ -44,6 +47,39 @@ func Md5SumV2(b []byte) string {
 	// return fmt.Sprintf("%x", sum)
 	// sum[:] convert [16]byte to []byte
 	return hex.EncodeToString(sum[:])
+}
+
+// gzip compress/uncompress
+
+func Gzip(data []byte) ([]byte, error) {
+	b := bytes.Buffer{}
+	gz := gzip.NewWriter(&b)
+	if _, err := gz.Write(data); err != nil {
+		return nil, err
+	}
+
+	if err := gz.Flush(); err != nil {
+		return nil, err
+	}
+	if err := gz.Close(); err != nil {
+		return nil, err
+	}
+	return b.Bytes(), nil
+}
+
+func Ungzip(data []byte) ([]byte, error) {
+	b := bytes.NewBuffer(data)
+	r, err := gzip.NewReader(b)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := bytes.Buffer{}
+	if _, err = ret.ReadFrom(r); err != nil {
+		return nil, err
+	}
+
+	return ret.Bytes(), nil
 }
 
 // CnStringConvert converts cn symbols in the string to en symbols.

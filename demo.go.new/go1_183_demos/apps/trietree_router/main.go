@@ -6,11 +6,14 @@ import (
 	"net/http"
 )
 
-// test:
+// rest api:
 //
 // curl 127.0.0.1:8081/hello
 // curl 127.0.0.1:8081/users/list
 // curl 127.0.0.1:8081/notfound
+//
+// curl 127.0.0.1:8081/test/json
+// curl 127.0.0.1:8081/test/gzip -v -H "Accept-Encoding: gzip" --output data.gzip; cat data.gzip | gunzip
 //
 
 func main() {
@@ -18,6 +21,9 @@ func main() {
 
 	r.Add("GET", "/hello", defaultHandler)
 	r.Add("GET", "/users/list", defaultHandler)
+
+	r.Add("GET", "/test/json", TestJsonHandler)
+	r.Add("GET", "/test/gzip", TestGzipHandler)
 
 	port := ":8081"
 	log.Println("http serve at:", port)

@@ -23,6 +23,15 @@ func TestMapCap(t *testing.T) {
 	}
 }
 
+func TestTimeDuration(t *testing.T) {
+	duration, err := time.ParseDuration("5m")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ti := time.Now().Add(duration)
+	t.Log("now after 5m:", ti)
+}
+
 // demo: bytes & string
 
 func TestStringMultiReplace(t *testing.T) {

@@ -13,7 +13,7 @@ func TestHexEncode(t *testing.T) {
 	t.Log("base64 text:", utils.Base64Encode(b))
 }
 
-func TestMd5SumTest(t *testing.T) {
+func TestMd5Sum(t *testing.T) {
 	s := "hello"
 	result, err := utils.Md5Sum([]byte(s))
 	if err != nil {
@@ -23,6 +23,24 @@ func TestMd5SumTest(t *testing.T) {
 
 	result = utils.Md5SumV2([]byte(s))
 	t.Log("md5 sum:", result)
+}
+
+func TestGzipCompress(t *testing.T) {
+	data := []byte("MyzYrIyMLyNqwDSTBqSwM2D6KD9sA8S/d3Vyy6ldE+oRVdWyqNQrjTxQ6uG3XBOS0P4GGaIMJEPQ=")
+	t.Log("origin data size:", len(data))
+
+	zipData, err := utils.Gzip(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("compress data size:", len(zipData))
+
+	unzipData, err := utils.Ungzip(zipData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("uncompress data size:", len(unzipData))
+	t.Log("uncompress data:", string(unzipData))
 }
 
 func TestCnStringConvert(t *testing.T) {
