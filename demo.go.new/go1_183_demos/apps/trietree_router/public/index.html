@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>decompress gzip test</title>
+  </head>
+  <body>
+    <h3>Decompress Gzip Test</h3>
+    <div>
+      <button onclick="onGetGzipContent()">Click me</button>
+      <div id="text-result">null</div>
+      <div id="decompress-result">null</div>
+    </div>
+  </body>
+  <script src="libs/axios.min.js"></script>
+  <script src="libs/pako.js"></script>
+  <script>
+    let fetchText = async () => {
+      let url = window.location.origin + "/ping";
+      try {
+        let { data } = await axios.get(url);
+        return data;
+      } catch (e) {
+        console.error(e.message);
+      }
+    };
+
+    let fetchGzipJSON = async () => {
+      // chrome will auto add below headers:
+      //   Accept: application/json, text/plain, */*
+      //   Accept-Encoding: gzip, deflate, br
+      let url = window.location.origin + "/test/gzip";
+      try {
+        let { data } = await axios.get(url, {
+          // headers: { "Accept-Encoding": "gzip" },
+          responseType: "arraybuffer",
+          decompress: true,
+        });
+        let inflateData = pako.inflate(data, { to: "string" });
+        return inflateData;
+      } catch (e) {
+        console.error(e.message);
+      }
+    };
+
+    let onGetGzipContent = async () => {
+      let text = await fetchText();
+      document.querySelector("#text-result").textContent = text;
+      let data = await fetchGzipJSON();
+      document.querySelector("#decompress-result").textContent = data;
+    };
+  </script>
+</html>

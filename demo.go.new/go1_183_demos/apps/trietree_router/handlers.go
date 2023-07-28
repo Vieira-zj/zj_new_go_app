@@ -2,19 +2,25 @@ package main
 
 import (
 	"compress/gzip"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 )
 
-func TestJsonHandler(w http.ResponseWriter, req *http.Request) {
+func defaultHandler(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "method=%s, path=%s", req.Method, req.URL.Path)
+}
+
+func testJsonHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"code":0,"msg":"success"}`))
 }
 
-func TestGzipHandler(w http.ResponseWriter, req *http.Request) {
+func testGzipHandler(w http.ResponseWriter, req *http.Request) {
+	// log.Printf("req headers: %+v", req.Header)
 	if !strings.Contains(req.Header.Get("Accept-Encoding"), "gzip") {
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)

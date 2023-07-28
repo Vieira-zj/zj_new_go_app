@@ -1,12 +1,42 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"log"
 	"net/http"
 )
 
-// rest api:
+func main() {
+	rtype := flag.String("type", "normal", "run type: normal, trietree")
+	flag.Parse()
+
+	if *rtype == "trietree" {
+		trietreeHttpServe()
+	} else {
+		httpServe()
+	}
+}
+
+// Http Server
+//
+// http://127.0.0.1:8081/
+// curl 127.0.0.1:8081/ping
+// curl 127.0.0.1:8081/test/gzip -v -H "Accept-Encoding: gzip" --output data.gzip
+//
+
+func httpServe() {
+	// Note: url path pattern must be suffix with "/", like "/public/"
+	http.Handle("/", http.FileServer(http.Dir("./public")))
+
+	http.HandleFunc("/ping", defaultHandler)
+	http.HandleFunc("/test/gzip", testGzipHandler)
+
+	port := ":8081"
+	log.Println("http serve at:", port)
+	log.Fatal(http.ListenAndServe(port, nil))
+}
+
+// TrieTree Http Server
 //
 // curl 127.0.0.1:8081/hello
 // curl 127.0.0.1:8081/users/list
@@ -16,22 +46,17 @@ import (
 // curl 127.0.0.1:8081/test/gzip -v -H "Accept-Encoding: gzip" --output data.gzip; cat data.gzip | gunzip
 //
 
-func main() {
+func trietreeHttpServe() {
 	r := NewRouter()
-
 	r.Add("GET", "/hello", defaultHandler)
 	r.Add("GET", "/users/list", defaultHandler)
 
-	r.Add("GET", "/test/json", TestJsonHandler)
-	r.Add("GET", "/test/gzip", TestGzipHandler)
+	r.Add("GET", "/test/json", testJsonHandler)
+	r.Add("GET", "/test/gzip", testGzipHandler)
 
 	port := ":8081"
-	log.Println("http serve at:", port)
+	log.Println("trietree http serve at:", port)
 	log.Fatal(http.ListenAndServe(port, r))
-}
-
-func defaultHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "method=%s, path=%s", req.Method, req.URL.Path)
 }
 
 // Router by TrieTree
