@@ -1,8 +1,16 @@
 #!/bin/bash
 set -eu
 
-root_dir="/tmp/test"
-cover_file="${root_dir}/results.cov"
+tmp_dir="/tmp/test"
+cover_file="${tmp_dir}/results.cov"
+
+source ./common.sh
+
+function echo_test {
+    echo_info "this is info msg"
+    echo_warn "this is warn msg"
+    echo_error "this is error msg"
+}
 
 function go_cover_test {
     if [[ -f $cover_file ]]; then
@@ -14,7 +22,7 @@ function go_cover_test {
 
 function build_test_bin {
     local dst_pkg="demo.apps/go.test/cover"
-    local dst_bin_file="${root_dir}/httpserve-test"
+    local dst_bin_file="${tmp_dir}/httpserve-test"
 
     if [[ -f $dst_bin_file ]]; then
         rm $dst_bin_file
@@ -26,7 +34,7 @@ function build_httpserve_cover_bin {
     # local cover_pkg="demo.apps/..."  # load all packages
     local cover_pkg="demo.apps/go.test/cover/..."
     local dst_pkg="demo.apps/go.test/cover/e2etest"
-    local dst_bin_file="${root_dir}/httpserve-cover"
+    local dst_bin_file="${tmp_dir}/httpserve-cover"
 
     if [[ -f $dst_bin_file ]]; then
         rm $dst_bin_file
@@ -35,7 +43,7 @@ function build_httpserve_cover_bin {
 }
 
 function create_func_cover_report {
-    local dst_file="${root_dir}/results.func"
+    local dst_file="${tmp_dir}/results.func"
     if [[ -f $dst_file ]]; then
         rm $dst_file
     fi
@@ -43,12 +51,18 @@ function create_func_cover_report {
 }
 
 function create_html_cover_report {
-    local dst_file="${root_dir}/results.html"
+    local dst_file="${tmp_dir}/results.html"
     if [[ -f $dst_file ]]; then
         rm $dst_file
     fi
     go tool cover -html=${cover_file} -o ${dst_file}
 }
+
+if [[ $1 == "test" ]]; then
+    echo "project path: ${project_dir}"
+    echo_test
+    exit 0
+fi
 
 if [[ $1 == "cover-test" ]]; then
     go_cover_test
