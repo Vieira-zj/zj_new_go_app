@@ -3,14 +3,20 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 
+	"demo.apps/utils"
 	"github.com/gin-gonic/gin"
 )
 
 /*
-api test:
+page:
+http://localhost:8081/static
 
+rest api:
 curl http://localhost:8081/
+curl http://localhost:8081/ping
 
 curl -v -XPOST http://localhost:8081/user -d '{"birthday":"10/07","timezone":"Asia/Shanghai"}'
 */
@@ -28,15 +34,41 @@ func initServer() *gin.Engine {
 	gin.SetMode(gin.DebugMode)
 	r := gin.Default()
 
+	// refer: https://www.notefeel.com/you-trusted-all-proxies-this-is-not-safe
+	r.ForwardedByClientIP = true
+	r.SetTrustedProxies([]string{"127.0.0.1"})
+
+	r.Use(gin.Recovery())
+
 	r.NoMethod(HandleNotFound)
 	r.NoRoute(HandleNotFound)
 
-	r.GET("/", HandlePing)
+	addStatic(r)
 
-	// validate middleware should be before CreateUser
+	r.GET("/", HandleIndex)
+	r.GET("/ping", HandlePing)
+
+	// validate middleware should be before CreateUser.
 	r.POST("/user", ValidateJsonBody[CreateUserHttpBody](), HandleCreateUser)
 
 	return r
+}
+
+// Static
+
+func addStatic(r *gin.Engine) {
+	distRePath := "Workspaces/zj_repos/zj_js_project/vue_apps/vue3_app_demo/dist"
+	distPath := filepath.Join(os.Getenv("HOME"), distRePath)
+	if utils.IsDirExist(distPath) {
+		// Note: must add matched alias "/static/", "/static/index.html" for "/" in vue router.
+		r.Static("/static", distPath)
+		r.Static("/assets", filepath.Join(distPath, "assets"))
+	}
+}
+
+//nolint:unused
+func addStaticEmbed(r *gin.Engine) {
+	// TODO:
 }
 
 // Handle
@@ -45,9 +77,13 @@ func HandleNotFound(c *gin.Context) {
 	c.JSON(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
+func HandleIndex(c *gin.Context) {
+	c.String(http.StatusOK, "gin server demo")
+}
+
 func HandlePing(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Pong",
+		"message": "pong",
 	})
 }
 

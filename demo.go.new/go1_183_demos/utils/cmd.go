@@ -64,10 +64,11 @@ func RunShellCmd(command string) (string, error) {
 	return string(output), nil
 }
 
-func RunShellCmdV2(command string) (string, error) {
+func RunShellCmdInDir(command, dir string) (string, error) {
 	log.Println("exec sh command:", command)
 	sh := getShellPath()
 	cmd := exec.Command(sh, "-c", command)
+	cmd.Dir = dir
 	b, err := cmd.Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {

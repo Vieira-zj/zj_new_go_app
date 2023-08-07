@@ -76,7 +76,15 @@ func FormatDateTime(ti time.Time) string {
 
 func IsExist(path string) bool {
 	_, err := os.Stat(path)
-	return os.IsExist(err)
+	return err == nil
+}
+
+func IsDirExist(path string) bool {
+	f, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return f.IsDir()
 }
 
 // Runtime

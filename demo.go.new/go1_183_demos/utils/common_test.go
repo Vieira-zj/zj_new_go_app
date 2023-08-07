@@ -27,6 +27,19 @@ func TestMultiSplitString(t *testing.T) {
 	}
 }
 
+func TestIsDirExist(t *testing.T) {
+	for _, path := range []string{
+		"/tmp/test",
+		"/tmp/test/mock",
+		"/tmp/test/test.json",
+	} {
+		result := utils.IsExist(path)
+		t.Logf("%s is exist: %v", path, result)
+		result = utils.IsDirExist(path)
+		t.Logf("%s is dir exist: %v\n", path, result)
+	}
+}
+
 // go test -bench=BenchmarkString -run=^$ -benchtime=5s -benchmem -v
 func BenchmarkString(b *testing.B) {
 	s := ""

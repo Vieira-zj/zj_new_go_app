@@ -24,10 +24,10 @@ func TestRunShellCmd(t *testing.T) {
 func TestRunShellCmdV2(t *testing.T) {
 	for _, cmd := range []string{
 		"sleep 3",
-		"ls /tmp/test",
-		"ls /tmp/not_exist",
+		"ls test/",
+		"ls not_exist",
 	} {
-		output, err := utils.RunShellCmdV2(cmd)
+		output, err := utils.RunShellCmdInDir(cmd, "/tmp")
 		if err != nil {
 			t.Fatal(err)
 		}
