@@ -32,6 +32,45 @@ func TestTimeDuration(t *testing.T) {
 	t.Log("now after 5m:", ti)
 }
 
+// demo: defer
+
+func TestDeferFn01(t *testing.T) {
+	testFn := func() func() {
+		t.Log("test fn")
+		return func() {
+			t.Log("wrapped test fn")
+		}
+	}
+
+	defer testFn()()
+	t.Log("start test defer fn")
+	time.Sleep(200 * time.Millisecond)
+	t.Log("end test defer fn")
+}
+
+type myTestStruct struct {
+	t *testing.T
+}
+
+func (s *myTestStruct) fn1() *myTestStruct {
+	s.t.Log("fn1 invoke")
+	return s
+}
+
+func (s *myTestStruct) fn2() *myTestStruct {
+	s.t.Log("fn2 invoke")
+	return s
+}
+
+func TestDeferFn02(t *testing.T) {
+	s := &myTestStruct{t}
+	defer s.fn1().fn2()
+
+	t.Log("start test defer struct fn")
+	time.Sleep(200 * time.Millisecond)
+	t.Log("end test defer struct fn")
+}
+
 // demo: bytes & string
 
 func TestStringMultiReplace(t *testing.T) {
