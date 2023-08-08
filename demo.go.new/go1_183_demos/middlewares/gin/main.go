@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"demo.apps/utils"
 	"github.com/gin-gonic/gin"
@@ -43,13 +44,13 @@ func initServer() *gin.Engine {
 	r.NoMethod(HandleNotFound)
 	r.NoRoute(HandleNotFound)
 
-	addStatic(r)
-
 	r.GET("/", HandleIndex)
 	r.GET("/ping", HandlePing)
 
-	// validate middleware should be before CreateUser.
-	r.POST("/user", ValidateJsonBody[CreateUserHttpBody](), HandleCreateUser)
+	// validate middleware should be before CreateUser
+	r.POST("/user", MiddlewareValidateJsonBody[CreateUserHttpBody](), HandleCreateUser)
+
+	addStatic(r)
 
 	return r
 }
@@ -57,9 +58,10 @@ func initServer() *gin.Engine {
 // Static
 
 func addStatic(r *gin.Engine) {
-	distRePath := "Workspaces/zj_repos/zj_js_project/vue_apps/vue3_app_demo/dist"
-	distPath := filepath.Join(os.Getenv("HOME"), distRePath)
+	distPath := getDistPath()
 	if utils.IsDirExist(distPath) {
+		r.Use(MiddlewareGzip())
+
 		// Note: must add matched alias "/static/", "/static/index.html" for "/" in vue router.
 		r.Static("/static", distPath)
 		r.Static("/assets", filepath.Join(distPath, "assets"))
@@ -87,7 +89,7 @@ func HandlePing(c *gin.Context) {
 	})
 }
 
-// Create User Handle
+// Demo: Create User Handle
 
 type CreateUserHttpBody struct {
 	Birthday string `json:"birthday" binding:"required,datetime=01/02"`
@@ -104,8 +106,8 @@ func HandleCreateUser(c *gin.Context) {
 
 const keyJsonBody = "jsonBody"
 
-// ValidateJsonBody a middleware to validate request body by generic.
-func ValidateJsonBody[BodyType any]() gin.HandlerFunc {
+// MiddlewareValidateJsonBody validates request body by generic.
+func MiddlewareValidateJsonBody[BodyType any]() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var body BodyType
 		if err := c.ShouldBindJSON(&body); err != nil {
@@ -120,4 +122,60 @@ func ValidateJsonBody[BodyType any]() gin.HandlerFunc {
 
 func GetJsonBody[BodyType any](c *gin.Context) BodyType {
 	return c.MustGet(keyJsonBody).(BodyType)
+}
+
+// Middleware: gzip
+
+// MiddlewareGzip gzip assets file if file size > 10kb.
+func MiddlewareGzip() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if isAcceptEncodingGzip(c.Request.Header["Accept-Encoding"]) && isAssetsFilePath(path) {
+			size, err := getFileSize(path)
+			if err != nil {
+				log.Println("get file size failed:", err)
+				c.Next()
+				return
+			}
+
+			if size > 10240 { // 10kb
+				log.Println("add gzip encoding header for:", path)
+				c.Header("Content-Encoding", "gzip")
+			}
+		}
+
+		c.Next()
+	}
+}
+
+// Helper
+
+func isAcceptEncodingGzip(elems []string) bool {
+	if len(elems) == 0 {
+		return false
+	}
+	for _, elem := range elems {
+		if strings.Contains(elem, "gzip") && strings.Contains(elem, "deflate") {
+			return true
+		}
+	}
+	return false
+}
+
+func isAssetsFilePath(url string) bool {
+	return strings.HasPrefix(url, "/assets")
+}
+
+func getFileSize(relPath string) (int64, error) {
+	fpath := filepath.Join(getDistPath(), relPath)
+	stat, err := os.Stat(fpath)
+	if err != nil {
+		return 0, err
+	}
+	return stat.Size(), nil
+}
+
+func getDistPath() string {
+	const distRePath = "Workspaces/zj_repos/zj_js_project/vue_apps/vue3_app_demo/dist"
+	return filepath.Join(os.Getenv("HOME"), distRePath)
 }
