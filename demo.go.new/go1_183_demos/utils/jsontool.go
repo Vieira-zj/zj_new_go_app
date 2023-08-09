@@ -14,10 +14,9 @@ func IsValidJson(b []byte) bool {
 	return json.Valid(b) && (b[0] == '{' || b[0] == '[')
 }
 
-// use JsonPatch instead
-
 // UpdateValueByJsonPath updates value by json path (from jsondiff).
 func UpdateValueByJsonPath(obj any, path string, newVal any) error {
+	// use JsonPatch instead
 	var parent, pKey any
 	for _, key := range strings.Split(path, "/") {
 		parent, pKey = obj, key
