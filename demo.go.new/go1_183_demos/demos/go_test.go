@@ -13,6 +13,24 @@ import (
 	"demo.apps/utils"
 )
 
+func TestSwitchConds(t *testing.T) {
+	getNumberDesc := func(num int) string {
+		switch num {
+		case 1, 2, 3:
+			return "num <= 3"
+		case 4, 5:
+			return "3 < num <= 5"
+		default:
+			return "num > 5"
+		}
+	}
+
+	for i := 2; i < 7; i++ {
+		desc := getNumberDesc(i)
+		t.Logf("%d: %s", i, desc)
+	}
+}
+
 func TestMapCap(t *testing.T) {
 	m := make(map[int]string, 2)
 	m[1] = "one"
