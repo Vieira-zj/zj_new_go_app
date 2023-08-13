@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"reflect"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -48,6 +49,16 @@ func TestTimeDuration(t *testing.T) {
 	}
 	ti := time.Now().Add(duration)
 	t.Log("now after 5m:", ti)
+}
+
+func TestReflectStrLen(t *testing.T) {
+	s := "hello world"
+	valueOf := reflect.ValueOf(s)
+	t.Log("len:", valueOf.Len())
+
+	b := []byte(s)
+	valueOf = reflect.ValueOf(b)
+	t.Log("len:", valueOf.Len())
 }
 
 // demo: defer

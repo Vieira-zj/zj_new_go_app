@@ -58,6 +58,20 @@ func BenchmarkMyString(b *testing.B) {
 	}
 }
 
+func TestGetLocalIPAddr(t *testing.T) {
+	addr, err := utils.GetLocalIPAddr()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("local ip addr:", addr)
+
+	addr, err = utils.GetLocalIPAddrByDial()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("local ip addr:", addr)
+}
+
 func TestGetCallerDetails(t *testing.T) {
 	details := utils.GetCallerDetails(1)
 	t.Log("details:\n", details)
