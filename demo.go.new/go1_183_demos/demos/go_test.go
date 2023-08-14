@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"regexp"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -51,7 +52,7 @@ func TestTimeDuration(t *testing.T) {
 	t.Log("now after 5m:", ti)
 }
 
-func TestReflectStrLen(t *testing.T) {
+func TestStrLenByReflect(t *testing.T) {
 	s := "hello world"
 	valueOf := reflect.ValueOf(s)
 	t.Log("len:", valueOf.Len())
@@ -102,14 +103,6 @@ func TestDeferFn02(t *testing.T) {
 
 // demo: bytes & string
 
-func TestStringMultiReplace(t *testing.T) {
-	replace := strings.NewReplacer(" ", "", `\n`, "", `\t`, "")
-
-	str := `{\t"name": "foo",\n\t"age": 31,\n\t"skills:": ["java", "golang"]}`
-	result := replace.Replace(str)
-	t.Log("result:", result)
-}
-
 func TestReuseBytes(t *testing.T) {
 	b := []byte("hello")
 	t.Log(string(b))
@@ -118,6 +111,27 @@ func TestReuseBytes(t *testing.T) {
 	t.Log("size:", len(b))
 	b = append(b, []byte("foo")...)
 	t.Log(string(b))
+}
+
+func TestStrSplitByMultiSpace(t *testing.T) {
+	str := "one_space two_space  three_space   end"
+	fields := strings.Fields(str)
+	t.Log("split fields:", fields)
+
+	reg, err := regexp.Compile(`\s+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fields = reg.Split(str, -1)
+	t.Log("split fields by regexp:", fields)
+}
+
+func TestStrMultiReplace(t *testing.T) {
+	replace := strings.NewReplacer(" ", "", `\n`, "", `\t`, "")
+
+	str := `{\t"name": "foo",\n\t"age": 31,\n\t"skills:": ["java", "golang"]}`
+	result := replace.Replace(str)
+	t.Log("result:", result)
 }
 
 // demo: ref
@@ -140,7 +154,7 @@ func TestNilCompare(t *testing.T) {
 	}
 }
 
-func TestRefUpdateSlice(t *testing.T) {
+func TestRefUpdateForSlice(t *testing.T) {
 	update := func(fruits []testFruit) {
 		for idx := range fruits {
 			fruits[idx].name += "-test"
@@ -156,7 +170,7 @@ func TestRefUpdateSlice(t *testing.T) {
 	t.Log("new fruits:", fruits)
 }
 
-func TestRefUpdateMap(t *testing.T) {
+func TestRefUpdateForMap(t *testing.T) {
 	update := func(fruits map[string]testFruit) {
 		for key, fruit := range fruits {
 			fruit.name += "-test"
