@@ -316,11 +316,31 @@ func TestCopyOfStruct(t *testing.T) {
 
 // demo: json
 
+func TestJsonMarshalForBytes(t *testing.T) {
+	type dataHold struct {
+		ID string `json:"id"`
+		// default marshal slice of bytes as base64
+		Bytes []byte `json:"bytes"`
+	}
+
+	data := dataHold{
+		ID:    "0101",
+		Bytes: []byte("hello"),
+	}
+	b, err := json.Marshal(&data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("%s", b)
+}
+
 func TestJsonMarshalForRawMessage(t *testing.T) {
 	strList := "[1,2,3]"
 	maxInt := math.MaxInt64 - 1 // 9223372036854775806
 	strObj := fmt.Sprintf(`{"name":"foo","max_int":%d}`, maxInt)
 
+	// #1
 	type dataHold1 struct {
 		Numbers string
 		User    string
@@ -335,6 +355,7 @@ func TestJsonMarshalForRawMessage(t *testing.T) {
 	}
 	t.Log("json string:", string(b))
 
+	// #2
 	type dataHold2 struct {
 		Numbers json.RawMessage
 		User    json.RawMessage
@@ -355,14 +376,14 @@ func TestJsonUnmarshalForRawMessage(t *testing.T) {
 	maxInt := math.MaxInt64 - 1 // 9223372036854775806
 	b := []byte(fmt.Sprintf(`{"name":"foo","max_int":%d}`, maxInt))
 
-	// when unmarshal map number to interface{}, default convert to float64
+	// #1: when unmarshal map number to interface{}, default convert to float64
 	m := make(map[string]any)
 	if err := json.Unmarshal(b, &m); err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("json unmarshal, max int: %v", m["max_int"])
 
-	// json.Number
+	// #2: json.Number
 	m = make(map[string]any)
 	if err := utils.JsonLoads(b, &m); err != nil {
 		t.Fatal(err)
@@ -377,7 +398,7 @@ func TestJsonUnmarshalForRawMessage(t *testing.T) {
 	}
 	t.Logf("json unmarshal with number, max int: %d, %v", i, i == int64(maxInt))
 
-	// json.RawMessage
+	// #3: json.RawMessage
 	type s struct {
 		Name string          `json:"name"`
 		Num  json.RawMessage `json:"max_int"`
@@ -386,7 +407,8 @@ func TestJsonUnmarshalForRawMessage(t *testing.T) {
 	if err := json.Unmarshal(b, &tmp); err != nil {
 		t.Fatal(err)
 	}
-	t.Log("json unmarshal with raw message, max int:", string(tmp.Num), string(tmp.Num) == strconv.Itoa(maxInt))
+	t.Log("json unmarshal with raw message, max int:",
+		string(tmp.Num), string(tmp.Num) == strconv.Itoa(maxInt))
 }
 
 // demo: marshal custom error
