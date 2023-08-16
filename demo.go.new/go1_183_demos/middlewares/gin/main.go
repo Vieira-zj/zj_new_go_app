@@ -14,6 +14,7 @@ import (
 /*
 page:
 http://localhost:8081/static
+http://localhost:8081/public/page_basic.html
 
 rest api:
 curl http://localhost:8081/
@@ -51,6 +52,7 @@ func initServer() *gin.Engine {
 	r.POST("/user", MiddlewareValidateJsonBody[CreateUserHttpBody](), HandleCreateUser)
 
 	addStatic(r)
+	addPagesStatic(r)
 
 	return r
 }
@@ -65,6 +67,13 @@ func addStatic(r *gin.Engine) {
 		// Note: must add matched alias "/static/", "/static/index.html" for "/" in vue router.
 		r.Static("/static", distPath)
 		r.Static("/assets", filepath.Join(distPath, "assets"))
+	}
+}
+
+func addPagesStatic(r *gin.Engine) {
+	distPath := getPagesDistPath()
+	if utils.IsDirExist(distPath) {
+		r.Static("/public", distPath)
 	}
 }
 
@@ -176,6 +185,11 @@ func getFileSize(relPath string) (int64, error) {
 }
 
 func getDistPath() string {
-	const distRePath = "Workspaces/zj_repos/zj_js_project/vue_apps/vue3_app_demo/dist"
+	const distRePath = "Workspaces/zj_repos/zj_js_project/vue3_lessons/demo_apps/app_basic/dist"
+	return filepath.Join(os.Getenv("HOME"), distRePath)
+}
+
+func getPagesDistPath() string {
+	const distRePath = "Workspaces/zj_repos/zj_js_project/vue3_lessons/demo_pages"
 	return filepath.Join(os.Getenv("HOME"), distRePath)
 }
