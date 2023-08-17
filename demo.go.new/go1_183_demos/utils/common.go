@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"reflect"
@@ -87,6 +88,38 @@ func IsDirExist(path string) bool {
 		return false
 	}
 	return f.IsDir()
+}
+
+// BlockedCopy copy file by 1m block.
+func BlockedCopy(src, dest string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	destFile, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	buf := make([]byte, 1024*1024) // 1m
+	for {
+		n, err := srcFile.Read(buf)
+		if err != nil && !errors.Is(err, io.EOF) {
+			return err
+		}
+		if n == 0 { // eof
+			break
+		}
+
+		if _, err = destFile.Write(buf[:n]); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Net

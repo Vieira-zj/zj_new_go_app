@@ -40,6 +40,15 @@ func TestIsDirExist(t *testing.T) {
 	}
 }
 
+func TestBlockedCopy(t *testing.T) {
+	src := "/tmp/test/src_copy.zip"
+	dest := "/tmp/test/dest_copied.zip"
+	if err := utils.BlockedCopy(src, dest); err != nil {
+		t.Fatal(err)
+	}
+	t.Log("success copied")
+}
+
 // go test -bench=BenchmarkString -run=^$ -benchtime=5s -benchmem -v
 func BenchmarkString(b *testing.B) {
 	s := ""
