@@ -22,20 +22,27 @@ func TestAddByReflect(t *testing.T) {
 	t.Logf("result: %.2f", res)
 }
 
+type TestInt32 int
+
 func TestAdd(t *testing.T) {
-	res1 := add(int32(1), 1)
+	res1 := add[int32](int32(1), 1)
 	t.Log("result:", res1)
 
 	res2 := add(float32(1.0), 2.1)
 	t.Log("result:", res2)
 
-	// error
+	// res3 := add(TestInt32(1), TestInt32(1))
+	// t.Log("result:", res3)
+
 	// res3 := AddByGeneric(float32(1.0), int32(1))
 	// t.Log("result:", res3)
 }
 
+type TestInt int
+
 func TestMin(t *testing.T) {
-	t.Log("min:", min(1, 3))
+	t.Log("min:", min[int](1, 3))
+	t.Log("min:", min(TestInt(1), TestInt(3))) // it's ok because of ~int
 	t.Log("min", min(float64(3.1), float64(2.4)))
 }
 
