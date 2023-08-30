@@ -80,8 +80,59 @@ func printUsage() {
 			} else {
 				fmt.Printf("process cpu usage: %.2f, mem usage: %.2f, time: %s\n", cpuPercent, memPercent, utils.FormatDateTime(time.Now()))
 			}
-			fmt.Println("---------------div------------------")
+			fmt.Println("--------------- div ------------------")
 		}
+		time.Sleep(5 * time.Second)
+	}
+}
+
+// nolint: unused
+func printUsageV2() {
+	pid := os.Getegid()
+	fmt.Println("current process pid:", pid)
+
+	p, err := process.NewProcess(int32(pid))
+	if err != nil {
+		panic("new process error:" + err.Error())
+	}
+
+	name, err := p.Name()
+	if err != nil {
+		panic("get process name error:" + err.Error())
+	}
+	fmt.Println("current process name:", name)
+
+	for {
+		if cpuPercent, err := p.CPUPercent(); err != nil {
+			fmt.Println("get cpu per error:", err)
+		} else {
+			fmt.Printf("process cpu usage: %.2f, time: %v\n", cpuPercent, time.Now().Format(time.DateTime))
+		}
+
+		if cpuTime, err := p.Times(); err != nil {
+			fmt.Println("get cpu time error:", err)
+		} else {
+			fmt.Println("process cpu time:", cpuTime.String())
+			// {"cpu":"cpu","user":0.1,"system":0.1,"idle":0.0,"nice":0.0,"iowait":0.0,"irq":0.0,"softirq":0.0,"steal":0.0,"guest":0.0,"guestNice":0.0}
+			// user 和 system 表示的是 CPU 真正执行的用户程序和内核程序的 CPU 使用率，nice 表示的是优先级较低的用户程序的 CPU 使用率，这 3 个指标通常被称为 CPU 的总体使用率
+		}
+
+		if memPercent, err := p.MemoryPercent(); err != nil {
+			fmt.Println("get memory per error:", err)
+		} else {
+			fmt.Printf("process memory usage: %.2f", memPercent)
+		}
+
+		if memInfo, err := p.MemoryInfo(); err != nil {
+			fmt.Println("get memory info error:", err)
+		} else {
+			fmt.Println("process mem info:", memInfo.String())
+			// {"rss":74186752,"vms":419716349952,"hwm":0,"data":0,"stack":0,"locked":0,"swap":0}
+			// rss (Resident Set Size): 进程使用的物理内存大小，包含共享库占用的内存
+			// vms (Virtual Memory Size): 进程使用的虚拟内存大小，包括堆、栈、共享库和映射文件占用的内存
+		}
+
+		fmt.Println("--------------- div ------------------")
 		time.Sleep(5 * time.Second)
 	}
 }
