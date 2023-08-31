@@ -81,9 +81,9 @@ func TestGetLocalIPAddr(t *testing.T) {
 	t.Log("local ip addr:", addr)
 }
 
-func TestGetCallerDetails(t *testing.T) {
-	details := utils.GetCallerDetails(1)
-	t.Log("details:\n", details)
+func TestGetCallerInfo(t *testing.T) {
+	info := utils.GetCallerInfo(1)
+	t.Log("caller info:\n", info)
 }
 
 func TestGetGoroutineID(t *testing.T) {

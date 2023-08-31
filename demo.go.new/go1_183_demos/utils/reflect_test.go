@@ -1,10 +1,18 @@
 package utils_test
 
 import (
+	"reflect"
 	"testing"
 
 	"demo.apps/utils"
 )
+
+func TestGetPkgName(t *testing.T) {
+	type Empty struct{}
+
+	tp := reflect.TypeOf(Empty{})
+	t.Log("package path:", tp.PkgPath())
+}
 
 func TestTrimStringFields(t *testing.T) {
 	type TestStruct struct {
