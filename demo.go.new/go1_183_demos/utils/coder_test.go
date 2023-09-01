@@ -6,10 +6,32 @@ import (
 	"demo.apps/utils"
 )
 
+func TestGetSeqChars(t *testing.T) {
+	b := []byte{'a'}
+	base := b[0]
+	for i := 1; i < 26; i++ {
+		b = append(b, base+byte(i))
+	}
+	t.Log("seq bytes:", string(b))
+}
+
+func TestCodec62(t *testing.T) {
+	// encode62: number => string
+	// base64:   string => string
+	for _, num := range []int{181338494, 15758306521} {
+		s := utils.Encode62(num)
+		t.Log("10=>62 result:", s)
+
+		n := utils.Decode62(s)
+		t.Log("62=>10 result:", n)
+	}
+}
+
 func TestHexEncode(t *testing.T) {
 	b := []byte{1, 15, 16}
 	t.Log("hex text:", utils.HexEncode(b))
 	// base64: 3 bytes to 4 bytes
+	// 0000:0001 0000:1000 0001:0000 => 000000 010000 100000 010000
 	t.Log("base64 text:", utils.Base64Encode(b))
 }
 

@@ -97,6 +97,14 @@ func TestDeferFn02(t *testing.T) {
 	t.Log("end test defer struct fn")
 }
 
+// demo: number
+
+func TestHexToDecimal(t *testing.T) {
+	val := 0xff
+	result := strconv.FormatInt(int64(val), 10)
+	t.Log("decimal result:", result)
+}
+
 // demo: bytes & string
 
 func TestReuseBytes(t *testing.T) {

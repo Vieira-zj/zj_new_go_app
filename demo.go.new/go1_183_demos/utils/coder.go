@@ -8,7 +8,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"reflect"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -20,6 +22,38 @@ func JsonLoads(b []byte, s any) error {
 	decoder := json.NewDecoder(bytes.NewBuffer(b))
 	decoder.UseNumber()
 	return decoder.Decode(s)
+}
+
+// codec: 10<=>62
+
+const chars62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+func Encode62(num int) string {
+	b := []byte{}
+	for num > 0 {
+		b = append(b, chars62[num%62])
+		num /= 62
+	}
+	reverseBytes(b)
+	return string(b)
+}
+
+func Decode62(s string) int {
+	var num int
+	for i := 0; i < len(s); i++ {
+		idx := strings.IndexByte(chars62, s[i])
+		num += int(math.Pow(62, float64(len(s)-i-1)) * float64(idx))
+	}
+	return num
+}
+
+func reverseBytes(b []byte) {
+	start, end := 0, len(b)-1
+	for start < end {
+		b[end], b[start] = b[start], b[end]
+		start += 1
+		end -= 1
+	}
 }
 
 // hex / base64 / md5 encoder
