@@ -104,6 +104,9 @@ func Gzip(data []byte) ([]byte, error) {
 func Ungzip(data []byte) ([]byte, error) {
 	b := bytes.NewBuffer(data)
 	r, err := gzip.NewReader(b)
+	if r != nil {
+		defer r.Close()
+	}
 	if err != nil {
 		return nil, err
 	}

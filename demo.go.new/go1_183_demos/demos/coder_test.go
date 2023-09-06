@@ -15,13 +15,18 @@ import (
 func TestJsonMarshalForBytes(t *testing.T) {
 	type dataHold struct {
 		ID string `json:"id"`
-		// default marshal slice of bytes as base64
+		// marshal bytes as base64
 		Bytes []byte `json:"bytes"`
+		// marshal as raw struct
+		RawBytes  json.RawMessage `json:"raw_bytes"`
+		RawString json.RawMessage `json:"raw_string"`
 	}
 
 	data := dataHold{
-		ID:    "0101",
-		Bytes: []byte("hello"),
+		ID:        "0101",
+		Bytes:     []byte("hello"),
+		RawBytes:  []byte(`{"name":"foo"}`),
+		RawString: json.RawMessage(`{"id":"0101"}`),
 	}
 	b, err := json.Marshal(&data)
 	if err != nil {
