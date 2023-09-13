@@ -12,6 +12,11 @@ function echo_test {
     echo_error "this is error msg"
 }
 
+function update_pkg_to_latest {
+    local pkg=$1
+    go get ${pkg}@latest
+}
+
 function go_cover_test {
     if [[ -f $cover_file ]]; then
         rm $cover_file

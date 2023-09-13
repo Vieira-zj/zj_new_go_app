@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/Shopify/sarama v1.38.1
 	github.com/arl/statsviz v0.5.2
-	github.com/bytedance/sonic v1.10.0-rc3
+	github.com/bytedance/sonic v1.10.1
 	github.com/evanphx/json-patch v0.5.2
 	github.com/gin-gonic/gin v1.8.0
 	github.com/golang-jwt/jwt/v5 v5.0.0-rc.2

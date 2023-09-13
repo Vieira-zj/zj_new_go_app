@@ -37,4 +37,7 @@ function checkout_go_version {
 # install_deps_for_go1_183
 # checkout_go_version 1_183
 
+# checkout_go_version 1_200
+checkout_go_version 1_211
+
 echo "done"

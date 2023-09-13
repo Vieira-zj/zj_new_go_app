@@ -39,3 +39,26 @@ func TestTrimStringFields(t *testing.T) {
 	}
 	t.Logf("after trim: %+v", s)
 }
+
+func TestSlicesContains(t *testing.T) {
+	t.Run("same size slice", func(t *testing.T) {
+		s1 := []string{"a", "b", "c"}
+		s2 := []string{"a", "c", "b"}
+		result := utils.SlicesContains[string](s1, s2)
+		t.Log("result:", result)
+	})
+
+	t.Run("diff size slice", func(t *testing.T) {
+		s1 := []string{"a", "b", "c"}
+		s2 := []string{"a", "y", "c", "b", "x"}
+		result := utils.SlicesContains(s1, s2)
+		t.Log("result:", result)
+	})
+
+	t.Run("diff slice", func(t *testing.T) {
+		s1 := []string{"a", "b1", "c"}
+		s2 := []string{"a", "c", "b"}
+		result := utils.SlicesContains(s1, s2)
+		t.Log("result:", result)
+	})
+}
