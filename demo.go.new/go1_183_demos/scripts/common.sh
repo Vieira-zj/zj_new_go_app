@@ -1,7 +1,8 @@
 #!/bin/bash
 set -eu
 
-project_dir="$(git rev-parse --show-toplevel)/demo.go.new/go1_183_demos"
+tmp_dir="/tmp/test"
+go_project=$(git rev-parse --show-toplevel)
 
 function echo_info() {
     local color=$(tput setaf 2)

@@ -1,10 +1,9 @@
 #!/bin/bash
 set -eu
 
-tmp_dir="/tmp/test"
-cover_file="${tmp_dir}/results.cov"
+source ./scripts/common.sh
 
-source ./common.sh
+cover_file="${tmp_dir}/results.cov"
 
 function echo_test {
     echo_info "this is info msg"
@@ -15,6 +14,16 @@ function echo_test {
 function update_pkg_to_latest {
     local pkg=$1
     go get ${pkg}@latest
+}
+
+function delta_golint {
+    # Filter Golang files match Added (A), Copied (C), Modified (M) conditions.
+    local gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$')
+    for gofile in ${gofiles}; do
+        local fpath="${go_project}/${gofile}"
+        echo "run golint for: ${fpath}"
+        golangci-lint run -c .golangci.yaml ${fpath}
+    done
 }
 
 function go_cover_test {
@@ -63,9 +72,15 @@ function create_html_cover_report {
     go tool cover -html=${cover_file} -o ${dst_file}
 }
 
-if [[ $1 == "test" ]]; then
-    echo "project path: ${project_dir}"
+if [[ $1 == "echo" ]]; then
+    echo "current go project: ${go_project}"
     echo_test
+    exit 0
+fi
+
+if [[ $1 == "delta-golint" ]]; then
+    delta_golint
+    echo "delta golint done"
     exit 0
 fi
 

@@ -14,5 +14,8 @@ debug:
 govet:
 	@go vet ./...
 
+delta-golint:
+	@./run.sh delta-golint
+
 golint:
 	@golangci-lint run -c .golangci.yaml ./...

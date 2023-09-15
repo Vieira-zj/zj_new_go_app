@@ -7,33 +7,36 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+const secretKey = "zj-secret-key"
+
 type MyCustomClaims struct {
-	UserId   int64  `json:"userId"`
-	UserName string `json:"userName"`
+	UserId   string `json:"user_id"`
+	UserName string `json:"user_name"`
 	jwt.RegisteredClaims
 }
 
-func CreateToken(userId int64, userName string, secretKey []byte) (string, error) {
+func CreateToken(userId, userName string, expired time.Duration) (string, error) {
 	claims := MyCustomClaims{
 		userId,
 		userName,
 		jwt.RegisteredClaims{
-			Issuer:    "test",
-			Subject:   "somebody",
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+			Issuer:    "tester",
+			Subject:   "jwt-for-test",
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expired)),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secretKey)
+	return token.SignedString([]byte(secretKey))
 }
 
-func ParseToken(tokenString string, secretKey []byte) (*MyCustomClaims, error) {
+func ParseToken(tokenString string) (*MyCustomClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return secretKey, nil
+		return []byte(secretKey), nil
 	})
 	if err != nil {
 		return nil, err
