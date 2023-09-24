@@ -104,6 +104,7 @@ func handleConn(conn net.Conn) {
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
 	for {
+		// tcp read
 		msg, err := reader.ReadString('\n')
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -116,8 +117,8 @@ func handleConn(conn net.Conn) {
 			}
 			panic(fmt.Sprintf("tcp conn read error: %v", err))
 		}
-
 		fmt.Print("read msg:", msg)
+
 		msg = strings.ToLower(msg)
 		if strings.HasPrefix(msg, "exit") || strings.HasPrefix(msg, "bye") {
 			fmt.Println("tcp conn exit")
@@ -126,6 +127,8 @@ func handleConn(conn net.Conn) {
 			}
 			return
 		}
+
+		// tcp write
 		if _, err := conn.Write([]byte("[server] got msg\n")); err != nil {
 			panic(fmt.Sprintf("tcp conn write error: %v", err))
 		}
@@ -161,10 +164,12 @@ func dialTCP(port string) error {
 			return fmt.Errorf("scanln error: %v", err)
 		}
 
+		// tcp write
 		if _, err := conn.Write([]byte(fmt.Sprintln(input))); err != nil {
 			return fmt.Errorf("tcp conn write error: %v", err)
 		}
 
+		// tcp read
 		reader := bufio.NewReader(conn)
 		resp, err := reader.ReadString('\n')
 		if err != nil {
