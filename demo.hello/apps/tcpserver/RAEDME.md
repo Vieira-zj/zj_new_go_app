@@ -1,21 +1,22 @@
 # TCP server
 
-1. Start tcp server
+1. Start Tcp server
 
 ```sh
 go run main.go
 ```
 
-2. Test TCP server
+2. Test Tcp server
 
-By telnet:
+- Telnet
 
-```sh
+```text
 telnet 127.0.0.1 8080
-> hello world
+> foo
+> bar
 ```
 
-By go test:
+- Tcp client by go test
 
 ```sh
 go test -timeout 30s -run ^TestEchoHandler$ demo.hello/apps/tcpserver/pkg -v -count=1

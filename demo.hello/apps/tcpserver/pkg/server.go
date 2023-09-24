@@ -8,7 +8,7 @@ import (
 )
 
 // ListenAndServe .
-func ListenAndServe(address string, handler TCPHandler, closeCh chan struct{}) {
+func ListenAndServe(address string, handler TCPHandle, closeCh chan struct{}) {
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("tcp listen error: %v", err))
@@ -27,7 +27,7 @@ func ListenAndServe(address string, handler TCPHandler, closeCh chan struct{}) {
 	}()
 
 	for {
-		// 同时处理多个请求（每个请求对应一个连接）
+		// 同时处理多个请求, 每个请求对应一个连接
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatal(fmt.Sprintf("accept err: %v", err))
