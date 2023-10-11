@@ -3,7 +3,11 @@ build_flag := -ldflags='-extldflags -static' -tags='embed kodo'
 default: version
 
 echo:
+ifdef build_flag
 	@echo "build flag: $(build_flag)"
+else
+	@echo "no build flag found"
+endif
 
 version:
 	@go version

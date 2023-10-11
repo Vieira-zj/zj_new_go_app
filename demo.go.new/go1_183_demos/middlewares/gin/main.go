@@ -62,8 +62,8 @@ func initServer() *gin.Engine {
 func addStatic(r *gin.Engine) {
 	distPath := getDistPath()
 	if utils.IsDirExist(distPath) {
+		log.Println("static resource path:", distPath)
 		r.Use(MiddlewareGzip())
-
 		// Note: must add matched alias "/static/", "/static/index.html" for "/" in vue router.
 		r.Static("/static", distPath)
 		r.Static("/assets", filepath.Join(distPath, "assets"))
@@ -72,7 +72,21 @@ func addStatic(r *gin.Engine) {
 
 func addPagesStatic(r *gin.Engine) {
 	distPath := getPagesDistPath()
+	if true { // for test
+		dir, err := os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
+		distPath = filepath.Join(dir, "public")
+	}
+
 	if utils.IsDirExist(distPath) {
+		log.Println("static page path:", distPath)
+		r.Use(func(c *gin.Context) {
+			log.Println("hook: before send public page")
+			c.Next()
+			log.Println("hook: after send public page")
+		})
 		r.Static("/public", distPath)
 	}
 }
