@@ -1,12 +1,15 @@
 package utils_test
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
 	"demo.apps/utils"
+	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/crypto/scrypt"
 )
 
 func TestFormatDateTime(t *testing.T) {
@@ -25,28 +28,6 @@ func TestMultiSplitString(t *testing.T) {
 	for _, field := range fields {
 		t.Log("field:", field)
 	}
-}
-
-func TestIsDirExist(t *testing.T) {
-	for _, path := range []string{
-		"/tmp/test",
-		"/tmp/test/mock",
-		"/tmp/test/test.json",
-	} {
-		result := utils.IsExist(path)
-		t.Logf("%s is exist: %v", path, result)
-		result = utils.IsDirExist(path)
-		t.Logf("%s is dir exist: %v\n", path, result)
-	}
-}
-
-func TestBlockedCopy(t *testing.T) {
-	src := "/tmp/test/src_copy.zip"
-	dest := "/tmp/test/dest_copied.zip"
-	if err := utils.BlockedCopy(src, dest); err != nil {
-		t.Fatal(err)
-	}
-	t.Log("success copied")
 }
 
 // go test -bench=BenchmarkString -run=^$ -benchtime=5s -benchmem -v
@@ -113,4 +94,31 @@ func TestGetGoroutineID(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 	t.Log("test goroutine id done")
+}
+
+func TestSecurity(t *testing.T) {
+	str := "test123"
+
+	t.Run("scrypt", func(t *testing.T) {
+		salt := "private"
+		b, err := scrypt.Key([]byte(str), []byte(salt), 32768, 8, 1, 32)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Log("password:", hex.EncodeToString(b))
+	})
+
+	t.Run("bcrypt", func(t *testing.T) {
+		hash, err := bcrypt.GenerateFromPassword([]byte(str), bcrypt.DefaultCost)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log("hash:", string(hash))
+
+		if err = bcrypt.CompareHashAndPassword(hash, []byte(str)); err != nil {
+			t.Fatal(err)
+		}
+		t.Log("compare success")
+	})
 }

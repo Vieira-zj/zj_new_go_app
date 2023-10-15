@@ -13,6 +13,7 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/wI2L/jsondiff v0.4.0
 	go.uber.org/zap v1.24.0
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 )
 
 require (
@@ -57,7 +58,6 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect

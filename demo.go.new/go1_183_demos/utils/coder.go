@@ -72,8 +72,7 @@ func Md5Sum(b []byte) (string, error) {
 		return "", err
 	}
 
-	result := hash.Sum(nil)
-	return hex.EncodeToString(result), nil
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func Md5SumV2(b []byte) string {
