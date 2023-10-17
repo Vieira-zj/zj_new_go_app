@@ -69,7 +69,7 @@ func insertAt[T any](list []T, idx int, t T) ([]T, error) {
 	return retList, nil
 }
 
-// nolint: unused
+//nolint:unused
 func removeAt[T any](list []T, idx int, t T) ([]T, error) {
 	l := len(list)
 	if idx < 0 {
@@ -116,7 +116,7 @@ type myNumber interface {
 	int | int32 | int64 | float32 | float64
 }
 
-// nolint: unused
+//nolint:unused
 type myReadWriterCloser interface {
 	*os.File | *net.TCPConn | *net.UDPConn | *net.UnixConn | *net.IPConn
 

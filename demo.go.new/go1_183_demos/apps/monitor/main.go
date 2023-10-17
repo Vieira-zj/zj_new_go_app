@@ -86,7 +86,7 @@ func printUsage() {
 	}
 }
 
-// nolint: unused
+//nolint:unused
 func printUsageV2() {
 	pid := os.Getegid()
 	fmt.Println("current process pid:", pid)

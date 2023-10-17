@@ -103,6 +103,10 @@ func HandleNotFound(c *gin.Context) {
 }
 
 func HandleIndex(c *gin.Context) {
+	// test get env var from debug session
+	if val, ok := os.LookupEnv("X-DEBUG"); ok {
+		log.Println("debug mode:", val)
+	}
 	c.String(http.StatusOK, "gin server demo")
 }
 
