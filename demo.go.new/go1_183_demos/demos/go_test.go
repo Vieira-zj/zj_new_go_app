@@ -29,6 +29,22 @@ func TestSwitchConds(t *testing.T) {
 	}
 }
 
+func TestSliceInitByIndex(t *testing.T) {
+	s := []string{
+		2: "two",
+		3: "three",
+		1: "one",
+		0: "zero",
+	}
+	t.Logf("len=%d, cap=%d", len(s), cap(s))
+	for idx, val := range s {
+		t.Logf("%d:%s", idx, val)
+	}
+
+	s = s[:0]
+	t.Logf("len=%d, cap=%d", len(s), cap(s))
+}
+
 func TestMapCap(t *testing.T) {
 	m := make(map[int]string, 2)
 	m[1] = "one"
@@ -58,7 +74,7 @@ func TestStrLenByReflect(t *testing.T) {
 	t.Log("len:", valueOf.Len())
 }
 
-// demo: defer
+// Demo: defer
 
 func TestDeferFn01(t *testing.T) {
 	testFn := func() func() {
@@ -97,15 +113,27 @@ func TestDeferFn02(t *testing.T) {
 	t.Log("end test defer struct fn")
 }
 
-// demo: number
+// Demo: bits, number
 
 func TestHexToDecimal(t *testing.T) {
 	val := 0xff
 	result := strconv.FormatInt(int64(val), 10)
-	t.Log("decimal result:", result)
+	t.Logf("decimal result: %d, %s", int64(val), result)
 }
 
-// demo: bytes & string
+func TestCalBits(t *testing.T) {
+	t.Log(1 << 0)
+	t.Log(1 << 1)
+	t.Log(2 << 0)
+
+	var val int
+	val |= 1 << 0
+	val |= 1 << 1
+	t.Log("contains:", val&(1<<0) != 0)
+	t.Log("contains:", val&(1<<1) != 0)
+}
+
+// Demo: bytes, string
 
 func TestReuseBytes(t *testing.T) {
 	b := []byte("hello")
@@ -146,7 +174,7 @@ func TestStrMultiReplace(t *testing.T) {
 	t.Log("result:", result)
 }
 
-// demo: ref
+// Demo: ref
 
 func TestNilCompare(t *testing.T) {
 	var myNil (*byte) = nil
@@ -199,7 +227,7 @@ func TestRefUpdateForMap(t *testing.T) {
 	t.Log("new fruits:", fruits)
 }
 
-// demo: struct
+// Demo: struct
 
 type testFruit struct {
 	name string
@@ -295,7 +323,7 @@ func TestUpdateStructRef(t *testing.T) {
 	t.Logf("s [%p]: %s", &s, s.String())
 }
 
-// demo: copy of struct
+// Demo: copy of struct
 
 func TestCopyOfStruct(t *testing.T) {
 	students := make([]testStudent, 0, 2)
@@ -326,7 +354,7 @@ func TestCopyOfStruct(t *testing.T) {
 	}
 }
 
-// demo: goroutine
+// Demo: goroutine
 
 func TestRecoverFromPanic(t *testing.T) {
 	ch := make(chan struct{})
