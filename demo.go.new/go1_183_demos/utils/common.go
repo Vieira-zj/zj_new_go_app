@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 	"unsafe"
 )
@@ -105,6 +106,14 @@ func GetLocalIPAddrByDial() (string, error) {
 }
 
 // Runtime
+
+func GetParentProcessId() int {
+	return syscall.Getppid()
+}
+
+func KillProcess(pid int) error {
+	return syscall.Kill(pid, syscall.SIGTERM)
+}
 
 func GetCallerInfo(depth int) string {
 	pc, _, _, _ := runtime.Caller(depth)

@@ -2,6 +2,8 @@ package demos_test
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
 	"reflect"
 	"regexp"
 	"runtime/debug"
@@ -62,6 +64,18 @@ func TestTimeDuration(t *testing.T) {
 	}
 	ti := time.Now().Add(duration)
 	t.Log("now after 5m:", ti)
+}
+
+func TestGoSlog(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
+	logger.Debug("text debug level log", "uid", 1002)
+	logger.Info("text info level log", "uid", 1002)
+
+	jsonLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	jsonLogger.Debug("json info level log", "uid", 1002)
+	jsonLogger.Info("json info level log", "uid", 1002)
 }
 
 func TestStrLenByReflect(t *testing.T) {

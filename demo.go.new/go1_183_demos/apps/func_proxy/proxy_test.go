@@ -35,6 +35,7 @@ func (i Impl) SayHello(from string) string {
 // struct: proxy
 
 type Impl_ struct {
+	// proxy fn to be inject: SayHello_ -> SayHello
 	SayHello_ func(string) string
 }
 
@@ -54,6 +55,7 @@ func TestProxyFunc(t *testing.T) {
 
 func TestInject(t *testing.T) {
 	app := &App{}
+	// auto init
 	RegisterImpl("app", app)
 	RegisterImpl("impl", &Impl{Name: "foo"})
 	RegisterProxyImpl("impl", &Impl_{})
