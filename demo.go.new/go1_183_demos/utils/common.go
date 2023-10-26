@@ -4,67 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
-	"unsafe"
 )
-
-// String
-
-func MultiSplitString(str string, splits []rune) []string {
-	keysDict := make(map[rune]struct{}, len(splits))
-	for _, key := range splits {
-		keysDict[key] = struct{}{}
-	}
-
-	results := strings.FieldsFunc(str, func(r rune) bool {
-		_, ok := keysDict[r]
-		return ok
-	})
-	return results
-}
-
-// MyString: string demo to reuse bytes.
-type MyString struct {
-	data []byte
-}
-
-func NewMyString() MyString {
-	return MyString{
-		data: make([]byte, 0),
-	}
-}
-
-func (s *MyString) SetValue(value string) {
-	s.data = append(s.data[:0], value...)
-}
-
-func (s *MyString) SetValueBytes(value []byte) {
-	s.data = append(s.data[:0], value...)
-}
-
-func (s MyString) GetValue() string {
-	return Bytes2string(s.data)
-}
-
-// Bytes2string: unsafe convert bytes to string.
-func Bytes2string(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
-}
-
-// String2bytes unsafe convert string to bytes.
-func String2bytes(s string) (b []byte) {
-	bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	bh.Data = sh.Data
-	bh.Cap = sh.Len
-	bh.Len = sh.Len
-	return b
-}
 
 // Datetime
 

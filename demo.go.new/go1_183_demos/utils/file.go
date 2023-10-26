@@ -3,8 +3,10 @@ package utils
 import (
 	"errors"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 func IsExist(path string) bool {
@@ -64,4 +66,27 @@ func GetFileContentType(path string) (string, error) {
 	}
 
 	return http.DetectContentType(buf), nil
+}
+
+func SearchFiles(dirPath string, patterns ...string) ([]string, error) {
+	paths := make([]string, 0)
+	err := filepath.Walk(dirPath, func(path string, info fs.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+
+		for _, pattern := range patterns {
+			ok, err := filepath.Match(pattern, info.Name())
+			if err != nil {
+				return err
+			}
+			if ok {
+				paths = append(paths, path)
+				break
+			}
+		}
+		return nil
+	})
+
+	return paths, err
 }

@@ -41,3 +41,16 @@ func TestGetFileContentType(t *testing.T) {
 		t.Logf("file:%s content_type:%s", path, tp)
 	}
 }
+
+func TestSearchFiles(t *testing.T) {
+	root := "/Users/jinzheng/Downloads/tmps"
+	results, err := utils.SearchFiles(root, "*.go", "*.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("total match:", len(results))
+	for _, path := range results {
+		t.Log(path)
+	}
+}
