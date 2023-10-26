@@ -36,7 +36,7 @@ func TestJsonMarshalForBytes(t *testing.T) {
 	t.Logf("%s", b)
 }
 
-func TestJsonMarshalForRawMessage(t *testing.T) {
+func TestJsonMarshalForRawMsg(t *testing.T) {
 	strList := "[1,2,3]"
 	maxInt := math.MaxInt64 - 1 // 9223372036854775806
 	strObj := fmt.Sprintf(`{"name":"foo","max_int":%d}`, maxInt)
@@ -73,7 +73,7 @@ func TestJsonMarshalForRawMessage(t *testing.T) {
 	t.Log("json string with raw message:", string(b))
 }
 
-func TestJsonUnmarshalForRawMessage(t *testing.T) {
+func TestJsonUnmarshalForRawMsg(t *testing.T) {
 	maxInt := math.MaxInt64 - 1 // 9223372036854775806
 	b := []byte(fmt.Sprintf(`{"name":"foo","max_int":%d}`, maxInt))
 
