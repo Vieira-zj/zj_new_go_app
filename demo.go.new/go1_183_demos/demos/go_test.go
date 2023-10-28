@@ -31,22 +31,6 @@ func TestSwitchConds(t *testing.T) {
 	}
 }
 
-func TestSliceInitByIndex(t *testing.T) {
-	s := []string{
-		2: "two",
-		3: "three",
-		1: "one",
-		0: "zero",
-	}
-	t.Logf("len=%d, cap=%d", len(s), cap(s))
-	for idx, val := range s {
-		t.Logf("%d:%s", idx, val)
-	}
-
-	s = s[:0]
-	t.Logf("len=%d, cap=%d", len(s), cap(s))
-}
-
 func TestMapCap(t *testing.T) {
 	m := make(map[int]string, 2)
 	m[1] = "one"
@@ -125,6 +109,67 @@ func TestDeferFn02(t *testing.T) {
 	t.Log("start test defer struct fn")
 	time.Sleep(200 * time.Millisecond)
 	t.Log("end test defer struct fn")
+}
+
+// Demo: slice
+
+func TestSliceInitByIndex(t *testing.T) {
+	s := []string{
+		2: "two",
+		3: "three",
+		1: "one",
+		0: "zero",
+	}
+	t.Logf("len=%d, cap=%d", len(s), cap(s))
+	for idx, val := range s {
+		t.Logf("%d:%s", idx, val)
+	}
+
+	s = s[:0]
+	t.Logf("len=%d, cap=%d", len(s), cap(s))
+}
+
+func TestSliceCopy(t *testing.T) {
+	type T struct {
+		id    int
+		value string
+	}
+
+	const size = 3
+
+	t.Run("slice of values", func(t *testing.T) {
+		s := make([]T, size)
+		for i := 0; i < size; i++ {
+			s[i] = T{id: i, value: strconv.Itoa(i)}
+		}
+		dst := make([]T, size)
+		_ = copy(dst, s)
+
+		s[0].value = "zero"
+		s[1].value = "one"
+
+		t.Log("unchange:")
+		for _, item := range dst {
+			t.Log(item.id, item.value)
+		}
+	})
+
+	t.Run("slice of refs", func(t *testing.T) {
+		s := make([]*T, size)
+		for i := 0; i < size; i++ {
+			s[i] = &T{id: i, value: strconv.Itoa(i)}
+		}
+		dst := make([]*T, size)
+		_ = copy(dst, s)
+
+		s[0].value = "zero"
+		s[1].value = "one"
+
+		t.Log("changed:")
+		for _, item := range dst {
+			t.Log(item.id, item.value)
+		}
+	})
 }
 
 // Demo: bits, number
