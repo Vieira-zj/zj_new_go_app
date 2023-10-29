@@ -31,6 +31,32 @@ func TestSwitchConds(t *testing.T) {
 	}
 }
 
+func TestTypeAssert(t *testing.T) {
+	var s, m any
+
+	t.Run("slice", func(t *testing.T) {
+		s = []int{1}
+		switch s.(type) {
+		case []any:
+			t.Log("type: []any")
+		case []int:
+			t.Log("type: []int")
+		default:
+			t.Log("unknown type")
+		}
+	})
+
+	t.Run("map", func(t *testing.T) {
+		m = map[string]int{"one": 1}
+		switch m.(type) {
+		case map[string]any:
+			t.Log("type: map[string]any")
+		default:
+			t.Log("unknown type")
+		}
+	})
+}
+
 func TestMapCap(t *testing.T) {
 	m := make(map[int]string, 2)
 	m[1] = "one"

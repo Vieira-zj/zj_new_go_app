@@ -9,6 +9,20 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+func TestDeepEqual(t *testing.T) {
+	t.Run("equal", func(t *testing.T) {
+		src := []string{"id", "name", "age"}
+		dst := []string{"name", "age", "id"}
+		t.Log("result:", deepEqual(src, dst))
+	})
+
+	t.Run("not equal", func(t *testing.T) {
+		src := []string{"id", "name", "age"}
+		dst := []string{"name", "age", "mtime"}
+		t.Log("result:", deepEqual(src, dst))
+	})
+}
+
 func TestFindUsersByRawSql(t *testing.T) {
 	db, err := createLocalMysqlDb()
 	if err != nil {

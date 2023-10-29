@@ -29,7 +29,7 @@ func TestSliceCheck(t *testing.T) {
 	t.Log("slice len:", len(holder.data))
 
 	s := holder.data[:0]
-	t.Log("init slice:", len(s))
+	t.Log("reset slice:", len(s), cap(s))
 }
 
 // Demo: slice

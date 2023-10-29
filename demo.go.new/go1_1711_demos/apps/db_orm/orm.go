@@ -172,10 +172,10 @@ func (s *SelectBuilder) Query() (string, []interface{}) {
 	return s.builder.String(), s.args
 }
 
-// Scanner
+// DB Rows Scanner
 
 func ScanDbRows(rows *sql.Rows, dst interface{}) error {
-	// 通过反射获取 dst slice element 结构体类型
+	// 通过反射获取 dst slice 结构体类型
 	val := reflect.ValueOf(dst) // &[]*main.User
 	if val.Kind() != reflect.Ptr {
 		return errors.New("dst not a pointer")
@@ -185,9 +185,9 @@ func ScanDbRows(rows *sql.Rows, dst interface{}) error {
 		return errors.New("dst not a pointer to slice")
 	}
 
-	// 获取 slice 中的类型
-	struPrt := val.Type().Elem() // &main.User
-	stru := struPrt.Elem()       // main.User
+	// 获取 slice item 类型
+	struPtr := val.Type().Elem() // &main.User
+	stru := struPtr.Elem()       // main.User
 	fmt.Println("dst slice element type:", stru)
 
 	cols, err := rows.Columns()
@@ -198,8 +198,8 @@ func ScanDbRows(rows *sql.Rows, dst interface{}) error {
 		return errors.New("NumField and cols not match")
 	}
 
-	// 获取结构体中字段的类型和 tag
-	tagIdx := make(map[string]int) //tag name -> field index
+	// 遍历结构体中字段的 tag
+	tagIdx := make(map[string]int) // tag_name:field_index
 	for i := 0; i < stru.NumField(); i++ {
 		tagname := stru.Field(i).Tag.Get("json")
 		if tagname != "" {
@@ -207,8 +207,8 @@ func ScanDbRows(rows *sql.Rows, dst interface{}) error {
 		}
 	}
 
-	index := make([]int, 0, len(cols))               // [0,1,2,3,4,5]
-	resultType := make([]reflect.Type, 0, len(cols)) // [int64,string,int64,time.Time,time.Time]
+	index := make([]int, 0, len(cols))               // struct field index for row col: [0,1,2,3,4,5]
+	resultType := make([]reflect.Type, 0, len(cols)) // struct field type for row col: [int64,string,int64,time.Time,time.Time]
 	for _, col := range cols {
 		if idx, ok := tagIdx[col]; ok {
 			index = append(index, idx)
@@ -229,11 +229,11 @@ func ScanDbRows(rows *sql.Rows, dst interface{}) error {
 		obj := reflect.New(stru).Elem() // main.User
 		for i, v := range result {
 			fieldIdx := index[i]
-			obj.Field(fieldIdx).Set(reflect.ValueOf(v).Elem()) // 给obj的每个字段赋值
+			obj.Field(fieldIdx).Set(reflect.ValueOf(v).Elem()) // 给 struct 的每个字段赋值
 		}
 
-		vv := reflect.Append(val, obj.Addr())
-		val.Set(vv) // []*main.User
+		newVal := reflect.Append(val, obj.Addr())
+		val.Set(newVal) // []*main.User
 	}
 
 	return rows.Err()

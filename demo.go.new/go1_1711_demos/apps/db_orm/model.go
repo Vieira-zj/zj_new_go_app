@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -74,7 +73,8 @@ func FindUser(ctx context.Context, db *sql.DB, b *SelectBuilder) ([]*User, error
 	defer rows.Close()
 
 	results := []*User{}
-	if colsDeepEqual(b.columns, generate.Columns) { // 不使用反射
+	// 查询字段名和表结构列名一致，且顺序一致 => 不使用反射
+	if deepEqual(b.columns, generate.Columns) {
 		for rows.Next() {
 			a := &User{}
 			if err := rows.Scan(&a.Id, &a.Name, &a.Age, &a.Ctime, &a.Mtime); err != nil {
@@ -96,18 +96,22 @@ func FindUser(ctx context.Context, db *sql.DB, b *SelectBuilder) ([]*User, error
 	return results, nil
 }
 
-func colsDeepEqual(srcCols, dstCols []string) bool {
+func deepEqual(srcCols, dstCols []string) bool {
+	fmt.Printf("columns deep equal: src=%v, dst=%v\n", srcCols, dstCols)
 	if len(srcCols) != len(dstCols) {
 		return false
 	}
 
-	sort.Strings(srcCols)
-	sort.Strings(dstCols)
-	fmt.Printf("columns deep equal: src=%v, dst=%v\n", srcCols, dstCols)
-	for i := 0; i < len(srcCols); i++ {
-		if srcCols[i] != dstCols[i] {
+	dst := make(map[string]struct{}, len(dstCols))
+	for _, col := range dstCols {
+		dst[col] = struct{}{}
+	}
+
+	for _, col := range srcCols {
+		if _, ok := dst[col]; !ok {
 			return false
 		}
+		delete(dst, col)
 	}
 	return true
 }
