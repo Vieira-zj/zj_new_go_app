@@ -230,7 +230,9 @@ func prometheusHandlerB(c *gin.Context) {
 const ctxTestKey = "ctx-test-key"
 
 func getContextValueHandler(c *gin.Context) {
-	// condition: enable r.ContextWithFallback
+	// 1) enable r.ContextWithFallback
+	// 2) set value in c.Request.Context
+	// 3) directly get value from gin context with fallback
 	val := c.Value(ctxTestKey)
 	if val == nil {
 		log.Println("no value in gin context")

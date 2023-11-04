@@ -84,9 +84,9 @@ func logger2Middleware() gin.HandlerFunc {
 
 func contextMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		log.Println("wrap for reqeust context")
+		log.Println("wrap reqeust context")
 		ctx := c.Request.Context()
-		newCtx := context.WithValue(ctx, ctxTestKey, "new-value")
+		newCtx := context.WithValue(ctx, ctxTestKey, "ContextWithFallback-test")
 		c.Request = c.Request.WithContext(newCtx)
 		c.Next()
 	}

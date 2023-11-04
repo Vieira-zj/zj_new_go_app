@@ -16,6 +16,22 @@ import (
 	"github.com/wI2L/jsondiff"
 )
 
+func TestPtrValueForJson(t *testing.T) {
+	type S struct {
+		BoolValue    bool  `json:"bool_value"`
+		BoolPtrValue *bool `json:"bool_ptr_value"`
+	}
+
+	v := false
+	s1 := S{BoolPtrValue: &v}
+	b, _ := json.Marshal(s1)
+	t.Log("marshal value:", string(b))
+
+	s2 := S{}
+	_ = json.Unmarshal(b, &s2)
+	t.Log("unmarshal value:", s2.BoolValue, *s2.BoolPtrValue)
+}
+
 func TestIsValidJson(t *testing.T) {
 	for _, s := range []string{
 		`{"name":"foo"}`,
