@@ -63,8 +63,13 @@ func KillProcess(pid int) error {
 func GetCallerInfo(depth int) string {
 	pc, _, _, _ := runtime.Caller(depth)
 	details := runtime.FuncForPC(pc)
-	f, line := details.FileLine(pc)
-	return fmt.Sprintf("%s:%d %s", f, line, details.Name())
+	fpath, line := details.FileLine(pc)
+
+	fullFnName := details.Name()
+	idx := strings.LastIndex(fullFnName, ".")
+	pkg := fullFnName[:idx]
+	fnName := fullFnName[idx+1:]
+	return fmt.Sprintf("%s:%d|%s|%s", fpath, line, pkg, fnName)
 }
 
 func GetGoroutineID() (int, error) {

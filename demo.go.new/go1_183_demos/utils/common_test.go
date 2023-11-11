@@ -3,6 +3,7 @@ package utils_test
 import (
 	"encoding/hex"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -31,8 +32,16 @@ func TestGetLocalIPAddr(t *testing.T) {
 }
 
 func TestGetCallerInfo(t *testing.T) {
-	info := utils.GetCallerInfo(1)
-	t.Log("caller info:\n", info)
+	t.Run("get package path", func(t *testing.T) {
+		type S struct{}
+		typeOf := reflect.TypeOf(S{})
+		t.Log("pkg path:", typeOf.PkgPath())
+	})
+
+	t.Run("get caller info", func(t *testing.T) {
+		callerInfo := utils.GetCallerInfo(1)
+		t.Log("caller info:\n", callerInfo)
+	})
 }
 
 func TestGetGoroutineID(t *testing.T) {
