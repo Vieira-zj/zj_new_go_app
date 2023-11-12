@@ -11,6 +11,7 @@ endif
 
 version:
 	@go version
+	@echo "project: $(shell pwd)"
 
 debug:
 	@go run main.go
