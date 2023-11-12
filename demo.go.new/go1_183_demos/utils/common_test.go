@@ -73,6 +73,19 @@ func TestGetGoroutineID(t *testing.T) {
 	t.Log("test goroutine id done")
 }
 
+func TestGetFuncDeclare(t *testing.T) {
+	for _, fn := range []any{
+		utils.GetLocalIPAddr,
+		utils.GetCallerInfo,
+	} {
+		result, err := utils.GetFuncDeclare(fn)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log("func desc:", result)
+	}
+}
+
 func TestSecurity(t *testing.T) {
 	str := "test123"
 

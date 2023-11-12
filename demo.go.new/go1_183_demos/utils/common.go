@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
@@ -84,4 +85,27 @@ func GetGoroutineID() (int, error) {
 	}
 
 	return id, nil
+}
+
+// Reflect
+
+func GetFuncDeclare(fn any) (string, error) {
+	fnType := reflect.TypeOf(fn)
+	if fnType.Kind() != reflect.Func {
+		return "", fmt.Errorf("must be function, but got: %s", fnType.Kind().String())
+	}
+
+	input := make([]string, 0)
+	for i := 0; i < fnType.NumIn(); i++ {
+		arg := fnType.In(i)
+		input = append(input, arg.String())
+	}
+
+	output := make([]string, 0)
+	for i := 0; i < fnType.NumOut(); i++ {
+		result := fnType.Out(i)
+		output = append(output, result.String())
+	}
+
+	return fmt.Sprintf("input args:%s, output results:%s", strings.Join(input, ","), strings.Join(output, ",")), nil
 }
