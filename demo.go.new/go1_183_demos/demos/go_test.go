@@ -88,57 +88,6 @@ func TestStrLenByReflect(t *testing.T) {
 	t.Log("len:", valueOf.Len())
 }
 
-// Demo: map
-
-func TestMapCap(t *testing.T) {
-	m := make(map[int]string, 2)
-	m[1] = "one"
-	t.Logf("len=%d", len(m))
-
-	for k, v := range m {
-		t.Logf("key=%d, value=%s", k, v)
-	}
-}
-
-func TestMapPtrAsKey(t *testing.T) {
-	type num struct {
-		id    int
-		value string
-	}
-
-	one := &num{id: 1, value: "one"}
-	two := &num{id: 2, value: "two"}
-
-	// use address as map key
-	m := map[*num]string{
-		one: "num_one",
-		two: "num_two",
-	}
-
-	t.Run("iterator", func(t *testing.T) {
-		for k, v := range m {
-			t.Log(k.id, k.value, v)
-		}
-	})
-
-	t.Run("get exist", func(t *testing.T) {
-		if v, ok := m[one]; ok {
-			t.Log(v)
-		} else {
-			t.Fatal("not found")
-		}
-	})
-
-	t.Run("get new", func(t *testing.T) {
-		one = &num{id: 1, value: "one"}
-		if v, ok := m[one]; ok {
-			t.Log(v)
-		} else {
-			t.Log("not found")
-		}
-	})
-}
-
 // Demo: defer
 
 func TestDeferFn01(t *testing.T) {
@@ -196,6 +145,21 @@ func TestSliceInitByIndex(t *testing.T) {
 	t.Logf("len=%d, cap=%d", len(s), cap(s))
 }
 
+func TestSliceAddValue(t *testing.T) {
+	size := 3
+	s := make([]int, size, size*2)
+	for i := 0; i < size; i++ {
+		s[i] = i
+	}
+
+	s = s[0 : size+1]
+	s[size] = 4
+	t.Logf("len=%d, cap=%d, values: %v", len(s), cap(s), s)
+
+	s = append(s, 5)
+	t.Logf("len=%d, cap=%d, values: %v", len(s), cap(s), s)
+}
+
 func TestSliceCopy(t *testing.T) {
 	type T struct {
 		id    int
@@ -235,6 +199,57 @@ func TestSliceCopy(t *testing.T) {
 		t.Log("changed:")
 		for _, item := range dst {
 			t.Log(item.id, item.value)
+		}
+	})
+}
+
+// Demo: map
+
+func TestMapCap(t *testing.T) {
+	m := make(map[int]string, 2)
+	m[1] = "one"
+	t.Logf("len=%d", len(m))
+
+	for k, v := range m {
+		t.Logf("key=%d, value=%s", k, v)
+	}
+}
+
+func TestMapPtrAsKey(t *testing.T) {
+	type num struct {
+		id    int
+		value string
+	}
+
+	one := &num{id: 1, value: "one"}
+	two := &num{id: 2, value: "two"}
+
+	// use address as map key
+	m := map[*num]string{
+		one: "num_one",
+		two: "num_two",
+	}
+
+	t.Run("iterator", func(t *testing.T) {
+		for k, v := range m {
+			t.Log(k.id, k.value, v)
+		}
+	})
+
+	t.Run("get exist", func(t *testing.T) {
+		if v, ok := m[one]; ok {
+			t.Log(v)
+		} else {
+			t.Fatal("not found")
+		}
+	})
+
+	t.Run("get new", func(t *testing.T) {
+		one = &num{id: 1, value: "one"}
+		if v, ok := m[one]; ok {
+			t.Log(v)
+		} else {
+			t.Log("not found")
 		}
 	})
 }
