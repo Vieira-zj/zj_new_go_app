@@ -131,7 +131,7 @@ func TestDeferFn02(t *testing.T) {
 
 func TestSliceInitByIndex(t *testing.T) {
 	s := []string{
-		2: "two",
+		2: "two", // index:value
 		3: "three",
 		1: "one",
 		0: "zero",
@@ -141,8 +141,26 @@ func TestSliceInitByIndex(t *testing.T) {
 		t.Logf("%d:%s", idx, val)
 	}
 
-	s = s[:0]
-	t.Logf("len=%d, cap=%d", len(s), cap(s))
+	t.Run("case1", func(t *testing.T) {
+		s1 := s[:0]
+		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
+	})
+
+	t.Run("case2", func(t *testing.T) {
+		s1 := s[:2]
+		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
+	})
+
+	t.Run("case3", func(t *testing.T) {
+		s1 := s[2:]
+		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
+	})
+
+	t.Run("case4", func(t *testing.T) {
+		// cap only relate to start index
+		s1 := s[1:3]
+		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
+	})
 }
 
 func TestSliceAddValue(t *testing.T) {
