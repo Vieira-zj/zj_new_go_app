@@ -2,6 +2,7 @@ package utils_test
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
@@ -101,16 +102,32 @@ func TestGetGoroutineID(t *testing.T) {
 	t.Log("test goroutine id done")
 }
 
-func TestGetFuncDeclare(t *testing.T) {
+func TestGetFullFnName(t *testing.T) {
+	anonymousFn := func() {
+		fmt.Println("anonymous fn for test")
+	}
+
+	for _, fn := range []any{
+		utils.GetLocalIPAddr,
+		utils.GetCallerInfo,
+		anonymousFn,
+	} {
+		t.Log("full fn name:", utils.GetFullFnName(fn))
+	}
+}
+
+func TestGetFnDeclaration(t *testing.T) {
 	for _, fn := range []any{
 		utils.GetLocalIPAddr,
 		utils.GetCallerInfo,
 	} {
-		result, err := utils.GetFuncDeclare(fn)
+		result, err := utils.GetFnDeclaration(fn)
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Log("func desc:", result)
+
+		b, _ := json.Marshal(&result)
+		t.Logf("func desc: %s", b)
 	}
 }
 

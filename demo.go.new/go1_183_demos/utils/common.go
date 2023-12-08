@@ -77,6 +77,10 @@ func KillProcess(pid int) error {
 	return syscall.Kill(pid, syscall.SIGTERM)
 }
 
+func GetFullFnName(fn any) string {
+	return runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()
+}
+
 func GetCallerInfo(depth int) string {
 	pc, _, _, _ := runtime.Caller(depth)
 	details := runtime.FuncForPC(pc)
@@ -105,10 +109,16 @@ func GetGoroutineID() (int, error) {
 
 // Reflect
 
-func GetFuncDeclare(fn any) (string, error) {
+type FnDeclaration struct {
+	Name   string   `json:"name"`
+	Input  []string `json:"input"`
+	Output []string `json:"output"`
+}
+
+func GetFnDeclaration(fn any) (FnDeclaration, error) {
 	fnType := reflect.TypeOf(fn)
 	if fnType.Kind() != reflect.Func {
-		return "", fmt.Errorf("must be function, but got: %s", fnType.Kind().String())
+		return FnDeclaration{}, fmt.Errorf("input must be function, but got: %s", fnType.Kind().String())
 	}
 
 	input := make([]string, 0)
@@ -123,5 +133,12 @@ func GetFuncDeclare(fn any) (string, error) {
 		output = append(output, result.String())
 	}
 
-	return fmt.Sprintf("input args:%s, output results:%s", strings.Join(input, ","), strings.Join(output, ",")), nil
+	fullName := GetFullFnName(fn)
+	shortName := fullName[strings.LastIndex(fullName, ".")+1:]
+
+	return FnDeclaration{
+		Name:   shortName,
+		Input:  input,
+		Output: output,
+	}, nil
 }
