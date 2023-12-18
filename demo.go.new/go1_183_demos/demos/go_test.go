@@ -163,6 +163,37 @@ func TestSliceInitByIndex(t *testing.T) {
 	})
 }
 
+func TestSliceAppend(t *testing.T) {
+	t.Run("append", func(t *testing.T) {
+		s := make([]int, 1, 2)
+		s[0] = -1
+		s2 := append(s, 2)
+		s2[0] = -2
+
+		// replace
+		s3 := append(s, 3)
+		s3[0] = -3
+		// s,s1,s3 have same address of array
+		for i, sl := range [][]int{s, s2, s3} {
+			t.Logf("s%d (%p): %v", i+1, sl, sl)
+		}
+	})
+
+	t.Run("append with scale", func(t *testing.T) {
+		s := make([]int, 1, 2)
+		s[0] = -1
+		s2 := append(s, 2)
+		s2[0] = -2
+
+		// scale, and return new address of slice
+		s3 := append(s2, 3)
+		s3[0] = -3
+		for i, sl := range [][]int{s, s2, s3} {
+			t.Logf("s%d (%p): %v", i+1, sl, sl)
+		}
+	})
+}
+
 func TestSliceAddValue(t *testing.T) {
 	size := 3
 	s := make([]int, size, size*2)
