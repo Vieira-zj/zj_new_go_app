@@ -1,27 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+	"time"
 
 	"demo.apps/utils"
 	"github.com/gin-gonic/gin"
 )
-
-/*
-page:
-http://localhost:8081/static
-http://localhost:8081/public/page_basic.html
-
-rest api:
-curl http://localhost:8081/
-curl http://localhost:8081/ping
-
-curl -v -XPOST http://localhost:8081/user -d '{"birthday":"10/07","timezone":"Asia/Shanghai"}'
-*/
 
 func main() {
 	r := initServer()
@@ -47,6 +36,8 @@ func initServer() *gin.Engine {
 
 	r.GET("/", HandleIndex)
 	r.GET("/ping", HandlePing)
+
+	r.POST("/upload", HandleUpload)
 
 	// validate middleware should be before CreateUser
 	r.POST("/user", MiddlewareValidateJsonBody[CreateUserHttpBody](), HandleCreateUser)
@@ -96,7 +87,7 @@ func addStaticEmbed(r *gin.Engine) {
 	// TODO:
 }
 
-// Handle
+// Default Handle
 
 func HandleNotFound(c *gin.Context) {
 	c.JSON(http.StatusNotFound, http.StatusText(http.StatusNotFound))
@@ -111,9 +102,65 @@ func HandleIndex(c *gin.Context) {
 }
 
 func HandlePing(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "pong",
-	})
+	// only write header
+	c.Writer.WriteHeader(http.StatusOK)
+}
+
+// Handler: Upload File
+
+func HandleUpload(c *gin.Context) {
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Note: key "files" matches the name in "curl F/--form <name=content>".
+	files := form.File["files"]
+	if len(files) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "no multipart file header found",
+		})
+		return
+	}
+
+	for _, f := range files {
+		fpath := fmt.Sprintf("/tmp/test/%d_%s", time.Now().UnixMilli(), f.Filename)
+		log.Println("save upload file to: " + fpath)
+		if err = c.SaveUploadedFile(f, fpath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "save upload file error: " + err.Error(),
+			})
+			return
+		}
+
+		md5hash := c.GetHeader("X-Md5")
+		if len(md5hash) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "no file md5 hash provided",
+			})
+			return
+		}
+
+		ok, err := verifyFileMd5hash(fpath, md5hash)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		if !ok {
+			log.Printf("verify upload file [%s] md5 hash failed", f.Filename)
+			c.JSON(http.StatusOK, gin.H{
+				"error": "save upload file error: md5 hash is not matched",
+			})
+			return
+		}
+	}
+
+	c.Writer.WriteHeader(http.StatusOK)
 }
 
 // Demo: Create User Handle
@@ -173,41 +220,4 @@ func MiddlewareGzip() gin.HandlerFunc {
 
 		c.Next()
 	}
-}
-
-// Helper
-
-func isAcceptEncodingGzip(elems []string) bool {
-	if len(elems) == 0 {
-		return false
-	}
-	for _, elem := range elems {
-		if strings.Contains(elem, "gzip") && strings.Contains(elem, "deflate") {
-			return true
-		}
-	}
-	return false
-}
-
-func isAssetsFilePath(url string) bool {
-	return strings.HasPrefix(url, "/assets")
-}
-
-func getFileSize(relPath string) (int64, error) {
-	fpath := filepath.Join(getDistPath(), relPath)
-	stat, err := os.Stat(fpath)
-	if err != nil {
-		return 0, err
-	}
-	return stat.Size(), nil
-}
-
-func getDistPath() string {
-	const distRePath = "Workspaces/zj_repos/zj_js_project/vue3_lessons/demo_apps/app_basic/dist"
-	return filepath.Join(os.Getenv("HOME"), distRePath)
-}
-
-func getPagesDistPath() string {
-	const distRePath = "Workspaces/zj_repos/zj_js_project/vue3_lessons/demo_pages"
-	return filepath.Join(os.Getenv("HOME"), distRePath)
 }
