@@ -16,7 +16,7 @@ function update_pkg_to_latest {
     go get ${pkg}@latest
 }
 
-function delta_golint {
+function golint_delta {
     # Filter Golang files match Added (A), Copied (C), Modified (M) conditions.
     local gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$')
     for gofile in ${gofiles}; do
@@ -78,9 +78,9 @@ if [[ $1 == "echo" ]]; then
     exit 0
 fi
 
-if [[ $1 == "delta-golint" ]]; then
-    delta_golint
-    echo "delta golint done"
+if [[ $1 == "golint-delta" ]]; then
+    golint_delta
+    echo "golint delta done"
     exit 0
 fi
 

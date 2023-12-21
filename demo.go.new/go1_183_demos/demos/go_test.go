@@ -544,6 +544,43 @@ func TestCopyOfStruct(t *testing.T) {
 	}
 }
 
+// Demo: interface{} type check
+
+func TestInterfaceTypeCheck(t *testing.T) {
+	type Value struct {
+		Id int
+	}
+
+	var i interface{} //nolint: gosimple
+	i = Value{1}
+
+	t.Run("type check", func(t *testing.T) {
+		switch tt := i.(type) {
+		case int:
+			t.Log("type is int")
+		case Value:
+			t.Logf("type is Value, id=%d", tt.Id)
+		default:
+			t.Log("unknown type")
+		}
+	})
+
+	t.Run("reflect type", func(t *testing.T) {
+		tof := reflect.TypeOf(i)
+		t.Logf("kind:%s, name:%s", tof.Kind().String(), tof.Name())
+	})
+
+	t.Run("reflect value", func(t *testing.T) {
+		i = 1
+		vof := reflect.ValueOf(i)
+		if ok := vof.CanConvert(reflect.TypeOf(0)); ok {
+			t.Log("int value:", vof.Int())
+		} else {
+			t.Log("any value:", vof.Interface())
+		}
+	})
+}
+
 // Demo: goroutine
 
 func TestRecoverFromPanic(t *testing.T) {
