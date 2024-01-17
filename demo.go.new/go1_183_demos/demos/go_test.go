@@ -13,6 +13,17 @@ import (
 	"time"
 )
 
+func TestClearupCase(t *testing.T) {
+	t.Cleanup(func() {
+		t.Log("case clear")
+	})
+
+	if ok := false; !ok {
+		t.Fatal("mock fatal")
+	}
+	t.Log("case run")
+}
+
 func TestSwitchConds(t *testing.T) {
 	getNumberDesc := func(num int) string {
 		switch num {

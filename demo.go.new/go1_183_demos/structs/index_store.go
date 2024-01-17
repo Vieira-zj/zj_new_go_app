@@ -37,7 +37,7 @@ type IndexFunc func(*Resource) string
 type IndexItem map[string]Resources
 
 type Index struct {
-	fns   map[string]IndexFunc // fn get index_key from resource
+	fns   map[string]IndexFunc // index_key:fn, fn returns index_value
 	items map[string]IndexItem // index_key:index_value:[]resource
 }
 

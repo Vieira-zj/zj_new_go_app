@@ -23,7 +23,7 @@ function install_deps_for_go1_183 {
 }
 
 function checkout_go_version {
-	set +e
+    set +e
     local version=$1
     rm /usr/local/go
     ln -s /usr/local/go${version} /usr/local/go
