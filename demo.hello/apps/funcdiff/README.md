@@ -104,10 +104,10 @@ Source files:
 ```text
 └── test
     ├── src1
-    │   ├── func.rpt
-    │   ├── main.go
-    │   ├── main_test.go
-    │   └── profile.cov
+        ├── func.rpt
+        ├── main.go
+        ├── main_test.go
+        └── profile.cov
     └── src2
         ├── func.rpt
         ├── func_merged.rpt

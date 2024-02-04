@@ -10,6 +10,7 @@ require (
 	github.com/evanphx/json-patch v0.5.2
 	github.com/gin-gonic/gin v1.8.0
 	github.com/golang-jwt/jwt/v5 v5.0.0-rc.2
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/samber/lo v1.38.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/wI2L/jsondiff v0.4.0
