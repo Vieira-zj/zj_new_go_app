@@ -9,9 +9,16 @@ else
 	@echo "no build flag found"
 endif
 
+check-env:
+ifndef ENV
+	@echo "var 'ENV' is not set, and default to 'dev'."
+else
+	@echo "run env $(ENV)."
+endif
+
 version:
 	@go version
-	@echo "project: $(shell pwd)"
+	@echo "project root: $(shell pwd)"
 
 debug:
 	@go run main.go
