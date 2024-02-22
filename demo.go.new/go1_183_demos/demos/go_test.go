@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"reflect"
 	"regexp"
 	"runtime/debug"
 	"strconv"
@@ -87,16 +86,6 @@ func TestGoSlog(t *testing.T) {
 	jsonLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	jsonLogger.Debug("json info level log", "uid", 1002)
 	jsonLogger.Info("json info level log", "uid", 1002)
-}
-
-func TestStrLenByReflect(t *testing.T) {
-	s := "hello world"
-	valueOf := reflect.ValueOf(s)
-	t.Log("len:", valueOf.Len())
-
-	b := []byte(s)
-	valueOf = reflect.ValueOf(b)
-	t.Log("len:", valueOf.Len())
 }
 
 // Demo: defer
@@ -553,43 +542,6 @@ func TestCopyOfStruct(t *testing.T) {
 	for _, s := range copied {
 		t.Log(s.name, s.age, s.tags)
 	}
-}
-
-// Demo: interface{} type check
-
-func TestInterfaceTypeCheck(t *testing.T) {
-	type Value struct {
-		Id int
-	}
-
-	var i interface{} //nolint: gosimple
-	i = Value{1}
-
-	t.Run("type check", func(t *testing.T) {
-		switch tt := i.(type) {
-		case int:
-			t.Log("type is int")
-		case Value:
-			t.Logf("type is Value, id=%d", tt.Id)
-		default:
-			t.Log("unknown type")
-		}
-	})
-
-	t.Run("reflect type", func(t *testing.T) {
-		tof := reflect.TypeOf(i)
-		t.Logf("kind:%s, name:%s", tof.Kind().String(), tof.Name())
-	})
-
-	t.Run("reflect value", func(t *testing.T) {
-		i = 1
-		vof := reflect.ValueOf(i)
-		if ok := vof.CanConvert(reflect.TypeOf(0)); ok {
-			t.Log("int value:", vof.Int())
-		} else {
-			t.Log("any value:", vof.Interface())
-		}
-	})
 }
 
 // Demo: goroutine
