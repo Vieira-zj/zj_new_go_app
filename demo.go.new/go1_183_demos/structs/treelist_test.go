@@ -1,4 +1,4 @@
-package demos
+package structs_test
 
 import (
 	"encoding/json"

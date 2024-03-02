@@ -1,4 +1,4 @@
-package demos
+package demos_test
 
 import (
 	"encoding/json"
@@ -112,7 +112,48 @@ func TestJsonUnmarshalForRawMsg(t *testing.T) {
 		string(tmp.Num), string(tmp.Num) == strconv.Itoa(maxInt))
 }
 
-// demo: marshal custom error
+// demo: custom json parse
+
+type OrderId uint64
+
+func (o OrderId) MarshalText() (text []byte, err error) {
+	return []byte(fmt.Sprint(o)), nil
+}
+
+func (o *OrderId) UnmarshalText(text []byte) error {
+	result, err := strconv.ParseUint(string(text), 10, 64)
+	if err != nil {
+		return err
+	}
+	*o = OrderId(result)
+	return nil
+}
+
+type TestJsonData struct {
+	ID      uint64  `json:"id"`
+	OrderID OrderId `json:"order_id"`
+}
+
+func TestCustomJsonParse(t *testing.T) {
+	data := TestJsonData{
+		ID:      1010,
+		OrderID: 10101,
+	}
+	b, err := json.Marshal(&data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("results:", string(b))
+
+	d := TestJsonData{}
+	err = json.Unmarshal(b, &d)
+	if err != nil {
+		t.Log("error:", err)
+	}
+	t.Log(d.ID, d.OrderID)
+}
+
+// demo: marshal error by custom json parse
 //
 // refer: http://gregtrowbridge.com/golang-json-serialization-with-interfaces/
 

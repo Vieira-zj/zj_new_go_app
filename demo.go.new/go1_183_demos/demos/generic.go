@@ -70,7 +70,7 @@ func insertAt[T any](list []T, idx int, t T) ([]T, error) {
 }
 
 //nolint:unused
-func removeAt[T any](list []T, idx int, t T) ([]T, error) {
+func removeAt[T any](list []T, idx int, _ T) ([]T, error) {
 	l := len(list)
 	if idx < 0 {
 		idx = l + idx

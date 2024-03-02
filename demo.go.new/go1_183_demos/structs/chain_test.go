@@ -1,6 +1,8 @@
-package demos
+package structs
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestMyInterceptorChain(t *testing.T) {
 	interceptors := []Interceptor{

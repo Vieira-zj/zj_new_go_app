@@ -74,7 +74,7 @@ func TestIndexStore(t *testing.T) {
 	})
 }
 
-func getResourceType(t *testing.T, i int) string {
+func getResourceType(_ *testing.T, i int) string {
 	switch {
 	case i%2 == 0:
 		return "type2"
@@ -85,7 +85,7 @@ func getResourceType(t *testing.T, i int) string {
 	}
 }
 
-func getResourceGroup(t *testing.T, i int) string {
+func getResourceGroup(_ *testing.T, i int) string {
 	switch {
 	case i%3 == 0:
 		return "group3"
