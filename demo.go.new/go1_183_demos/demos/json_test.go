@@ -112,6 +112,39 @@ func TestJsonUnmarshalForRawMsg(t *testing.T) {
 		string(tmp.Num), string(tmp.Num) == strconv.Itoa(maxInt))
 }
 
+func TestJsonUnMarshalForPtr(t *testing.T) {
+	type Contract struct {
+		Email string `json:"email"`
+		TelNo int    `json:"tel_no"`
+	}
+
+	t.Run("unmarshal struct", func(t *testing.T) {
+		type Person struct {
+			Id       int      `json:"id"`
+			Contract Contract `json:"contract"`
+		}
+		b := []byte(`{"id": 1010}`)
+		p := Person{}
+		if err := json.Unmarshal(b, &p); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("person: %+v", p)
+	})
+
+	t.Run("unmarshal ptr", func(t *testing.T) {
+		type Person struct {
+			Id       int       `json:"id"`
+			Contract *Contract `json:"contract"` // default nil
+		}
+		b := []byte(`{"id": 1010}`)
+		p := Person{}
+		if err := json.Unmarshal(b, &p); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("person: %#v", p)
+	})
+}
+
 // demo: custom json parse
 
 type OrderId uint64

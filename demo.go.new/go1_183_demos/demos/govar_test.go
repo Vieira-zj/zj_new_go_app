@@ -10,7 +10,7 @@ import (
 	"github.com/samber/lo"
 )
 
-// Demo: bits, number
+// Demo: bit, number
 
 func TestHexToDecimal(t *testing.T) {
 	val := 0xff
@@ -37,7 +37,7 @@ func TestReuseBytes(t *testing.T) {
 	t.Log(string(b))
 
 	b = b[:0] // reuse bytes
-	t.Log("size:", len(b))
+	t.Logf("len=%d, cap=%d", len(b), cap(b))
 	b = append(b, []byte("foo")...)
 	t.Log(string(b))
 }
@@ -50,17 +50,29 @@ func TestRegexpFindIndex(t *testing.T) {
 	}
 }
 
+func TestStrCut(t *testing.T) {
+	str := "foo|hello world"
+	before, after, ok := strings.Cut(str, "|")
+	if ok {
+		t.Logf("before=%s, after=%s", before, after)
+	}
+}
+
 func TestStrSplitByMultiSpace(t *testing.T) {
 	str := "one_space two_space  three_space   end"
-	fields := strings.Fields(str)
-	t.Log("split fields:", fields)
+	t.Run("strings fields", func(t *testing.T) {
+		fields := strings.Fields(str)
+		t.Log("split fields:", fields)
+	})
 
-	reg, err := regexp.Compile(`\s+`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fields = reg.Split(str, -1)
-	t.Log("split fields by regexp:", fields)
+	t.Run("regexp split", func(t *testing.T) {
+		reg, err := regexp.Compile(`\s+`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fields := reg.Split(str, -1)
+		t.Log("split fields by regexp:", fields)
+	})
 }
 
 func TestStrMultiReplace(t *testing.T) {
