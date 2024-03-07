@@ -12,28 +12,51 @@ import (
 
 // demo: json
 
-func TestJsonMarshalForBytes(t *testing.T) {
-	type dataHold struct {
+func TestJsonParseForBytes(t *testing.T) {
+	type DataHold struct {
 		ID string `json:"id"`
-		// marshal bytes as base64
+		// encode/decode as base64
 		Bytes []byte `json:"bytes"`
-		// marshal as raw struct
+		// marshal as raw bytes
 		RawBytes  json.RawMessage `json:"raw_bytes"`
 		RawString json.RawMessage `json:"raw_string"`
 	}
 
-	data := dataHold{
-		ID:        "0101",
-		Bytes:     []byte("hello"),
-		RawBytes:  []byte(`{"name":"foo"}`),
-		RawString: json.RawMessage(`{"id":"0101"}`),
-	}
-	b, err := json.Marshal(&data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("json marshal", func(t *testing.T) {
+		data := DataHold{
+			ID:        "0101",
+			Bytes:     []byte(`{"say":"hello"}`),
+			RawBytes:  []byte(`{"name":"foo"}`),
+			RawString: json.RawMessage(`{"id":"0101"}`),
+		}
+		b, err := json.Marshal(&data)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	t.Logf("%s", b)
+		t.Logf("results: %s", b)
+	})
+
+	t.Run("json unmarshal", func(t *testing.T) {
+		s := `{"bytes":"eyJzYXkiOiJoZWxsbyJ9","raw_bytes":{"name":"foo"},"raw_string":{"id":"0101"}}`
+		d := DataHold{}
+		if err := json.Unmarshal([]byte(s), &d); err != nil {
+			t.Fatal(err)
+		}
+
+		t.Logf("bytes: %s", d.Bytes)
+		t.Log("raw bytes:", string(d.RawBytes))
+		t.Logf("raw string: %s", d.RawString)
+
+		// unmarshal json raw message
+		o := struct {
+			Name string `json:"name"`
+		}{}
+		if err := json.Unmarshal(d.RawBytes, &o); err != nil {
+			t.Fatal(err)
+		}
+		t.Log("name:", o.Name)
+	})
 }
 
 func TestJsonMarshalForRawMsg(t *testing.T) {

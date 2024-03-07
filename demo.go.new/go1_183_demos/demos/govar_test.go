@@ -259,7 +259,7 @@ func TestMapPtrAsKey(t *testing.T) {
 	})
 }
 
-// Demo: lo tool
+// Demo: lo util
 
 func TestLoSliceUnique(t *testing.T) {
 	names := lo.Uniq[string]([]string{"foo", "bar", "foo"})
@@ -423,4 +423,40 @@ func TestCopyOfStruct(t *testing.T) {
 	for _, s := range copied {
 		t.Log(s.name, s.age, s.tags)
 	}
+}
+
+// Demo: abstract class
+
+type IPerson interface {
+	GetName() string
+	Say(string)
+}
+
+type PersonBase struct{}
+
+func (b PersonBase) GetName() string {
+	return "default"
+}
+
+func (b PersonBase) Say(msg string) {
+	fmt.Println("hello:", msg)
+}
+
+type AbstractPerson struct {
+	PersonBase
+}
+
+// GetName: it overwrites the same method in PersonBase.
+func (b AbstractPerson) Say(msg string) {
+	fmt.Println("receive message:", msg)
+}
+
+func TestAbstractStruct(t *testing.T) {
+	run := func(p IPerson) {
+		t.Log("name:", p.GetName())
+		p.Say("this is abstract class test")
+	}
+
+	p := AbstractPerson{}
+	run(p)
 }
