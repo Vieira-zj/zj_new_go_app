@@ -82,7 +82,7 @@ func TestInterfaceTypeCheck(t *testing.T) {
 		Id int
 	}
 
-	var i interface{} //nolint: gosimple
+	var i interface{} //nolint:gosimple
 	i = Value{1}
 
 	t.Run("type check", func(t *testing.T) {
