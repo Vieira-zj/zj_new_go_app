@@ -21,7 +21,7 @@ version:
 	@echo "project root: $(shell pwd)"
 
 debug:
-	@go run main.go
+	@GOMEMLIMIT=512MiB go run main.go
 
 govet:
 	@go vet ./...
