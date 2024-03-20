@@ -300,6 +300,29 @@ func TestLoStringTest(t *testing.T) {
 
 // Demo: struct
 
+type testStruct struct {
+	id   int
+	name string
+}
+
+func (s testStruct) String() string {
+	return fmt.Sprintf("id=%d, name=%s", s.id, s.name)
+}
+
+func TestUpdateStruct(t *testing.T) {
+	s := testStruct{
+		id:   1,
+		name: "foo",
+	}
+	s1 := s
+
+	s.id = 2
+	s.name = "bar"
+	s2 := s
+	t.Log("src:", s1)
+	t.Log("dest:", s2)
+}
+
 type testFruit struct {
 	name string
 }
@@ -371,7 +394,7 @@ func updateStudentRef(s *testStudent) {
 	s.addScore("cn", 98)
 }
 
-func TestUpdateStruct(t *testing.T) {
+func TestUpdateStudentStruct(t *testing.T) {
 	s1 := NewTestStudent("foo", 13)
 	s1.addTag("p1")
 	s1.addScore("en", 91)
@@ -383,7 +406,7 @@ func TestUpdateStruct(t *testing.T) {
 	t.Log("s2:", s2.String())
 }
 
-func TestUpdateStructRef(t *testing.T) {
+func TestUpdateStudentRef(t *testing.T) {
 	s := NewTestStudent("foo", 13)
 	s.addTag("p1")
 	s.addScore("en", 91)

@@ -147,22 +147,22 @@ func TestDeferFn01(t *testing.T) {
 	t.Log("end test defer fn")
 }
 
-type myTestStruct struct {
+type WrappedTest struct {
 	t *testing.T
 }
 
-func (s *myTestStruct) fn1() *myTestStruct {
-	s.t.Log("fn1 invoke")
-	return s
+func (w *WrappedTest) fn1() *WrappedTest {
+	w.t.Log("fn1 invoke")
+	return w
 }
 
-func (s *myTestStruct) fn2() *myTestStruct {
-	s.t.Log("fn2 invoke")
-	return s
+func (w *WrappedTest) fn2() *WrappedTest {
+	w.t.Log("fn2 invoke")
+	return w
 }
 
 func TestDeferFn02(t *testing.T) {
-	s := &myTestStruct{t}
+	s := &WrappedTest{t}
 	defer s.fn1().fn2()
 
 	t.Log("start test defer struct fn")
