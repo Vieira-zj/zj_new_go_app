@@ -82,3 +82,35 @@ func TestDel(t *testing.T) {
 	}
 	t.Log("deleted")
 }
+
+func TestReplaceHashFieldName(t *testing.T) {
+	keyForTest := "test_hash"
+	client, err := redis.GetRedisClientForLocalTest(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < 3; i++ {
+		if err := redis.HIncrBy(client, keyForTest, "key_"+strconv.Itoa(i), int64(i)); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := redis.ReplaceHashFieldName(client, keyForTest, "key_2", "key_2_new", 2); err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := redis.HGetAll(client, keyForTest)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("hash count:", len(results))
+	for k, v := range results {
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("key=%s, value=%d", k, i)
+	}
+}

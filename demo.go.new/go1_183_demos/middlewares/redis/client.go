@@ -45,6 +45,12 @@ func Add(client *redis.Client, key string, value any, expr time.Duration) error 
 	return client.SetNX(ctx, key, value, expr).Err()
 }
 
+func GetInt(client *redis.Client, key string) (int, error) {
+	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+	defer cancel()
+	return client.Get(ctx, key).Int()
+}
+
 func Del(client *redis.Client, key string) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
 	defer cancel()
@@ -60,6 +66,12 @@ func HIncrBy(client *redis.Client, key, field string, incr int64) error {
 	return client.HIncrBy(ctx, key, field, incr).Err()
 }
 
+func HGetInt(client *redis.Client, key, field string) (int, error) {
+	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+	defer cancel()
+	return client.HGet(ctx, key, field).Int()
+}
+
 func HGetAll(client *redis.Client, key string) (map[string]string, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
 	defer cancel()
@@ -69,6 +81,18 @@ func HGetAll(client *redis.Client, key string) (map[string]string, error) {
 		return nil, err
 	}
 	return results, nil
+}
+
+func ReplaceHashFieldName(client *redis.Client, key, oldField, newField string, value any) error {
+	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+	defer cancel()
+
+	p := client.Pipeline()
+	p.HSetNX(ctx, key, newField, value)
+	p.HDel(ctx, key, oldField)
+
+	_, err := p.Exec(ctx)
+	return err
 }
 
 // sorted set (with scores)
