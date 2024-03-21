@@ -60,6 +60,12 @@ func Del(client *redis.Client, key string) error {
 
 // hash
 
+func HLen(client *redis.Client, key string) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+	defer cancel()
+	return client.HLen(ctx, key).Result()
+}
+
 func HIncrBy(client *redis.Client, key, field string, incr int64) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
 	defer cancel()
@@ -81,6 +87,19 @@ func HGetAll(client *redis.Client, key string) (map[string]string, error) {
 		return nil, err
 	}
 	return results, nil
+}
+
+// HSCAN
+//
+// 于编码类型为 IntSet 和 ZipList 的 Redis 集合对象, 在执行 HSCAN 命令是会忽略 COUNT 参数并遍历所有元素.
+//
+// 将 Redis 集合对象的编码类型从 IntSet 和 ZipList 转换为 HshTable 或 SkipList, 以避免 HSCAN 命令全量扫描集合对象的所有元素,
+// 建议谨慎调整此类参数设置避免引发其他如内存使用率上涨等问题.
+
+func HScan(client *redis.Client, key string, cursor uint64, limit int64) ([]string, uint64, error) {
+	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+	defer cancel()
+	return client.HScan(ctx, key, cursor, "", limit).Result()
 }
 
 func ReplaceHashFieldName(client *redis.Client, key, oldField, newField string, value any) error {
