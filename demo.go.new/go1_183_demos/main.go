@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"runtime"
 	"runtime/debug"
+	"time"
 
 	"demo.apps/go.test/cover"
 )
@@ -19,10 +19,8 @@ var (
 )
 
 func main() {
-	ver := runtime.Version()
-	fmt.Println("go version:", ver)
-
-	setMemoryLimit(256)
+	showGoVersion()
+	setMemoryLimit(256, MB)
 
 	httpServe(false)
 
@@ -40,8 +38,39 @@ func httpServe(isRun bool) {
 	}
 }
 
+// Sys Utils
+
+func showGoVersion() {
+	ver := runtime.Version()
+	log.Println("go version:", ver)
+}
+
 // refer: https://pkg.go.dev/runtime/debug#SetMemoryLimit
-func setMemoryLimit(size int64) {
-	pre := debug.SetMemoryLimit(size * MB)
-	fmt.Printf("mem limit: pre=%dMB, cur=%dMB\n", pre/MB, size)
+func setMemoryLimit(size, unit int64) {
+	pre := debug.SetMemoryLimit(size * unit)
+	log.Printf("mem limit: pre=%dMB, cur=%dMB", pre/MB, size)
+}
+
+//nolint:unused
+func forceFreeMemory() {
+	debug.FreeOSMemory()
+}
+
+//nolint:unused
+func collectGCState(ctx context.Context, interval time.Duration) {
+	t := time.NewTicker(interval)
+	defer t.Stop()
+
+	state := debug.GCStats{}
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				debug.ReadGCStats(&state)
+				log.Printf("%+v", state)
+			}
+		}
+	}()
 }

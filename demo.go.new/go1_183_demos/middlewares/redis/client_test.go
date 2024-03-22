@@ -47,6 +47,47 @@ func TestHash(t *testing.T) {
 	})
 }
 
+func TestHashHGet(t *testing.T) {
+	keyForTest := "test_hash"
+	client, err := redis.GetRedisClientForLocalTest(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	redis.HIncrBy(client, keyForTest, "key_sub_1", 1)
+	redis.HIncrBy(client, keyForTest, "key_sub_2", 2)
+
+	t.Run("get success", func(t *testing.T) {
+		result, ok, err := redis.HGetInt(client, keyForTest, "key_sub_1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
+			t.Log("get:", result)
+		}
+	})
+
+	t.Run("key not exist", func(t *testing.T) {
+		_, ok, err := redis.HGetInt(client, "not_exist", "key_sub_1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Log("key not found")
+		}
+	})
+
+	t.Run("field not exist", func(t *testing.T) {
+		_, ok, err := redis.HGetInt(client, keyForTest, "not_exist")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Log("field not found")
+		}
+	})
+}
+
 func TestHashHScan(t *testing.T) {
 	keyForTest := "test_hash"
 	client, err := redis.GetRedisClientForLocalTest(t)

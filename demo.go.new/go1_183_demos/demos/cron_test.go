@@ -28,7 +28,7 @@ func TestParseQuartzCronTimeExp(t *testing.T) {
 	parser := cron.NewParser(cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
 	for _, exp := range []string{
 		"0 0 0/1 * * ?", // every hour
-		"10 1 1 * * ?",  // 01:01:10 every day
+		"10 5 1 * * ?",  // 01:01:10 every day
 	} {
 		schedule, err := parser.Parse(exp)
 		if err != nil {

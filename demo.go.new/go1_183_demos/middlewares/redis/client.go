@@ -72,10 +72,18 @@ func HIncrBy(client *redis.Client, key, field string, incr int64) error {
 	return client.HIncrBy(ctx, key, field, incr).Err()
 }
 
-func HGetInt(client *redis.Client, key, field string) (int, error) {
+func HGetInt(client *redis.Client, key, field string) (int, bool, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
 	defer cancel()
-	return client.HGet(ctx, key, field).Int()
+	result, err := client.HGet(ctx, key, field).Int()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return -1, false, nil
+		}
+		return -1, false, err
+	}
+
+	return result, true, nil
 }
 
 func HGetAll(client *redis.Client, key string) (map[string]string, error) {
