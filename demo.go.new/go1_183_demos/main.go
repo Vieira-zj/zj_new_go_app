@@ -62,15 +62,13 @@ func collectGCState(ctx context.Context, interval time.Duration) {
 	defer t.Stop()
 
 	state := debug.GCStats{}
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-t.C:
-				debug.ReadGCStats(&state)
-				log.Printf("%+v", state)
-			}
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			debug.ReadGCStats(&state)
+			log.Printf("%+v", state)
 		}
-	}()
+	}
 }

@@ -1,6 +1,7 @@
 package demos_test
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -108,27 +109,6 @@ func TestTypeAssert(t *testing.T) {
 			t.Log("unknown type")
 		}
 	})
-}
-
-func TestTimeDuration(t *testing.T) {
-	duration, err := time.ParseDuration("5m")
-	if err != nil {
-		t.Fatal(err)
-	}
-	ti := time.Now().Add(duration)
-	t.Log("now after 5m:", ti)
-}
-
-func TestGoSlog(t *testing.T) {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	}))
-	logger.Debug("text debug level log", "uid", 1002)
-	logger.Info("text info level log", "uid", 1002)
-
-	jsonLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	jsonLogger.Debug("json info level log", "uid", 1002)
-	jsonLogger.Info("json info level log", "uid", 1002)
 }
 
 // Demo: defer
@@ -245,4 +225,66 @@ func TestRecoverFromPanic(t *testing.T) {
 	fmt.Println("wait...")
 	<-ch
 	fmt.Println("recover demo done")
+}
+
+// Demo: context
+
+func TestContextAfterFunc(t *testing.T) {
+	t.Run("run ctx AfterFunc", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		context.AfterFunc(ctx, func() {
+			fmt.Println("run ctx clearup")
+		})
+
+		t.Log("wait...")
+		<-ctx.Done()
+		t.Log("cancelled")
+	})
+
+	t.Run("stop ctx AfterFunc", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		stop := context.AfterFunc(ctx, func() {
+			fmt.Println("run ctx clearup")
+		})
+
+		select {
+		case <-ctx.Done():
+			t.Log("cancelled")
+		case <-time.After(200 * time.Millisecond):
+			if ok := stop(); ok {
+				t.Log("stop AfterFunc")
+			}
+		}
+		t.Log("finish")
+	})
+}
+
+// Demo: modules
+
+func TestTimeAdd(t *testing.T) {
+	duration, err := time.ParseDuration("5m")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ti := time.Now().Add(duration)
+	t.Log("now after 5m:", ti)
+
+	ti = ti.AddDate(0, 0, 6)
+	t.Log("now after 3 days:", ti)
+}
+
+func TestGoSlog(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
+	logger.Debug("text debug level log", "uid", 1002)
+	logger.Info("text info level log", "uid", 1002)
+
+	jsonLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	jsonLogger.Debug("json info level log", "uid", 1002)
+	jsonLogger.Info("json info level log", "uid", 1002)
 }

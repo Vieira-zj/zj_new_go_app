@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"runtime"
 
+	streamlister "demo.apps/apps/stream_lister/pkg"
+	"github.com/gogo/protobuf/proto"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
@@ -36,8 +40,21 @@ func main() {
 	// 以 stream 的方式进行 pod list, 逐个返回结果, 降低全量 list 时的内存占用
 	go func() {
 		defer close(podCh)
-		clientset.CoreV1().RESTClient()
-		// TODO: stream list
+		client := clientset.CoreV1().RESTClient()
+		if err := streamlister.StreamList(context.TODO(), client, "pods", "default", metav1.ListOptions{ResourceVersion: "0"}, streamlister.Param{
+			ObjectFactoryFunc: func() proto.Unmarshaler {
+				return &corev1.Pod{}
+			},
+			OnListMetaFunc: func(listMeta *metav1.ListMeta) {
+				log.Printf("rv=%s", listMeta.ResourceVersion)
+			},
+			OnObjectFunc: func(obj proto.Unmarshaler) {
+				pod := obj.(*corev1.Pod)
+				podCh <- pod
+			},
+		}); err != nil {
+			log.Fatal("streamlister.StreamList failed:", err)
+		}
 	}()
 
 	var i int
