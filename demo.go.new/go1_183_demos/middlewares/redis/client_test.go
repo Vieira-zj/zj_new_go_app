@@ -1,12 +1,66 @@
 package redis_test
 
 import (
+	"errors"
 	"math/rand"
 	"strconv"
 	"testing"
+	"time"
 
 	"demo.apps/middlewares/redis"
+	redisv8 "github.com/go-redis/redis/v8"
 )
+
+func TestSetExpired(t *testing.T) {
+	keyForTest := "test_expired"
+	client, err := redis.GetRedisClientForLocalTest(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("set expired ok", func(t *testing.T) {
+		if err := redis.Add(client, keyForTest, "expired_at_sec", 0); err != nil {
+			t.Fatal(err)
+		}
+		result, err := redis.Get(client, keyForTest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log("get value:", result)
+
+		ok, err := redis.SetExpired(client, keyForTest, time.Second)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatal("add expired failed")
+		}
+		t.Log("add expired")
+
+		time.Sleep(1200 * time.Millisecond)
+		if _, err = redis.Get(client, keyForTest); err != nil && errors.Is(err, redisv8.Nil) {
+			t.Logf("key [%s] is expired", keyForTest)
+		}
+	})
+
+	t.Run("set expired failed", func(t *testing.T) {
+		if err := redis.Add(client, keyForTest, "expired_at_3_secs", 3*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		time.Sleep(time.Second)
+
+		_, err := redis.SetExpired(client, keyForTest, time.Second)
+		if err != nil && errors.Is(err, redis.ErrExpiredAlreadySet) {
+			t.Logf("%v for key: %s", err, keyForTest)
+		}
+
+		result, err := redis.Get(client, keyForTest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log("get value:", result)
+	})
+}
 
 func TestHash(t *testing.T) {
 	keyForTest := "test_hash"

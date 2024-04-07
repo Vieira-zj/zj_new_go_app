@@ -3,13 +3,19 @@ package redis
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 	"testing"
 	"time"
 
 	"github.com/go-redis/redis/v8"
 )
 
-var redisClient *redis.Client
+var (
+	redisClient *redis.Client
+
+	ErrExpiredAlreadySet = fmt.Errorf("expired already set")
+)
 
 func GetRedisClient(addr, uname, pwd string) *redis.Client {
 	if redisClient == nil {
@@ -39,10 +45,28 @@ func GetRedisClientForLocalTest(t *testing.T) (*redis.Client, error) {
 
 // kv
 
+func SetExpired(client *redis.Client, key string, expired time.Duration) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+	defer cancel()
+
+	ttl := client.TTL(ctx, key).Val() // unit: second
+	if ttl <= 0 {
+		return client.Expire(ctx, key, expired).Result()
+	}
+	log.Printf("[%s] ttl: %.1f secs", key, ttl.Seconds())
+	return false, ErrExpiredAlreadySet
+}
+
 func Add(client *redis.Client, key string, value any, expr time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
 	defer cancel()
 	return client.SetNX(ctx, key, value, expr).Err()
+}
+
+func Get(client *redis.Client, key string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+	defer cancel()
+	return client.Get(ctx, key).Result()
 }
 
 func GetInt(client *redis.Client, key string) (int, error) {
@@ -99,7 +123,7 @@ func HGetAll(client *redis.Client, key string) (map[string]string, error) {
 
 // HSCAN
 //
-// 于编码类型为 IntSet 和 ZipList 的 Redis 集合对象, 在执行 HSCAN 命令是会忽略 COUNT 参数并遍历所有元素.
+// 对于编码类型为 IntSet 和 ZipList 的 Redis 集合对象, 在执行 HSCAN 命令是会忽略 COUNT 参数并遍历所有元素.
 //
 // 将 Redis 集合对象的编码类型从 IntSet 和 ZipList 转换为 HshTable 或 SkipList, 以避免 HSCAN 命令全量扫描集合对象的所有元素,
 // 建议谨慎调整此类参数设置避免引发其他如内存使用率上涨等问题.
