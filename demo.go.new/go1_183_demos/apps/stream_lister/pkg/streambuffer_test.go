@@ -3,11 +3,131 @@ package streamlister
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
+	"io"
 	"sync"
 	"testing"
 	"time"
 )
+
+func TestBinaryCodec01(t *testing.T) {
+	buf := make([]byte, 10)
+	t.Run("binary encode", func(t *testing.T) {
+		ts := uint32(time.Now().Unix())
+		binary.BigEndian.PutUint16(buf[0:], 0xa20c)
+		binary.BigEndian.PutUint16(buf[2:], 0x04af)
+		binary.BigEndian.PutUint32(buf[4:], ts)
+		binary.BigEndian.PutUint16(buf[8:], 479)
+		fmt.Printf("bytes: %x\n", buf)
+	})
+
+	t.Run("binary decode", func(t *testing.T) {
+		sensorID := binary.BigEndian.Uint16(buf[0:])
+		locID := binary.BigEndian.Uint16(buf[2:])
+		tstamp := binary.BigEndian.Uint32(buf[4:])
+		temp := binary.BigEndian.Uint16(buf[8:])
+		fmt.Printf("sid: %0#x, locID %0#x ts: %0#x, temp:%d\n", sensorID, locID, tstamp, temp)
+	})
+}
+
+func TestBinaryCodec02(t *testing.T) {
+	tmp := make([]byte, 10)
+	var buf []byte
+
+	t.Run("binary encode int", func(t *testing.T) {
+		n := binary.PutUvarint(tmp, 3)
+		n += binary.PutUvarint(tmp[n:], 6)
+		n += binary.PutUvarint(tmp[n:], 9)
+		buf = tmp[:n]
+		t.Log("buf len:", len(buf))
+	})
+
+	t.Run("binary decode int", func(t *testing.T) {
+		offset := 0
+		for {
+			num, n := binary.Uvarint(buf[offset:])
+			if n <= 0 {
+				t.Log("decode failed")
+				break
+			}
+
+			t.Log("number:", num)
+			offset += n
+		}
+	})
+
+	t.Run("binary decode in by reader", func(t *testing.T) {
+		r := bytes.NewReader(buf)
+		if _, err := r.Seek(0, io.SeekStart); err != nil {
+			t.Fatal(err)
+		}
+
+		for {
+			num, err := binary.ReadUvarint(r)
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					t.Log("eof")
+					break
+				}
+				t.Fatal(err)
+			}
+			t.Log("number:", num)
+		}
+	})
+}
+
+func TestBinaryCodec03(t *testing.T) {
+	buf := make([]byte, 0)
+
+	t.Run("write to buffer", func(t *testing.T) {
+		for k, v := range map[string]string{
+			"one":   "bar",
+			"two":   "hello",
+			"three": "foo",
+		} {
+			tmp := make([]byte, 10)
+			n := binary.PutUvarint(tmp, uint64(len(k)))     // key len
+			n += binary.PutUvarint(tmp[n:], uint64(len(v))) // value len
+			buf = append(buf, tmp[:n]...)
+			buf = append(buf, []byte(k)...) // key
+			buf = append(buf, []byte(v)...) // value
+		}
+
+		t.Log("buf len:", len(buf))
+	})
+
+	t.Run("read kv from buffer", func(t *testing.T) {
+		r := bytes.NewReader(buf)
+		if _, err := r.Seek(0, io.SeekStart); err != nil {
+			t.Fatal(err)
+		}
+
+		for {
+			klen, err := binary.ReadUvarint(r)
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					t.Log("eof")
+					break
+				}
+				t.Fatal(err)
+			}
+
+			vlen, _ := binary.ReadUvarint(r)
+
+			kbuf := make([]byte, klen)
+			if _, err := io.ReadFull(r, kbuf); err != nil {
+				t.Fatal(err)
+			}
+			vbuf := make([]byte, vlen)
+			if _, err := io.ReadFull(r, vbuf); err != nil {
+				t.Fatal(err)
+			}
+
+			t.Logf("read: key=%s, value=%s", kbuf, vbuf)
+		}
+	})
+}
 
 var (
 	beginB  byte = 0x12
@@ -26,7 +146,7 @@ func TestStreamBufferRw(t *testing.T) {
 		defer wg.Done()
 
 		for i := 0; i < 8; i++ {
-			b := make([]byte, 2)
+			b := make([]byte, 2) // 2 bytes for unit16
 			buf.WriteByte(headerB)
 			binary.LittleEndian.PutUint16(b, uint16(i))
 			buf.Write(b)
@@ -91,13 +211,4 @@ func TestStreamBufferRw(t *testing.T) {
 	close(errCh)
 
 	t.Log("stream buffer finish")
-}
-
-func TestBinaryInt(t *testing.T) {
-	b := make([]byte, 2)
-	binary.LittleEndian.PutUint16(b, uint16(12))
-	t.Log("bytes:", b)
-
-	number := binary.LittleEndian.Uint16(b)
-	t.Log("number:", number)
 }

@@ -12,6 +12,44 @@ import (
 
 // demo: json
 
+func TestJsonParsePtr(t *testing.T) {
+	type MyValue struct {
+		Str     string  `json:"str"`
+		StrPtr  *string `json:"str_ptr"`
+		StrOmit string  `json:"str_omit,omitempty"`
+	}
+
+	t.Run("marshal ptr", func(t *testing.T) {
+		str := "boo_ptr"
+		value := MyValue{
+			Str:     "boo",
+			StrPtr:  &str,
+			StrOmit: "omit_value",
+		}
+
+		b, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("result: %s", b)
+	})
+
+	t.Run("marshal nil ptr", func(t *testing.T) {
+		value := MyValue{Str: "boo"}
+		b, err := json.Marshal(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("result: %s", b)
+
+		v := MyValue{}
+		if err = json.Unmarshal(b, &v); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("struct: %+v", v)
+	})
+}
+
 func TestJsonParseForBytes(t *testing.T) {
 	type DataHold struct {
 		ID string `json:"id"`
@@ -22,7 +60,7 @@ func TestJsonParseForBytes(t *testing.T) {
 		RawString json.RawMessage `json:"raw_string"`
 	}
 
-	t.Run("json marshal", func(t *testing.T) {
+	t.Run("marshal bytes", func(t *testing.T) {
 		data := DataHold{
 			ID:        "0101",
 			Bytes:     []byte(`{"say":"hello"}`),
@@ -37,7 +75,7 @@ func TestJsonParseForBytes(t *testing.T) {
 		t.Logf("results: %s", b)
 	})
 
-	t.Run("json unmarshal", func(t *testing.T) {
+	t.Run("unmarshal bytes", func(t *testing.T) {
 		s := `{"bytes":"eyJzYXkiOiJoZWxsbyJ9","raw_bytes":{"name":"foo"},"raw_string":{"id":"0101"}}`
 		d := DataHold{}
 		if err := json.Unmarshal([]byte(s), &d); err != nil {

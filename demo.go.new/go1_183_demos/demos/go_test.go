@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"os"
 	"reflect"
 	"runtime/debug"
@@ -240,6 +241,7 @@ func TestContextAfterFunc(t *testing.T) {
 
 		t.Log("wait...")
 		<-ctx.Done()
+		time.Sleep(30 * time.Millisecond)
 		t.Log("cancelled")
 	})
 
@@ -255,15 +257,36 @@ func TestContextAfterFunc(t *testing.T) {
 		case <-ctx.Done():
 			t.Log("cancelled")
 		case <-time.After(200 * time.Millisecond):
-			if ok := stop(); ok {
+			if stop() {
 				t.Log("stop AfterFunc")
 			}
 		}
+
+		cancel()
+		t.Log("do cancel")
+		time.Sleep(30 * time.Millisecond)
 		t.Log("finish")
 	})
 }
 
 // Demo: modules
+
+func TestRandom(t *testing.T) {
+	t.Run("rand directly", func(t *testing.T) {
+		for i := 0; i < 6; i++ {
+			num := rand.Intn(10)
+			t.Log("rand number:", num)
+		}
+	})
+
+	t.Run("new rand", func(t *testing.T) {
+		rander := rand.New(rand.NewSource(time.Now().Unix()))
+		for i := 0; i < 6; i++ {
+			num := rander.Intn(10)
+			t.Log("rand number:", num)
+		}
+	})
+}
 
 func TestTimeAdd(t *testing.T) {
 	duration, err := time.ParseDuration("5m")
