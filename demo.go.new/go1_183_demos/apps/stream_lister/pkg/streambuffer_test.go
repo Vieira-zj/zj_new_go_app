@@ -78,6 +78,7 @@ func TestBinaryCodec02(t *testing.T) {
 }
 
 func TestBinaryCodec03(t *testing.T) {
+	var tmp [10]byte // use array instead of slice
 	buf := make([]byte, 0)
 
 	t.Run("write to buffer", func(t *testing.T) {
@@ -86,12 +87,12 @@ func TestBinaryCodec03(t *testing.T) {
 			"two":   "hello",
 			"three": "foo",
 		} {
-			tmp := make([]byte, 10)
-			n := binary.PutUvarint(tmp, uint64(len(k)))     // key len
-			n += binary.PutUvarint(tmp[n:], uint64(len(v))) // value len
+			// format: key-len | value-len | key | value
+			n := binary.PutUvarint(tmp[0:], uint64(len(k)))
+			n += binary.PutUvarint(tmp[n:], uint64(len(v)))
 			buf = append(buf, tmp[:n]...)
-			buf = append(buf, []byte(k)...) // key
-			buf = append(buf, []byte(v)...) // value
+			buf = append(buf, []byte(k)...)
+			buf = append(buf, []byte(v)...)
 		}
 
 		t.Log("buf len:", len(buf))
