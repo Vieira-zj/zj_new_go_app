@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -35,12 +34,12 @@ func RunShellCmd(command string) (string, error) {
 	}
 
 	// here, blocked until cmd exec finish
-	output, err := ioutil.ReadAll(stdout)
+	output, err := io.ReadAll(stdout)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return "", fmt.Errorf("%s read stdout error: %v", tag, err)
 	}
 
-	errOutput, err := ioutil.ReadAll(stderr)
+	errOutput, err := io.ReadAll(stderr)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return "", fmt.Errorf("%s read stderr error: %v", tag, err)
 	}

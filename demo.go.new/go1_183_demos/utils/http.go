@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 )
@@ -89,7 +89,7 @@ func (requester HttpRequester) send(req *http.Request) (*http.Response, []byte, 
 		return nil, nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return resp, nil, err
 	}

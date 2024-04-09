@@ -22,7 +22,7 @@ func IsDirExist(path string) bool {
 	return f.IsDir()
 }
 
-// BlockedCopy copy file by 1m block.
+// BlockedCopy copies file by each 1m block.
 func BlockedCopy(src, dest string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
