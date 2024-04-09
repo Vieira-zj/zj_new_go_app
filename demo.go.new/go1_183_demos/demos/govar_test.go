@@ -19,15 +19,23 @@ func TestHexToDecimal(t *testing.T) {
 }
 
 func TestCalBits(t *testing.T) {
-	t.Log(1 << 0)
-	t.Log(1 << 1)
-	t.Log(2 << 0)
+	t.Run("bit move op", func(t *testing.T) {
+		t.Log(0 << 2)  // 0
+		t.Log(16 << 1) // num*2
 
-	var val int
-	val |= 1 << 0
-	val |= 1 << 1
-	t.Log("contains:", val&(1<<0) != 0)
-	t.Log("contains:", val&(1<<1) != 0)
+		t.Log(14 >> 1) // num/2
+	})
+
+	t.Run("bit | op", func(t *testing.T) {
+		t.Log(1 << 1)
+		t.Log(1 << 2)
+
+		var val int
+		val |= 1 << 1
+		val |= 1 << 2
+		t.Log("contains:", val&(1<<1) != 0)
+		t.Log("contains:", val&(1<<2) != 0)
+	})
 }
 
 // Demo: bytes, string
