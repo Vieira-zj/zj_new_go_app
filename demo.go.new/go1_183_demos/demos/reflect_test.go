@@ -111,3 +111,27 @@ func TestInterfaceTypeCheck(t *testing.T) {
 		}
 	})
 }
+
+// Demo: check class impl
+
+type MyInterface interface {
+	MethodA()
+	MethodB()
+}
+
+type MyClass struct{}
+
+func NewMyClass() *MyClass {
+	return &MyClass{}
+}
+
+func (m *MyClass) MethodA() {}
+
+func (m *MyClass) MethodB() {}
+
+func TestInterfaceImpl(t *testing.T) {
+	clsType := reflect.TypeOf(NewMyClass())
+	interType := reflect.TypeOf((*MyInterface)(nil)).Elem()
+	t.Log("interface type:", interType.String())
+	t.Log("is impl:", clsType.Implements(interType))
+}
