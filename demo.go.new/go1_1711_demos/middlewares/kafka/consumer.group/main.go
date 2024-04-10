@@ -45,6 +45,7 @@ func init() {
 }
 
 // Start a consumer group client to loop consume topic messages.
+//
 // 1. Parallel is equal to partition number of topic
 // 2. Mark consumed messages, and will continue from last offset
 
@@ -161,21 +162,22 @@ func toggleConsumptionFlow(client sarama.ConsumerGroup, isPaused *bool) {
 
 // Consumer
 
-// Consumer represents a Sarama consumer group consumer
+// Consumer represents a Sarama consumer group consumer.
 type Consumer struct {
 	index atomic.Uint32
 	ready chan bool
 }
 
-// Setup is run at the beginning of a new session, before ConsumeClaim
-func (consumer *Consumer) Setup(sarama.ConsumerGroupSession) error {
+// Setup is run at the beginning of a new session, before ConsumeClaim.
+func (consumer *Consumer) Setup(session sarama.ConsumerGroupSession) error {
 	log.Println("consumer setup")
+	log.Printf("topic claimed partitions: %+v", session.Claims())
 	// Mark the consumer as ready
 	close(consumer.ready)
 	return nil
 }
 
-// Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited
+// Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited.
 func (consumer *Consumer) Cleanup(sarama.ConsumerGroupSession) error {
 	log.Println("consumer clearup")
 	return nil
@@ -184,7 +186,9 @@ func (consumer *Consumer) Cleanup(sarama.ConsumerGroupSession) error {
 // ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
 func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	idx := consumer.index.Add(1)
-	// NOTE: Do not move the code below to a goroutine. The `ConsumeClaim` itself is called within a goroutine.
+	// NOTE: Do not move the code below to a goroutine.
+	// The `ConsumeClaim` itself is called within a goroutine, see:
+	// https://github.com/Shopify/sarama/blob/main/consumer_group.go#L27-L29
 	for {
 		select {
 		case message := <-claim.Messages():

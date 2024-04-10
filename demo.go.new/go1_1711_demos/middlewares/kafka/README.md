@@ -1,5 +1,15 @@
 # Kafka Middleware Demo
 
+## Project
+
+- `client.go` / `client_test.go`: kafka admin client to list/create/delete topic.
+
+- `main.go`: a http server as kafka producer.
+
+- `consumer.group/main.go`: a kafka consumer group to parallel consume message.
+  - parallel is equal to partition number of topic
+  - mark consumed messages, and will continue from last offset
+
 ## Env
 
 Topics/ConsumerGroup for test:

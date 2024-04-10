@@ -25,7 +25,7 @@ var (
 	tlsSkipVerify = flag.Bool("tls-skip-verify", false, "Whether to skip TLS server cert verification")
 )
 
-// Start http service to roduce sync and async messages to kafka topic.
+// Start a http server to produce sync and async messages to kafka topic.
 
 func main() {
 	flag.Parse()

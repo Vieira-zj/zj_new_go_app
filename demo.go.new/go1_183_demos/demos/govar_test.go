@@ -1,6 +1,7 @@
 package demos_test
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -18,7 +19,7 @@ func TestHexToDecimal(t *testing.T) {
 	t.Logf("decimal result: %d, %s", int64(val), result)
 }
 
-func TestCalBits(t *testing.T) {
+func TestBitsOps(t *testing.T) {
 	t.Run("bit move op", func(t *testing.T) {
 		t.Log(0 << 2)  // 0
 		t.Log(16 << 1) // num*2
@@ -35,6 +36,18 @@ func TestCalBits(t *testing.T) {
 		val |= 1 << 2
 		t.Log("contains:", val&(1<<1) != 0)
 		t.Log("contains:", val&(1<<2) != 0)
+	})
+}
+
+func TestBytesCompare(t *testing.T) {
+	t.Run("bytes compare", func(t *testing.T) {
+		result := bytes.Compare([]byte("abc"), []byte("abx"))
+		t.Log("result:", result)
+	})
+
+	t.Run("string compare", func(t *testing.T) {
+		result := strings.Compare("abx", "abc")
+		t.Log("result:", result)
 	})
 }
 
