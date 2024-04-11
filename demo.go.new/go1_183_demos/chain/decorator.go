@@ -1,4 +1,4 @@
-package algorithm
+package chain
 
 import (
 	"context"
@@ -20,7 +20,7 @@ func Decorate(fn handleFunc) handleFunc {
 
 type DecorateFunc func(ctx context.Context, param map[string]any, fn handleFunc) error
 
-func ChainDecorators(decorators []DecorateFunc) DecorateFunc {
+func DecoratorsChain(decorators []DecorateFunc) DecorateFunc {
 	return func(ctx context.Context, param map[string]any, fn handleFunc) error {
 		return decorators[0](ctx, param, getChainHandler(decorators, 0, fn))
 	}

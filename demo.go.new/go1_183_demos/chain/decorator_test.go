@@ -1,4 +1,4 @@
-package algorithm
+package chain
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func TestDecorate(t *testing.T) {
 	t.Log("decorate done")
 }
 
-func TestChainDecorators(t *testing.T) {
+func TestDecoratorsChain(t *testing.T) {
 	dfn1 := func(ctx context.Context, param map[string]any, fn handleFunc) error {
 		log.Println("[decorator1] pre-process...")
 		err := fn(ctx, param)
@@ -41,7 +41,7 @@ func TestChainDecorators(t *testing.T) {
 		return err
 	}
 
-	chain := ChainDecorators([]DecorateFunc{dfn1, dfn2})
+	chain := DecoratorsChain([]DecorateFunc{dfn1, dfn2})
 
 	// invoke
 	fn := func(ctx context.Context, param map[string]any) error {
