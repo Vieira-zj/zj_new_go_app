@@ -36,7 +36,36 @@ func TestStrLenByReflect(t *testing.T) {
 	t.Log("len:", valueOf.Len())
 }
 
-// Demo: new instance by reflect
+// Demo: compare by DeepEqual
+
+func TestMapDeepEqual(t *testing.T) {
+	t.Run("map same value and struct", func(t *testing.T) {
+		m1 := map[string]int{"one": 1, "two": 2}
+		m2 := map[string]int{"one": 1, "two": 2}
+		result := reflect.DeepEqual(m1, m2)
+		t.Log("diff result:", result)
+	})
+
+	t.Run("map same value and diff struct", func(t *testing.T) {
+		m1 := map[string]int{"one": 1, "two": 2, "three": 3}
+		m2 := map[string]int{"two": 2, "three": 3, "one": 1}
+		result := reflect.DeepEqual(m1, m2)
+		t.Log("diff result:", result)
+	})
+
+	t.Run("map diff value", func(t *testing.T) {
+		m1 := map[string]int{"one": 1, "two": 2}
+		m2 := map[string]int{"two": 2, "one": 3}
+		result := reflect.DeepEqual(m1, m2)
+		t.Log("diff result:", result)
+	})
+}
+
+func TestStructDeepEqual(t *testing.T) {
+	// TODO:
+}
+
+// Demo: new object by reflect
 
 type TestPerson struct {
 	Name string `json:"name"`
@@ -85,7 +114,10 @@ func TestInterfaceTypeCheck(t *testing.T) {
 	var i interface{} //nolint:gosimple
 	i = Value{1}
 
-	t.Run("type check", func(t *testing.T) {
+	tof := reflect.TypeOf(i)
+	t.Logf("kind:%s, name:%s", tof.Kind().String(), tof.Name())
+
+	t.Run("switch type check", func(t *testing.T) {
 		switch tt := i.(type) {
 		case int:
 			t.Log("type is int")
@@ -96,12 +128,7 @@ func TestInterfaceTypeCheck(t *testing.T) {
 		}
 	})
 
-	t.Run("reflect type", func(t *testing.T) {
-		tof := reflect.TypeOf(i)
-		t.Logf("kind:%s, name:%s", tof.Kind().String(), tof.Name())
-	})
-
-	t.Run("reflect value", func(t *testing.T) {
+	t.Run("type check by reflect", func(t *testing.T) {
 		i = 1
 		vof := reflect.ValueOf(i)
 		if ok := vof.CanConvert(reflect.TypeOf(0)); ok {

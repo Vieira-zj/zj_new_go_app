@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode"
 )
 
 // Demo: go test
@@ -271,6 +272,14 @@ func TestContextAfterFunc(t *testing.T) {
 
 // Demo: modules
 
+func TestUnicode(t *testing.T) {
+	t.Log("IsDigit:", unicode.IsDigit(rune('3')))
+	t.Log("IsDigit:", unicode.IsDigit(rune('a')))
+
+	t.Log("IsLower:", unicode.IsLower(rune('b')))
+	t.Log("IsLower:", unicode.IsLower(rune('B')))
+}
+
 func TestRandom(t *testing.T) {
 	t.Run("rand directly", func(t *testing.T) {
 		for i := 0; i < 6; i++ {
@@ -293,6 +302,7 @@ func TestTimeAdd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	ti := time.Now().Add(duration)
 	t.Log("now after 5m:", ti)
 
