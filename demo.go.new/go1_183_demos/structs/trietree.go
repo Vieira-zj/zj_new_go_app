@@ -15,7 +15,7 @@ func (t *TrieTree) Add(path string) {
 	// 逐个 byte 加入到 Trie Tree
 	for i := range path {
 		if child, ok := parent.children[path[i]]; ok {
-			// 如果子节点不为空，继续向下遍历
+			// 如果子节点不为空, 继续向下遍历
 			parent = child
 		} else {
 			child := NewTrieTree()
@@ -28,7 +28,7 @@ func (t *TrieTree) Add(path string) {
 	parent.isPath = true
 }
 
-// Find 返回指定路由是否存在于 Trie Tree 中。
+// Find 返回指定路由是否存在于 Trie Tree 中.
 func (t *TrieTree) Find(path string) bool {
 	parent := t
 	for i := range path {

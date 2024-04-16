@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -36,6 +37,7 @@ func initServer() *gin.Engine {
 
 	r.GET("/", HandleIndex)
 	r.GET("/ping", HandlePing)
+	r.Any("/echo", HandleEcho)
 
 	r.POST("/upload", HandleUpload)
 
@@ -103,6 +105,44 @@ func HandleIndex(c *gin.Context) {
 
 func HandlePing(c *gin.Context) {
 	// only write header
+	c.Writer.WriteHeader(http.StatusOK)
+}
+
+func HandleEcho(c *gin.Context) {
+	log.Println("method:", c.Request.Method)
+	log.Println("host:", c.Request.Host)
+
+	log.Println("query:")
+	for k, v := range c.Request.URL.Query() {
+		fmt.Printf("\tkey=%s, value=%s\n", k, v)
+	}
+
+	log.Println("headers:")
+	for k, v := range c.Request.Header {
+		fmt.Printf("\tkey=%s, value=%s\n", k, v)
+	}
+
+	body, err := io.ReadAll(c.Request.Body)
+	defer c.Request.Body.Close()
+	if err != nil {
+		log.Println("read body error:", err)
+	}
+	if len(body) > 0 {
+		log.Println("body:")
+		fmt.Println(string(body))
+	}
+
+	if timeout := c.Query("timeout"); len(timeout) > 0 {
+		duration, err := time.ParseDuration(timeout)
+		if err != nil {
+			log.Println("invalid timeout:", timeout)
+			c.Writer.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		log.Println("sleep for " + timeout)
+		time.Sleep(duration)
+	}
+
 	c.Writer.WriteHeader(http.StatusOK)
 }
 

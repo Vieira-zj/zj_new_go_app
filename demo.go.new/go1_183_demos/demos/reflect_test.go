@@ -39,30 +39,62 @@ func TestStrLenByReflect(t *testing.T) {
 // Demo: compare by DeepEqual
 
 func TestMapDeepEqual(t *testing.T) {
-	t.Run("map same value and struct", func(t *testing.T) {
-		m1 := map[string]int{"one": 1, "two": 2}
-		m2 := map[string]int{"one": 1, "two": 2}
+	t.Run("same key and value map", func(t *testing.T) {
+		m1 := map[string]any{"one": 1, "two": "2"}
+		m2 := map[string]any{"one": 1, "two": "2"}
 		result := reflect.DeepEqual(m1, m2)
+		t.Log("diff result:", result)
+
+		m1 = map[string]any{"one": 1, "two": "2", "three": 3}
+		m2 = map[string]any{"two": "2", "three": 3, "one": 1}
+		result = reflect.DeepEqual(m1, m2)
 		t.Log("diff result:", result)
 	})
 
-	t.Run("map same value and diff struct", func(t *testing.T) {
-		m1 := map[string]int{"one": 1, "two": 2, "three": 3}
-		m2 := map[string]int{"two": 2, "three": 3, "one": 1}
-		result := reflect.DeepEqual(m1, m2)
-		t.Log("diff result:", result)
-	})
-
-	t.Run("map diff value", func(t *testing.T) {
+	t.Run("diff value map", func(t *testing.T) {
 		m1 := map[string]int{"one": 1, "two": 2}
 		m2 := map[string]int{"two": 2, "one": 3}
 		result := reflect.DeepEqual(m1, m2)
+		t.Log("is equal:", result)
+	})
+
+	t.Run("same key and slice/map value map", func(t *testing.T) {
+		m1 := map[string]any{"one": 1, "two": "2", "three": 3, "slice": []int{1, 2, 3}}
+		m2 := map[string]any{"two": "2", "three": 3, "one": 1, "slice": []int{1, 2, 3}}
+		result := reflect.DeepEqual(m1, m2)
+		t.Log("diff result:", result)
+
+		m1 = map[string]any{"one": 1, "two": "2", "three": 3, "map": map[string]any{"name": "foo", "age": 31}}
+		m2 = map[string]any{"two": "2", "three": 3, "map": map[string]any{"age": 31, "name": "foo"}, "one": 1}
+		result = reflect.DeepEqual(m1, m2)
 		t.Log("diff result:", result)
 	})
 }
 
 func TestStructDeepEqual(t *testing.T) {
-	// TODO:
+	type TestData struct {
+		person  TestPerson
+		extinfo string
+	}
+
+	t.Run("same field and value struct", func(t *testing.T) {
+		d1 := TestData{
+			person: TestPerson{
+				Name: "foo",
+				Age:  41,
+			},
+			extinfo: "struct DeepEqual test",
+		}
+		d2 := TestData{
+			extinfo: "struct DeepEqual test",
+			person: TestPerson{
+				Name: "foo",
+				Age:  41,
+			},
+		}
+		result := reflect.DeepEqual(d1, d2)
+		t.Log("is equal:", result)
+	})
 }
 
 // Demo: new object by reflect
