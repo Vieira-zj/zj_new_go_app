@@ -2,6 +2,7 @@ package utils_test
 
 import (
 	"encoding/hex"
+	"reflect"
 	"testing"
 	"time"
 
@@ -13,6 +14,26 @@ import (
 func TestFormatDateTime(t *testing.T) {
 	result := utils.FormatDateTime(time.Now())
 	t.Log("now:", result)
+}
+
+func TestIsNil(t *testing.T) {
+	var x interface{}
+	var y *int = nil
+	x = y
+
+	typOf := reflect.TypeOf(x)
+	t.Logf("kind:%v, type:%s", typOf.Kind(), typOf.String())
+
+	//nolint:staticcheck
+	t.Run("nil interface var check", func(t *testing.T) {
+		// 即使接口持有的值为 nil, 也并不意味着接口本身为 nil.
+		t.Log("x != nil", x != nil) // true
+		t.Log("x:", x)
+	})
+
+	t.Run("nil check by reflect", func(t *testing.T) {
+		t.Log("IsNil:", utils.IsNil(x))
+	})
 }
 
 func TestTrackTime(t *testing.T) {

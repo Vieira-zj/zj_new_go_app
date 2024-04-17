@@ -106,6 +106,22 @@ func TestStrMultiReplace(t *testing.T) {
 
 // Demo: slice
 
+func TestSliceToArray(t *testing.T) {
+	t.Run("slice to array for Go 1.17", func(t *testing.T) {
+		var a [3]int
+		s := []int{0, 1, 2, 3, 4, 5}
+		a = *(*[3]int)(s[:3])
+		t.Log("array:", a)
+	})
+
+	t.Run("slice to array for Go 1.20", func(t *testing.T) {
+		var a [3]int
+		s := []int{0, 1, 2, 3, 4, 5}
+		a = [3]int(s[:3])
+		t.Log("array:", a)
+	})
+}
+
 func TestSliceInitByIndex(t *testing.T) {
 	s := []string{
 		2: "two", // index:value

@@ -9,12 +9,12 @@ import (
 	"unsafe"
 )
 
-// Bytes2string: unsafe convert bytes to string.
+// Bytes2string unsafe converts bytes to string.
 func Bytes2string(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-// String2bytes: unsafe convert string to bytes.
+// String2bytes unsafe converts string to bytes.
 func String2bytes(s string) (b []byte) {
 	bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
 	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))

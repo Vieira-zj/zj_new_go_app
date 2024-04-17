@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 )
 
@@ -9,6 +10,13 @@ const timeLayout = "2006-01-02 15:04:05"
 
 func FormatDateTime(ti time.Time) string {
 	return ti.Format(timeLayout)
+}
+
+func IsNil(x any) bool {
+	if x == nil {
+		return true
+	}
+	return reflect.ValueOf(x).IsNil()
 }
 
 func TrackTime() func() {

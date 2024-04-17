@@ -2,6 +2,7 @@ package demos_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -297,7 +298,7 @@ func TestRandom(t *testing.T) {
 	})
 }
 
-func TestTimeAdd(t *testing.T) {
+func TestCalTime(t *testing.T) {
 	duration, err := time.ParseDuration("5m")
 	if err != nil {
 		t.Fatal(err)
@@ -308,6 +309,26 @@ func TestTimeAdd(t *testing.T) {
 
 	ti = ti.AddDate(0, 0, 6)
 	t.Log("now after 3 days:", ti)
+}
+
+func TestErrors(t *testing.T) {
+	t.Run("error wrapped", func(t *testing.T) {
+		err := errors.New("mock err")
+		wrappedErr := fmt.Errorf("wrapped: %w", err)
+		t.Log("err:", wrappedErr)
+
+		rawErr := errors.Unwrap(wrappedErr)
+		t.Log("raw err:", rawErr)
+	})
+
+	t.Run("errors join from Go 1.20", func(t *testing.T) {
+		err1 := errors.New("Error 1st")
+		err2 := errors.New("Error 2nd")
+
+		err := errors.Join(err1, err2)
+		t.Log("err1:", errors.Is(err, err1))
+		t.Log("err2:", errors.Is(err, err2))
+	})
 }
 
 func TestGoSlog(t *testing.T) {
