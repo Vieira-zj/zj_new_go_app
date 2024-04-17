@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"reflect"
 	"strings"
@@ -61,5 +62,39 @@ func SlicesContains[T ~int | string | bool](s1, s2 []T) bool {
 }
 
 func isObjectEqual(src, dest any) bool {
-	return reflect.TypeOf(src).Kind() == reflect.TypeOf(dest).Kind() && src == dest
+	return reflect.TypeOf(src).Kind() == reflect.TypeOf(dest).Kind() && reflect.DeepEqual(src, dest)
+}
+
+type FnDeclaration struct {
+	Name   string   `json:"name"`
+	Input  []string `json:"input"`
+	Output []string `json:"output"`
+}
+
+func GetFnDeclaration(fn any) (FnDeclaration, error) {
+	fnType := reflect.TypeOf(fn)
+	if fnType.Kind() != reflect.Func {
+		return FnDeclaration{}, fmt.Errorf("input must be function, but got: %s", fnType.Kind().String())
+	}
+
+	input := make([]string, 0)
+	for i := 0; i < fnType.NumIn(); i++ {
+		arg := fnType.In(i)
+		input = append(input, arg.String())
+	}
+
+	output := make([]string, 0)
+	for i := 0; i < fnType.NumOut(); i++ {
+		result := fnType.Out(i)
+		output = append(output, result.String())
+	}
+
+	fullName := GetFullFnName(fn)
+	shortName := fullName[strings.LastIndex(fullName, ".")+1:]
+
+	return FnDeclaration{
+		Name:   shortName,
+		Input:  input,
+		Output: output,
+	}, nil
 }

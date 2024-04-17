@@ -60,19 +60,7 @@ func TestSearchFiles(t *testing.T) {
 
 func TestReadFileLastBytes(t *testing.T) {
 	path := "/tmp/test/raw.txt"
-
-	t.Run("write file", func(t *testing.T) {
-		f, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer f.Close()
-
-		if _, err = f.WriteString("\nabcd\nefghi\njkl"); err != nil {
-			t.Fatal(err)
-		}
-		t.Log("write file finish")
-	})
+	writeFileForTest(t, path, "\nabcd\nefghi\njkl")
 
 	t.Run("read file last bytes", func(t *testing.T) {
 		f, err := os.Open(path)
@@ -98,4 +86,42 @@ func TestReadFileLastBytes(t *testing.T) {
 		}
 		t.Logf("read last %d bytes: %s", size, b)
 	})
+}
+
+func TestFileWriteAt(t *testing.T) {
+	path := "/tmp/test/raw.txt"
+	writeFileForTest(t, path, "abcd\nabcd\nabcd")
+
+	t.Run("write file at offset", func(t *testing.T) {
+		f, err := os.OpenFile(path, os.O_WRONLY, 0644)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+
+		// replace existing bytes
+		if _, err = f.WriteAt([]byte("xy"), 5); err != nil {
+			t.Fatal(err)
+		}
+		if err = f.Sync(); err != nil {
+			t.Fatal(err)
+		}
+		t.Log("file writeAt finish")
+	})
+}
+
+func writeFileForTest(t *testing.T, path, content string) {
+	if utils.IsExist(path) {
+		os.Remove(path)
+	}
+
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	if _, err = f.WriteString(content); err != nil {
+		t.Fatal(err)
+	}
 }

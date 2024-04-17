@@ -4,10 +4,44 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"io"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 )
+
+// Network
+
+func GetLocalIPAddr() (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "", err
+	}
+
+	for _, addr := range addrs {
+		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				return ipNet.IP.String(), nil
+			}
+		}
+	}
+	return "-1:", errors.New("not happen")
+}
+
+func GetLocalIPAddrByDial() (string, error) {
+	conn, err := net.Dial("udp", "8.8.8.8:53")
+	if err != nil {
+		return "", err
+	}
+
+	if addr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
+		idx := strings.Index(addr.String(), ":")
+		return addr.String()[:idx], nil
+	}
+	return "-1", errors.New("not happen")
+}
 
 // Http Client
 

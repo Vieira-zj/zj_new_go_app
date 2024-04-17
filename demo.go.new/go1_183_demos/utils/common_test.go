@@ -2,9 +2,6 @@ package utils_test
 
 import (
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -12,6 +9,19 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/scrypt"
 )
+
+func TestFormatDateTime(t *testing.T) {
+	result := utils.FormatDateTime(time.Now())
+	t.Log("now:", result)
+}
+
+func TestTrackTime(t *testing.T) {
+	defer utils.TrackTime()()
+
+	t.Log("start ...")
+	time.Sleep(time.Second)
+	t.Log("end")
+}
 
 func TestDelFirstNItemsOfSlice(t *testing.T) {
 	makeSlice := func() []any {
@@ -39,96 +49,6 @@ func TestDelFirstNItemsOfSlice(t *testing.T) {
 		s = s[n:]
 		t.Log("results:", len(s), s)
 	})
-}
-
-func TestFormatDateTime(t *testing.T) {
-	result := utils.FormatDateTime(time.Now())
-	t.Log("now:", result)
-}
-
-func TestGetLocalIPAddr(t *testing.T) {
-	addr, err := utils.GetLocalIPAddr()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("local ip addr:", addr)
-
-	addr, err = utils.GetLocalIPAddrByDial()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("local ip addr:", addr)
-}
-
-func TestGetCallerInfo(t *testing.T) {
-	t.Run("get package path", func(t *testing.T) {
-		type S struct{}
-		typeOf := reflect.TypeOf(S{})
-		t.Log("pkg path:", typeOf.PkgPath())
-	})
-
-	t.Run("get caller info", func(t *testing.T) {
-		callerInfo := utils.GetCallerInfo(1)
-		t.Log("caller info:\n", callerInfo)
-	})
-}
-
-func TestGetGoroutineID(t *testing.T) {
-	ch := make(chan int)
-	for i := 0; i < 3; i++ {
-		idx := i
-		go func() {
-			id, err := utils.GetGoroutineID()
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			fmt.Printf("[%d] goroutine id: %d, start\n", idx, id)
-			for val := range ch {
-				fmt.Printf("[%d] goroutine id: %d, get value: %d\n", idx, id, val)
-			}
-			fmt.Printf("[%d] goroutine id: %d, exit\n", idx, id)
-		}()
-	}
-
-	for i := 0; i < 10; i++ {
-		ch <- i
-		time.Sleep(10 * time.Millisecond)
-	}
-	close(ch)
-
-	time.Sleep(100 * time.Millisecond)
-	t.Log("test goroutine id done")
-}
-
-func TestGetFullFnName(t *testing.T) {
-	anonymousFn := func() {
-		fmt.Println("anonymous fn for test")
-	}
-
-	for _, fn := range []any{
-		utils.GetLocalIPAddr,
-		utils.GetCallerInfo,
-		anonymousFn,
-	} {
-		t.Log("full fn name:", utils.GetFullFnName(fn))
-	}
-}
-
-func TestGetFnDeclaration(t *testing.T) {
-	for _, fn := range []any{
-		utils.GetLocalIPAddr,
-		utils.GetCallerInfo,
-	} {
-		result, err := utils.GetFnDeclaration(fn)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		b, _ := json.Marshal(&result)
-		t.Logf("func desc: %s", b)
-	}
 }
 
 func TestSecurity(t *testing.T) {

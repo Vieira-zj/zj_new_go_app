@@ -1,6 +1,7 @@
 package utils_test
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -61,4 +62,19 @@ func TestSlicesContains(t *testing.T) {
 		result := utils.SlicesContains(s1, s2)
 		t.Log("result:", result)
 	})
+}
+
+func TestGetFnDeclaration(t *testing.T) {
+	for _, fn := range []any{
+		utils.GetLocalIPAddr,
+		utils.GetCallerInfo,
+	} {
+		result, err := utils.GetFnDeclaration(fn)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		b, _ := json.Marshal(&result)
+		t.Logf("func desc: %s", b)
+	}
 }
