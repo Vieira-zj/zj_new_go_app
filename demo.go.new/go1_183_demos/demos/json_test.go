@@ -10,7 +10,7 @@ import (
 	"demo.apps/utils"
 )
 
-// demo: json
+// Demo: Json
 
 func TestJsonParsePtr(t *testing.T) {
 	type MyValue struct {
@@ -147,7 +147,7 @@ func TestJsonUnmarshalForRawMsg(t *testing.T) {
 
 	// #2: json.Number
 	m = make(map[string]any)
-	if err := utils.JsonLoads(b, &m); err != nil {
+	if err := utils.JsonLoad(b, &m); err != nil {
 		t.Fatal(err)
 	}
 	num, ok := m["max_int"].(json.Number)
@@ -206,7 +206,7 @@ func TestJsonUnMarshalForPtr(t *testing.T) {
 	})
 }
 
-// demo: custom json parse
+// Demo: Custom Json Codec
 
 type OrderId uint64
 
@@ -247,7 +247,7 @@ func TestCustomJsonParse(t *testing.T) {
 	t.Log(d.ID, d.OrderID)
 }
 
-// demo: marshal error by custom json parse
+// Demo: Marshal error by custom json parse
 //
 // refer: http://gregtrowbridge.com/golang-json-serialization-with-interfaces/
 

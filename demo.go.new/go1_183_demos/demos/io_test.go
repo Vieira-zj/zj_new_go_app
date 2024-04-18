@@ -3,18 +3,13 @@ package demos_test
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"testing"
-)
 
-func TestOSGetwd(t *testing.T) {
-	path, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("cur path:", path)
-}
+	"demo.apps/utils"
+)
 
 func TestIOBufScan(t *testing.T) {
 	lines := make([]string, 0, 10)
@@ -37,4 +32,72 @@ func TestIOBufScan(t *testing.T) {
 	}
 
 	t.Log("lines count:", count)
+}
+
+func TestReadFileLastBytes(t *testing.T) {
+	path := "/tmp/test/raw.txt"
+	writeFileForTest(t, path, "\nabcd\nefghi\njkl")
+
+	t.Run("read file last bytes", func(t *testing.T) {
+		f, err := os.Open(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+
+		size := len([]byte("abc"))
+		t.Log("read bytes size:", size)
+
+		reader := bufio.NewReader(f)
+
+		// Seek(offset, start)
+		if _, err = f.Seek(int64(-size), io.SeekEnd); err != nil {
+			t.Fatal(err)
+		}
+		reader.Reset(f)
+
+		b := make([]byte, size)
+		if _, err = io.ReadFull(reader, b); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("read last %d bytes: %s", size, b)
+	})
+}
+
+func TestFileWriteAt(t *testing.T) {
+	path := "/tmp/test/raw.txt"
+	writeFileForTest(t, path, "abcd\nabcd\nabcd")
+
+	t.Run("write file at offset", func(t *testing.T) {
+		f, err := os.OpenFile(path, os.O_WRONLY, 0644)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+
+		// replace existing bytes
+		if _, err = f.WriteAt([]byte("xy"), 5); err != nil {
+			t.Fatal(err)
+		}
+		if err = f.Sync(); err != nil {
+			t.Fatal(err)
+		}
+		t.Log("file writeAt finish")
+	})
+}
+
+func writeFileForTest(t *testing.T, path, content string) {
+	if utils.IsExist(path) {
+		os.Remove(path)
+	}
+
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	if _, err = f.WriteString(content); err != nil {
+		t.Fatal(err)
+	}
 }

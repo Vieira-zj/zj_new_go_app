@@ -14,7 +14,7 @@ import (
 	"unicode/utf8"
 )
 
-func JsonLoads(b []byte, s any) error {
+func JsonLoad(b []byte, s any) error {
 	if reflect.TypeOf(s).Kind() != reflect.Ptr {
 		return fmt.Errorf("input should be pointer")
 	}
@@ -24,7 +24,7 @@ func JsonLoads(b []byte, s any) error {
 	return decoder.Decode(s)
 }
 
-// codec: 10<=>62
+// Codec: 10<=>62
 
 const chars62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
@@ -56,7 +56,7 @@ func reverseBytes(b []byte) {
 	}
 }
 
-// hex / base64 / md5 encoder
+// Codec: Hex / Base64 / MD5
 
 func HexEncode(b []byte) string {
 	return hex.EncodeToString(b)
@@ -64,6 +64,10 @@ func HexEncode(b []byte) string {
 
 func Base64Encode(b []byte) string {
 	return base64.StdEncoding.EncodeToString(b)
+}
+
+func Base64Decode(s string) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(s)
 }
 
 func Md5Sum(b []byte) (string, error) {
@@ -82,7 +86,7 @@ func Md5SumV2(b []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// gzip compress/uncompress
+// Gzip Compress / Decompress
 
 func Gzip(data []byte) ([]byte, error) {
 	b := bytes.Buffer{}
