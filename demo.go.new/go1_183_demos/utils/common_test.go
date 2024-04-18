@@ -16,32 +16,66 @@ func TestFormatDateTime(t *testing.T) {
 	t.Log("now:", result)
 }
 
-func TestIsNil(t *testing.T) {
-	var x interface{}
-	var y *int = nil
-	x = y
-
-	typOf := reflect.TypeOf(x)
-	t.Logf("kind:%v, type:%s", typOf.Kind(), typOf.String())
-
-	//nolint:staticcheck
-	t.Run("nil interface var check", func(t *testing.T) {
-		// 即使接口持有的值为 nil, 也并不意味着接口本身为 nil.
-		t.Log("x != nil", x != nil) // true
-		t.Log("x:", x)
-	})
-
-	t.Run("nil check by reflect", func(t *testing.T) {
-		t.Log("IsNil:", utils.IsNil(x))
-	})
-}
-
 func TestTrackTime(t *testing.T) {
 	defer utils.TrackTime()()
 
 	t.Log("start ...")
 	time.Sleep(time.Second)
 	t.Log("end")
+}
+
+func TestIsNil01(t *testing.T) {
+	var x any
+	var y *int = nil
+	x = y
+
+	typOf := reflect.TypeOf(x)
+	t.Logf("kind:%v, type:%s", typOf.Kind(), typOf.String())
+
+	t.Run("nil any var check", func(t *testing.T) {
+		runCase := func(a any) {
+			// 即使接口持有的值为 nil, 也并不意味着接口本身为 nil
+			t.Log("x:", a)
+			t.Log("x != nil", a != nil) // true
+		}
+		runCase(x)
+	})
+
+	t.Run("is nil check", func(t *testing.T) {
+		t.Log("IsNil:", utils.IsNil(x))
+	})
+}
+
+type MyInterface interface {
+	apply()
+}
+
+type MyInterfaceImpl struct{}
+
+func (*MyInterfaceImpl) apply() {}
+
+// 在编译阶段检查接口实现
+var _ MyInterface = (*MyInterfaceImpl)(nil)
+
+func TestIsNil02(t *testing.T) {
+	var x MyInterface
+	var y *MyInterfaceImpl = nil
+	x = y
+
+	typOf := reflect.TypeOf(x)
+	t.Logf("kind:%v, type:%s", typOf.Kind(), typOf.String())
+
+	t.Run("nil interface var check", func(t *testing.T) {
+		runCase := func(a MyInterface) {
+			t.Log("x:", a)
+			t.Log("x != nil", a != nil) // true
+		}
+		runCase(x)
+	})
+
+	t.Run("is nil check", func(t *testing.T) {
+		t.Log("IsNil:", utils.IsNil(x))
+	})
 }
 
 func TestDelFirstNItemsOfSlice(t *testing.T) {
