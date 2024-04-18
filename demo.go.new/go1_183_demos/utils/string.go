@@ -58,7 +58,7 @@ func ToString(value any) string {
 	}
 }
 
-func MultiSplitString(str string, splits []rune) []string {
+func StringMultiSplit(str string, splits []rune) []string {
 	keysDict := make(map[rune]struct{}, len(splits))
 	for _, key := range splits {
 		keysDict[key] = struct{}{}

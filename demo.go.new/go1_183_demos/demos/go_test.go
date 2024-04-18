@@ -2,20 +2,15 @@ package demos_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log/slog"
-	"math/rand"
-	"os"
 	"reflect"
 	"runtime/debug"
 	"strings"
 	"testing"
 	"time"
-	"unicode"
 )
 
-// Demo: go test
+// Demo: Go Test
 
 func TestClearupCase(t *testing.T) {
 	t.Cleanup(func() {
@@ -68,7 +63,7 @@ func TestParallelRunCase(t *testing.T) {
 	}
 }
 
-// Demo: go stmt
+// Demo: Go Stmt
 
 func TestSwitchConds(t *testing.T) {
 	getNumberDesc := func(num int) string {
@@ -114,7 +109,7 @@ func TestTypeAssert(t *testing.T) {
 	})
 }
 
-// Demo: defer
+// Demo: Defer
 
 func TestDeferFn01(t *testing.T) {
 	testFn := func() func() {
@@ -153,7 +148,7 @@ func TestDeferFn02(t *testing.T) {
 	t.Log("end test defer struct fn")
 }
 
-// Demo: ref
+// Demo: Ref
 
 func TestNilCompare(t *testing.T) {
 	var myNil (*byte) = nil
@@ -206,7 +201,7 @@ func TestRefUpdateForMap(t *testing.T) {
 	t.Log("new fruits:", fruits)
 }
 
-// Demo: goroutine
+// Demo: Goroutine
 
 func TestRecoverFromPanic(t *testing.T) {
 	ch := make(chan struct{})
@@ -230,7 +225,7 @@ func TestRecoverFromPanic(t *testing.T) {
 	fmt.Println("recover demo done")
 }
 
-// Demo: context
+// Demo: Context
 
 func TestContextAfterFunc(t *testing.T) {
 	t.Run("run ctx AfterFunc", func(t *testing.T) {
@@ -269,76 +264,4 @@ func TestContextAfterFunc(t *testing.T) {
 		time.Sleep(30 * time.Millisecond)
 		t.Log("finish")
 	})
-}
-
-// Demo: modules
-
-func TestUnicode(t *testing.T) {
-	t.Log("IsDigit:", unicode.IsDigit(rune('3')))
-	t.Log("IsDigit:", unicode.IsDigit(rune('a')))
-
-	t.Log("IsLower:", unicode.IsLower(rune('b')))
-	t.Log("IsLower:", unicode.IsLower(rune('B')))
-}
-
-func TestRandom(t *testing.T) {
-	t.Run("rand directly", func(t *testing.T) {
-		for i := 0; i < 6; i++ {
-			num := rand.Intn(10)
-			t.Log("rand number:", num)
-		}
-	})
-
-	t.Run("new rand", func(t *testing.T) {
-		rander := rand.New(rand.NewSource(time.Now().Unix()))
-		for i := 0; i < 6; i++ {
-			num := rander.Intn(10)
-			t.Log("rand number:", num)
-		}
-	})
-}
-
-func TestCalTime(t *testing.T) {
-	duration, err := time.ParseDuration("5m")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ti := time.Now().Add(duration)
-	t.Log("now after 5m:", ti)
-
-	ti = ti.AddDate(0, 0, 6)
-	t.Log("now after 3 days:", ti)
-}
-
-func TestErrors(t *testing.T) {
-	t.Run("error wrapped", func(t *testing.T) {
-		err := errors.New("mock err")
-		wrappedErr := fmt.Errorf("wrapped: %w", err)
-		t.Log("err:", wrappedErr)
-
-		rawErr := errors.Unwrap(wrappedErr)
-		t.Log("raw err:", rawErr)
-	})
-
-	t.Run("errors join from Go 1.20", func(t *testing.T) {
-		err1 := errors.New("Error 1st")
-		err2 := errors.New("Error 2nd")
-
-		err := errors.Join(err1, err2)
-		t.Log("err1:", errors.Is(err, err1))
-		t.Log("err2:", errors.Is(err, err2))
-	})
-}
-
-func TestGoSlog(t *testing.T) {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	}))
-	logger.Debug("text debug level log", "uid", 1002)
-	logger.Info("text info level log", "uid", 1002)
-
-	jsonLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	jsonLogger.Debug("json info level log", "uid", 1002)
-	jsonLogger.Info("json info level log", "uid", 1002)
 }

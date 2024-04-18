@@ -11,7 +11,7 @@ import (
 	"github.com/samber/lo"
 )
 
-// Demo: bit, number
+// Demo: Bit, Number
 
 func TestHexToDecimal(t *testing.T) {
 	val := 0xff
@@ -51,7 +51,7 @@ func TestBytesCompare(t *testing.T) {
 	})
 }
 
-// Demo: bytes, string
+// Demo: Bytes, String
 
 func TestReuseBytes(t *testing.T) {
 	b := []byte("hello")
@@ -104,7 +104,7 @@ func TestStrMultiReplace(t *testing.T) {
 	t.Log("result:", result)
 }
 
-// Demo: slice
+// Demo: Slice
 
 func TestSliceToArray(t *testing.T) {
 	t.Run("slice to array for Go 1.17", func(t *testing.T) {
@@ -245,7 +245,7 @@ func TestSliceCopy(t *testing.T) {
 	})
 }
 
-// Demo: map
+// Demo: Map
 
 func TestMapCap(t *testing.T) {
 	m := make(map[int]string, 2)
@@ -335,7 +335,7 @@ func TestLoStringTest(t *testing.T) {
 	t.Log("rand str:", str)
 }
 
-// Demo: struct
+// Demo: Struct
 
 type testStruct struct {
 	id   int
@@ -454,7 +454,7 @@ func TestUpdateStudentRef(t *testing.T) {
 	t.Logf("s [%p]: %s", &s, s.String())
 }
 
-// Demo: copy of struct
+// Demo: Copy of Struct
 
 func TestCopyOfStruct(t *testing.T) {
 	students := make([]testStudent, 0, 2)
@@ -485,7 +485,7 @@ func TestCopyOfStruct(t *testing.T) {
 	}
 }
 
-// Demo: abstract class
+// Demo: Abstract Class
 
 type IPerson interface {
 	GetName() string
@@ -506,7 +506,7 @@ type AbstractPerson struct {
 	PersonBase
 }
 
-// GetName: it overwrites the same method in PersonBase.
+// GetName overwrites the same method in PersonBase.
 func (b AbstractPerson) Say(msg string) {
 	fmt.Println("receive message:", msg)
 }

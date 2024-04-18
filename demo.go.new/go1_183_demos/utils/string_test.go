@@ -2,6 +2,7 @@ package utils_test
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 
 	"demo.apps/utils"
@@ -13,11 +14,17 @@ func TestToString(t *testing.T) {
 	t.Logf("str value: %s", utils.ToString(map[string]int{"one": 1, "two": 2}))
 }
 
-func TestMultiSplitString(t *testing.T) {
-	fields := utils.MultiSplitString("a,b.c|d.e|f,g", []rune{',', '.', '|'})
+func TestStringMultiSplit(t *testing.T) {
+	fields := utils.StringMultiSplit("a,b.c|d.e|f,g", []rune{',', '.', '|'})
 	for _, field := range fields {
 		t.Log("field:", field)
 	}
+}
+
+func TestStringMultiReplace(t *testing.T) {
+	r := strings.NewReplacer("&&", "AND", "||", "OR")
+	result := r.Replace("id = '1010' && age > 31 && region = 'cn' || ignore = true")
+	t.Log("replace result:", result)
 }
 
 // Demo: string with reuse bytes
