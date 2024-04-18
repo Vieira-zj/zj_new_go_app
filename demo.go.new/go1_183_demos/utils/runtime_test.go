@@ -9,6 +9,18 @@ import (
 	"demo.apps/utils"
 )
 
+func TestGetProjectRootPath(t *testing.T) {
+	path := utils.GetProjectRootPath()
+	t.Log("project root path:", path)
+
+	cmd := "git rev-parse --show-toplevel"
+	output, err := utils.RunShellCmdInDir(cmd, "./")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("git root path:", output)
+}
+
 func TestGetFullFnName(t *testing.T) {
 	anonymousFn := func() {
 		fmt.Println("anonymous fn for test")
