@@ -105,8 +105,7 @@ func Gzip(data []byte) ([]byte, error) {
 }
 
 func Ungzip(data []byte) ([]byte, error) {
-	b := bytes.NewBuffer(data)
-	r, err := gzip.NewReader(b)
+	r, err := gzip.NewReader(bytes.NewBuffer(data))
 	if r != nil {
 		defer r.Close()
 	}
@@ -114,12 +113,12 @@ func Ungzip(data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	ret := bytes.Buffer{}
-	if _, err = ret.ReadFrom(r); err != nil {
+	buf := bytes.Buffer{}
+	if _, err = buf.ReadFrom(r); err != nil {
 		return nil, err
 	}
 
-	return ret.Bytes(), nil
+	return buf.Bytes(), nil
 }
 
 // CnStringConvert converts cn symbols in the string to en symbols.

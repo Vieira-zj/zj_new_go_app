@@ -95,6 +95,7 @@ func TestGoFormat(t *testing.T) {
 	}
 `)
 
+	// it will not check go compile error
 	fb, err := format.Source(b)
 	if err != nil {
 		t.Fatal(err)

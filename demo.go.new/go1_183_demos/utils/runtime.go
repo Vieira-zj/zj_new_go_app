@@ -31,7 +31,7 @@ func GetProjectRootPath() string {
 	return filepath.Dir(filepath.Dir(fpath))
 }
 
-func GetFullFnName(fn any) string {
+func GetFnFullName(fn any) string {
 	return runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()
 }
 

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
@@ -39,4 +40,16 @@ func DelFirstNItemsOfSlice(s []any /* will change input slice */, n int) ([]any,
 
 	s = s[:m] // reset length
 	return s, nil
+}
+
+func DeepCopy(src, dest any) error {
+	b, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(b, &dest); err != nil {
+		return err
+	}
+	return nil
 }

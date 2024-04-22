@@ -89,7 +89,7 @@ func GetFnDeclaration(fn any) (FnDeclaration, error) {
 		output = append(output, result.String())
 	}
 
-	fullName := GetFullFnName(fn)
+	fullName := GetFnFullName(fn)
 	shortName := fullName[strings.LastIndex(fullName, ".")+1:]
 
 	return FnDeclaration{

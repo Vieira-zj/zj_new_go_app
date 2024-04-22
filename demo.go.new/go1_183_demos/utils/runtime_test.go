@@ -21,7 +21,7 @@ func TestGetProjectRootPath(t *testing.T) {
 	t.Log("git root path:", output)
 }
 
-func TestGetFullFnName(t *testing.T) {
+func TestGetFnFullName(t *testing.T) {
 	anonymousFn := func() {
 		fmt.Println("anonymous fn for test")
 	}
@@ -31,7 +31,7 @@ func TestGetFullFnName(t *testing.T) {
 		utils.GetCallerInfo,
 		anonymousFn,
 	} {
-		t.Log("full fn name:", utils.GetFullFnName(fn))
+		t.Log("fn full name:", utils.GetFnFullName(fn))
 	}
 }
 
