@@ -50,6 +50,7 @@ func GetCallerInfo(depth int) string {
 func GetGoroutineID() (int, error) {
 	var buf [64]byte
 	n := runtime.Stack(buf[:], false)
+	// log.Println("read stack size:", n)
 	stk := strings.TrimPrefix(string(buf[:n]), "goroutine")
 
 	idField := strings.Fields(stk)[0]

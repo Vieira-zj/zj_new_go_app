@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
+	"io"
+	"log"
 	"log/slog"
 	"math/rand"
 	"os"
@@ -70,6 +72,22 @@ func TestErrors(t *testing.T) {
 		t.Log("err1:", errors.Is(err, err1))
 		t.Log("err2:", errors.Is(err, err2))
 	})
+}
+
+func TestLogToFile(t *testing.T) {
+	path := "/tmp/test/log_test.txt"
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	logWriter := io.MultiWriter(f, os.Stdout)
+	logger := log.New(logWriter, "[go_test]", log.LstdFlags)
+
+	logger.Println("test log to file start")
+	logger.Println("test log to file end")
+	t.Log("done")
 }
 
 func TestGoSlog(t *testing.T) {

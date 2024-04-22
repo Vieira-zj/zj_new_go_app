@@ -6,14 +6,14 @@ import (
 	"testing"
 )
 
-func TestReflectBasic(t *testing.T) {
+func TestReflectTypeOf(t *testing.T) {
 	t.Run("get slice type", func(t *testing.T) {
 		i := 1
 		tof := reflect.TypeOf(i)
 		t.Log("type:", tof.String())
 
-		eleTof := reflect.SliceOf(tof)
-		t.Log("element type:", eleTof.String())
+		sliceTof := reflect.SliceOf(tof)
+		t.Log("slice type:", sliceTof.String())
 	})
 
 	t.Run("get pointer type", func(t *testing.T) {
@@ -21,19 +21,21 @@ func TestReflectBasic(t *testing.T) {
 		tof := reflect.TypeOf(i)
 		t.Log("type:", tof.String())
 
-		pof := reflect.PtrTo(tof)
-		t.Log("type:", pof.Elem().String())
+		ptrTof := reflect.PtrTo(tof)
+		t.Logf("ptr type: %s, elem type: %s", ptrTof.String(), ptrTof.Elem().String())
 	})
 }
 
-func TestStrLenByReflect(t *testing.T) {
-	s := "hello world"
-	valueOf := reflect.ValueOf(s)
-	t.Log("len:", valueOf.Len())
+func TestReflectValueOf(t *testing.T) {
+	t.Run("get length", func(t *testing.T) {
+		s := "hello world"
+		valueOf := reflect.ValueOf(s)
+		t.Log("len:", valueOf.Len())
 
-	b := []byte(s)
-	valueOf = reflect.ValueOf(b)
-	t.Log("len:", valueOf.Len())
+		b := []byte(s)
+		valueOf = reflect.ValueOf(b)
+		t.Log("len:", valueOf.Len())
+	})
 }
 
 // Demo: compare by DeepEqual
