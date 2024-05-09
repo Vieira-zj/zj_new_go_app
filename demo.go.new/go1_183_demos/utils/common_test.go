@@ -54,7 +54,7 @@ type MyInterfaceImpl struct{}
 
 func (*MyInterfaceImpl) apply() {}
 
-// 在编译阶段检查接口实现
+// 在编译阶段检查 impl 接口实现
 var _ MyInterface = (*MyInterfaceImpl)(nil)
 
 func TestIsNil02(t *testing.T) {

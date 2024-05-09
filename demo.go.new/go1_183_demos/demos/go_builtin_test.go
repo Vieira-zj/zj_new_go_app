@@ -54,7 +54,32 @@ func TestCalTime(t *testing.T) {
 	t.Log("now after 3 days:", ti)
 }
 
+type StackError struct {
+	err   string
+	stack string
+}
+
+func (e StackError) Error() string {
+	return e.err
+}
+
+func (e StackError) Stack() string {
+	return e.stack
+}
+
 func TestErrors(t *testing.T) {
+	t.Run("error as interface", func(t *testing.T) {
+		err := StackError{
+			err:   "mock error",
+			stack: "mock stack",
+		}
+		t.Log("err:", err.Error())
+
+		if ok := errors.As(err, new(interface{ Stack() string })); ok {
+			t.Log("stack:", err.Stack())
+		}
+	})
+
 	t.Run("error wrapped", func(t *testing.T) {
 		err := errors.New("mock err")
 		wrappedErr := fmt.Errorf("wrapped: %w", err)

@@ -227,6 +227,27 @@ func TestRecoverFromPanic(t *testing.T) {
 
 // Demo: Context
 
+type testCtxKey string
+
+func TestCtxWithDuplicatedKeys(t *testing.T) {
+	const key testCtxKey = "ctx_key"
+
+	printCtxValue := func(ctx context.Context, key testCtxKey) {
+		if s, ok := ctx.Value(key).(string); ok {
+			t.Log("ctx value:", s)
+		} else {
+			t.Log("ctx value not found for key:", key)
+		}
+	}
+
+	ctx := context.TODO()
+	ctx = context.WithValue(ctx, key, "ctx_value1")
+	printCtxValue(ctx, key)
+
+	ctx = context.WithValue(ctx, key, "ctx_value2")
+	printCtxValue(ctx, key)
+}
+
 func TestContextAfterFunc(t *testing.T) {
 	t.Run("run ctx AfterFunc", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
