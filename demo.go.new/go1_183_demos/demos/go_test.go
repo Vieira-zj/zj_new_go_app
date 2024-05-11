@@ -23,7 +23,7 @@ func TestClearupCase(t *testing.T) {
 	t.Log("case run")
 }
 
-func MySplit(s, sep string) []string {
+func MyStringSplit(s, sep string) []string {
 	idx := strings.Index(s, sep)
 	if idx == -1 {
 		return []string{}
@@ -55,7 +55,7 @@ func TestParallelRunCase(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got := MySplit(tt.input, tt.sep)
+			got := MyStringSplit(tt.input, tt.sep)
 			if reflect.DeepEqual(got, tt.want) {
 				t.Errorf("expected:%#v, got:%#v", tt.want, got)
 			}
