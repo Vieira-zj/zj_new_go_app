@@ -9,7 +9,19 @@ type Foo interface {
 	Bar(x int) int
 }
 
-func SUT(f Foo) {
+type FooImpl struct {
+	Foo
+}
+
+func NewFooImpl() *FooImpl {
+	return &FooImpl{}
+}
+
+func (*FooImpl) Bar(x int) int {
+	return x + 2
+}
+
+func Sut(f Foo) {
 	result := f.Bar(99)
 	fmt.Println("sut result:", result)
 }

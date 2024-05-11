@@ -8,9 +8,14 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var isParallel = false
+
 func TestRunTestSuite(t *testing.T) {
 	s := new(ExampleTestSuite)
 	s.caseRunTime = make(map[string]int64, 2)
+	if isParallel {
+		t.Parallel()
+	}
 	suite.Run(t, s)
 }
 

@@ -33,16 +33,28 @@ func (m *MockBar) EXPECT() *MockBarMockRecorder {
 	return m.recorder
 }
 
-// Foo mocks base method.
-func (m *MockBar) Foo(x int) int {
+// Get mocks base method.
+func (m *MockBar) Get(key string) any {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Foo", x)
-	ret0, _ := ret[0].(int)
+	ret := m.ctrl.Call(m, "Get", key)
+	ret0, _ := ret[0].(any)
 	return ret0
 }
 
-// Foo indicates an expected call of Foo.
-func (mr *MockBarMockRecorder) Foo(x interface{}) *gomock.Call {
+// Get indicates an expected call of Get.
+func (mr *MockBarMockRecorder) Get(key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Foo", reflect.TypeOf((*MockBar)(nil).Foo), x)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockBar)(nil).Get), key)
+}
+
+// Put mocks base method.
+func (m *MockBar) Put(key string, value any) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Put", key, value)
+}
+
+// Put indicates an expected call of Put.
+func (mr *MockBarMockRecorder) Put(key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockBar)(nil).Put), key, value)
 }
