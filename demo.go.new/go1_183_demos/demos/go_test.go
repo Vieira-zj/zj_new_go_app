@@ -244,6 +244,7 @@ func TestCtxWithDuplicatedKeys(t *testing.T) {
 	ctx = context.WithValue(ctx, key, "ctx_value1")
 	printCtxValue(ctx, key)
 
+	// 由下而上, 由子及父, 依次对 key 进行匹配
 	ctx = context.WithValue(ctx, key, "ctx_value2")
 	printCtxValue(ctx, key)
 }
