@@ -12,6 +12,18 @@ import (
 	"demo.apps/utils"
 )
 
+func TestTmplCustomDelims(t *testing.T) {
+	tmpl := `hello, <<.Name>>!`
+	parse, err := template.New("demo").Delims("<<", ">>").Parse(tmpl)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err = parse.Execute(os.Stdout, struct{ Name string }{"Foo"}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestTmplEmptySliceRange(t *testing.T) {
 	// 如果数组为空, 则走 else
 	tmpl := `{{range .Array}}
