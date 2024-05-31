@@ -11,7 +11,7 @@ import (
 	"demo.apps/utils"
 )
 
-func TestIOBufScan(t *testing.T) {
+func TestBufIOScan(t *testing.T) {
 	lines := make([]string, 0, 10)
 	for i := 0; i < 10; i++ {
 		lines = append(lines, fmt.Sprintf("mock line: %d", i))

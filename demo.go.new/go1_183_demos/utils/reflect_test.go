@@ -2,10 +2,13 @@ package utils_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"demo.apps/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetPkgName(t *testing.T) {
@@ -77,4 +80,35 @@ func TestGetFnDeclaration(t *testing.T) {
 		b, _ := json.Marshal(&result)
 		t.Logf("func desc: %s", b)
 	}
+}
+
+func TestWrapFunc(t *testing.T) {
+	helloFn := func(name string) string {
+		fmt.Println("helloFn run")
+		return "Hello, " + name
+	}
+
+	addFn := func(i, j int) string {
+		fmt.Println("addFn run")
+		return strconv.Itoa(i + j)
+	}
+
+	t.Run("wrap invalid fn", func(t *testing.T) {
+		_, err := utils.WrapFunc("1")
+		assert.Error(t, err, "input arg is not a func")
+	})
+
+	t.Run("warp fn", func(t *testing.T) {
+		fn, err := utils.WrapFunc(helloFn)
+		assert.NoError(t, err)
+		if hello, ok := fn.(func(name string) string); ok {
+			t.Log(hello("foo"))
+		}
+
+		fn, err = utils.WrapFunc(addFn)
+		assert.NoError(t, err)
+		if add, ok := fn.(func(i, j int) string); ok {
+			t.Log("add result:", add(2, 4))
+		}
+	})
 }

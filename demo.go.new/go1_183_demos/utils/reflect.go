@@ -98,3 +98,25 @@ func GetFnDeclaration(fn any) (FnDeclaration, error) {
 		Output: output,
 	}, nil
 }
+
+func WrapFunc(fn any) (any, error) {
+	typ := reflect.TypeOf(fn)
+	if typ.Kind() != reflect.Func {
+		return nil, errors.New("input arg is not a func")
+	}
+
+	wrapFunc := func(args []reflect.Value) (results []reflect.Value) {
+		decl, err := GetFnDeclaration(fn)
+		if err != nil {
+			return []reflect.Value{reflect.ValueOf(err)}
+		}
+
+		fmt.Println("before run:", decl.Name)
+		results = reflect.ValueOf(fn).Call(args)
+		fmt.Println("after run:", decl.Name)
+
+		return results
+	}
+
+	return reflect.MakeFunc(typ, wrapFunc).Interface(), nil
+}
