@@ -3,7 +3,9 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
+	"runtime/debug"
 	"time"
 )
 
@@ -52,4 +54,32 @@ func DeepCopy(src, dest any) error {
 		return err
 	}
 	return nil
+}
+
+// Panic Handler in Goroutine
+
+func logPanic(r any) {
+	b := debug.Stack()
+	log.Printf("panic error: %v", r)
+	log.Println("stack:\n", string(b))
+}
+
+var defaultPanicHanders = []func(any){logPanic}
+
+func HandlePanic(handlers ...func(any)) {
+	if r := recover(); r != nil {
+		for _, handler := range defaultPanicHanders {
+			handler(r)
+		}
+		for _, handler := range handlers {
+			handler(r)
+		}
+	}
+}
+
+func Go(fn func()) {
+	go func() {
+		defer HandlePanic()
+		fn()
+	}()
 }
