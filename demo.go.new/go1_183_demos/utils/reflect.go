@@ -1,11 +1,13 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"reflect"
 	"strings"
+	"time"
 )
 
 func TrimStringFields(obj any) error {
@@ -99,24 +101,92 @@ func GetFnDeclaration(fn any) (FnDeclaration, error) {
 	}, nil
 }
 
-func WrapFunc(fn any) (any, error) {
+// Deep Copy by Reflect
+
+func ReflectDeepCopy(in any) any {
+	return reflectDeepCopy(reflect.ValueOf(in)).Interface()
+}
+
+func reflectDeepCopy(src reflect.Value) reflect.Value {
+	switch src.Kind() {
+	case reflect.Ptr, reflect.Interface, reflect.Slice, reflect.Map:
+		if src.IsNil() {
+			return src
+		}
+	case reflect.Func, reflect.Chan, reflect.UnsafePointer, reflect.Uintptr:
+		panic(fmt.Sprintf("cannot deep copy kind: %s", src.Kind()))
+	}
+
+	switch src.Kind() {
+	case reflect.Interface:
+		return reflectDeepCopy(src.Elem())
+	case reflect.Ptr:
+		dst := reflect.New(src.Type().Elem())
+		dst.Elem().Set(reflectDeepCopy(src.Elem()))
+		return dst
+	case reflect.Array:
+		dst := reflect.New(src.Type())
+		for i := 0; i < src.Len(); i++ {
+			dst.Elem().Index(i).Set(reflectDeepCopy(src.Index(i)))
+		}
+		return dst.Elem()
+	case reflect.Slice:
+		dst := reflect.MakeSlice(src.Type(), 0, src.Len())
+		for i := 0; i < src.Len(); i++ {
+			reflect.Append(dst, reflectDeepCopy(src.Index(i)))
+		}
+		return dst
+	case reflect.Map:
+		dst := reflect.MakeMapWithSize(src.Type(), src.Len())
+		for _, key := range src.MapKeys() {
+			dst.SetMapIndex(key, reflectDeepCopy(src.MapIndex(key)))
+		}
+		return dst
+	case reflect.Struct:
+		dst := reflect.New(src.Type())
+		for i := 0; i < src.NumField(); i++ {
+			if !dst.Elem().Field(i).CanSet() { // can't set private fields
+				return dst
+			}
+			dst.Elem().Field(i).Set(reflectDeepCopy(src.Field(i)))
+		}
+		return dst.Elem()
+	default:
+		// basic value types like numbers, booleans, and strings
+		return src
+	}
+}
+
+// Wrap Func by Reflect
+
+type ReflectFunc func(args []reflect.Value) (results []reflect.Value)
+
+func LogWrappedFunc(fn any) ReflectFunc {
+	return func(args []reflect.Value) (results []reflect.Value) {
+		decl, err := GetFnDeclaration(fn)
+		if err != nil {
+			return []reflect.Value{reflect.ValueOf(err)}
+		}
+		b, err := json.Marshal(decl)
+		if err != nil {
+			return []reflect.Value{reflect.ValueOf(err)}
+		}
+
+		start := time.Now()
+		log.Println("exec func:", string(b))
+		results = reflect.ValueOf(fn).Call(args)
+		log.Printf("exec duration: %d millisec", time.Since(start).Milliseconds())
+
+		return results
+	}
+}
+
+func ReflectWrapFunc(fn any) (any, error) {
 	typ := reflect.TypeOf(fn)
 	if typ.Kind() != reflect.Func {
 		return nil, errors.New("input arg is not a func")
 	}
 
-	wrapFunc := func(args []reflect.Value) (results []reflect.Value) {
-		decl, err := GetFnDeclaration(fn)
-		if err != nil {
-			return []reflect.Value{reflect.ValueOf(err)}
-		}
-
-		fmt.Println("before run:", decl.Name)
-		results = reflect.ValueOf(fn).Call(args)
-		fmt.Println("after run:", decl.Name)
-
-		return results
-	}
-
+	wrapFunc := LogWrappedFunc(fn)
 	return reflect.MakeFunc(typ, wrapFunc).Interface(), nil
 }

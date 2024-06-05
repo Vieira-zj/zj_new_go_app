@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 
 	"demo.apps/utils"
 	"github.com/stretchr/testify/assert"
@@ -82,33 +83,58 @@ func TestGetFnDeclaration(t *testing.T) {
 	}
 }
 
-func TestWrapFunc(t *testing.T) {
+func TestReflectWrapFunc(t *testing.T) {
 	helloFn := func(name string) string {
 		fmt.Println("helloFn run")
+		time.Sleep(200 * time.Millisecond)
 		return "Hello, " + name
 	}
 
 	addFn := func(i, j int) string {
 		fmt.Println("addFn run")
+		time.Sleep(250 * time.Millisecond)
 		return strconv.Itoa(i + j)
 	}
 
-	t.Run("wrap invalid fn", func(t *testing.T) {
-		_, err := utils.WrapFunc("1")
+	t.Run("wrap invalid func", func(t *testing.T) {
+		_, err := utils.ReflectWrapFunc("1")
 		assert.Error(t, err, "input arg is not a func")
 	})
 
-	t.Run("warp fn", func(t *testing.T) {
-		fn, err := utils.WrapFunc(helloFn)
+	t.Run("wrap func", func(t *testing.T) {
+		fn, err := utils.ReflectWrapFunc(helloFn)
 		assert.NoError(t, err)
 		if hello, ok := fn.(func(name string) string); ok {
 			t.Log(hello("foo"))
 		}
 
-		fn, err = utils.WrapFunc(addFn)
+		fn, err = utils.ReflectWrapFunc(addFn)
 		assert.NoError(t, err)
 		if add, ok := fn.(func(i, j int) string); ok {
 			t.Log("add result:", add(2, 4))
 		}
 	})
+}
+
+func TestReflectDeepCopy(t *testing.T) {
+	data := map[string]struct {
+		Id  string
+		Age int
+	}{
+		"foo": {"1010", 31},
+		"bar": {"1011", 29},
+	}
+
+	dst := utils.ReflectDeepCopy(data)
+	dstMap, ok := dst.(map[string]struct {
+		Id  string
+		Age int
+	})
+	assert.True(t, ok)
+
+	for key, val := range dstMap {
+		b, err := json.Marshal(val)
+		assert.NoError(t, err)
+		t.Logf("name:%s, %s", key, b)
+	}
 }
