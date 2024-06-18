@@ -58,3 +58,21 @@ func TestDifferCompare02(t *testing.T) {
 		t.Log("differ results:\n", differ.Patches().string())
 	})
 }
+
+func TestDifferCompare03(t *testing.T) {
+	src := make(map[string]any)
+	srcb := []byte(`{"map1":{"key1":"value1","key2":"value2"}, "map2":{"keya":"valuea","keyb":"valueb"}}`)
+	err := json.Unmarshal(srcb, &src)
+	assert.NoError(t, err)
+
+	dst := make(map[string]any)
+	dstb := []byte(`{"map1":{"key1":"value1","key2":"valueb"}, "map2":{"keya":"value1","keyb":"valueb"}}`)
+	err = json.Unmarshal(dstb, &dst)
+	assert.NoError(t, err)
+
+	t.Run("diff maps value", func(t *testing.T) {
+		differ := NewDiffer()
+		differ.Compare(src, dst)
+		t.Log("differ results:\n", differ.Patches().string())
+	})
+}

@@ -2,12 +2,15 @@ package demos_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"runtime/debug"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Demo: Go Test
@@ -285,5 +288,67 @@ func TestContextAfterFunc(t *testing.T) {
 		t.Log("do cancel")
 		time.Sleep(30 * time.Millisecond)
 		t.Log("finish")
+	})
+}
+
+// Demo: Unmarshal ptr value
+
+func unMarshalPtr(val []byte, obj any) error {
+	// here, obj type is *interface{}
+	if string(val) == "null" {
+		*obj.(*interface{}) = &TestPerson{}
+		return nil
+	}
+
+	p := &TestPerson{}
+	if err := json.Unmarshal(val, p); err != nil {
+		return err
+	}
+
+	*obj.(*interface{}) = p
+	return nil
+}
+
+func TestUnMarshalPtr(t *testing.T) {
+	t.Run("null value", func(t *testing.T) {
+		var (
+			p   *TestPerson
+			val = []byte("null")
+		)
+
+		getFn := func(obj any) any {
+			innerFn := func(innerObj any) {
+				err := unMarshalPtr(val, innerObj)
+				assert.NoError(t, err)
+			}
+			innerFn(&obj)
+			return obj
+		}
+
+		retObj := getFn(p)
+		_, ok := retObj.(*TestPerson)
+		assert.True(t, ok)
+		t.Logf("object: %+v", retObj)
+	})
+
+	t.Run("json value", func(t *testing.T) {
+		var (
+			p   *TestPerson
+			val = []byte(`{"name":"foo", "age":33}`)
+		)
+
+		getFn := func(obj any) any {
+			innerFn := func(innerObj any) {
+				err := unMarshalPtr(val, innerObj)
+				assert.NoError(t, err)
+			}
+			innerFn(&obj)
+			return obj
+		}
+
+		retObj := getFn(p)
+		_, ok := retObj.(*TestPerson)
+		assert.True(t, ok)
+		t.Logf("object: %+v", retObj)
 	})
 }
