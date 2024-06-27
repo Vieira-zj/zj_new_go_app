@@ -1,6 +1,7 @@
 package demos_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"go/format"
@@ -12,6 +13,8 @@ import (
 	"testing"
 	"time"
 	"unicode"
+
+	"demo.apps/utils"
 )
 
 // Demo: Go Built-in Modules
@@ -51,7 +54,7 @@ func TestCalTime(t *testing.T) {
 	t.Log("now after 5m:", ti)
 
 	ti = ti.AddDate(0, 0, 6)
-	t.Log("now after 3 days:", ti)
+	t.Log("now after 6 days:", ti)
 }
 
 type StackError struct {
@@ -115,18 +118,6 @@ func TestLogToFile(t *testing.T) {
 	t.Log("done")
 }
 
-func TestGoSlog(t *testing.T) {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	}))
-	logger.Debug("text debug level log", "uid", 1002)
-	logger.Info("text info level log", "uid", 1002)
-
-	jsonLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	jsonLogger.Debug("json info level log", "uid", 1002)
-	jsonLogger.Info("json info level log", "uid", 1002)
-}
-
 func TestGoFormat(t *testing.T) {
 	b := []byte(`
 	package main
@@ -144,4 +135,87 @@ func TestGoFormat(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log("format go:\n" + string(fb))
+}
+
+// Slog
+
+//
+// 原理
+//
+// 1. 用户调用前端 `Logger` 提供的日志记录方法 `Info` 记录一条日志
+// 2. `Info` 方法会调用一个私有方法 `log`， `log` 方法内部会使用 `NewRecord` 创建一个日志条目 `Record`
+// 3. 最终，`Logger` 会调用其嵌入的 `Handler` 对象的 `Handle` 方法解析 `Record` 并执行日志记录逻辑
+//
+
+func TestGoSlog(t *testing.T) {
+	t.Run("log with ctx", func(t *testing.T) {
+		ctx := context.TODO()
+		t.Log("log level:", utils.GetSlogLevel().String())
+		slog.DebugContext(ctx, "debug message", "hello", "world")
+		slog.WarnContext(ctx, "warn message", "hello", "world")
+	})
+
+	t.Run("log key/value", func(t *testing.T) {
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		logger.Info("info message", slog.String("hello", "world"), slog.Int("code", 200), slog.Any("error", fmt.Errorf("mock err")))
+	})
+
+	t.Run("log group key/value", func(t *testing.T) {
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		logger.Info("info message", slog.Group("user", slog.String("name", "root"), slog.Int("age", 31)))
+	})
+
+	t.Run("with new logger", func(t *testing.T) {
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		l := logger.With(slog.String("trace_id", "abc-xyz"))
+		l.Info("info message")
+		l.Info("warn message")
+	})
+}
+
+func TestSlogHandler(t *testing.T) {
+	t.Run("json handler", func(t *testing.T) {
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level:       slog.LevelDebug, // 设置日志级别
+			AddSource:   true,            // 记录日志位置
+			ReplaceAttr: nil,
+		}))
+		logger.Debug("json debug level log", "hello", "world")
+		logger.Info("json info level log", "hello", "world")
+	})
+
+	t.Run("text handler", func(t *testing.T) {
+		logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+			Level:       slog.LevelDebug,
+			AddSource:   true,
+			ReplaceAttr: nil,
+		}))
+		logger.Debug("text debug level log", "hello", "world")
+		logger.Info("text info level log", "hello", "world")
+	})
+}
+
+func TestSlogLogger(t *testing.T) {
+	t.Run("relace default slog logger", func(t *testing.T) {
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource:   true,
+			Level:       slog.LevelDebug,
+			ReplaceAttr: nil,
+		}))
+		slog.SetDefault(logger)
+
+		slog.Info("info message", "hello", "world")
+		// log is replaced too
+		log.Println("normal log")
+	})
+
+	t.Run("log logger", func(t *testing.T) {
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource:   true,
+			Level:       slog.LevelDebug,
+			ReplaceAttr: nil,
+		}))
+		logLogger := slog.NewLogLogger(logger.Handler(), slog.LevelInfo)
+		logLogger.Println("normal log")
+	})
 }

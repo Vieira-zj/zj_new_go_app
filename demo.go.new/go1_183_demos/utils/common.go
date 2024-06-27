@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"reflect"
 	"runtime/debug"
 	"time"
@@ -13,6 +15,17 @@ const timeLayout = "2006-01-02 15:04:05"
 
 func FormatDateTime(ti time.Time) string {
 	return ti.Format(timeLayout)
+}
+
+func GetSlogLevel() slog.Level {
+	var curLevel slog.Level = -10
+	for _, level := range []slog.Level{slog.LevelDebug, slog.LevelInfo, slog.LevelWarn, slog.LevelError} {
+		if enabled := slog.Default().Enabled(context.TODO(), level); enabled {
+			curLevel = level
+			break
+		}
+	}
+	return curLevel
 }
 
 func IsNil(x any) bool {
