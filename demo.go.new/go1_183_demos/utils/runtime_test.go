@@ -43,8 +43,10 @@ func TestGetCallerInfo(t *testing.T) {
 	})
 
 	t.Run("get caller info", func(t *testing.T) {
-		callerInfo := utils.GetCallerInfo(1)
-		t.Log("caller info:\n", callerInfo)
+		for i := 0; i < 3; i++ {
+			callerInfo := utils.GetCallerInfo(i)
+			t.Logf("depth %d caller info: %s", i, callerInfo)
+		}
 	})
 }
 

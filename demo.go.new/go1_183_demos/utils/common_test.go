@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"demo.apps/utils"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/scrypt"
 )
@@ -75,6 +76,35 @@ func TestIsNil02(t *testing.T) {
 
 	t.Run("is nil check", func(t *testing.T) {
 		t.Log("IsNil:", utils.IsNil(x))
+	})
+}
+
+type MyPersonImpl struct {
+	Name string
+	Age  int
+}
+
+func TestIsEmptyStruct(t *testing.T) {
+	t.Run("empty person", func(t *testing.T) {
+		p := MyPersonImpl{}
+		assert.True(t, utils.IsEmptyStruct(p))
+	})
+
+	t.Run("empty person pointer", func(t *testing.T) {
+		p := MyPersonImpl{}
+		assert.True(t, utils.IsEmptyStruct(&p))
+	})
+
+	t.Run("person with name", func(t *testing.T) {
+		p := MyPersonImpl{}
+		p.Name = "foo"
+		assert.False(t, utils.IsEmptyStruct(p))
+	})
+
+	t.Run("person with age", func(t *testing.T) {
+		p := MyPersonImpl{}
+		p.Age = 40
+		assert.False(t, utils.IsEmptyStruct(p))
 	})
 }
 

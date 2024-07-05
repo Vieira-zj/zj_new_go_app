@@ -35,6 +35,14 @@ func IsNil(x any) bool {
 	return reflect.ValueOf(x).IsNil()
 }
 
+func IsEmptyStruct(x any) bool {
+	valOf := reflect.ValueOf(x)
+	if valOf.Kind() == reflect.Ptr {
+		valOf = valOf.Elem()
+	}
+	return valOf.IsZero()
+}
+
 func TrackTime() func() {
 	start := time.Now()
 	return func() {
