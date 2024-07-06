@@ -6,6 +6,14 @@ import (
 	"testing"
 )
 
+func TestRegexpFindIndex(t *testing.T) {
+	reg := regexp.MustCompile("mtime")
+	pos := reg.FindIndex([]byte("response.order[0].mtime=1697202124"))
+	if len(pos) == 2 {
+		t.Logf("pos: [start=%d,end=%d]", pos[0], pos[1])
+	}
+}
+
 func TestRegExpSubmatch(t *testing.T) {
 	pattern := `(\w+)\s(\d+)`
 	regex := regexp.MustCompile(pattern)

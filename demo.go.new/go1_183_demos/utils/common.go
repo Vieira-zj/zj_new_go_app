@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"reflect"
@@ -15,6 +16,17 @@ const timeLayout = "2006-01-02 15:04:05"
 
 func FormatDateTime(ti time.Time) string {
 	return ti.Format(timeLayout)
+}
+
+func JsonMarshalStream(r io.Reader, object any) error {
+	decoder := json.NewDecoder(r)
+	decoder.UseNumber()
+	return decoder.Decode(object)
+}
+
+func JsonUnmarshalStream(w io.Writer, object any) error {
+	encoder := json.NewEncoder(w)
+	return encoder.Encode(object)
 }
 
 func GetSlogLevel() slog.Level {

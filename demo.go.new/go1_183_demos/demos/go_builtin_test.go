@@ -35,7 +35,7 @@ func TestRandom(t *testing.T) {
 		}
 	})
 
-	t.Run("new rand", func(t *testing.T) {
+	t.Run("new rand with src", func(t *testing.T) {
 		rander := rand.New(rand.NewSource(time.Now().Unix()))
 		for i := 0; i < 6; i++ {
 			num := rander.Intn(10)
@@ -56,6 +56,27 @@ func TestCalTime(t *testing.T) {
 	ti = ti.AddDate(0, 0, 6)
 	t.Log("now after 6 days:", ti)
 }
+
+func TestGoFormat(t *testing.T) {
+	b := []byte(`
+	package main
+	import  "fmt"
+
+
+	func main(){
+	  fmt.Println("hello");fmt.Println("world")
+	}
+`)
+
+	// it will not check go compile error
+	fb, err := format.Source(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("format go:\n" + string(fb))
+}
+
+// Error
 
 type StackError struct {
 	err   string
@@ -102,6 +123,8 @@ func TestErrors(t *testing.T) {
 	})
 }
 
+// Log
+
 func TestLogToFile(t *testing.T) {
 	path := "/tmp/test/log_test.txt"
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -116,25 +139,6 @@ func TestLogToFile(t *testing.T) {
 	logger.Println("test log to file start")
 	logger.Println("test log to file end")
 	t.Log("done")
-}
-
-func TestGoFormat(t *testing.T) {
-	b := []byte(`
-	package main
-	import  "fmt"
-
-
-	func main(){
-	  fmt.Println("hello");fmt.Println("world")
-	}
-`)
-
-	// it will not check go compile error
-	fb, err := format.Source(b)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("format go:\n" + string(fb))
 }
 
 // Slog

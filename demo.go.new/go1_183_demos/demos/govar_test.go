@@ -11,13 +11,7 @@ import (
 	"github.com/samber/lo"
 )
 
-// Demo: Bit, Number
-
-func TestHexToDecimal(t *testing.T) {
-	val := 0xff
-	result := strconv.FormatInt(int64(val), 10)
-	t.Logf("decimal result: %d, %s", int64(val), result)
-}
+// Demo: Bit
 
 func TestBitsOps(t *testing.T) {
 	t.Run("bit move op", func(t *testing.T) {
@@ -39,6 +33,16 @@ func TestBitsOps(t *testing.T) {
 	})
 }
 
+// Demo: Number
+
+func TestHexToDecimal(t *testing.T) {
+	val := 0xff
+	result := strconv.FormatInt(int64(val), 10)
+	t.Logf("decimal result: %d, %s", int64(val), result)
+}
+
+// Demo: Bytes, String
+
 func TestBytesCompare(t *testing.T) {
 	t.Run("bytes compare", func(t *testing.T) {
 		result := bytes.Compare([]byte("abc"), []byte("abx"))
@@ -51,24 +55,16 @@ func TestBytesCompare(t *testing.T) {
 	})
 }
 
-// Demo: Bytes, String
-
 func TestReuseBytes(t *testing.T) {
 	b := []byte("hello")
 	t.Log(string(b))
 
 	b = b[:0] // reuse bytes
 	t.Logf("len=%d, cap=%d", len(b), cap(b))
+
 	b = append(b, []byte("foo")...)
 	t.Log(string(b))
-}
-
-func TestRegexpFindIndex(t *testing.T) {
-	reg := regexp.MustCompile("mtime")
-	pos := reg.FindIndex([]byte("response.order[0].mtime=1697202124"))
-	if len(pos) == 2 {
-		t.Logf("pos: [start=%d,end=%d]", pos[0], pos[1])
-	}
+	t.Logf("len=%d, cap=%d", len(b), cap(b))
 }
 
 func TestStrCut(t *testing.T) {
