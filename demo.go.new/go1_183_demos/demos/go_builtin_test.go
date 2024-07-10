@@ -44,17 +44,27 @@ func TestRandom(t *testing.T) {
 	})
 }
 
-func TestCalTime(t *testing.T) {
+func TestDateTime(t *testing.T) {
 	duration, err := time.ParseDuration("5m")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ti := time.Now().Add(duration)
-	t.Log("now after 5m:", ti)
+	now := time.Now()
 
-	ti = ti.AddDate(0, 0, 6)
-	t.Log("now after 6 days:", ti)
+	t.Run("time since", func(t *testing.T) {
+		ti := now.Add(-duration)
+		since := time.Since(ti)
+		t.Logf("since: %.2f min, %.2f sec", since.Minutes(), since.Seconds())
+	})
+
+	t.Run("time calculate", func(t *testing.T) {
+		ti := now.Add(duration)
+		t.Log("now after 5m:", ti)
+
+		ti = ti.AddDate(0, 0, 6)
+		t.Log("now after 6 days:", ti)
+	})
 }
 
 func TestGoFormat(t *testing.T) {

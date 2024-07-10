@@ -232,24 +232,43 @@ func TestRecoverFromPanic(t *testing.T) {
 
 type testCtxKey string
 
-func TestCtxWithDuplicatedKeys(t *testing.T) {
-	const key testCtxKey = "ctx_key"
+func TestWrappedContext(t *testing.T) {
+	t.Run("ctx wrapped", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
 
-	printCtxValue := func(ctx context.Context, key testCtxKey) {
-		if s, ok := ctx.Value(key).(string); ok {
-			t.Log("ctx value:", s)
-		} else {
-			t.Log("ctx value not found for key:", key)
+		wrappedCtxFn := func(ctx context.Context) {
+			t.Log("new local ctx")
+			lctx, lcancel := context.WithTimeout(ctx, 3*time.Second)
+			defer lcancel()
+
+			<-lctx.Done()
+			t.Log("cannelled")
 		}
-	}
 
-	ctx := context.TODO()
-	ctx = context.WithValue(ctx, key, "ctx_value1")
-	printCtxValue(ctx, key)
+		wrappedCtxFn(ctx)
+		t.Log("done")
+	})
 
-	// 由下而上, 由子及父, 依次对 key 进行匹配
-	ctx = context.WithValue(ctx, key, "ctx_value2")
-	printCtxValue(ctx, key)
+	t.Run("ctx value wrapped", func(t *testing.T) {
+		const key testCtxKey = "ctx_key"
+
+		printCtxValue := func(ctx context.Context, key testCtxKey) {
+			if s, ok := ctx.Value(key).(string); ok {
+				t.Log("ctx value:", s)
+			} else {
+				t.Log("ctx value not found for key:", key)
+			}
+		}
+
+		ctx := context.TODO()
+		ctx = context.WithValue(ctx, key, "ctx_value1")
+		printCtxValue(ctx, key)
+
+		// 由下而上, 由子及父, 依次对 key 进行匹配
+		ctx = context.WithValue(ctx, key, "ctx_value2")
+		printCtxValue(ctx, key)
+	})
 }
 
 func TestContextAfterFunc(t *testing.T) {
