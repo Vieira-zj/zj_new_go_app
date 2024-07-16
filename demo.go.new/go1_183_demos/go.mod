@@ -8,6 +8,7 @@ require (
 	github.com/Shopify/sarama v1.38.1
 	github.com/arl/statsviz v0.5.2
 	github.com/bytedance/sonic v1.10.1
+	github.com/dave/dst v0.27.3
 	github.com/dop251/goja v0.0.0-20231024180952-594410467bc6
 	github.com/evanphx/json-patch v4.12.0+incompatible
 	github.com/gin-gonic/gin v1.8.0

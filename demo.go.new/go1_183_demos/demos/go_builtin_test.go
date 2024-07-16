@@ -10,11 +10,13 @@ import (
 	"log/slog"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 	"unicode"
 
 	"demo.apps/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 // Demo: Go Built-in Modules
@@ -67,6 +69,14 @@ func TestDateTime(t *testing.T) {
 	})
 }
 
+func TestFilePath(t *testing.T) {
+	t.Run("get abs path", func(t *testing.T) {
+		absPath, err := filepath.Abs("./")
+		assert.NoError(t, err)
+		t.Log("abs path:", absPath)
+	})
+}
+
 func TestGoFormat(t *testing.T) {
 	b := []byte(`
 	package main
@@ -78,7 +88,7 @@ func TestGoFormat(t *testing.T) {
 	}
 `)
 
-	// it will not check go compile error
+	// it does not check go compile error
 	fb, err := format.Source(b)
 	if err != nil {
 		t.Fatal(err)
