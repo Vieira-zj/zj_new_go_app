@@ -13,14 +13,9 @@ import (
 
 // Refer: https://ebitengine.org/en/examples/blur.html
 
-const (
-	screenWidth  = 640
-	screenHeight = 480
-)
+const screenWidth, screenHeight = 640, 480
 
-var (
-	gophersImage *ebiten.Image
-)
+var gophersImage *ebiten.Image
 
 func init() {
 	img, _, err := image.Decode(bytes.NewReader(images.FiveYears_jpg))
