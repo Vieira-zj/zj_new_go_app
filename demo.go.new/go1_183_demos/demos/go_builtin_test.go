@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 	"unicode"
@@ -21,12 +22,19 @@ import (
 
 // Demo: Go Built-in Modules
 
-func TestUnicode(t *testing.T) {
-	t.Log("IsDigit:", unicode.IsDigit(rune('3')))
-	t.Log("IsDigit:", unicode.IsDigit(rune('a')))
+func TestString(t *testing.T) {
+	t.Run("char check", func(t *testing.T) {
+		assert.True(t, unicode.IsDigit(rune('3')))
+		assert.False(t, unicode.IsDigit(rune('a')))
 
-	t.Log("IsLower:", unicode.IsLower(rune('b')))
-	t.Log("IsLower:", unicode.IsLower(rune('B')))
+		assert.True(t, unicode.IsLower(rune('b')))
+		assert.False(t, unicode.IsLower(rune('B')))
+	})
+
+	t.Run("string compare", func(t *testing.T) {
+		assert.True(t, strings.EqualFold("case", "CaSe"))
+		assert.False(t, strings.EqualFold("case", "cases"))
+	})
 }
 
 func TestRandom(t *testing.T) {

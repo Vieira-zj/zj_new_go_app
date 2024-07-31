@@ -102,6 +102,29 @@ func TestStrMultiReplace(t *testing.T) {
 
 // Demo: Slice
 
+func TestSliceInit(t *testing.T) {
+	t.Run("init slice by append", func(t *testing.T) {
+		var s []string
+		s = append(s, strings.Split("hello", "")...)
+		t.Logf("result: %v", s)
+	})
+
+	t.Run("init slice as map value", func(t *testing.T) {
+		m := make(map[byte][]string)
+		for _, s := range []string{
+			"a1", "a2", "apple",
+			"b1", "b2", "banana",
+		} {
+			b := s[0]
+			m[b] = append(m[b], s)
+		}
+
+		for k, v := range m {
+			t.Logf("key=%s, value=%v", string(k), v)
+		}
+	})
+}
+
 func TestSliceToArray(t *testing.T) {
 	t.Run("slice to array for Go 1.17", func(t *testing.T) {
 		var a [3]int
