@@ -62,6 +62,20 @@ func TestDateTime(t *testing.T) {
 
 	now := time.Now()
 
+	t.Run("get time hour and min", func(t *testing.T) {
+		t.Logf("hour:%d, min:%d", now.Hour(), now.Minute())
+	})
+
+	t.Run("time before", func(t *testing.T) {
+		d1, err := time.Parse(time.DateOnly, "2024-08-02")
+		assert.NoError(t, err)
+
+		d2, err := time.Parse(time.DateOnly, "2024-07-31")
+		assert.NoError(t, err)
+
+		assert.True(t, d2.Before(d1))
+	})
+
 	t.Run("time since", func(t *testing.T) {
 		ti := now.Add(-duration)
 		since := time.Since(ti)
@@ -79,9 +93,17 @@ func TestDateTime(t *testing.T) {
 
 func TestFilePath(t *testing.T) {
 	t.Run("get abs path", func(t *testing.T) {
+		t.Log("separator:", string(filepath.Separator))
+
 		absPath, err := filepath.Abs("./")
 		assert.NoError(t, err)
 		t.Log("abs path:", absPath)
+	})
+
+	t.Run("file pattern match", func(t *testing.T) {
+		ok, err := filepath.Match("*_test.go", "go_test.go")
+		assert.NoError(t, err)
+		t.Log("is match:", ok)
 	})
 }
 
