@@ -3,26 +3,9 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
-	"unsafe"
 )
-
-// Bytes2string unsafe converts bytes to string.
-func Bytes2string(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
-}
-
-// String2bytes unsafe converts string to bytes.
-func String2bytes(s string) (b []byte) {
-	bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	bh.Data = sh.Data
-	bh.Cap = sh.Len
-	bh.Len = sh.Len
-	return b
-}
 
 func ToString(value any) string {
 	if value == nil {
@@ -58,7 +41,7 @@ func ToString(value any) string {
 	}
 }
 
-func StringMultiSplit(str string, splits []rune) []string {
+func StrMultiSplit(str string, splits []rune) []string {
 	keysDict := make(map[rune]struct{}, len(splits))
 	for _, key := range splits {
 		keysDict[key] = struct{}{}

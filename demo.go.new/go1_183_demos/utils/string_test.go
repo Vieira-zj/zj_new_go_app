@@ -15,7 +15,7 @@ func TestToString(t *testing.T) {
 }
 
 func TestStringMultiSplit(t *testing.T) {
-	fields := utils.StringMultiSplit("a,b.c|d.e|f,g", []rune{',', '.', '|'})
+	fields := utils.StrMultiSplit("a,b.c|d.e|f,g", []rune{',', '.', '|'})
 	for _, field := range fields {
 		t.Log("field:", field)
 	}
