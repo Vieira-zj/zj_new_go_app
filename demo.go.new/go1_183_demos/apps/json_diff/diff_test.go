@@ -2,6 +2,9 @@ package jsondiff
 
 import (
 	"encoding/json"
+	"fmt"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -75,4 +78,60 @@ func TestDifferCompare03(t *testing.T) {
 		differ.Compare(src, dst)
 		t.Log("differ results:\n", differ.Patches().string())
 	})
+}
+
+// Compare Slice
+
+func TestCompareSliceOfFloat(t *testing.T) {
+	src := make(map[string]any)
+	srcb := []byte(`{"slice":[1,7,2,3,4]}`)
+	err := json.Unmarshal(srcb, &src)
+	assert.NoError(t, err)
+
+	dst := make(map[string]any)
+	dstb := []byte(`{"slice":[1,3,11,2,9,4]}`)
+	err = json.Unmarshal(dstb, &dst)
+	assert.NoError(t, err)
+
+	t.Run("failed, diff with slice order", func(t *testing.T) {
+		differ := NewDiffer(WithSliceOrders([]string{"/slice"}))
+		differ.Compare(src, dst)
+		t.Log("differ results:\n", differ.Patches().string())
+	})
+
+	t.Run("pass, order and diff slice", func(t *testing.T) {
+		srcSlice, srcOk := src["slice"].([]any)
+		dstSlice, dstOk := dst["slice"].([]any)
+		assert.True(t, srcOk && dstOk)
+
+		results := CompareSliceOfFloat(srcSlice, dstSlice)
+		t.Log("compare results:\n", strings.Join(results, " | "))
+	})
+}
+
+func CompareSliceOfFloat(src, dst []any) []string {
+	m := make(map[float64]uint8, len(src))
+	for _, num := range src {
+		m[num.(float64)] += 1
+	}
+	for _, num := range dst {
+		m[num.(float64)] += 10
+	}
+
+	results := make([]string, 0, len(src))
+	for key, val := range m {
+		switch val {
+		case 1: // in old
+			results = append(results, fmt.Sprintf("del: %.0f", key))
+		case 10: // in new
+			results = append(results, fmt.Sprintf("add: %.0f", key))
+		case 11: // in old and new
+			results = append(results, fmt.Sprintf("exist: %.0f", key))
+		default:
+			panic("not happen")
+		}
+	}
+
+	sort.Strings(results)
+	return results
 }
