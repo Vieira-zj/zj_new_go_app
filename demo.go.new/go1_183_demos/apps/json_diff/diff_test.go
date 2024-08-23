@@ -110,6 +110,7 @@ func TestCompareSliceOfFloat(t *testing.T) {
 }
 
 func CompareSliceOfFloat(src, dst []any) []string {
+	// make sure no duplicated items in slice.
 	m := make(map[float64]uint8, len(src))
 	for _, num := range src {
 		m[num.(float64)] += 1

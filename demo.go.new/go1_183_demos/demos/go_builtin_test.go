@@ -91,6 +91,44 @@ func TestDateTime(t *testing.T) {
 	})
 }
 
+func TestTimeTicker(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	stop := 200 * time.Millisecond
+
+	t.Run("loop by time ticker", func(t *testing.T) {
+		tick := time.NewTicker(stop)
+		defer tick.Stop()
+	outer:
+		for i := 0; i < 10; i++ {
+			select {
+			case <-ctx.Done():
+				t.Log(ctx.Err())
+				break outer
+			case <-tick.C:
+				t.Log("tick at:", i)
+			}
+		}
+	})
+
+	t.Run("loop by timer and reset", func(t *testing.T) {
+		ti := time.NewTimer(stop)
+		defer ti.Stop()
+	outer:
+		for i := 0; i < 10; i++ {
+			select {
+			case <-ctx.Done():
+				t.Log(ctx.Err())
+				break outer
+			case <-ti.C:
+				t.Log("tick at:", i)
+				ti.Reset(stop)
+			}
+		}
+	})
+}
+
 func TestFilePath(t *testing.T) {
 	t.Run("get abs path", func(t *testing.T) {
 		t.Log("separator:", string(filepath.Separator))
