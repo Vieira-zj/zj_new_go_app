@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -23,6 +24,10 @@ func main() {
 		Handler: mux,
 	}
 
+	srv.RegisterOnShutdown(func() {
+		log.Println("register shutdown hook")
+	})
+
 	go func() {
 		log.Println("serve listen at " + port)
 		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
@@ -31,9 +36,10 @@ func main() {
 		log.Println("stopped serving new connections")
 	}()
 
-	quit, stop := signal.NotifyContext(context.TODO(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	defer stop()
-	<-quit.Done()
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	<-quit
 	log.Println("shutdown server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

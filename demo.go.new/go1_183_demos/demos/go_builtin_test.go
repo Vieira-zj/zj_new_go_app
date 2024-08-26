@@ -95,10 +95,10 @@ func TestTimeTicker(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	stop := 200 * time.Millisecond
+	interval := 200 * time.Millisecond
 
-	t.Run("loop by time ticker", func(t *testing.T) {
-		tick := time.NewTicker(stop)
+	t.Run("loop by time ticker with fix interval", func(t *testing.T) {
+		tick := time.NewTicker(interval)
 		defer tick.Stop()
 	outer:
 		for i := 0; i < 10; i++ {
@@ -112,8 +112,8 @@ func TestTimeTicker(t *testing.T) {
 		}
 	})
 
-	t.Run("loop by timer and reset", func(t *testing.T) {
-		ti := time.NewTimer(stop)
+	t.Run("loop by timer with diff interval", func(t *testing.T) {
+		ti := time.NewTimer(interval)
 		defer ti.Stop()
 	outer:
 		for i := 0; i < 10; i++ {
@@ -123,7 +123,8 @@ func TestTimeTicker(t *testing.T) {
 				break outer
 			case <-ti.C:
 				t.Log("tick at:", i)
-				ti.Reset(stop)
+				// reset to a diff interval for next iter
+				ti.Reset(interval - time.Duration(i))
 			}
 		}
 	})

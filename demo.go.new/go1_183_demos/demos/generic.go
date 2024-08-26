@@ -11,8 +11,21 @@ import (
 
 // Refer: https://github.com/smallnest/talk-about-go-generics
 
-// addByReflect an add fn supports for int32 and float32 by reflect.
-func addByReflect(a, b interface{}) (interface{}, error) {
+// 泛型方法 add
+
+func addT(a, b any) (any, error) {
+	switch a.(type) {
+	case int32:
+		return a.(int32) + b.(int32), nil
+	case float32:
+		return a.(float32) + b.(float32), nil
+	default:
+	}
+
+	return -1, fmt.Errorf("param must be int32 or float32")
+}
+
+func addR(a, b interface{}) (interface{}, error) {
 	// here use generic [T any] instead of interface{}
 	aType := reflect.TypeOf(a).Name()
 	bType := reflect.TypeOf(b).Name()
@@ -29,16 +42,15 @@ func addByReflect(a, b interface{}) (interface{}, error) {
 	case reflect.Float32:
 		return aValueOf.Float() + bValueOf.Float(), nil
 	default:
-		return -1, fmt.Errorf("param must be int32 or float32")
 	}
+	return -1, fmt.Errorf("param must be int32 or float32")
 }
 
-// 泛型方法
-
-// add adds fn supports for int32 and float32 by generic.
-func add[T int32 | float32](a, b T) T {
+func addG[T int32 | float32](a, b T) T {
 	return a + b
 }
+
+// 泛型方法 min
 
 // The special tilde ("~") symbol instructs Go that T should approximately match one of these types rather than precisely.
 // That is, it should match one of these types or a derived-type extending these.
@@ -49,6 +61,8 @@ func min[T ~int | ~float64](x, y T) T {
 	}
 	return y
 }
+
+// 泛型方法 slice
 
 func insertAt[T any](list []T, idx int, t T) ([]T, error) {
 	l := len(list)
@@ -88,6 +102,8 @@ func removeAt[T any](list []T, idx int, _ T) ([]T, error) {
 	return retList, nil
 }
 
+// 泛型方法
+
 func getFieldInfo[T any /* int | string */](field T) string {
 	typeOf := reflect.TypeOf(field)
 	valueOf := reflect.ValueOf(field)
@@ -112,18 +128,18 @@ func getFieldInfo[T any /* int | string */](field T) string {
 
 // 类型约束
 
-type myNumber interface {
-	int | int32 | int64 | float32 | float64
+type scalar interface {
+	int | float64 | ~string
 }
 
-//nolint:unused
-type myReadWriterCloser interface {
-	*os.File | *net.TCPConn | *net.UDPConn | *net.UnixConn | *net.IPConn
+func plus[T scalar](a, b T) T {
+	return a + b
+}
 
-	// 嵌入接口
-	io.Reader
-	io.Writer
-	io.Closer
+// 类型约束 KvMap
+
+type myNumber interface {
+	int | int32 | int64 | float32 | float64
 }
 
 // comparable means that the value of T supports comparison using the equality operator ("=").
@@ -140,4 +156,16 @@ func (kv MyKvMap[K, V]) Pprint() {
 	for k, v := range kv {
 		fmt.Printf("key=%v,value=%v\n", k, v)
 	}
+}
+
+// 类型约束 ReadWriterCloser
+
+//nolint:unused
+type myReadWriterCloser interface {
+	*os.File | *net.TCPConn | *net.UDPConn | *net.UnixConn | *net.IPConn
+
+	// 嵌入接口
+	io.Reader
+	io.Writer
+	io.Closer
 }
