@@ -14,6 +14,7 @@ import (
 // 泛型方法 add
 
 func addT(a, b any) (any, error) {
+	// cannot compare var.(type) directly
 	switch a.(type) {
 	case int32:
 		return a.(int32) + b.(int32), nil
