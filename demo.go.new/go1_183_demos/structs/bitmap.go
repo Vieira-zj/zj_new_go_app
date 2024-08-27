@@ -23,24 +23,24 @@ func (b BitMap) Size() int {
 }
 
 func (b BitMap) Set(offset int) error {
-	byteOffset := offset / 8
-	if !b.isByteOffsetValid(byteOffset) {
-		return fmt.Errorf("invalid offset: %d", byteOffset)
+	index := offset / 8
+	if !b.isIndexOutOfRange(index) {
+		return fmt.Errorf("offset=%d out of range", offset)
 	}
 
 	bitOffset := offset % 8
-	b.data[byteOffset] |= 1 << bitOffset
+	b.data[index] |= 1 << bitOffset
 	return nil
 }
 
 func (b BitMap) Get(offset int) bool {
-	byteOffset := offset / 8
-	if !b.isByteOffsetValid(byteOffset) {
+	index := offset / 8
+	if !b.isIndexOutOfRange(index) {
 		return false
 	}
 
 	bitOffset := offset % 8
-	return (b.data[byteOffset] & (1 << bitOffset)) != 0
+	return (b.data[index] & (1 << bitOffset)) != 0
 }
 
 func (b BitMap) Reset(offset int) error {
@@ -48,16 +48,16 @@ func (b BitMap) Reset(offset int) error {
 		return nil
 	}
 
-	byteOffset := offset / 8
-	if !b.isByteOffsetValid(byteOffset) {
-		return fmt.Errorf("invalid offset: %d", byteOffset)
+	index := offset / 8
+	if !b.isIndexOutOfRange(index) {
+		return fmt.Errorf("offset=%d out of range", offset)
 	}
 
 	bitOffset := offset % 8
-	b.data[byteOffset] ^= 1 << bitOffset
+	b.data[index] ^= 1 << bitOffset
 	return nil
 }
 
-func (b BitMap) isByteOffsetValid(offset int) bool {
-	return offset >= 0 && offset < b.size
+func (b BitMap) isIndexOutOfRange(index int) bool {
+	return index >= 0 && index < b.size
 }

@@ -42,4 +42,13 @@ func TestBitMap(t *testing.T) {
 			assert.True(t, ok)
 		}
 	})
+
+	t.Run("bitmap out of range", func(t *testing.T) {
+		ok := bitmap.Get(71)
+		assert.False(t, ok)
+
+		err := bitmap.Set(71)
+		assert.Error(t, err, "out of range")
+		t.Log("error:", err)
+	})
 }
