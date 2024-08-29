@@ -206,7 +206,35 @@ func TestRefUpdateForMap(t *testing.T) {
 
 // Demo: Goroutine
 
-func TestRecoverFromPanic(t *testing.T) {
+func TestIteratorChan(t *testing.T) {
+	ch := make(chan int)
+	go func() {
+		defer close(ch)
+		for _, n := range []int{1, 2, 3, 4, 5} {
+			ch <- n
+		}
+	}()
+
+	t.Run("iterator chan by check ok", func(t *testing.T) {
+		for {
+			if v, ok := <-ch; ok {
+				t.Log("value:", v)
+			} else {
+				t.Log("close")
+				break
+			}
+		}
+	})
+
+	t.Run("directly iterator chan", func(t *testing.T) {
+		for v := range ch {
+			t.Log("value:", v)
+		}
+		t.Log("done")
+	})
+}
+
+func TestRecoverWhenPanic(t *testing.T) {
 	ch := make(chan struct{})
 
 	go func() {
@@ -216,7 +244,7 @@ func TestRecoverFromPanic(t *testing.T) {
 				fmt.Println("recover err:", r)
 				fmt.Printf("stack:\n%s", debug.Stack())
 			}
-			ch <- struct{}{}
+			close(ch)
 		}()
 		fmt.Println("goroutine run...")
 		time.Sleep(time.Second)
