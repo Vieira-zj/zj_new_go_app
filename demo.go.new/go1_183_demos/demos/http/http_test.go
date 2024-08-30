@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptrace"
 	"sync"
 	"sync/atomic"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Http Client 连接池复用问题
@@ -14,6 +17,11 @@ import (
 const testUrl = "https://www.baidu.com"
 
 var getConnCount, getDNSCount int32
+
+func TestHttpPing(t *testing.T) {
+	err := httpPingByHead()
+	assert.NoError(t, err)
+}
 
 func TestHttpGet(t *testing.T) {
 	t.Run("http get without read body", func(t *testing.T) {
@@ -24,6 +32,33 @@ func TestHttpGet(t *testing.T) {
 		runHttpGet(t, httpGetWithReadBody)
 	})
 }
+
+func httpPingByHead() error {
+	resp, err := http.Head(testUrl)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("response header:")
+		for k, v := range resp.Header {
+			fmt.Printf("key=%s, value=%v\n", k, v)
+		}
+	}
+
+	return nil
+}
+
+/*
+原理分析
+
+httpclient 每个连接会创建读写协程两个协程, 分别使用 reqch 和 writech 来跟 roundTrip 通信.
+上层使用的 response.Body 其实是经过多次封装的, 一次封装的 body 是直接跟 net.conn 进行交互读取, 二次封装的 body 则是加强了 close 和 eof 处理的 bodyEOFSignal.
+
+当未读取 body 就进行 close 时, 会触发 earlyCloseFn() 回调, 看 earlyCloseFn 的函数定义, 在 close 未见 io.EOF 时才调用.
+自定义的 earlyCloseFn 方法会给 readLoop 监听的 waitForBodyRead 传入 false, 这样引发 alive 为 false 不能继续循环的接收新请求,
+只能是退出调用注册过的 defer 方法, 关闭连接和清理连接池.
+*/
 
 func runHttpGet(t *testing.T, httpGetFn func() error) {
 	var wg sync.WaitGroup
@@ -43,6 +78,7 @@ func runHttpGet(t *testing.T, httpGetFn func() error) {
 	}
 
 	wg.Wait()
+	close(limitCh)
 	t.Logf("getConnCount=%d, getDNSCount=%d", getConnCount, getDNSCount)
 }
 
@@ -88,14 +124,3 @@ func httpGetWithReadBody() error {
 	_, err = io.Copy(io.Discard, resp.Body) // 读取 body
 	return err
 }
-
-/*
-原理分析
-
-httpclient 每个连接会创建读写协程两个协程, 分别使用 reqch 和 writech 来跟 roundTrip 通信.
-上层使用的 response.Body 其实是经过多次封装的, 一次封装的 body 是直接跟 net.conn 进行交互读取, 二次封装的 body 则是加强了 close 和 eof 处理的 bodyEOFSignal.
-
-当未读取 body 就进行 close 时, 会触发 earlyCloseFn() 回调, 看 earlyCloseFn 的函数定义, 在 close 未见 io.EOF 时才调用.
-自定义的 earlyCloseFn 方法会给 readLoop 监听的 waitForBodyRead 传入 false, 这样引发 alive 为 false 不能继续循环的接收新请求,
-只能是退出调用注册过的 defer 方法, 关闭连接和清理连接池.
-*/

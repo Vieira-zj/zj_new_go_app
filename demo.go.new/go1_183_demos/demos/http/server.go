@@ -16,7 +16,8 @@ import (
 func main() {
 	s := FakeService{}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/sleep", s.Handler)
+	mux.HandleFunc("/sleep", s.SleepHandler)
+	mux.HandleFunc("/cancel", CancelHandler)
 
 	port := ":8081"
 	srv := &http.Server{
@@ -55,12 +56,38 @@ func main() {
 
 // Handler
 
+// curl "http://localhost:8081/cancel"
+func CancelHandler(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	defer func() {
+		log.Printf("duration: %.2f", time.Since(start).Seconds())
+	}()
+
+	ch := make(chan bool)
+	go func() {
+		time.Sleep(3 * time.Second)
+		ch <- true
+		close(ch)
+	}()
+
+	ctx := r.Context()
+
+	select {
+	case <-ch:
+		fmt.Fprintln(w, "hello")
+	case <-ctx.Done():
+		log.Println("request cancelled")
+	}
+}
+
+// Sleep Handler
+
 type FakeService struct {
 	wg sync.WaitGroup
 }
 
 // curl "http://localhost:8081/sleep?duration=3s"
-func (s *FakeService) Handler(w http.ResponseWriter, r *http.Request) {
+func (s *FakeService) SleepHandler(w http.ResponseWriter, r *http.Request) {
 	duration, err := time.ParseDuration(r.FormValue("duration"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
