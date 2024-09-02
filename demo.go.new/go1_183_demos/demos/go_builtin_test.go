@@ -1,6 +1,7 @@
 package demos_test
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -21,6 +22,14 @@ import (
 )
 
 // Demo: Go Built-in Modules
+
+func TestCompare(t *testing.T) {
+	rint := cmp.Compare(2, 1)
+	t.Log("result:", rint)
+
+	rbool := cmp.Less(2, 1)
+	t.Log("result:", rbool)
+}
 
 func TestString(t *testing.T) {
 	t.Run("char check", func(t *testing.T) {

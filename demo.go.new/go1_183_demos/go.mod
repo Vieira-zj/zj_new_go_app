@@ -7,7 +7,7 @@ toolchain go1.21.1
 require (
 	github.com/Shopify/sarama v1.38.1
 	github.com/arl/statsviz v0.5.2
-	github.com/bytedance/sonic v1.10.1
+	github.com/bytedance/sonic v1.12.2
 	github.com/dave/dst v0.27.3
 	github.com/dop251/goja v0.0.0-20231024180952-594410467bc6
 	github.com/evanphx/json-patch v4.12.0+incompatible
@@ -33,9 +33,10 @@ require (
 )
 
 require (
+	github.com/bytedance/sonic/loader v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
-	github.com/chenzhuoyu/iasm v0.9.0 // indirect
+	github.com/cloudwego/base64x v0.1.4 // indirect
+	github.com/cloudwego/iasm v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
