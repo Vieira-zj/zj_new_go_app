@@ -39,5 +39,6 @@ function checkout_go_version {
 
 # checkout_go_version 1_200
 checkout_go_version 1_211
+# checkout_go_version 1_230
 
 echo "done"

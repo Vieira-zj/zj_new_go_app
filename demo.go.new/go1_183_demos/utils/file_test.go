@@ -1,10 +1,12 @@
 package utils_test
 
 import (
+	"encoding/csv"
 	"os"
 	"testing"
 
 	"demo.apps/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOSGetwd(t *testing.T) {
@@ -62,4 +64,26 @@ func TestSearchFiles(t *testing.T) {
 	for _, path := range results {
 		t.Log(path)
 	}
+}
+
+func TestWriteCSV(t *testing.T) {
+	fpath := "/tmp/test/output.csv"
+	f, err := os.OpenFile(fpath, os.O_CREATE|os.O_WRONLY, 0644)
+	assert.NoError(t, err)
+	defer f.Close()
+
+	w := csv.NewWriter(f)
+	defer w.Flush()
+
+	for _, row := range [][]string{
+		{"Name", "Age", "City"},
+		{"Foo", "25", "New York"},
+		{"Bob", "30", "London"},
+		{"Bar", "20", "Paris"},
+	} {
+		err := w.Write(row)
+		assert.NoError(t, err)
+	}
+
+	t.Log("write csv finish")
 }
