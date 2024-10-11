@@ -31,6 +31,12 @@ func TestCompare(t *testing.T) {
 	t.Log("result:", rbool)
 }
 
+func TestFmtPrint(t *testing.T) {
+	s := "hello"
+	fmt.Printf("type: %T\n", s)
+	fmt.Printf("quota value: %q\n", s)
+}
+
 func TestString(t *testing.T) {
 	t.Run("char check", func(t *testing.T) {
 		assert.True(t, unicode.IsDigit(rune('3')))

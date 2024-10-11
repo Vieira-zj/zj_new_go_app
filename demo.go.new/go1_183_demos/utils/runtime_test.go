@@ -9,6 +9,10 @@ import (
 	"demo.apps/utils"
 )
 
+func TestRuntimeUtils(t *testing.T) {
+	t.Log("result:", utils.MB == 1024*1024)
+}
+
 func TestGetProjectRootPath(t *testing.T) {
 	path := utils.GetProjectRootPath()
 	t.Log("project root path:", path)

@@ -68,10 +68,26 @@ var (
 	GB = int64(1 << 30)
 )
 
+func PrintMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	fmt.Printf("\tAlloc = %v MiB\n", bToMb(m.Alloc))
+	fmt.Printf("\tTotalAlloc = %v MiB\n", bToMb(m.TotalAlloc))
+	fmt.Printf("\tSys = %v MiB\n", bToMb(m.Sys))
+	fmt.Printf("\tHeapAlloc = %v MiB\n", bToMb(m.HeapAlloc))
+	fmt.Printf("\tHeapSys = %v MiB\n", bToMb(m.HeapSys))
+	fmt.Printf("\tHeapInuse = %v MiB\n", bToMb(m.HeapInuse))
+	fmt.Println()
+}
+
+func bToMb(b uint64) uint64 {
+	return b / uint64(MB)
+}
+
 // refer: https://pkg.go.dev/runtime/debug#SetMemoryLimit
 func SetMemoryLimit(size, unit int64) {
 	pre := debug.SetMemoryLimit(size * unit)
-	log.Printf("mem limit: pre=%dMB, cur=%dMB", pre/MB, size)
+	log.Printf("mem limit: pre=%dMB, current=%dMB", pre/MB, size)
 }
 
 func ForceFreeMemory() {
