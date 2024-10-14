@@ -22,6 +22,15 @@ func IsDirExist(path string) bool {
 	return f.IsDir()
 }
 
+func IsSymlinkFile(path string) (bool, error) {
+	stat, err := os.Lstat(path)
+	if err != nil {
+		return false, err
+	}
+
+	return stat.Mode()&os.ModeSymlink != 0, nil
+}
+
 // BlockedCopy copies file by each 1m block.
 func BlockedCopy(src, dest string) error {
 	srcFile, err := os.Open(src)

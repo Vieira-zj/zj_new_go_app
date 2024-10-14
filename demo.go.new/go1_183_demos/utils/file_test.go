@@ -30,6 +30,17 @@ func TestIsDirExist(t *testing.T) {
 	}
 }
 
+func TestIsSymlinkFile(t *testing.T) {
+	for _, fpath := range []string{
+		"/tmp/test/test.csv",
+		"/tmp/test/test_link.csv", // ln -s test.csv test_link.csv
+	} {
+		result, err := utils.IsSymlinkFile(fpath)
+		assert.NoError(t, err)
+		t.Logf("is symlink file (%s): %v", fpath, result)
+	}
+}
+
 func TestBlockedCopy(t *testing.T) {
 	src := "/tmp/test/src_copy.zip"
 	dest := "/tmp/test/dest_copied.zip"

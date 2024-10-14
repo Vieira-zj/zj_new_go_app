@@ -23,6 +23,36 @@ import (
 
 // Demo: Go Built-in Modules
 
+func TestBuildInFn(t *testing.T) {
+	t.Run("build-in func", func(t *testing.T) {
+		t.Log("min:", min(1, 2))
+		t.Log("max:", max(8, 10))
+	})
+
+	t.Run("clear slice", func(t *testing.T) {
+		s := []int{1, 2, 3}
+		t.Logf("len=%d, cap=%d", len(s), cap(s))
+
+		clear(s)
+		t.Log("after clear")
+		t.Logf("len=%d, cap=%d", len(s), cap(s))
+		t.Log("slice:", s)
+	})
+
+	t.Run("clear map", func(t *testing.T) {
+		m := map[string]int{
+			"one":   1,
+			"two":   2,
+			"three": 3,
+		}
+		t.Logf("len=%d", len(m))
+
+		clear(m)
+		t.Log("after clear")
+		t.Logf("len=%d", len(m))
+	})
+}
+
 func TestCompare(t *testing.T) {
 	rint := cmp.Compare(2, 1)
 	t.Log("result:", rint)
