@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/samber/lo"
@@ -17,7 +19,6 @@ func TestBitsOps(t *testing.T) {
 	t.Run("bit move op", func(t *testing.T) {
 		t.Log(0 << 2)  // 0
 		t.Log(16 << 1) // num*2
-
 		t.Log(14 >> 1) // num/2
 	})
 
@@ -538,4 +539,36 @@ func TestAbstractStruct(t *testing.T) {
 
 	p := AbstractPerson{}
 	run(p)
+}
+
+// Demo: Atomic
+
+func TestAtomicSumUpBySelfLoop(t *testing.T) {
+	var (
+		val atomic.Int32
+		wg  sync.WaitGroup
+	)
+
+	limit := 50
+
+	val.Store(1)
+	wg.Add(limit)
+	for i := 0; i < limit; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			// self-loop
+			for {
+				tmp := val.Load()
+				fmt.Printf("goroutine [%d] load value: %d\n", idx, tmp)
+				if ok := val.CompareAndSwap(tmp, tmp+1); ok {
+					return
+				} else {
+					fmt.Printf("goroutine [%d] compare '%d' failed and retry\n", idx, tmp)
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait()
+	t.Log("result:", val.Load())
 }
