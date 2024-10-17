@@ -9,6 +9,7 @@ require (
 	github.com/arl/statsviz v0.5.2
 	github.com/bytedance/sonic v1.12.2
 	github.com/dave/dst v0.27.3
+	github.com/dave/jennifer v1.5.0
 	github.com/dop251/goja v0.0.0-20231024180952-594410467bc6
 	github.com/evanphx/json-patch v4.12.0+incompatible
 	github.com/gin-gonic/gin v1.8.0
@@ -16,6 +17,7 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt/v5 v5.0.0-rc.2
 	github.com/golang/mock v1.6.0
+	github.com/google/uuid v1.3.0
 	github.com/hajimehoshi/bitmapfont/v3 v3.0.0
 	github.com/hajimehoshi/ebiten/v2 v2.7.7
 	github.com/robfig/cron/v3 v3.0.1
@@ -64,7 +66,6 @@ require (
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect

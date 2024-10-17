@@ -11,7 +11,7 @@ import (
 type Logger struct {
 	l   *zap.Logger
 	cfg zap.Config
-	// 这里使用zap.AtomicLevel类型存储logger的level信息，基于zap.AtomicLevel的level支持热更新，我们可以在程序运行时动态修改logger的log level
+	// 这里使用 zap.AtomicLevel 类型存储 logger 的 level 信息，基于 zap.AtomicLevel 的 level 支持热更新，我们可以在程序运行时动态修改 logger 的 log level
 	level zap.AtomicLevel
 }
 
