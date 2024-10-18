@@ -16,6 +16,33 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+func TestAstParseComments(t *testing.T) {
+	src := `
+// Calculator package provides methods 
+// for basic int calculation 
+package calculator
+
+// Import of fmt package 
+import "fmt"
+
+// Add adds two integers
+func Add(a, b int) int {
+	// calculate the result
+	result := a + b
+	// return the result
+	return result
+}
+`
+
+	fs := token.NewFileSet()
+	f, err := parser.ParseFile(fs, "", src, parser.ParseComments)
+	assert.NoError(t, err)
+
+	for _, c := range f.Comments {
+		t.Log("comment:", c.Text())
+	}
+}
+
 func TestAstReverseOrder(t *testing.T) {
 	code := `package a
 func main(){
@@ -24,7 +51,7 @@ func main(){
 }
 `
 
-	t.Run("go ast", func(t *testing.T) {
+	t.Run("parse by ast", func(t *testing.T) {
 		fset := token.NewFileSet()
 		f, err := parser.ParseFile(fset, "", code, parser.ParseComments)
 		assert.NoError(t, err)
@@ -37,7 +64,7 @@ func main(){
 		assert.NoError(t, err)
 	})
 
-	t.Run("go dst", func(t *testing.T) {
+	t.Run("parse by dst", func(t *testing.T) {
 		f, err := decorator.Parse(code)
 		assert.NoError(t, err)
 
