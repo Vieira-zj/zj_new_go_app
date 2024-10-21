@@ -9,8 +9,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-
-	"github.com/samber/lo"
 )
 
 // Demo: Bit
@@ -277,82 +275,72 @@ func TestMapCap(t *testing.T) {
 	}
 }
 
-func TestMapPtrAsKey(t *testing.T) {
+func TestMapKeyByStruct(t *testing.T) {
 	type num struct {
 		id    int
 		value string
 	}
 
-	one := &num{id: 1, value: "one"}
-	two := &num{id: 2, value: "two"}
+	t.Run("struct as map key", func(t *testing.T) {
+		three := num{id: 3, value: "three"}
+		four := num{id: 4, value: "four"}
 
-	// use address as map key
-	m := map[*num]string{
-		one: "num_one",
-		two: "num_two",
-	}
+		m := map[num]string{
+			three: "3:three",
+			four:  "4:four",
+		}
 
-	t.Run("iterator", func(t *testing.T) {
+		t.Log("iterator:")
 		for k, v := range m {
 			t.Log(k.id, k.value, v)
 		}
-	})
 
-	t.Run("get exist", func(t *testing.T) {
-		if v, ok := m[one]; ok {
-			t.Log(v)
+		t.Log("check key [one] exist:")
+		if v, ok := m[three]; ok {
+			t.Log("found", v)
 		} else {
 			t.Fatal("not found")
 		}
-	})
 
-	t.Run("get new", func(t *testing.T) {
-		one = &num{id: 1, value: "one"}
-		if v, ok := m[one]; ok {
-			t.Log(v)
+		newThree := num{id: 3, value: "three"}
+		t.Logf("get with new existing key: id=%d, value=%s", newThree.id, newThree.value)
+		if v, ok := m[newThree]; ok {
+			t.Log("found", v)
 		} else {
 			t.Log("not found")
 		}
 	})
-}
 
-// Demo: lo util
+	t.Run("struct ptr as map key", func(t *testing.T) {
+		one := &num{id: 1, value: "one"}
+		two := &num{id: 2, value: "two"}
 
-func TestLoSliceUnique(t *testing.T) {
-	names := lo.Uniq[string]([]string{"foo", "bar", "foo"})
-	t.Log("names:", names)
-}
+		// use address as map key
+		m := map[*num]string{
+			one: "1:one",
+			two: "2:two",
+		}
 
-func TestLoSliceFilterAndMap(t *testing.T) {
-	even := lo.Filter[int]([]int{1, 2, 3, 4}, func(x int, index int) bool {
-		return x%2 == 0
+		t.Log("iterator:")
+		for k, v := range m {
+			t.Log(k.id, k.value, v)
+		}
+
+		t.Log("check key [one] exist:")
+		if v, ok := m[one]; ok {
+			t.Log("found", v)
+		} else {
+			t.Fatal("not found")
+		}
+
+		newOne := &num{id: 1, value: "one"}
+		t.Logf("get with new existing key: id=%d, value=%s", newOne.id, newOne.value)
+		if v, ok := m[newOne]; ok {
+			t.Log("found", v)
+		} else {
+			t.Log("not found")
+		}
 	})
-	t.Log("even num:", even)
-
-	result := lo.Map[int64, string]([]int64{1, 2, 3, 4}, func(x int64, index int) string {
-		return strconv.FormatInt(x, 10)
-	})
-	t.Log("map result:", result)
-}
-
-func TestLoMapKeysAndValues(t *testing.T) {
-	m := map[string]int{"foo": 1, "bar": 2}
-	keys := lo.Keys[string, int](m)
-	t.Log("map keys:", keys)
-
-	values := lo.Values[string, int](m)
-	t.Log("map values:", values)
-
-	value := lo.ValueOr[string, int](m, "test", 29)
-	t.Log("value:", value)
-}
-
-func TestLoStringTest(t *testing.T) {
-	sub := lo.Substring("hello", 2, 3)
-	t.Log("sub str:", sub)
-
-	str := lo.RandomString(12, lo.LettersCharset)
-	t.Log("rand str:", str)
 }
 
 // Demo: Struct

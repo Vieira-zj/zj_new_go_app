@@ -46,7 +46,9 @@ func TestParseProductPreComment(t *testing.T) {
 
 	comments := make(map[string]*ast.CommentGroup, len(f.Comments))
 	for _, c := range f.Comments {
-		k := fmt.Sprintf("%s|%d", filepath.Base(fpath), fs.Position(c.Pos()).Line)
+		// pos := fs.Position(c.Pos())
+		pos := fs.Position(c.End())
+		k := fmt.Sprintf("%s|%d", filepath.Base(pos.Filename), pos.Line)
 		comments[k] = c
 	}
 
@@ -55,8 +57,8 @@ func TestParseProductPreComment(t *testing.T) {
 	obj := pkg.Types.Scope().Lookup(srcTypeName)
 	assert.NotNil(t, obj)
 
-	pos := pkg.Fset.Position(obj.Pos()).Line - 1
-	key := fmt.Sprintf("%s|%d", filepath.Base(fpath), pos)
+	pos := pkg.Fset.Position(obj.Pos())
+	key := fmt.Sprintf("%s|%d", filepath.Base(pos.Filename), pos.Line-1) // pre line
 	comment, ok := comments[key]
 	assert.True(t, ok)
 
