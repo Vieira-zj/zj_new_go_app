@@ -33,7 +33,7 @@ func initServer() *gin.Engine {
 	r.Use(gin.Recovery())
 
 	r.NoMethod(HandleNotFound)
-	r.NoRoute(HandleNotFound)
+	r.NoRoute(HandleNotFound) // 配置动态路由规则
 
 	r.GET("/", HandleIndex)
 	r.GET("/ping", HandlePing)
@@ -92,7 +92,7 @@ func addStaticEmbed(r *gin.Engine) {
 // Default Handle
 
 func HandleNotFound(c *gin.Context) {
-	c.JSON(http.StatusNotFound, http.StatusText(http.StatusNotFound))
+	c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
 func HandleIndex(c *gin.Context) {

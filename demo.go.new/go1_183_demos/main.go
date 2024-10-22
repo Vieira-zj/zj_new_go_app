@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"os/signal"
+	"syscall"
 
 	"demo.apps/go.test/cover"
 	"demo.apps/utils"
@@ -16,7 +16,10 @@ func main() {
 
 	httpServe(false)
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	// kill (no param) default send syscall.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall. SIGKILL but can"t be catch, so don't need add it
+	ctx, cancel := signal.NotifyContext(context.TODO(), syscall.SIGTERM, syscall.SIGINT)
 	<-ctx.Done()
 	cancel()
 

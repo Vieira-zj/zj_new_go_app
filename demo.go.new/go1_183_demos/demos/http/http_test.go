@@ -82,6 +82,7 @@ func runHttpGet(t *testing.T, httpGetFn func() error) {
 	t.Logf("getConnCount=%d, getDNSCount=%d", getConnCount, getDNSCount)
 }
 
+// httptrace by callbacks.
 var testHttpTrace = httptrace.ClientTrace{
 	ConnectDone: func(network, addr string, err error) {
 		atomic.AddInt32(&getConnCount, 1)

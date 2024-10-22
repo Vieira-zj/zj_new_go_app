@@ -78,7 +78,7 @@ func main() {
 	// kill -2 发送 syscall.SIGINT 信号，常用的 Ctrl+C 就是触发系统 SIGINT 信号
 	// kill -9 发送 syscall.SIGKILL 信号，但是不能被捕获，所以不需要添加它
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

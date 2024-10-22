@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"runtime"
 	"runtime/debug"
+	"syscall"
 	"time"
 
 	"demo.apps/utils"
@@ -20,7 +21,7 @@ func main() {
 	fmt.Println("monitor app start")
 	statsviz.RegisterDefault()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	ctx, stop := signal.NotifyContext(context.TODO(), syscall.SIGTERM, syscall.SIGINT)
 
 	go startPProf()
 	go printUsage()
