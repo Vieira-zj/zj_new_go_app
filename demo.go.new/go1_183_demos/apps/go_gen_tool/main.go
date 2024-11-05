@@ -14,5 +14,5 @@ const (
 
 func main() {
 	fmt.Printf("For headaches, take %v\n", Ibuprofen)
-	fmt.Printf("For a fever, take %v\n", Paracetamol)
+	fmt.Printf("For a fever, take %s\n", Paracetamol.String())
 }

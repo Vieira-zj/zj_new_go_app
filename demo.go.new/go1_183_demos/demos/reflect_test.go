@@ -7,22 +7,27 @@ import (
 )
 
 func TestReflectTypeOf(t *testing.T) {
-	t.Run("get slice type", func(t *testing.T) {
-		i := 1
-		tof := reflect.TypeOf(i)
-		t.Log("type:", tof.String())
-
-		sliceTof := reflect.SliceOf(tof)
-		t.Log("slice type:", sliceTof.String())
+	t.Run("get pointer type", func(t *testing.T) {
+		tof := reflect.TypeOf((*int)(nil))
+		t.Logf("type=%s, elem_type=%s", tof.String(), tof.Elem().String())
 	})
 
-	t.Run("get pointer type", func(t *testing.T) {
+	t.Run("new a pointer", func(t *testing.T) {
 		i := 1
 		tof := reflect.TypeOf(i)
 		t.Log("type:", tof.String())
 
 		ptrTof := reflect.PtrTo(tof)
 		t.Logf("ptr type: %s, elem type: %s", ptrTof.String(), ptrTof.Elem().String())
+	})
+
+	t.Run("new a slice", func(t *testing.T) {
+		i := 1
+		tof := reflect.TypeOf(i)
+		t.Log("type:", tof.String())
+
+		sliceTof := reflect.SliceOf(tof)
+		t.Log("slice type:", sliceTof.String())
 	})
 }
 
@@ -35,6 +40,21 @@ func TestReflectValueOf(t *testing.T) {
 		b := []byte(s)
 		valueOf = reflect.ValueOf(b)
 		t.Log("len:", valueOf.Len())
+	})
+}
+
+func TestReflectForStruct(t *testing.T) {
+	t.Run("get struct field value", func(t *testing.T) {
+		p := &TestPerson{
+			Name: "foo",
+			Age:  34,
+		}
+
+		val := reflect.ValueOf(p)
+		val = reflect.Indirect(val)
+
+		fval := val.FieldByName("Age")
+		t.Log("age:", fval.Uint())
 	})
 }
 

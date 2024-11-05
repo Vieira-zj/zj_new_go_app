@@ -1,10 +1,12 @@
 package demos
 
 import (
+	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"os"
 	"strconv"
 	"testing"
@@ -15,6 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/tools/go/packages"
 )
+
+// Go Ast
 
 func TestAstParseComments(t *testing.T) {
 	src := `
@@ -75,6 +79,41 @@ func main(){
 		assert.NoError(t, err)
 	})
 }
+
+func TestAstParseVarAlias(t *testing.T) {
+	src := `
+package main
+
+type intAlias = int
+
+func main() {
+	var x intAlias
+	println(x)
+}
+`
+
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "example.go", src, 0)
+	assert.NoError(t, err)
+
+	// 创建类型检查器
+	conf := types.Config{Importer: nil}
+	info := &types.Info{
+		Types: make(map[ast.Expr]types.TypeAndValue),
+		Defs:  make(map[*ast.Ident]types.Object),
+	}
+
+	_, err = conf.Check("example", fset, []*ast.File{file}, info)
+	assert.NoError(t, err)
+
+	for ident, obj := range info.Defs {
+		if ident.Name == "x" {
+			fmt.Println("var x type is:", obj.Type().String())
+		}
+	}
+}
+
+// Go Dst
 
 func TestDstAddComments(t *testing.T) {
 	code := `package main

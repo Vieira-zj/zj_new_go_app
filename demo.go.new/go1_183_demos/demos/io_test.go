@@ -2,6 +2,7 @@ package demos_test
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -32,6 +33,38 @@ func TestBufIOScan(t *testing.T) {
 	}
 
 	t.Log("lines count:", count)
+}
+
+func splitBySpaceAndStop(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if idx := bytes.IndexByte(data, ' '); idx >= 0 {
+		token = data[:idx]
+		advance = idx + 1
+		if string(token) == "STOP" {
+			return 0, nil, bufio.ErrFinalToken
+		}
+		return advance, token, nil
+	}
+
+	if atEOF && len(data) > 0 {
+		return len(data), data, nil
+	}
+
+	return 0, nil, nil
+}
+
+func TestBufIOScanByCustomSplit(t *testing.T) {
+	s := "apple banana cherry STOP date"
+	scanner := bufio.NewScanner(strings.NewReader(s))
+	scanner.Split(splitBySpaceAndStop)
+
+	for scanner.Scan() {
+		if token := scanner.Text(); len(token) > 0 {
+			fmt.Println("token:", token)
+		}
+		if err := scanner.Err(); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func TestReadFileLastBytes(t *testing.T) {
