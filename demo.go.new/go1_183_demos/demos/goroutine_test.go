@@ -125,7 +125,7 @@ func TestParallelByErrGroup(t *testing.T) {
 				if url == "http://www.somestupidname.com/" {
 					time.Sleep(time.Second)
 				}
-				req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+				req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil) // use global ctx
 				if err != nil {
 					return err
 				}

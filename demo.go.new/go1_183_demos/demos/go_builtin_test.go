@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"log/slog"
+	"math"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -63,6 +64,30 @@ func TestCompare(t *testing.T) {
 	t.Log("result:", rbool)
 }
 
+func TestMath(t *testing.T) {
+	t.Run("math floor and ceil", func(t *testing.T) {
+		t.Log("math floor:", math.Floor(1.1))
+		t.Log("math ceil:", math.Ceil(1.1))
+	})
+}
+
+func TestRandom(t *testing.T) {
+	t.Run("rand directly", func(t *testing.T) {
+		for i := 0; i < 6; i++ {
+			num := rand.Intn(10)
+			t.Log("rand number:", num)
+		}
+	})
+
+	t.Run("new rand with seed", func(t *testing.T) {
+		rander := rand.New(rand.NewSource(time.Now().Unix()))
+		for i := 0; i < 6; i++ {
+			num := rander.Intn(10)
+			t.Log("rand number:", num)
+		}
+	})
+}
+
 func TestFmtPrint(t *testing.T) {
 	s := "hello"
 	fmt.Printf("type: %T\n", s)
@@ -81,23 +106,6 @@ func TestString(t *testing.T) {
 	t.Run("string compare", func(t *testing.T) {
 		assert.True(t, strings.EqualFold("case", "CaSe"))
 		assert.False(t, strings.EqualFold("case", "cases"))
-	})
-}
-
-func TestRandom(t *testing.T) {
-	t.Run("rand directly", func(t *testing.T) {
-		for i := 0; i < 6; i++ {
-			num := rand.Intn(10)
-			t.Log("rand number:", num)
-		}
-	})
-
-	t.Run("new rand with src", func(t *testing.T) {
-		rander := rand.New(rand.NewSource(time.Now().Unix()))
-		for i := 0; i < 6; i++ {
-			num := rander.Intn(10)
-			t.Log("rand number:", num)
-		}
 	})
 }
 

@@ -6,15 +6,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBitMap(t *testing.T) {
+func TestBitMapOps(t *testing.T) {
 	offsets := []int{1, 3, 9, 10, 15}
 	bitmap := NewBitMap(15)
+
+	t.Run("bitmap size", func(t *testing.T) {
+		assert.Equal(t, 16, bitmap.Size())
+	})
 
 	t.Run("bitmap set and get", func(t *testing.T) {
 		for _, offset := range offsets {
 			bitmap.Set(offset)
 		}
-		t.Log("bitmap size:", bitmap.Size())
+		t.Logf("bitmap: size=%d, count=%d", bitmap.Size(), bitmap.Count())
 
 		for _, offset := range offsets {
 			ok := bitmap.Get(offset)

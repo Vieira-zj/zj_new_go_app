@@ -2,7 +2,9 @@ package demos_test
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"math/bits"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,7 +22,7 @@ func TestBitsOps(t *testing.T) {
 		t.Log(14 >> 1) // num/2
 	})
 
-	t.Run("bit | op", func(t *testing.T) {
+	t.Run("bit or op", func(t *testing.T) {
 		t.Log(1 << 1)
 		t.Log(1 << 2)
 
@@ -29,6 +31,16 @@ func TestBitsOps(t *testing.T) {
 		val |= 1 << 2
 		t.Log("contains:", val&(1<<1) != 0)
 		t.Log("contains:", val&(1<<2) != 0)
+	})
+
+	t.Run("bits util", func(t *testing.T) {
+		// 1 byte: [0,255]
+		num := uint16(259)
+		t.Log("bit count:", bits.OnesCount(uint(num)))
+
+		b := make([]byte, 2)
+		binary.BigEndian.PutUint16(b, num)
+		t.Log("bytes:", b) // [0000 0001], [0000 0011]
 	})
 }
 

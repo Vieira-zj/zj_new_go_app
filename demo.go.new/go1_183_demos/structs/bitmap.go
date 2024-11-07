@@ -1,6 +1,9 @@
 package structs
 
-import "fmt"
+import (
+	"fmt"
+	"math/bits"
+)
 
 type BitMap struct {
 	size int
@@ -22,9 +25,17 @@ func (b BitMap) Size() int {
 	return b.size * 8
 }
 
+func (b BitMap) Count() int {
+	count := 0
+	for _, b := range b.data {
+		count += bits.OnesCount8(uint8(b))
+	}
+	return count
+}
+
 func (b BitMap) Set(offset int) error {
 	index := offset / 8
-	if !b.isIndexOutOfRange(index) {
+	if !b.isOutOfRange(index) {
 		return fmt.Errorf("offset=%d out of range", offset)
 	}
 
@@ -35,7 +46,7 @@ func (b BitMap) Set(offset int) error {
 
 func (b BitMap) Get(offset int) bool {
 	index := offset / 8
-	if !b.isIndexOutOfRange(index) {
+	if !b.isOutOfRange(index) {
 		return false
 	}
 
@@ -49,7 +60,7 @@ func (b BitMap) Reset(offset int) error {
 	}
 
 	index := offset / 8
-	if !b.isIndexOutOfRange(index) {
+	if !b.isOutOfRange(index) {
 		return fmt.Errorf("offset=%d out of range", offset)
 	}
 
@@ -58,6 +69,6 @@ func (b BitMap) Reset(offset int) error {
 	return nil
 }
 
-func (b BitMap) isIndexOutOfRange(index int) bool {
+func (b BitMap) isOutOfRange(index int) bool {
 	return index >= 0 && index < b.size
 }
