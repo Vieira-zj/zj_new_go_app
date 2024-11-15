@@ -12,12 +12,6 @@ import (
 	"time"
 )
 
-const timeLayout = "2006-01-02 15:04:05"
-
-func FormatDateTime(ti time.Time) string {
-	return ti.Format(timeLayout)
-}
-
 func JsonMarshalStream(r io.Reader, object any) error {
 	decoder := json.NewDecoder(r)
 	decoder.UseNumber()

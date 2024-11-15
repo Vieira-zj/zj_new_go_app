@@ -22,6 +22,8 @@ import (
 	"demo.apps/utils"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Demo: Go Built-in Modules
@@ -106,6 +108,13 @@ func TestString(t *testing.T) {
 	t.Run("string compare", func(t *testing.T) {
 		assert.True(t, strings.EqualFold("case", "CaSe"))
 		assert.False(t, strings.EqualFold("case", "cases"))
+	})
+
+	t.Run("string title", func(t *testing.T) {
+		c := cases.Title(language.English)
+		for _, s := range []string{"task", "sub-task"} {
+			t.Log("result:", c.String(s))
+		}
 	})
 }
 

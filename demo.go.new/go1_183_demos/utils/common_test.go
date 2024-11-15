@@ -12,11 +12,6 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
-func TestFormatDateTime(t *testing.T) {
-	result := utils.FormatDateTime(time.Now())
-	t.Log("now:", result)
-}
-
 func TestTrackTime(t *testing.T) {
 	defer utils.TrackTime()()
 
