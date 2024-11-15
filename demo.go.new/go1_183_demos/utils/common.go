@@ -9,8 +9,23 @@ import (
 	"log/slog"
 	"reflect"
 	"runtime/debug"
+	"strings"
 	"time"
 )
+
+func ConcatString(sl ...string) string {
+	n := 0
+	for i := 0; i < len(sl); i++ {
+		n += len(sl[i])
+	}
+
+	b := strings.Builder{}
+	b.Grow(n)
+	for _, s := range sl {
+		b.WriteString(s)
+	}
+	return b.String()
+}
 
 func JsonMarshalStream(r io.Reader, object any) error {
 	decoder := json.NewDecoder(r)

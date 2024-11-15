@@ -153,6 +153,14 @@ func TestDateTime(t *testing.T) {
 		ti = ti.AddDate(0, 0, 6)
 		t.Log("now after 6 days:", ti)
 	})
+
+	t.Run("time truncate", func(t *testing.T) {
+		ti := now.Truncate(time.Hour)
+		t.Log("truncate by hour:", ti.Format(time.TimeOnly))
+
+		ti = now.Truncate(time.Minute)
+		t.Log("truncate by minute:", ti.Format(time.TimeOnly))
+	})
 }
 
 func TestTimeTicker(t *testing.T) {
