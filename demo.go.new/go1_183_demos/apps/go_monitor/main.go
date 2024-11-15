@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"demo.apps/utils"
 	"github.com/arl/statsviz"
 	"github.com/shirou/gopsutil/process"
 )
@@ -79,7 +78,7 @@ func printUsage() {
 			if err != nil {
 				fmt.Println("get mem per error:", err)
 			} else {
-				fmt.Printf("process cpu usage: %.2f, mem usage: %.2f, time: %s\n", cpuPercent, memPercent, utils.FormatDateTime(time.Now()))
+				fmt.Printf("process cpu usage: %.2f, mem usage: %.2f, time: %s\n", cpuPercent, memPercent, time.Now().Format(time.DateOnly))
 			}
 			fmt.Println("--------------- div ------------------")
 		}
