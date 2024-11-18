@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"demo.apps/demos/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetSliceElement(t *testing.T) {
@@ -22,6 +23,60 @@ func TestGetSliceElement(t *testing.T) {
 	ele := *((*int64)(unsafe.Pointer(uintptr(baseAddr) + offset)))
 	t.Log("1st element:", ele)
 }
+
+// Demo: 用 reflect.Type 得出来的信息来直接做反射，而不依赖于 reflect.ValueOf
+
+// emptyInterface is the header for an interface{} value.
+type emptyInterface struct {
+	typ  *struct{}
+	word unsafe.Pointer
+}
+
+type sliceHeader struct {
+	Data unsafe.Pointer
+	Len  int
+	Cap  int
+}
+
+func TestGetValueByReflectType(t *testing.T) {
+	type TestObj struct {
+		field1 string
+	}
+
+	t.Run("get struct field value", func(t *testing.T) {
+		struct_ := &TestObj{}
+		field, ok := reflect.TypeOf(struct_).Elem().FieldByName("field1")
+		assert.True(t, ok)
+
+		field1Ptr := uintptr(unsafe.Pointer(struct_)) + field.Offset
+		*((*string)(unsafe.Pointer(field1Ptr))) = "hello"
+		t.Log("field1 value:", struct_.field1)
+	})
+
+	t.Run("get interface field value", func(t *testing.T) {
+		struct_ := &TestObj{}
+		structInter := (interface{})(struct_)
+
+		field, _ := reflect.TypeOf(structInter).Elem().FieldByName("field1")
+		structPtr := (*emptyInterface)(unsafe.Pointer(&structInter)).word
+		field1Ptr := uintptr(structPtr) + field.Offset
+		*((*string)(unsafe.Pointer(field1Ptr))) = "world"
+		t.Log("field1 value:", struct_.field1)
+	})
+
+	t.Run("get slice element value", func(t *testing.T) {
+		slice := []string{"hello", "world"}
+		header := (*sliceHeader)(unsafe.Pointer(&slice))
+		t.Log("slice size:", header.Len)
+
+		eleType := reflect.TypeOf(slice).Elem()
+		secondElemPtr := uintptr(header.Data) + eleType.Size()
+		*((*string)(unsafe.Pointer(secondElemPtr))) = "!!!"
+		t.Log("slice:", slice)
+	})
+}
+
+// Demo: Set field value
 
 func TestSetUnAddressableField(t *testing.T) {
 	var x = 47
