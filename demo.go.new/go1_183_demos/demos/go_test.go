@@ -152,22 +152,42 @@ func TestDeferFn02(t *testing.T) {
 
 // Demo: Ref
 
-func TestNilCompare(t *testing.T) {
-	var myNil (*byte) = nil
+func TestPtrInit(t *testing.T) {
+	t.Run("init ptr by addr", func(t *testing.T) {
+		i := 0
+		var j *int //nolint:gosimple
+		j = &i
+		t.Log("int:", *j)
 
-	isNil := true
-	if !isNil {
+		*j = 1
+		t.Log("int:", *j)
+	})
+
+	t.Run("init ptr by new", func(t *testing.T) {
+		var j *int = new(int) // 为 0 分配空间
+		t.Log("int:", *j)
+
+		*j = 1
+		t.Log("int:", *j)
+	})
+}
+
+func TestCompareNilVal(t *testing.T) {
+	var myByteNil (*byte) = nil
+
+	t.Run("is nil", func(t *testing.T) {
+		assert.True(t, myByteNil == nil)
+
+		// error: mismatch type
+		// var myIntNil (*int) = nil
+		// t.Log(myByteNil == myIntNil)
+	})
+
+	t.Run("init nil", func(t *testing.T) {
 		str := byte(0)
-		myNil = &str
-	} else {
-		t.Log("not init")
-	}
-
-	if myNil == nil {
-		t.Log("is nil")
-	} else {
-		t.Log(("is not nil"))
-	}
+		myByteNil = &str
+		t.Log("value:", *myByteNil)
+	})
 }
 
 func TestRefUpdateForSlice(t *testing.T) {

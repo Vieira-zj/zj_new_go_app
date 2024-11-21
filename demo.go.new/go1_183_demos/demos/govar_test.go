@@ -117,7 +117,7 @@ func TestSliceInit(t *testing.T) {
 	t.Run("init slice by append", func(t *testing.T) {
 		var s []string
 		s = append(s, strings.Split("hello", "")...)
-		t.Logf("result: %v", s)
+		t.Log("slice:", s)
 	})
 
 	t.Run("init slice as map value", func(t *testing.T) {
@@ -164,22 +164,22 @@ func TestSliceInitByIndex(t *testing.T) {
 		t.Logf("%d:%s", idx, val)
 	}
 
-	t.Run("case1", func(t *testing.T) {
+	t.Run("sub slice case1", func(t *testing.T) {
 		s1 := s[:0]
 		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
 	})
 
-	t.Run("case2", func(t *testing.T) {
+	t.Run("sub slice case2", func(t *testing.T) {
 		s1 := s[:2]
 		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
 	})
 
-	t.Run("case3", func(t *testing.T) {
+	t.Run("sub slice case3", func(t *testing.T) {
 		s1 := s[2:]
 		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
 	})
 
-	t.Run("case4", func(t *testing.T) {
+	t.Run("sub slice case4", func(t *testing.T) {
 		// cap only relate to start index
 		s1 := s[1:3]
 		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
@@ -187,32 +187,36 @@ func TestSliceInitByIndex(t *testing.T) {
 }
 
 func TestSliceAppend(t *testing.T) {
-	t.Run("append", func(t *testing.T) {
-		s := make([]int, 1, 2)
-		s[0] = -1
-		s2 := append(s, 2)
+	t.Run("slice append without scale", func(t *testing.T) {
+		s1 := make([]int, 1, 2)
+		s1[0] = -1
+
+		s2 := append(s1, 2)
 		s2[0] = -2
 
-		// replace
-		s3 := append(s, 3)
+		s3 := append(s1, 3)
 		s3[0] = -3
-		// s,s1,s3 have same address of array
-		for i, sl := range [][]int{s, s2, s3} {
-			t.Logf("s%d (%p): %v", i+1, sl, sl)
+
+		// s,s2,s3 share the same address of array
+		for i, s := range [][]int{s1, s2, s3} {
+			t.Logf("s%d: s=%v, ptr=%p, elem=%p", i+1, s, s, &s[0])
 		}
 	})
 
-	t.Run("append with scale", func(t *testing.T) {
-		s := make([]int, 1, 2)
-		s[0] = -1
-		s2 := append(s, 2)
+	t.Run("slice append with scale", func(t *testing.T) {
+		s1 := make([]int, 1, 2)
+		s1[0] = -1
+
+		s2 := append(s1, 2)
 		s2[0] = -2
 
-		// scale, and return new address of slice
+		// scale
 		s3 := append(s2, 3)
 		s3[0] = -3
-		for i, sl := range [][]int{s, s2, s3} {
-			t.Logf("s%d (%p): %v", i+1, sl, sl)
+
+		// after scale, and get new address of slice
+		for i, s := range [][]int{s1, s2, s3} {
+			t.Logf("s%d: s=%v, ptr=%p, elem=%p", i+1, s, s, &s[0])
 		}
 	})
 }
@@ -272,6 +276,53 @@ func TestSliceCopy(t *testing.T) {
 		for _, item := range dst {
 			t.Log(item.id, item.value)
 		}
+	})
+}
+
+func TestSliceGrow(t *testing.T) {
+	s := make([]byte, 2, 10)
+	s[0] = 0
+	s[1] = 1
+	t.Logf("init slice: %v, ptr=%p", s, &s[0])
+
+	l := len(s)
+
+	t.Run("slice copy without grow", func(t *testing.T) {
+		sub := []byte{2, 3}
+		copy(s[l:], sub)
+		t.Logf("copied slice: %v, ptr=%p", s, &s[0]) // slice unchanged
+	})
+
+	t.Run("slice grow and copy", func(t *testing.T) {
+		sub := []byte{2, 3, 4}
+		s = s[:l+len(sub)]
+		t.Logf("grow slice: %v, ptr=%p", s, &s[0])
+
+		copy(s[l:], sub)
+		t.Logf("copied slice: %v, ptr=%p", s, &s[0])
+	})
+
+	t.Run("slice append", func(t *testing.T) {
+		s = append(s, 5)
+		t.Logf("append slice: %v, ptr=%p", s, &s[0])
+	})
+
+	t.Run("slice append with scale", func(t *testing.T) {
+		for i := 6; i < 13; i++ {
+			s = append(s, byte(i))
+		}
+		t.Logf("append slice: %v, ptr=%p, cap=%d", s, &s[0], cap(s))
+	})
+
+	t.Run("slice grow with scale", func(t *testing.T) {
+		s := make([]byte, 2, 3)
+		s[0] = 0
+		s[1] = 1
+		t.Logf("slice: %v, ptr=%p, elem=%p", s, s, &s[0])
+
+		// panic: slice bounds out of range
+		// s = s[:len(s)+2]
+		// t.Log("slice:", s)
 	})
 }
 
