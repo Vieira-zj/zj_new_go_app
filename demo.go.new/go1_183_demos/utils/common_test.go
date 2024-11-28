@@ -12,6 +12,11 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
+func TestBinaryCeil(t *testing.T) {
+	result := utils.BinaryCeil(12)
+	t.Log("result:", result)
+}
+
 func TestTrackTime(t *testing.T) {
 	defer utils.TrackTime()()
 
