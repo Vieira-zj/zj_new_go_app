@@ -78,12 +78,19 @@ func TestReuseBytes(t *testing.T) {
 	t.Logf("len=%d, cap=%d", len(b), cap(b))
 }
 
-func TestStrCut(t *testing.T) {
-	str := "foo|hello world"
-	before, after, ok := strings.Cut(str, "|")
-	if ok {
-		t.Logf("before=%s, after=%s", before, after)
-	}
+func TestStrOps(t *testing.T) {
+	t.Run("string quota", func(t *testing.T) {
+		str := "hello"
+		t.Logf("quota str: %s, %q", strconv.Quote(str), str)
+	})
+
+	t.Run("string cut", func(t *testing.T) {
+		str := "foo|hello world"
+		before, after, ok := strings.Cut(str, "|")
+		if ok {
+			t.Logf("before=%s, after=%s", before, after)
+		}
+	})
 }
 
 func TestStrSplitByMultiSpace(t *testing.T) {

@@ -150,6 +150,31 @@ func TestDeferFn02(t *testing.T) {
 	t.Log("end test defer struct fn")
 }
 
+func TestDeferInBlocks(t *testing.T) {
+	// no effect in code blocks
+	defer func() {
+		t.Log("test clearup")
+	}()
+
+	t.Log("test start")
+
+	{
+		defer func() {
+			t.Log("test sub1 clearup")
+		}()
+		t.Log("test sub1")
+	}
+
+	{
+		defer func() {
+			t.Log("test sub2 clearup")
+		}()
+		t.Log("test sub2")
+	}
+
+	t.Log("test finish")
+}
+
 // Demo: Ref
 
 func TestPtrInit(t *testing.T) {
