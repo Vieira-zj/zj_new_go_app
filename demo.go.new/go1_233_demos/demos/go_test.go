@@ -54,3 +54,13 @@ func TestBuiltInMapsOp(t *testing.T) {
 		t.Logf("map: %+v", m)
 	})
 }
+
+// Demo: Built-In Libs
+
+func TestOsUtils(t *testing.T) {
+	t.Run("os exec", func(t *testing.T) {
+		path, err := os.Executable()
+		assert.NoError(t, err)
+		t.Log("exec path:", path)
+	})
+}
