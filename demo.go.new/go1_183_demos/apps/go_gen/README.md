@@ -6,5 +6,12 @@
 go install golang.org/x/tools/cmd/stringer@latest
 ```
 
-2. Run `go generate`
+2. Add `go:generate` announce
 
+```go
+//go:generate stringer -type=AutoPill -output=pill_string.go
+
+//go:generate stringer -type=AutoPill -linecomment
+```
+
+3. Run `go generate`

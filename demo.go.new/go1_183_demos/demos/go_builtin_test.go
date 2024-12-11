@@ -124,13 +124,14 @@ func TestDateTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	now := time.Now()
+	now := time.Now().Local()
+	t.Log("now:", now.Format(time.DateTime))
 
 	t.Run("get time hour and min", func(t *testing.T) {
 		t.Logf("hour:%d, min:%d", now.Hour(), now.Minute())
 	})
 
-	t.Run("time before", func(t *testing.T) {
+	t.Run("time before or after", func(t *testing.T) {
 		d1, err := time.Parse(time.DateOnly, "2024-08-02")
 		assert.NoError(t, err)
 
@@ -155,11 +156,22 @@ func TestDateTime(t *testing.T) {
 	})
 
 	t.Run("time truncate", func(t *testing.T) {
-		ti := now.Truncate(time.Hour)
-		t.Log("truncate by hour:", ti.Format(time.TimeOnly))
+		ti := now.Truncate(24 * time.Hour)
+		t.Log("truncate by day:", ti.Format(time.DateTime))
+
+		ti = now.Truncate(time.Hour)
+		t.Log("truncate by hour:", ti.Format(time.DateTime))
 
 		ti = now.Truncate(time.Minute)
-		t.Log("truncate by minute:", ti.Format(time.TimeOnly))
+		t.Log("truncate by minute:", ti.Format(time.DateTime))
+	})
+
+	t.Run("time round", func(t *testing.T) {
+		ti := now.Round(time.Hour)
+		t.Log("truncate by hour:", ti.Format(time.DateTime))
+
+		ti = now.Round(time.Minute)
+		t.Log("truncate by minute:", ti.Format(time.DateTime))
 	})
 }
 

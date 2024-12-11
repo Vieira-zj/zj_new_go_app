@@ -8,6 +8,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestIsDateEqual(t *testing.T) {
+	for _, item := range []struct{ src, dst string }{
+		{src: "2024-09-03 15:04:05", dst: "2024-09-03 17:14:05"},
+		{src: "2024-09-04 15:04:05", dst: "2024-09-03 17:14:05"},
+	} {
+		t.Logf("src_date=%s, dst_date=%s", item.src, item.dst)
+		srcDt, err := time.Parse(time.DateTime, item.src)
+		assert.NoError(t, err)
+		dstDt, err := time.Parse(time.DateTime, item.dst)
+		assert.NoError(t, err)
+
+		t.Log("is equal:", utils.IsDateEqual(srcDt, dstDt))
+	}
+}
+
 func TestGetNextWorkDayAfterDays(t *testing.T) {
 	for _, tc := range []struct {
 		desc   string
