@@ -9,7 +9,30 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestBindReqQuery(t *testing.T) {
+	type testQuery struct {
+		VersionID string `form:"version_id"`
+		Count     uint8  `form:"count"`
+		Success   bool   `form:"success"`
+	}
+
+	w := httptest.NewRecorder()
+	c := GetTestGinContext(w)
+	SetTestUrlQueryForGet(c, map[string]string{
+		"version_id": "v1.1",
+		"count":      "19",
+		"success":    "true",
+	})
+	t.Log("request url:", c.Request.URL.String())
+
+	query := testQuery{}
+	err := c.ShouldBindQuery(&query)
+	assert.NoError(t, err)
+	t.Logf("bind request: %+v", query)
+}
 
 func TestHandleIndex(t *testing.T) {
 	w := httptest.NewRecorder()
@@ -46,7 +69,10 @@ func GetTestGinContext(w *httptest.ResponseRecorder) *gin.Context {
 	c, _ := gin.CreateTestContext(w)
 	c.Request = &http.Request{
 		Header: make(http.Header),
-		URL:    &url.URL{},
+		URL: &url.URL{
+			Scheme: "http",
+			Host:   "localhost:8080",
+		},
 	}
 	return c
 }
