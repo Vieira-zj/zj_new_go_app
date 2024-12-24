@@ -10,20 +10,11 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
 func GoVersion() string {
 	return runtime.Version()
-}
-
-func GetParentProcessId() int {
-	return syscall.Getppid()
-}
-
-func KillProcess(pid int) error {
-	return syscall.Kill(pid, syscall.SIGTERM)
 }
 
 func GetProjectRootPath() string {
@@ -62,11 +53,15 @@ func GetGoroutineID() (int, error) {
 	return id, nil
 }
 
-var (
+const (
 	KB = int64(1 << 10)
 	MB = int64(1 << 20)
 	GB = int64(1 << 30)
 )
+
+func bToMb(b uint64) uint64 {
+	return b / uint64(MB)
+}
 
 func PrintMemUsage() {
 	var m runtime.MemStats
@@ -78,10 +73,6 @@ func PrintMemUsage() {
 	fmt.Printf("\tHeapSys = %v MiB\n", bToMb(m.HeapSys))
 	fmt.Printf("\tHeapInuse = %v MiB\n", bToMb(m.HeapInuse))
 	fmt.Println()
-}
-
-func bToMb(b uint64) uint64 {
-	return b / uint64(MB)
 }
 
 // refer: https://pkg.go.dev/runtime/debug#SetMemoryLimit

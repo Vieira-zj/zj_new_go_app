@@ -32,7 +32,7 @@ func TestReflectTypeOf(t *testing.T) {
 }
 
 func TestReflectValueOf(t *testing.T) {
-	t.Run("get length", func(t *testing.T) {
+	t.Run("get reflect.value length", func(t *testing.T) {
 		s := "hello world"
 		valueOf := reflect.ValueOf(s)
 		t.Log("len:", valueOf.Len())
@@ -44,15 +44,20 @@ func TestReflectValueOf(t *testing.T) {
 }
 
 func TestReflectForStruct(t *testing.T) {
+	p := &TestPerson{
+		Name: "foo",
+		Age:  34,
+	}
+	val := reflect.ValueOf(p)
+
+	t.Run("len and nil check for struct ptr", func(t *testing.T) {
+		t.Log("is nil:", val.IsNil())
+		// panic: reflect: call of reflect.Value.Len on ptr to non-array Value
+		// t.Log("len:", val.Len())
+	})
+
 	t.Run("get struct field value", func(t *testing.T) {
-		p := &TestPerson{
-			Name: "foo",
-			Age:  34,
-		}
-
-		val := reflect.ValueOf(p)
 		val = reflect.Indirect(val)
-
 		fval := val.FieldByName("Age")
 		t.Log("age:", fval.Uint())
 	})
