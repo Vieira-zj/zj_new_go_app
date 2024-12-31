@@ -7,6 +7,8 @@ import (
 const (
 	RootNodeID   = "root"
 	RootNodePath = "/root"
+
+	Separate = "/"
 )
 
 type DirTreeNode struct {
@@ -111,14 +113,14 @@ func initNodeFullPath(nodes map[string]*DirTreeNode, node *DirTreeNode) error {
 
 	for !node.IsRoot() {
 		if parent, ok := nodes[node.ParentID]; ok && parent.IsDir {
-			path = parent.ID + "/" + path
+			path = parent.ID + Separate + path
 			node = parent
 		} else {
 			return fmt.Errorf("parent dir node is not found, id=%s", node.ParentID)
 		}
 	}
 
-	srcNode.FullPath = "/" + path
+	srcNode.FullPath = Separate + path
 	return nil
 }
 
@@ -136,18 +138,109 @@ func prettyPrintDirTreeWithPrefix(prefix string, root *DirTreeNode) {
 	}
 }
 
+//
+// DirTree2
+//
+
+type DirTreeNode2 struct {
+	Name       string          `json:"name"`
+	ParentPath string          `json:"parent_path"`
+	IsDir      bool            `json:"is_dir"`
+	Children   []*DirTreeNode2 `json:"children,omitempty"`
+}
+
+func (n *DirTreeNode2) String() string {
+	return fmt.Sprintf("{ name=%s, path=%s }", n.Name, n.GetPullPath())
+}
+
+func (n *DirTreeNode2) GetPullPath() string {
+	if n.ParentPath == Separate {
+		return n.ParentPath + n.Name
+	}
+	return n.ParentPath + Separate + n.Name
+}
+
+type DirTree2 struct {
+	Root  *DirTreeNode2
+	Nodes map[string]*DirTreeNode2 // key:full_path
+}
+
+func CreeateDirTree2(nodes []*DirTreeNode2) (*DirTree2, error) {
+	nodesMap := make(map[string]*DirTreeNode2, len(nodes))
+	for _, node := range nodes {
+		if len(node.ParentPath) == 0 {
+			node.ParentPath = Separate
+		}
+		if _, ok := nodesMap[node.GetPullPath()]; ok {
+			return nil, fmt.Errorf("dulplicated node, path=%s", node.GetPullPath())
+		}
+		nodesMap[node.GetPullPath()] = node
+	}
+
+	root := &DirTreeNode2{
+		Name:       "",
+		ParentPath: Separate,
+		IsDir:      true,
+		Children:   make([]*DirTreeNode2, 0, 4),
+	}
+	nodesMap[root.GetPullPath()] = root
+
+	for _, node := range nodes {
+		if parent, ok := nodesMap[node.ParentPath]; ok && parent.IsDir {
+			parent.Children = append(parent.Children, node)
+		} else {
+			return nil, fmt.Errorf("parent dir node is not found, path=%s", node.ParentPath)
+		}
+	}
+
+	return &DirTree2{
+		Root:  root,
+		Nodes: nodesMap,
+	}, nil
+}
+
+func (t *DirTree2) AppendNode(node *DirTreeNode2) error {
+	if len(node.ParentPath) == 0 {
+		node.ParentPath = Separate
+	}
+
+	if _, ok := t.Nodes[node.GetPullPath()]; ok {
+		return fmt.Errorf("dulplicated node, path=%s", node.GetPullPath())
+	}
+
+	if parent, ok := t.Nodes[node.ParentPath]; ok && parent.IsDir {
+		parent.Children = append(parent.Children, node)
+		return nil
+	}
+	return fmt.Errorf("parent dir node is not found, path=%s", node.ParentPath)
+}
+
+func PrettyPrintDirTree2(root *DirTreeNode2) {
+	prettyPrintDirTreeWithPrefix2("", root)
+}
+
+func prettyPrintDirTreeWithPrefix2(prefix string, root *DirTreeNode2) {
+	fmt.Println(prefix + root.String())
+
+	if root.IsDir && len(root.Children) > 0 {
+		for _, child := range root.Children {
+			prettyPrintDirTreeWithPrefix2(prefix+"\t", child)
+		}
+	}
+}
+
 /*
 TD: Project Users Structure
 
 Table:
 
-- mgr_project_group_structure.tab: for level1-level3 user groups (e.g. id, department, group_name, parent_name, full_path).
-- mgr_project_users.tab: for project users info (e.g. id, email, group_full_path).
+- mgr_project_group_structure.tab: for level1-level3 user groups (e.g. id, department, group_name, parent_path, is_leaf).
+- mgr_project_users.tab: for project users info (e.g. id, email, group_path).
 
 Rest API:
 
 - /get_prj_group_struct: returns level1-level3 user groups.
   - because of too much users, here only loads user groups structure.
-  - it first build a singlton user groups structure tree.
+  - first, it build a singlton user groups structure tree.
 - /get_prj_users: returns project users info by group name.
 */
