@@ -39,6 +39,7 @@ function checkout_go_version {
 
 # checkout_go_version 1_200
 # checkout_go_version 1_211
-checkout_go_version 1_233
+# checkout_go_version 1_233
 
-echo "done"
+go version
+echo 'switch go done'
