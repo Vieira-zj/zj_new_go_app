@@ -8,16 +8,16 @@ import (
 )
 
 type treeNode struct {
-	Name         string               `json:"name"`
-	ChildrenDict map[string]*treeNode `json:"-"`
-	Children     []*treeNode          `json:"children,omitempty"`
+	Name     string               `json:"name"`
+	Children []*treeNode          `json:"children,omitempty"`
+	Nodes    map[string]*treeNode `json:"-"`
 }
 
 func newTreeNode(name string) *treeNode {
 	return &treeNode{
-		Name:         name,
-		ChildrenDict: make(map[string]*treeNode, 1),
-		Children:     make([]*treeNode, 0, 1),
+		Name:     name,
+		Children: make([]*treeNode, 0, 1),
+		Nodes:    make(map[string]*treeNode, 1),
 	}
 }
 
@@ -36,18 +36,19 @@ func buildTreeList(groups []string) *treeNode {
 				continue
 			}
 
-			node, ok := curNode.ChildrenDict[name]
+			node, ok := curNode.Nodes[name]
 			if ok {
 				curNode = node
 				continue
 			}
 
 			newNode := newTreeNode(name)
-			curNode.ChildrenDict[name] = newNode
+			curNode.Nodes[name] = newNode
 			curNode.Children = append(curNode.Children, newNode)
 			curNode = newNode
 		}
 	}
+
 	return root
 }
 

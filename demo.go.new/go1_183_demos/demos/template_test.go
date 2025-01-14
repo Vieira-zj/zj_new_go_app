@@ -24,6 +24,49 @@ func TestTmplCustomDelims(t *testing.T) {
 	}
 }
 
+func TestTmplIfElseCond(t *testing.T) {
+	t.Run("tmpl bool cond", func(t *testing.T) {
+		// output without newline tag
+		tmpl := `results: {{ if .Result -}}
+true
+{{- else -}}
+false
+{{- end }}
+`
+
+		parse, err := template.New("demo").Parse(tmpl)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err = parse.Execute(os.Stdout, struct {
+			Result bool
+		}{false}); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("tmpl slice length cond", func(t *testing.T) {
+		tmpl := `{{ if gt (len .Slice) 0 -}}
+slice has elements
+{{- else -}}
+slice is empty
+{{- end }}
+`
+
+		parse, err := template.New("demo").Parse(tmpl)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err = parse.Execute(os.Stdout, struct {
+			Slice []int
+		}{Slice: []int{1, 2}}); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
 func TestTmplEmptySliceRange(t *testing.T) {
 	// 如果数组为空, 则走 else
 	tmpl := `{{range .Array}}
