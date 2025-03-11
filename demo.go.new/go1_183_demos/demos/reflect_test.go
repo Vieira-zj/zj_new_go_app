@@ -61,6 +61,15 @@ func TestReflectForStruct(t *testing.T) {
 		fval := val.FieldByName("Age")
 		t.Log("age:", fval.Uint())
 	})
+
+	t.Run("get struct field info", func(t *testing.T) {
+		tof := reflect.TypeOf(p).Elem()
+		for i := 0; i < tof.NumField(); i++ {
+			field := tof.FieldByIndex([]int{i})
+			jsonTag := field.Tag.Get("json")
+			t.Log("field:", field.Name, jsonTag)
+		}
+	})
 }
 
 // Demo: compare by DeepEqual
@@ -127,8 +136,8 @@ func TestStructDeepEqual(t *testing.T) {
 // Demo: new object by reflect
 
 type TestPerson struct {
-	Name string `json:"name"`
-	Age  uint   `json:"age"`
+	Name string `json:"name,omitempty"`
+	Age  uint   `json:"age,omitempty"`
 }
 
 func TestNewObjectByReflect(t *testing.T) {

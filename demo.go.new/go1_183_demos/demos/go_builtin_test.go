@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -116,6 +117,22 @@ func TestString(t *testing.T) {
 			t.Log("result:", c.String(s))
 		}
 	})
+}
+
+func TestSort(t *testing.T) {
+	persons := []TestPerson{
+		{Name: "user1", Age: 30},
+		{Name: "user2", Age: 21},
+		{Name: "user3", Age: 35},
+	}
+
+	sort.Slice(persons, func(i, j int) bool {
+		return persons[i].Age > persons[j].Age
+	})
+
+	for _, p := range persons {
+		t.Logf("person: %+v", p)
+	}
 }
 
 func TestDateTime(t *testing.T) {
