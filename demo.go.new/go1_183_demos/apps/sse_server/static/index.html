@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>sse demo</title>
+  </head>
+  <body>
+    <h1>Server-Sent Events Demo</h1>
+    <div id="events"></div>
+  </body>
+  <script>
+    const events = document.getElementById("events");
+    const source = new EventSource("/stream");
+
+    source.onmessage = function (event) {
+      const newElement = document.createElement("p");
+      newElement.textContent = event.data;
+      events.appendChild(newElement);
+    };
+
+    source.onerror = function (event) {
+      console.error("sse error:", event);
+    };
+  </script>
+</html>
