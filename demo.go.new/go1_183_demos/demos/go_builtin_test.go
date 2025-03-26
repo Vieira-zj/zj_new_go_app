@@ -1,6 +1,7 @@
 package demos_test
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"errors"
@@ -281,7 +282,31 @@ func (e StackError) Stack() string {
 	return e.stack
 }
 
-func TestErrors(t *testing.T) {
+func TestErrorTypeCheck(t *testing.T) {
+	for _, path := range []string{
+		"/tmp/test/out.json",
+		"/tmp/test/out.txt",
+	} {
+		b, err := os.ReadFile(path)
+
+		switch err.(type) {
+		case nil:
+			t.Log("err is nil")
+		case StackError:
+			t.Log("stack error")
+		default:
+			t.Log("unexpected error")
+		}
+
+		if len(b) > 0 {
+			n, err := io.Copy(io.Discard, bytes.NewReader(b))
+			assert.NoError(t, err)
+			t.Logf("%d bytes discard", n)
+		}
+	}
+}
+
+func TestGoErrors(t *testing.T) {
 	t.Run("error as interface", func(t *testing.T) {
 		err := StackError{
 			err:   "mock error",
@@ -294,7 +319,7 @@ func TestErrors(t *testing.T) {
 		}
 	})
 
-	t.Run("error wrapped", func(t *testing.T) {
+	t.Run("error wrap and unwrap", func(t *testing.T) {
 		err := errors.New("mock err")
 		wrappedErr := fmt.Errorf("wrapped: %w", err)
 		t.Log("err:", wrappedErr)
