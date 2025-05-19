@@ -63,7 +63,7 @@ func TestParallelByLimit(t *testing.T) {
 	t.Log("all goroutine done")
 }
 
-func TestRecoverForPanic(t *testing.T) {
+func TestRecoverForPanic01(t *testing.T) {
 	ch := make(chan struct{})
 
 	go func() {
@@ -77,11 +77,43 @@ func TestRecoverForPanic(t *testing.T) {
 		}()
 		fmt.Println("goroutine run...")
 		time.Sleep(time.Second)
-		panic("mock err")
+		panic("mock panic")
 	}()
 
 	fmt.Println("wait...")
 	<-ch
+	fmt.Println("recover demo done")
+}
+
+func TestRecoverForPanic02(t *testing.T) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("recover err:", r)
+				fmt.Printf("stack:\n%s", debug.Stack())
+			}
+			fmt.Println("goroutine end")
+		}()
+
+		fmt.Println("goroutine start")
+
+		go func() {
+			defer func() {
+				// sub groutine panic can only recover here, but not in parent groutine
+				if r := recover(); r != nil {
+					fmt.Println("sub recover err:", r)
+					fmt.Printf("stack:\n%s", debug.Stack())
+				}
+				fmt.Println("sub goroutine end")
+			}()
+
+			fmt.Println("sub goroutine start")
+			time.Sleep(time.Second)
+			panic("mock panic")
+		}()
+	}()
+
+	time.Sleep(3 * time.Second)
 	fmt.Println("recover demo done")
 }
 

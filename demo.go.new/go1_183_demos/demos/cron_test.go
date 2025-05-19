@@ -11,7 +11,8 @@ func TestParseStandardCronTimeExp(t *testing.T) {
 	// the "standard" cron format for linux
 	for _, exp := range []string{
 		"0 * * * *",   // every hour
-		"45 23 * * 1", // 23:45 every monday
+		"45 23 * * 1", // every 23:45 of monday
+		"1 0 1 * *",   // every 1st day of month
 	} {
 		schedule, err := cron.ParseStandard(exp)
 		if err != nil {
