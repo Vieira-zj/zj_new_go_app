@@ -67,6 +67,21 @@ func TestParallelRunCase(t *testing.T) {
 
 // Demo: Go Stmt
 
+type SystemType int
+
+const (
+	SysTypeWin SystemType = iota + 1
+	SysTypeLinux
+	SysTypeMac
+)
+
+func TestCustomConstType(t *testing.T) {
+	t.Run("print custom const type", func(t *testing.T) {
+		t.Log("win system:", SysTypeWin)
+		t.Log("mac system:", SysTypeMac)
+	})
+}
+
 func TestSwitchConds(t *testing.T) {
 	getNumberDesc := func(num int) string {
 		switch num {
