@@ -1,6 +1,7 @@
 package demos_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -8,9 +9,38 @@ import (
 	"testing"
 
 	"demo.apps/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 // Demo: Json
+
+func TestJsonStreamParse(t *testing.T) {
+	b := bytes.NewBuffer([]byte{})
+
+	t.Run("json stream encoder", func(t *testing.T) {
+		encoder := json.NewEncoder(b)
+		err := encoder.Encode(map[string]any{
+			"name": "foo",
+			"age":  38,
+		})
+		assert.NoError(t, err)
+		t.Log("json encode:", b.String())
+	})
+
+	t.Run("json stream decoder", func(t *testing.T) {
+		decoder := json.NewDecoder(b)
+		decoder.UseNumber()
+
+		m := make(map[string]any)
+		err := decoder.Decode(&m)
+		assert.NoError(t, err)
+		t.Logf("json decode: %+v", m)
+
+		if num, ok := m["age"].(json.Number); ok {
+			t.Log("age:", num.String())
+		}
+	})
+}
 
 func TestJsonParsePtr(t *testing.T) {
 	type MyValue struct {

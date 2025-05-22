@@ -120,6 +120,19 @@ func TestStrMultiReplace(t *testing.T) {
 
 // Demo: Slice
 
+func TestArrayOps(t *testing.T) {
+	t.Run("array loop", func(t *testing.T) {
+		arr := [3]int{1, 2, 3}
+		for i := 0; i < len(arr); i++ {
+			t.Logf("arr[%d]: %d", i, arr[i])
+		}
+
+		for i, v := range arr {
+			t.Logf("arr[%d]: %d", i, v)
+		}
+	})
+}
+
 func TestSliceInit(t *testing.T) {
 	t.Run("init slice by append", func(t *testing.T) {
 		var s []string
@@ -187,7 +200,7 @@ func TestSliceInitByIndex(t *testing.T) {
 	})
 
 	t.Run("sub slice case4", func(t *testing.T) {
-		// cap only relate to start index
+		// cap() only relate to start index
 		s1 := s[1:3]
 		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
 	})

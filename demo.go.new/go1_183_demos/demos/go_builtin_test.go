@@ -12,6 +12,8 @@ import (
 	"log/slog"
 	"math"
 	"math/rand"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"sort"
@@ -118,22 +120,40 @@ func TestString(t *testing.T) {
 			t.Log("result:", c.String(s))
 		}
 	})
+
+	t.Run("string prefix cut", func(t *testing.T) {
+		s := "hello foo"
+		result, ok := strings.CutPrefix(s, "hello ")
+		assert.True(t, ok)
+		t.Log("cut prefix result:", result)
+	})
 }
 
 func TestSort(t *testing.T) {
 	persons := []TestPerson{
 		{Name: "user1", Age: 30},
-		{Name: "user2", Age: 21},
-		{Name: "user3", Age: 35},
+		{Name: "user3", Age: 21},
+		{Name: "user2", Age: 35},
 	}
 
-	sort.Slice(persons, func(i, j int) bool {
-		return persons[i].Age > persons[j].Age
+	t.Run("sort by int age", func(t *testing.T) {
+		sort.Slice(persons, func(i, j int) bool {
+			return persons[i].Age > persons[j].Age
+		})
+		for _, p := range persons {
+			t.Logf("person: %+v", p)
+		}
 	})
 
-	for _, p := range persons {
-		t.Logf("person: %+v", p)
-	}
+	t.Run("sort by string name", func(t *testing.T) {
+		sort.Slice(persons, func(i, j int) bool {
+			return persons[i].Name < persons[j].Name
+			// return strings.Compare(persons[i].Name, persons[j].Name) < 0
+		})
+		for _, p := range persons {
+			t.Logf("person: %+v", p)
+		}
+	})
 }
 
 func TestDateTime(t *testing.T) {
@@ -245,6 +265,21 @@ func TestFilePath(t *testing.T) {
 		ok, err := filepath.Match("*_test.go", "go_test.go")
 		assert.NoError(t, err)
 		t.Log("is match:", ok)
+	})
+}
+
+func TestHttpOps(t *testing.T) {
+	t.Run("http limit reader", func(t *testing.T) {
+		rb := bytes.NewBufferString("hello world")
+		r := io.NopCloser(rb)
+
+		w := httptest.NewRecorder()
+		out := http.MaxBytesReader(w, r, 8)
+		defer out.Close()
+
+		outb, err := io.ReadAll(out)
+		assert.NoError(t, err)
+		t.Log("out bytes:", string(outb))
 	})
 }
 

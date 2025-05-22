@@ -3,6 +3,7 @@ package demos
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"runtime/debug"
 	"sync"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 )
 
 // Demo: Goroutine
@@ -60,7 +62,38 @@ func TestParallelByLimit(t *testing.T) {
 
 	wg.Wait()
 	close(limit)
-	t.Log("all goroutine done")
+	t.Log("all goroutines done")
+}
+
+func TestParallelBySemaphore(t *testing.T) {
+	ch := make(chan struct{}, 1)
+	sem := semaphore.NewWeighted(3)
+
+	ctx := context.TODO()
+
+	for i := 0; i < 10; i++ {
+		idx := i
+		go func() {
+			if err := sem.Acquire(ctx, 1); err != nil {
+				log.Println("acquire semaphore error:", err)
+				return
+			}
+			defer sem.Release(1)
+
+			<-ch
+			log.Printf("goroutine [%d] start", idx)
+			time.Sleep(time.Second)
+			log.Printf("goroutine [%d] done", idx)
+		}()
+	}
+
+	for i := 0; i < 10; i++ {
+		ch <- struct{}{}
+	}
+
+	time.Sleep(2 * time.Second)
+	close(ch)
+	t.Log("semaphore test done")
 }
 
 func TestRecoverForPanic01(t *testing.T) {
