@@ -154,6 +154,19 @@ func TestSliceInit(t *testing.T) {
 			t.Logf("key=%s, value=%v", string(k), v)
 		}
 	})
+
+	t.Run("init slice with index", func(t *testing.T) {
+		s := []string{
+			2: "two", // index:value
+			3: "three",
+			1: "one",
+			0: "zero",
+		}
+		t.Logf("len=%d, cap=%d", len(s), cap(s))
+		for idx, val := range s {
+			t.Logf("%d:%s", idx, val)
+		}
+	})
 }
 
 func TestSliceToArray(t *testing.T) {
@@ -172,7 +185,7 @@ func TestSliceToArray(t *testing.T) {
 	})
 }
 
-func TestSliceInitByIndex(t *testing.T) {
+func TestSliceSubOps(t *testing.T) {
 	s := []string{
 		2: "two", // index:value
 		3: "three",
@@ -200,8 +213,16 @@ func TestSliceInitByIndex(t *testing.T) {
 	})
 
 	t.Run("sub slice case4", func(t *testing.T) {
-		// cap() only relate to start index
+		// len = 3-1 = 2
+		// cap = s.len-1 = 3
 		s1 := s[1:3]
+		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
+	})
+
+	t.Run("sub slice case5 (set cap manual)", func(t *testing.T) {
+		// len = 3-1 = 2
+		// cap = 4-1 = 3
+		s1 := s[1:3:4]
 		t.Logf("len=%d, cap=%d: %v", len(s1), cap(s1), s1)
 	})
 }
