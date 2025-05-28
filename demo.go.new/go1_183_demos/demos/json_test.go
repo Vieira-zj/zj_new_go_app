@@ -80,6 +80,33 @@ func TestJsonParsePtr(t *testing.T) {
 	})
 }
 
+func TestJsonParseBool(t *testing.T) {
+	type DataHold struct {
+		ID      string `json:"id"`
+		BoolVar bool   `json:"bool_var"`
+		BoolPtr *bool  `json:"bool_ptr,omitempty"`
+	}
+
+	t.Run("unmarshal bool", func(t *testing.T) {
+		s := `{"id":"0101","bool_var":true,"bool_ptr":true}`
+		d := DataHold{}
+		if err := json.Unmarshal([]byte(s), &d); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("data: %+v", d)
+	})
+
+	t.Run("unmarshal bool with omitted", func(t *testing.T) {
+		s := `{"id":"0101"}`
+		d := DataHold{}
+		// bool_ptr is omitted, and default as nil
+		if err := json.Unmarshal([]byte(s), &d); err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("data: %+v", d)
+	})
+}
+
 func TestJsonParseForBytes(t *testing.T) {
 	type DataHold struct {
 		ID string `json:"id"`
