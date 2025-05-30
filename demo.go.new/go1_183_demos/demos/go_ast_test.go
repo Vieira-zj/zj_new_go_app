@@ -29,22 +29,53 @@ package calculator
 // Import of fmt package 
 import "fmt"
 
+// This is a global variable
+var gtotal int
+
 // Add adds two integers
 func Add(a, b int) int {
 	// calculate the result
-	result := a + b
+	gtotal = a + b
 	// return the result
-	return result
+	return gtotal
 }
 `
 
 	fs := token.NewFileSet()
-	f, err := parser.ParseFile(fs, "", src, parser.ParseComments)
+	root, err := parser.ParseFile(fs, "", src, parser.ParseComments)
 	assert.NoError(t, err)
 
-	for _, c := range f.Comments {
-		t.Log("comment:", c.Text())
-	}
+	t.Run("print all comments", func(t *testing.T) {
+		for _, c := range root.Comments {
+			t.Log("comment:", c.Text())
+		}
+	})
+
+	t.Run("print func doc comment", func(t *testing.T) {
+		for _, decl := range root.Decls {
+			if funcDecl, ok := decl.(*ast.FuncDecl); ok {
+				t.Log("function:", funcDecl.Name.String())
+				assert.NotNil(t, funcDecl.Doc, "funcDecl.Doc should not be nil")
+				t.Log("doc comment:", funcDecl.Doc.Text())
+			}
+		}
+	})
+
+	t.Run("print var doc comment", func(t *testing.T) {
+		ast.Inspect(root, func(n ast.Node) bool {
+			if genDecl, ok := n.(*ast.GenDecl); ok && genDecl.Tok == token.VAR {
+				for _, spec := range genDecl.Specs {
+					if valueSpec, ok := spec.(*ast.ValueSpec); ok {
+						t.Log("variable:", valueSpec.Names[0].Name)
+						assert.NotNil(t, genDecl.Doc, "genDecl.Doc should not be nil")
+						t.Log("gen decl doc comment:", genDecl.Doc.Text())
+						assert.Nil(t, valueSpec.Doc)
+					}
+				}
+			}
+			return true
+		})
+	})
 }
 
 func TestAstReverseOrder(t *testing.T) {

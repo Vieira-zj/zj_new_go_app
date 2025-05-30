@@ -5,12 +5,15 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/bits"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Demo: Bit
@@ -118,11 +121,20 @@ func TestStrMultiReplace(t *testing.T) {
 	t.Log("result:", result)
 }
 
-// Demo: Slice
+// Demo: Array & Slice
 
 func TestArrayOps(t *testing.T) {
-	t.Run("array loop", func(t *testing.T) {
-		arr := [3]int{1, 2, 3}
+	t.Run("init array with fix values", func(t *testing.T) {
+		names := [...]string{"foo", "bar", "baz"}
+		t.Log("array:", names)
+
+		typeOf := reflect.TypeOf(names)
+		assert.True(t, typeOf.Kind() == reflect.Array)
+		t.Logf("type=%s, elem_type=%s, len=%d", typeOf.Kind().String(), typeOf.Elem().Kind().String(), typeOf.Len())
+	})
+
+	t.Run("loop for array", func(t *testing.T) {
+		arr := [...]int{1, 2, 3, 4}
 		for i := 0; i < len(arr); i++ {
 			t.Logf("arr[%d]: %d", i, arr[i])
 		}
@@ -133,6 +145,22 @@ func TestArrayOps(t *testing.T) {
 	})
 }
 
+func TestInitArrayBySlice(t *testing.T) {
+	t.Run("slice to array for Go 1.17", func(t *testing.T) {
+		var a [3]int
+		s := []int{0, 1, 2, 3, 4, 5}
+		a = *(*[3]int)(s[:3])
+		t.Log("array:", a)
+	})
+
+	t.Run("slice to array for Go 1.20", func(t *testing.T) {
+		var a [3]int
+		s := []int{0, 1, 2, 3, 4, 5}
+		a = [3]int(s[:3])
+		t.Log("array:", a)
+	})
+}
+
 func TestSliceInit(t *testing.T) {
 	t.Run("init slice by append", func(t *testing.T) {
 		var s []string
@@ -140,7 +168,7 @@ func TestSliceInit(t *testing.T) {
 		t.Log("slice:", s)
 	})
 
-	t.Run("init slice as map value", func(t *testing.T) {
+	t.Run("init slice with group by", func(t *testing.T) {
 		m := make(map[byte][]string)
 		for _, s := range []string{
 			"a1", "a2", "apple",
@@ -166,22 +194,6 @@ func TestSliceInit(t *testing.T) {
 		for idx, val := range s {
 			t.Logf("%d:%s", idx, val)
 		}
-	})
-}
-
-func TestSliceToArray(t *testing.T) {
-	t.Run("slice to array for Go 1.17", func(t *testing.T) {
-		var a [3]int
-		s := []int{0, 1, 2, 3, 4, 5}
-		a = *(*[3]int)(s[:3])
-		t.Log("array:", a)
-	})
-
-	t.Run("slice to array for Go 1.20", func(t *testing.T) {
-		var a [3]int
-		s := []int{0, 1, 2, 3, 4, 5}
-		a = [3]int(s[:3])
-		t.Log("array:", a)
 	})
 }
 
