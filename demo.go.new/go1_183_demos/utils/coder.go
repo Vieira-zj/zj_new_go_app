@@ -6,23 +6,10 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
 	"math"
-	"reflect"
 	"strings"
 	"unicode/utf8"
 )
-
-func JsonLoad(b []byte, s any) error {
-	if reflect.TypeOf(s).Kind() != reflect.Ptr {
-		return fmt.Errorf("input should be pointer")
-	}
-
-	decoder := json.NewDecoder(bytes.NewBuffer(b))
-	decoder.UseNumber()
-	return decoder.Decode(s)
-}
 
 // Codec: 10<=>62
 

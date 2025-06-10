@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
@@ -11,7 +12,31 @@ import (
 
 func IsValidJson(b []byte) bool {
 	b = bytes.Trim(b, " ")
-	return json.Valid(b) && (b[0] == '{' || b[0] == '[')
+	if len(b) == 0 {
+		return false
+	}
+	return (b[0] == '{' || b[0] == '[') && json.Valid(b)
+}
+
+func JsonLoad(b []byte, s any) error {
+	if reflect.TypeOf(s).Kind() != reflect.Ptr {
+		return fmt.Errorf("input should be pointer")
+	}
+
+	decoder := json.NewDecoder(bytes.NewBuffer(b))
+	decoder.UseNumber()
+	return decoder.Decode(s)
+}
+
+func JsonMarshalStream(r io.Reader, object any) error {
+	decoder := json.NewDecoder(r)
+	decoder.UseNumber()
+	return decoder.Decode(object)
+}
+
+func JsonUnmarshalStream(w io.Writer, object any) error {
+	encoder := json.NewEncoder(w)
+	return encoder.Encode(object)
 }
 
 // UpdateValueByJsonPath updates value by json path (from jsondiff).

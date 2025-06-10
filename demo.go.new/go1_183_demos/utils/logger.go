@@ -96,3 +96,16 @@ func (l *Logger) log(ctx context.Context, level slog.Level, msg string, args ...
 	}
 	_ = l.l.Handler().Handle(ctx, r)
 }
+
+// Utils
+
+func GetSlogLevel() slog.Level {
+	var curLevel slog.Level = -10
+	for _, level := range []slog.Level{slog.LevelDebug, slog.LevelInfo, slog.LevelWarn, slog.LevelError} {
+		if enabled := slog.Default().Enabled(context.TODO(), level); enabled {
+			curLevel = level
+			break
+		}
+	}
+	return curLevel
+}

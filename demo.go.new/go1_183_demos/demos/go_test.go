@@ -265,6 +265,78 @@ func TestRefUpdateForMap(t *testing.T) {
 
 // Demo: Context
 
+func TestContextWrapped(t *testing.T) {
+	t.Run("wrapped timeout ctx", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+		defer cancel()
+
+		wrappedCtxFn := func(ctx context.Context) {
+			t.Log("new local ctx with timeout")
+			lctx, lcancel := context.WithTimeout(ctx, 3*time.Second)
+			defer lcancel()
+
+			<-lctx.Done()
+			t.Log("cannelled")
+		}
+
+		wrappedCtxFn(ctx)
+		t.Log("done")
+	})
+
+	t.Run("wrapped ctx with value", func(t *testing.T) {
+		type TestCtxKey string
+
+		const key TestCtxKey = "ctx_key"
+
+		printCtxValue := func(ctx context.Context, key TestCtxKey) {
+			if s, ok := ctx.Value(key).(string); ok {
+				t.Log("ctx value:", s)
+			} else {
+				t.Log("ctx value not found for key:", key)
+			}
+		}
+
+		ctx := context.TODO()
+		ctx = context.WithValue(ctx, key, "ctx_value1")
+		printCtxValue(ctx, key)
+
+		// 由下而上, 由子及父, 依次对 key 进行匹配
+		ctx = context.WithValue(ctx, key, "ctx_value2")
+		printCtxValue(ctx, key)
+	})
+}
+
+func TestContextKeyByStruct(t *testing.T) {
+	type (
+		TestCtxKey1 struct{}
+		TestCtxKey2 struct{}
+	)
+
+	t.Run("context key by struct", func(t *testing.T) {
+		key1 := TestCtxKey1{}
+		ctx := context.WithValue(context.TODO(), key1, "value1")
+		t.Log("before, ctx key1 value:", ctx.Value(key1))
+
+		key2 := TestCtxKey2{}
+		ctx = context.WithValue(ctx, key2, "value2")
+		t.Log("ctx key2 value:", ctx.Value(key2))
+
+		t.Log("after, ctx key1 value:", ctx.Value(key1))
+	})
+
+	t.Run("context key by struct, and overwrite", func(t *testing.T) {
+		key1 := TestCtxKey1{}
+		ctx := context.WithValue(context.TODO(), key1, "value1")
+		t.Log("before, ctx key1 value:", ctx.Value(key1))
+
+		key2 := TestCtxKey1{}
+		ctx = context.WithValue(ctx, key2, "value2")
+		t.Log("ctx key2 value:", ctx.Value(key2))
+
+		t.Log("after, ctx key1 value:", ctx.Value(key1))
+	})
+}
+
 func TestCtxWithCancelCause(t *testing.T) {
 	ctx, cancel := context.WithCancelCause(context.TODO())
 	go func() {
@@ -284,54 +356,13 @@ func TestCtxWithCancelCause(t *testing.T) {
 	t.Log("done")
 }
 
-type testCtxKey string
-
-func TestWrappedContext(t *testing.T) {
-	t.Run("ctx wrapped", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-		defer cancel()
-
-		wrappedCtxFn := func(ctx context.Context) {
-			t.Log("new local ctx")
-			lctx, lcancel := context.WithTimeout(ctx, 3*time.Second)
-			defer lcancel()
-
-			<-lctx.Done()
-			t.Log("cannelled")
-		}
-
-		wrappedCtxFn(ctx)
-		t.Log("done")
-	})
-
-	t.Run("ctx value wrapped", func(t *testing.T) {
-		const key testCtxKey = "ctx_key"
-
-		printCtxValue := func(ctx context.Context, key testCtxKey) {
-			if s, ok := ctx.Value(key).(string); ok {
-				t.Log("ctx value:", s)
-			} else {
-				t.Log("ctx value not found for key:", key)
-			}
-		}
-
-		ctx := context.TODO()
-		ctx = context.WithValue(ctx, key, "ctx_value1")
-		printCtxValue(ctx, key)
-
-		// 由下而上, 由子及父, 依次对 key 进行匹配
-		ctx = context.WithValue(ctx, key, "ctx_value2")
-		printCtxValue(ctx, key)
-	})
-}
-
 func TestContextAfterFunc(t *testing.T) {
 	t.Run("run ctx AfterFunc", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
 		defer cancel()
 
 		context.AfterFunc(ctx, func() {
-			fmt.Println("run ctx clearup")
+			t.Log("run ctx clearup")
 		})
 
 		t.Log("wait...")
@@ -345,7 +376,7 @@ func TestContextAfterFunc(t *testing.T) {
 		defer cancel()
 
 		stop := context.AfterFunc(ctx, func() {
-			fmt.Println("run ctx clearup")
+			t.Log("run ctx clearup")
 		})
 
 		select {

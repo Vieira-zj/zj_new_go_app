@@ -7,6 +7,20 @@ import (
 	"strings"
 )
 
+func ConcatString(sl ...string) string {
+	n := 0
+	for i := 0; i < len(sl); i++ {
+		n += len(sl[i])
+	}
+
+	b := strings.Builder{}
+	b.Grow(n)
+	for _, s := range sl {
+		b.WriteString(s)
+	}
+	return b.String()
+}
+
 func ToString(value any) string {
 	if value == nil {
 		return ""

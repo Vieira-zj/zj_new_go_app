@@ -10,6 +10,21 @@ import (
 	"time"
 )
 
+func IsNil(x any) bool {
+	if x == nil {
+		return true
+	}
+	return reflect.ValueOf(x).IsNil()
+}
+
+func IsEmptyStruct(x any) bool {
+	valOf := reflect.ValueOf(x)
+	if valOf.Kind() == reflect.Ptr {
+		valOf = valOf.Elem()
+	}
+	return valOf.IsZero()
+}
+
 func TrimStringFields(obj any) error {
 	v := reflect.ValueOf(obj)
 	if v.Kind() != reflect.Pointer {
