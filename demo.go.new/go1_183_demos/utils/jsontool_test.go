@@ -100,7 +100,7 @@ func TestJsonDiffWithIgnore(t *testing.T) {
 	}
 
 	for _, op := range patch {
-		t.Logf(op.String())
+		t.Log(op.String())
 	}
 }
 
@@ -115,7 +115,7 @@ func TestJsonDiffWithEquivalence01(t *testing.T) {
 	}
 
 	for _, op := range patch {
-		t.Logf(op.String())
+		t.Log(op.String())
 	}
 }
 
@@ -129,7 +129,7 @@ func TestJsonDiffWithEquivalence02(t *testing.T) {
 	}
 
 	for _, op := range patch {
-		t.Logf(op.String())
+		t.Log(op.String())
 	}
 }
 
@@ -143,7 +143,7 @@ func TestJsonDiffWithFactorize(t *testing.T) {
 	}
 
 	for _, op := range patch {
-		t.Logf(op.String())
+		t.Log(op.String())
 	}
 }
 

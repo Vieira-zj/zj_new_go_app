@@ -81,8 +81,10 @@ func (b *Broadcaster2) Broadcast() {
 
 // Broadcaster by Context
 
+type BroadcasterCtxKey struct{}
+
 type Broadcaster3 struct {
-	key    struct{}
+	key    BroadcasterCtxKey
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -90,7 +92,7 @@ type Broadcaster3 struct {
 func NewBroadcaster3() *Broadcaster3 {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Broadcaster3{
-		key:    struct{}{},
+		key:    BroadcasterCtxKey{},
 		ctx:    ctx,
 		cancel: cancel,
 	}

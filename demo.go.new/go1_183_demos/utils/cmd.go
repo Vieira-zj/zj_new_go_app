@@ -57,7 +57,7 @@ func RunShellCmd(command string) (string, error) {
 		if len(errOutput) > 0 {
 			errMsg += "\nerror output: " + string(errOutput)
 		}
-		return "", fmt.Errorf(errMsg)
+		return "", errors.New(errMsg)
 	}
 
 	return string(output), nil

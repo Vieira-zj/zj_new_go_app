@@ -495,13 +495,13 @@ func TestLoSliceFilterAndMap(t *testing.T) {
 
 func TestLoMapKeysAndValues(t *testing.T) {
 	m := map[string]int{"foo": 1, "bar": 2}
-	keys := lo.Keys[string, int](m)
+	keys := lo.Keys(m)
 	t.Log("map keys:", keys)
 
-	values := lo.Values[string, int](m)
+	values := lo.Values(m)
 	t.Log("map values:", values)
 
-	value := lo.ValueOr[string, int](m, "test", 29)
+	value := lo.ValueOr(m, "test", 29)
 	t.Log("value:", value)
 }
 
