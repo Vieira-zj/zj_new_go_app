@@ -23,7 +23,7 @@ func (l *LinkedList[T]) Add(value T) {
 	}
 }
 
-// rangefunc
+// range func
 // 针对遍历到的每一项都调用一次 yield 函数.
 // 调用 yield 函数得到的返回值, 被用来控制循环是否继续, 若返回 true 则继续, 返回 false 则结束.
 
