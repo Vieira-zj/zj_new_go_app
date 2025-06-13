@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -8,11 +10,11 @@ import (
 	"github.com/casbin/casbin/v2"
 )
 
-// curl "http://localhost:8081/login?name=Sabine"
-// curl "http://localhost:8081/logout?name=Sabine"
-// curl "http://localhost:8081/member/role?name=Sabine"
-// curl "http://localhost:8081/member/id?name=Sabine"
-// curl "http://localhost:8081/admin/total?name=Sabine"
+// curl "http://localhost:8081/login" -H "name:Sabine"
+// curl "http://localhost:8081/logout" -H "name:Sabine"
+// curl "http://localhost:8081/member/role" -H "name:Sabine"
+// curl "http://localhost:8081/member/id" -H "name:Sabine"
+// curl "http://localhost:8081/admin/total" -H "name:Sabine"
 
 func main() {
 	authEnforcer, err := casbin.NewEnforcer("./conf/auth_model.conf", "./conf/policy.csv")
@@ -29,27 +31,38 @@ func main() {
 	mux.HandleFunc("/member/role", getUserRoleHandler())
 	mux.HandleFunc("/admin/total", getTotalHandler(users))
 
-	log.Print("http server started on :8080")
-	handler := Authorizer(authEnforcer, users)(mux)
+	handler := AuthMiddleware(authEnforcer, users)(mux)
+	handler = UserMiddleware(users)(handler)
+
+	log.Print("http server started on :8081")
 	if err := http.ListenAndServe(":8081", handler); err != nil {
 		log.Fatal(err)
 	}
 }
 
+// Handlers
+
 func loginHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		if user, ok := GetSession().GetUser(); ok { // get cached login user
+		if user, ok := GetSession().GetUser(r.Context()); ok { // get cached login user
+			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("hello, " + user.Name))
 			return
 		}
 
-		user := GetSession().GetCurUser()
+		user, err := getUserFromContext(r.Context())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
 		if user.isAnonymous() {
 			w.Write([]byte("anonymous login"))
 			return
 		}
 
+		w.WriteHeader(http.StatusOK)
 		if mockCheckPwd(user) {
 			GetSession().Save(user) // store login user in session
 			w.Write([]byte("hello, " + user.Name))
@@ -61,18 +74,20 @@ func loginHandler() http.HandlerFunc {
 
 func logoutHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if user, ok := GetSession().GetUser(); ok {
-			GetSession().Clear(user.Name)
-		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(http.StatusText(http.StatusOK)))
+		if user, ok := GetSession().GetUser(r.Context()); ok {
+			GetSession().Clear(user.Name)
+			w.Write([]byte("bye, " + user.Name))
+		} else {
+			w.Write([]byte(http.StatusText(http.StatusOK)))
+		}
 	}
 }
 
 func getUserIdHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		if user, ok := GetSession().GetUser(); ok {
+		if user, ok := GetSession().GetUser(r.Context()); ok {
 			w.Write([]byte(strconv.Itoa(user.ID)))
 		} else {
 			w.Write([]byte("user is not login"))
@@ -83,7 +98,7 @@ func getUserIdHandler() http.HandlerFunc {
 func getUserRoleHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		if user, ok := GetSession().GetUser(); ok {
+		if user, ok := GetSession().GetUser(r.Context()); ok {
 			w.Write([]byte(user.Role))
 		} else {
 			w.Write([]byte("user is not login"))
@@ -94,12 +109,35 @@ func getUserRoleHandler() http.HandlerFunc {
 func getTotalHandler(users Users) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		if _, ok := GetSession().GetUser(); ok {
+		if _, ok := GetSession().GetUser(r.Context()); ok {
 			w.Write([]byte(strconv.Itoa(len(users))))
 		} else {
 			w.Write([]byte("user is not login"))
 		}
 	}
+}
+
+// Utils
+
+func getUserFromContext(ctx context.Context) (User, error) {
+	user, ok := ctx.Value(UserCtxKey{}).(User)
+	if !ok {
+		return User{}, fmt.Errorf("user is not set in context")
+	}
+	return user, nil
+}
+
+func getUser(r *http.Request, users Users) (User, error) {
+	name := r.Header.Get("name")
+	if len(name) == 0 {
+		return User{Role: "anonymous"}, nil
+	}
+
+	// get user from session, if not login, try to get from db
+	if user, ok := GetSession().FindUser(name); ok {
+		return user, nil
+	}
+	return users.FindByName(name)
 }
 
 func mockInitUsers() Users {

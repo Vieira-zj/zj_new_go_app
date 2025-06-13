@@ -1,7 +1,8 @@
 package main
 
+import "context"
+
 type Session struct {
-	user  User            // current user
 	store map[string]User // store login users
 }
 
@@ -28,20 +29,17 @@ func (s Session) Clear(name string) {
 	delete(s.store, name)
 }
 
-func (s *Session) SetCurUser(user User) {
-	s.user = user
-}
-
-func (s *Session) GetCurUser() User {
-	return s.user
-}
-
 func (s Session) FindUser(name string) (User, bool) {
 	user, ok := s.store[name]
 	return user, ok
 }
 
-func (s Session) GetUser() (User, bool) {
-	user, ok := s.store[s.user.Name]
+func (s Session) GetUser(ctx context.Context) (User, bool) {
+	curUser, err := getUserFromContext(ctx)
+	if err != nil {
+		return User{}, false
+	}
+
+	user, ok := s.store[curUser.Name]
 	return user, ok
 }
