@@ -20,7 +20,7 @@
       "env": {
         "X-DEBUG": "launch package",
       },
-      "program": "${workspaceFolder}/middlewares/gin"
+      "program": "${workspaceFolder}/middlewares/casbin/httpapp"
     },
     {
       "name": "Attach Local Process",
