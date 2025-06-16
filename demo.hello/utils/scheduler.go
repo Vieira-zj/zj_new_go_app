@@ -78,10 +78,11 @@ type SchedulerV2 struct {
 func (s *SchedulerV2) AddTask(name string, interval time.Duration, task Task) {
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		tick := time.Tick(interval)
+		tick := time.NewTicker(interval)
+		defer tick.Stop()
 		for {
 			select {
-			case <-tick:
+			case <-tick.C:
 				task()
 			case <-ctx.Done():
 				fmt.Printf("task [%s] exit\n", name)

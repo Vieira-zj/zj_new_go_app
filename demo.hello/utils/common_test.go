@@ -128,6 +128,7 @@ func TestRegexFindAllSubString(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	fmt.Println("results:", matches)
 }
 
 func TestGetSimpleNowDatetime(t *testing.T) {

@@ -65,7 +65,7 @@ func (c *Cache) Get(key string) (interface{}, error) {
 	if val, ok := m[key]; ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf("Key [%s] not found", key)
+	return nil, fmt.Errorf("key [%s] not found", key)
 }
 
 // IsExist returns whether key is exist.

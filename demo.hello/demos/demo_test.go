@@ -57,7 +57,39 @@ func TestDemo04(t *testing.T) {
 }
 
 func TestDemo05(t *testing.T) {
-	demo0502()
+	t.Run("time ticker case1", func(t *testing.T) {
+		demo0501()
+	})
+
+	t.Run("time ticker case2", func(t *testing.T) {
+		demo0502()
+	})
+}
+
+func TestDemoMain(t *testing.T) {
+	t.Run("test rpc call case", func(t *testing.T) {
+		demo06()
+	})
+
+	t.Run("test channel case01", func(t *testing.T) {
+		demo0701()
+	})
+
+	t.Run("test channel case02", func(t *testing.T) {
+		demo0702()
+	})
+
+	t.Run("handle panic in goroutine case", func(t *testing.T) {
+		demo08()
+	})
+
+	t.Run("func deco case", func(t *testing.T) {
+		demo10()
+	})
+
+	t.Run("atomic int op case", func(t *testing.T) {
+		demo11()
+	})
 }
 
 type person struct {
@@ -66,31 +98,34 @@ type person struct {
 }
 
 func TestDemo06(t *testing.T) {
-	// bytes copy
-	text := "hello world"
-	b := make([]byte, 16)
-	n := copy(b, text)
-	fmt.Printf("%d copy bytes: %s\n", n, b[:n])
-	fmt.Println()
+	t.Run("bytes copy", func(t *testing.T) {
+		text := "hello world"
+		b := make([]byte, 16)
+		n := copy(b, text)
+		fmt.Printf("%d copy bytes: %s\n", n, b[:n])
+		fmt.Println()
+	})
 
-	// 字符串较长，多次 copy 的情况
-	text = "abcdefgh"
-	b = make([]byte, 4)
-	res := ""
-	for {
-		if len(text) < len(b) {
-			n = copy(b, text)
+	t.Run("multi bytes copies", func(t *testing.T) {
+		// 字符串较长, 多次 copy 的情况
+		text := "abcdefgh"
+		b := make([]byte, 4)
+		res := ""
+		for {
+			if len(text) < len(b) {
+				n := copy(b, text)
+				res += string(b[:n])
+				text = text[n:]
+				break
+			}
+			n := copy(b, text)
 			res += string(b[:n])
 			text = text[n:]
-			break
 		}
-		n = copy(b, text)
-		res += string(b[:n])
-		text = text[n:]
-	}
-	fmt.Println("text size:", len(text))
-	fmt.Printf("%d copy bytes: %s\n", len(res), res)
-	fmt.Println()
+		fmt.Println("text size:", len(text))
+		fmt.Printf("%d copy bytes: %s\n", len(res), res)
+		fmt.Println()
+	})
 }
 
 func TestDemo07(t *testing.T) {
@@ -1454,7 +1489,7 @@ func TestDemo48(t *testing.T) {
 }
 
 // demo49, Functional Options Pattern
-// 当需要修改已有的函数时，为了不破坏原有的签名和行为，可以使用 Functional Options Pattern 的形式增加可变参数，即可以增加设置项，又能兼容已有的代码
+// 当需要修改已有的函数时, 为了不破坏原有的签名和行为, 可以使用 Functional Options Pattern 的形式增加可变参数, 即可以增加设置项, 又能兼容已有的代码
 type UserForOptionTest struct {
 	Name      string
 	Role      string

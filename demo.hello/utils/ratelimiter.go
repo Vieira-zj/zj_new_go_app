@@ -44,10 +44,11 @@ func (rl *RateLimiter) Start() {
 	}
 
 	go func() {
-		tick := time.Tick(rl.duration)
+		tick := time.NewTicker(rl.duration)
+		defer tick.Stop()
 		for {
 			select {
-			case <-tick:
+			case <-tick.C:
 				for i := 0; i < rl.threshold; i++ {
 					select {
 					case rl.store <- struct{}{}:

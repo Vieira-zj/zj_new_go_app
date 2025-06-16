@@ -31,9 +31,7 @@ func (s *Set) Add(val interface{}) {
 
 // Remove .
 func (s *Set) Remove(val interface{}) {
-	if _, ok := s.data[val]; ok {
-		delete(s.data, val)
-	}
+	delete(s.data, val)
 }
 
 // Has .

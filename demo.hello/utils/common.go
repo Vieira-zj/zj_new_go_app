@@ -152,7 +152,7 @@ func FormatDateTimeAsDate(t time.Time) string {
 // GetTimeFromTimestamp .
 func GetTimeFromTimestamp(timestamp string) (time.Time, error) {
 	if len(timestamp) < 10 {
-		return time.Time{}, fmt.Errorf("Timestamp length should be >= 10")
+		return time.Time{}, fmt.Errorf("timestamp length should be >= 10")
 	}
 
 	var (

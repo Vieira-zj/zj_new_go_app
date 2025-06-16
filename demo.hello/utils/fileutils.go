@@ -117,7 +117,7 @@ func ReadFileWithExpandEnv(path string) (string, error) {
 	return os.ExpandEnv(string(bytes)), nil
 }
 
-// WalkDir 获取指定目录及所有子目录下的所有文件，根据后缀过滤
+// WalkDir 获取指定目录及所有子目录下的所有文件, 根据后缀过滤
 func WalkDir(dirPath, suffix string) (files []string, err error) {
 	if suffix[0] != '.' {
 		suffix = "." + suffix
@@ -266,7 +266,7 @@ func CreateFile(filePath string, b []byte) error {
 
 	newFile, err := os.Create(filePath)
 	if err != nil {
-		return fmt.Errorf("Create file error: %v", err)
+		return fmt.Errorf("create file error: %v", err)
 	}
 	defer newFile.Close()
 
@@ -301,7 +301,7 @@ func ReadLinesFile(filePath string) ([]string, error) {
 			return retLines, err
 		}
 		if isPrefix {
-			return retLines, fmt.Errorf("A too long line, seems unexpected")
+			return retLines, fmt.Errorf("a too long line, seems unexpected")
 		}
 		retLines = append(retLines, string(line))
 	}
@@ -465,10 +465,9 @@ func FileWordsCount(filePath string) (map[string]int, error) {
 }
 
 //
-// Zip
+// Zip & Unzip
 //
 
-// Zip 压缩
 func Zip(srcDir, dstZipFile string) error {
 	zipFile, err := os.Create(dstZipFile)
 	if err != nil {
@@ -518,7 +517,6 @@ func Zip(srcDir, dstZipFile string) error {
 	return nil
 }
 
-// Unzip 解压
 func Unzip(zipFile, dstDir string) error {
 	zipReader, err := zip.OpenReader(zipFile)
 	if err != nil {

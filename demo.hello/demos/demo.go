@@ -18,7 +18,8 @@ func demo01() string {
 	return "demo01"
 }
 
-// demo02, context with cancel
+// context with timeout
+
 func demo02() int {
 	var (
 		a       = 2
@@ -37,10 +38,6 @@ func demo02() int {
 	fmt.Printf("\nCompute: %d+%d, result: %d\n", a, b, ret)
 	return ret
 }
-
-/*
-context with timeout
-*/
 
 func demo03() int {
 	var (
@@ -87,9 +84,7 @@ func myIncr(x int) int {
 	return x + 1
 }
 
-/*
-context with value
-*/
+// context with value
 
 type ctxKey int
 
@@ -135,13 +130,11 @@ func demo04() {
 	fmt.Println("context value test done.")
 }
 
-/*
-time.ticker
-*/
+// time.ticker
 
 func demo0501() {
-	ticker := time.NewTicker(time.Second)
 	i := 0
+	ticker := time.NewTicker(time.Second)
 	for range ticker.C {
 		fmt.Println("do sometime each second")
 		i++
@@ -174,19 +167,16 @@ func demo0502() {
 	fmt.Println("Done")
 }
 
-/*
-rpc by context
-*/
+// rpc by context
 
 func demo06() {
-	start := time.Now()
-	timeout := 8
+	start, timeout := time.Now(), 8
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	rpcCalls(ctx, cancel)
 
 	select {
 	case <-ctx.Done():
-		fmt.Println("duration:", time.Now().Sub(start).Seconds())
+		fmt.Println("duration:", time.Since(start).Seconds())
 		fmt.Println("rpc calls done")
 	case <-time.After(time.Duration(timeout-1) * time.Second):
 		fmt.Println("timeout")
@@ -197,8 +187,8 @@ func demo06() {
 func rpcCalls(ctx context.Context, cancel context.CancelFunc) {
 	defer cancel()
 	wg := sync.WaitGroup{}
+	wg.Add(2)
 
-	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		if err := mockRPC(ctx, "http://zj.test1.com"); err != nil {
@@ -207,7 +197,6 @@ func rpcCalls(ctx context.Context, cancel context.CancelFunc) {
 		}
 	}()
 
-	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		if err := mockRPC(ctx, "http://zj.test2.com"); err != nil {
@@ -246,11 +235,11 @@ func mockRPC(ctx context.Context, url string) error {
 /*
 channel close
 
-1. channel不能close两次，否则panic
-2. 读取的时候channel提前关闭了，不会panic. 返回值：string => "", bool => false
-3. 向已经关闭的channel写数据，会引起panic
-4. 判断channel是否close: if value, ok := <- ch; !ok { fmt.Println("closed") }
-5. for循环读取channel, ch关闭时，for循环会自动结束
+1. channel 不能 close 两次, 否则 panic
+2. 读取的时候 channel 提前关闭了, 不会 panic. 返回值：string => "", bool => false
+3. 向已经关闭的 channel 写数据, 会引起 panic
+4. 判断 channel 是否close: if value, ok := <- ch; !ok { fmt.Println("closed") }
+5. for 循环读取 channel, ch 关闭时, for 循环会自动结束
 */
 
 func demo0701() {
@@ -367,9 +356,15 @@ func demo09() {
 	}
 }
 
-/*
-func deco
-*/
+// demo10, func deco
+func demo10() {
+	buildHello := func(name string) string {
+		fmt.Println("build hello message...")
+		return "Hello " + name
+	}
+	decoFunc := deco(buildHello)
+	fmt.Println(decoFunc("Henry"))
+}
 
 func deco(fn func(string) string) func(string) string {
 	return func(text string) string {
@@ -380,22 +375,12 @@ func deco(fn func(string) string) func(string) string {
 	}
 }
 
-func demo10() {
-	buildHello := func(name string) string {
-		fmt.Println("build hello message...")
-		return "Hello " + name
-	}
-	decoFunc := deco(buildHello)
-	fmt.Println(decoFunc("Henry"))
-}
-
 // demo11, atomic int
 func demo11() {
 	var v int32
 	atomic.StoreInt32(&v, 10)
 
-	parallel := 3
-	wg := sync.WaitGroup{}
+	parallel, wg := 3, sync.WaitGroup{}
 	wg.Add(parallel)
 	for i := 0; i < parallel; i++ {
 		go func() {
@@ -427,7 +412,8 @@ func (p myPerson) SayHello() {
 	fmt.Println("hello, my name is:", p.Name)
 }
 
-// Main .
+// Main
+
 func Main() {
 	fmt.Println("demo main")
 	demo09()

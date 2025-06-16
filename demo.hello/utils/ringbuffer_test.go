@@ -59,7 +59,7 @@ func TestRingBuffer02(t *testing.T) {
 		readSeek := 0
 		length := 3
 		fmt.Println("start read")
-		for true {
+		for {
 			time.Sleep(time.Duration(500) * time.Millisecond)
 			ret, err := ringBuf.Read(uint32(readSeek), uint32(length))
 			if err != nil {

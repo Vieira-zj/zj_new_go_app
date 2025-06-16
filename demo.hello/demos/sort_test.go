@@ -29,7 +29,6 @@ func TestGoroutinesPrint(t *testing.T) {
 					ch <- val
 				case <-ctx.Done():
 					return
-				default:
 				}
 			}
 		}()

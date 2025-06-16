@@ -140,6 +140,8 @@ func getUser(r *http.Request, users Users) (User, error) {
 	return users.FindByName(name)
 }
 
+// Mock
+
 func mockInitUsers() Users {
 	return Users{
 		{ID: 1, Name: "Admin", Role: "admin"},
