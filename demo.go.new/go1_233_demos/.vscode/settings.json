@@ -1,5 +1,6 @@
 {
   "window.zoomLevel": 0,
+  "editor.wordWrap": "on",
   "git.openRepositoryInParentFolders": "always",
   "makefile.configureOnOpen": false,
 
@@ -7,10 +8,11 @@
   "go.goroot": "/usr/local/go",
   "go.gopath": "/Users/jinzheng/Workspaces/.go",
   "go.buildFlags": ["-tags=pro", "-tags=pro,enterprise"],
-  "go.testFlags": ["-v", "-count=1"],
+  "go.testFlags": ["-v", "-count=1", "-timeout=30s", "-race"],
   "go.testEnvVars": {
     "LOG_LEVEL": "debug"
   },
+  "go.testTimeout": "30s",
   "go.lintTool": "golangci-lint",
   "go.lintFlags": ["--fast"]
 }

@@ -53,7 +53,6 @@ func AuthMiddleware(e *casbin.Enforcer, users Users) func(next http.Handler) htt
 			}
 
 			next.ServeHTTP(w, r)
-			return
 		}
 
 		return http.HandlerFunc(fn)

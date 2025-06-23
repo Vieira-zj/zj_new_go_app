@@ -5,6 +5,7 @@ go 1.23.3
 require (
 	github.com/casbin/casbin/v2 v2.107.0
 	github.com/stretchr/testify v1.10.0
+	golang.org/x/time v0.12.0
 )
 
 require (
