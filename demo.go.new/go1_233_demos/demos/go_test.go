@@ -2,6 +2,7 @@ package demos
 
 import (
 	"cmp"
+	"encoding/json"
 	"maps"
 	"os"
 	"slices"
@@ -9,6 +10,34 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+// Common
+
+func TestCommonSlice(t *testing.T) {
+	t.Run("case1: slice append when iterator", func(t *testing.T) {
+		s := []int{1, 2, 3, 4, 5}
+		for _, v := range s {
+			t.Log("value:", v)
+			if v == 2 || v == 4 {
+				s = append(s, v+10, v+20, v+30)
+			}
+		}
+		t.Log("slice:", s)
+	})
+
+	t.Run("case2: slice append when iterator", func(t *testing.T) {
+		s := []int{1, 2, 3, 4, 5}
+		for len(s) > 0 {
+			v := s[0]
+			t.Log("value:", v)
+			if v == 2 || v == 4 {
+				s = append(s, v+10)
+			}
+			s = s[1:]
+		}
+		t.Log("slice:", s)
+	})
+}
 
 // Demo: Built-In Fn
 
@@ -62,5 +91,38 @@ func TestOsUtils(t *testing.T) {
 		path, err := os.Executable()
 		assert.NoError(t, err)
 		t.Log("exec path:", path)
+	})
+}
+
+// Demo: Json
+
+func TestJsonTags(t *testing.T) {
+	type Person struct {
+		ID    int    `json:"id,string"`
+		Name  string `json:"name"`
+		Level int    `json:"level,omitzero"`
+		Desc  string `json:"description,omitempty"`
+	}
+
+	t.Run("json marshal with tags", func(t *testing.T) {
+		p := Person{
+			ID:    102,
+			Name:  "Foo",
+			Level: 31,
+			Desc:  "A person description",
+		}
+		b, err := json.Marshal(&p)
+		assert.NoError(t, err)
+		t.Log("json:", string(b))
+	})
+
+	t.Run("json marshal with omit tags", func(t *testing.T) {
+		p := Person{
+			ID:   102,
+			Name: "Foo",
+		}
+		b, err := json.Marshal(&p)
+		assert.NoError(t, err)
+		t.Log("json:", string(b))
 	})
 }

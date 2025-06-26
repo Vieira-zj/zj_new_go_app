@@ -37,7 +37,7 @@ func (l *LinkedList[T]) AllValues() iter.Seq[T] {
 	}
 }
 
-func (l *LinkedList[T]) All() iter.Seq2[int, T] {
+func (l *LinkedList[T]) AllItems() iter.Seq2[int, T] {
 	return func(yield func(int, T) bool) {
 		for index, node := 0, l.head; node != nil; index, node = index+1, node.next {
 			if !yield(index, node.value) {

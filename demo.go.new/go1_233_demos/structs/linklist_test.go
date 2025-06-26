@@ -19,7 +19,7 @@ func TestLinkedList(t *testing.T) {
 			l.Add(i)
 		}
 
-		for i, v := range l.All() {
+		for i, v := range l.AllItems() {
 			t.Logf("index: %d, value: %d", i, v)
 		}
 	})
