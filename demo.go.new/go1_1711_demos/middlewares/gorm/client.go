@@ -79,11 +79,49 @@ func getLocalhostDBConfig() DbConfig {
 	}
 }
 
+// Transaction
+
+type DBTxCtxKey struct{}
+
+func Transaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	db := NewDB()
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		ctx := context.WithValue(ctx, DBTxCtxKey{}, tx)
+		return fn(ctx)
+	})
+}
+
+func GetDB(ctx context.Context) *gorm.DB {
+	if tx, ok := ctx.Value(DBTxCtxKey{}).(*gorm.DB); ok && tx != nil {
+		return tx
+	}
+	return NewDB()
+}
+
 // DB Query
 
 func GetUsers(ctx context.Context, offset, limit int) ([]model.User, error) {
-	db := NewDB()
-	var users []model.User
+	db := GetDB(ctx)
+	users := make([]model.User, 0)
 	result := db.WithContext(ctx).Offset(offset).Limit(limit).Find(&users)
 	return users, result.Error
+}
+
+func SearchUser(ctx context.Context, wheres ...func(*gorm.DB) *gorm.DB) ([]model.User, error) {
+	db := GetDB(ctx)
+	users := make([]model.User, 0)
+	result := db.WithContext(ctx).Scopes(wheres...).Find(&users)
+	return users, result.Error
+}
+
+func SearchUserWithIDGreaterThan(id int32) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("id > ?", id)
+	}
+}
+
+func SearchUserWithNameHasPrefix(prefix string) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("name like '?%'", prefix)
+	}
 }

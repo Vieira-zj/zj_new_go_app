@@ -32,6 +32,21 @@ func TestGetUsers(t *testing.T) {
 	}
 }
 
+func TestSearchUser(t *testing.T) {
+	users, err := gorm.SearchUser(
+		context.TODO(),
+		gorm.SearchUserWithNameHasPrefix("jin"),
+		gorm.SearchUserWithIDGreaterThan(101),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range users {
+		u := users[i]
+		t.Log("user:", u.Name, u.Age)
+	}
+}
+
 func TestInsertBlob(t *testing.T) {
 	db := gorm.NewDB()
 	data := map[string]string{
