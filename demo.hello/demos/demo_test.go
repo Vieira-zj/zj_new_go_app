@@ -187,7 +187,7 @@ func TestDemo09(t *testing.T) {
 
 	go func() {
 		wg.Wait()
-		t.Log("done and close data channel.")
+		t.Log("done and close data channel")
 		close(ch)
 	}()
 
@@ -213,7 +213,7 @@ func TestDemo10(t *testing.T) {
 	s = append(s, 20)
 	fmt.Printf("len=%d, cap=%d, value:%v\n", len(s), cap(s), s)
 
-	s = make([]int16, 10, 10)
+	s = make([]int16, 10)
 	s[0] = 10
 	s[1] = 20
 	fmt.Printf("len=%d, cap=%d, value:%v\n", len(s), cap(s), s)
@@ -230,8 +230,7 @@ func TestDemo11(t *testing.T) {
 		t.Fatalf("want empty, got %v\n", m["3"])
 	}
 
-	_, ok := m["3"]
-	if ok {
+	if _, ok := m["3"]; ok {
 		t.Fatalf("want false, got %v\n", ok)
 	}
 }
@@ -247,7 +246,7 @@ type data struct {
 type student struct {
 	ID       int    `yaml:"id"`
 	Name     string `yaml:"name"`
-	internal string `yaml:"internal"`
+	internal string `yaml:"interval"`
 }
 
 func TestDemo12(t *testing.T) {
@@ -265,8 +264,9 @@ students:
 	output := data{}
 	if err := yaml.Unmarshal([]byte(input), &output); err != nil {
 		t.Fatal(err)
-	} else {
-		fmt.Printf("%+v", output)
+	}
+	for _, s := range output.Students {
+		fmt.Printf("id: %d, name: %s, internal: %s\n", s.ID, s.Name, s.internal)
 	}
 }
 
@@ -299,8 +299,9 @@ func TestDemo13(t *testing.T) {
 /*
 make slice by len and cap:
 s := make([]type, len, cap)
-len: slice中元素个数，会初始化元素的值，值为对应类型的默认值。如：int为零，string为空
-cap: slice的容量，不会初始化元素的值。通过append方法来添加元素
+
+- len: slice 中元素个数, 会初始化元素的值, 值为对应类型的默认值. 如: int 为 0, string为 ""
+- cap: slice的容量, 不会初始化元素的值. 通过 append 方法来添加元素
 */
 
 func TestDemo14(t *testing.T) {
@@ -363,9 +364,9 @@ func TestDemo15(t *testing.T) {
 /*
 unsafe.Pointer
 
-1. 任意类型的指针值都可以转换为unsafe.Pointer, unsafe.Pointer也可以转换为任意类型的指针值
-2. unsafe.Pointer与uintptr可以实现相互转换
-3. 可以通过uintptr可以进行加减操作，从而实现指针的运算
+1. 任意类型的指针值都可以转换为 unsafe.Pointer, unsafe.Pointer 也可以转换为任意类型的指针值
+2. unsafe.Pointer 与 uintptr 可以实现相互转换
+3. 可以通过 uintptr 可以进行加减操作, 从而实现指针的运算
 */
 
 func TestDemo16(t *testing.T) {
@@ -383,7 +384,7 @@ func TestDemo16(t *testing.T) {
 }
 
 func TestDemo17(t *testing.T) {
-	// slice指针运算
+	// slice 指针运算
 	data := []byte("abcd")
 	for i := 0; i < len(data); i++ {
 		ptr := unsafe.Pointer(uintptr(unsafe.Pointer(&data[0])) + uintptr(i)*unsafe.Sizeof(data[0]))
@@ -435,7 +436,7 @@ func TestDemo19(t *testing.T) {
 	if err := temp.Execute(&output, recipient); err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println("templated string:", string(output.Bytes()))
+	fmt.Println("templated string:", output.String())
 }
 
 func TestDemo20(t *testing.T) {
@@ -510,8 +511,8 @@ func BenchmarkSwitch(b *testing.B) {
 /*
 switch case
 
-1. switch每个case最后默认带有break
-2. fallthrough强制执行后面case的代码，而不考虑expr结果是否为true
+1. switch 每个 case 最后默认带有 break
+2. fallthrough 强制执行后面 case 的代码, 而不考虑 expr 结果是否为 true
 */
 
 type mockErrorType int
@@ -553,19 +554,19 @@ type sub interface {
 	getData() []string
 }
 
-type subOne struct {
+type subOneImpl struct {
 	Data []string
 }
 
-func (sub *subOne) getData() []string {
+func (sub *subOneImpl) getData() []string {
 	return sub.Data
 }
 
-type subTwo struct {
+type subTwoImpl struct {
 	Data []string
 }
 
-func (sub *subTwo) getData() []string {
+func (sub *subTwoImpl) getData() []string {
 	return sub.Data
 }
 
@@ -574,12 +575,12 @@ func printData(s sub) {
 }
 
 func TestDemo21(t *testing.T) {
-	sub1 := subOne{
+	sub1 := subOneImpl{
 		Data: []string{"1", "2", "3"},
 	}
 	printData(&sub1)
 
-	sub2 := subTwo{
+	sub2 := subTwoImpl{
 		Data: []string{"one", "two", "three"},
 	}
 	printData(&sub2)
@@ -590,7 +591,7 @@ chan close
 */
 
 func TestDemo22(t *testing.T) {
-	// 从关闭的channel中不但可以读取出已发送的数据，还可以不断的读取零值
+	// 从关闭的 channel 中不但可以读取出已发送的数据, 还可以不断的读取零值
 	ch := make(chan int, 5)
 	for i := 1; i < 4; i++ {
 		ch <- i
@@ -603,7 +604,7 @@ func TestDemo22(t *testing.T) {
 }
 
 func TestDemo23(t *testing.T) {
-	// 如果通过range读取，channel关闭后，读取完已发送的数据，for循环会跳出
+	// 如果通过 range 读取, channel 关闭后, 读取完已发送的数据, for 循环会跳出
 	ch := make(chan int, 5)
 	for i := 1; i < 4; i++ {
 		ch <- i
@@ -617,7 +618,7 @@ func TestDemo23(t *testing.T) {
 }
 
 func TestDemo24(t *testing.T) {
-	// Debouncing（防抖动） 是一种避免事件重复的方法，我们设置一个小的延迟，如果在达到延迟之前发生了其他事件，则重启计时器
+	// Debouncing (防抖动) 是一种避免事件重复的方法, 我们设置一个小的延迟, 如果在达到延迟之前发生了其他事件, 则重启计时器
 	var count uint32
 
 	addFunc := func(value uint32) {
@@ -625,7 +626,7 @@ func TestDemo24(t *testing.T) {
 		atomic.AddUint32(&count, value)
 	}
 
-	// 取消之前的事件，返回最新的结果
+	// 取消之前的事件, 返回最新的结果
 	debounce := debounce.New(time.Duration(200) * time.Millisecond)
 	for i := 0; i < 3; i++ {
 		for j := 0; j < 10; j++ {
@@ -813,6 +814,7 @@ func TestDemo28(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer outputFile.Close()
+
 	multiWriter := io.MultiWriter(os.Stdout, outputFile)
 	fmt.Fprintf(multiWriter, "multi writer test: stdout and file [%s]\n", filePath)
 }
@@ -1298,7 +1300,7 @@ func TestDemo43(t *testing.T) {
 	// expvar
 	// 1. 公共变量
 	// 2. 操作都是协程安全的
-	// 3. 通过HTTP在 /debug/vars 位置以JSON格式导出这些变量（cmdline, memstats）
+	// 3. 通过 HTTP 在 /debug/vars 位置以 JSON 格式导出这些变量 (cmdline, memstats)
 	kvFunc := func(kv expvar.KeyValue) {
 		fmt.Println(kv.Key, kv.Value)
 	}
@@ -1387,7 +1389,7 @@ func TestDemo45(t *testing.T) {
 
 	chMid <- 18
 	chMid <- 19
-	// 等待处理 mid channel 中的任务，再添加任务到 high channel 中
+	// 等待处理 mid channel 中的任务, 再添加任务到 high channel 中
 	for i := 0; i < size; i++ {
 		chHigh <- i
 	}
@@ -1566,19 +1568,18 @@ type tPerson interface {
 
 type tStudent string
 
-// tStudent 基于 string 类型，这里参数 s 不使用指针类型
+// tStudent 基于 string 类型, 这里参数 s 不使用指针类型
 func (s tStudent) SayHello() {
 	fmt.Println("Hello, my name is", string(s))
 }
 
 func TestDemo51(t *testing.T) {
-	var p tPerson
-	p = tStudent("foo")
+	var p tPerson = tStudent("foo")
 	p.SayHello()
 }
 
 func TestDemo52(t *testing.T) {
-	// 数组是值传递
+	// array 是值传递
 	a := [3]int{1, 2, 3}
 	func(a [3]int) {
 		a[0] = 7
@@ -1959,5 +1960,8 @@ func TestDemo102(t *testing.T) {
 
 	testStr = "randint(10,20)"
 	r, err = regexp.Compile(`\d+`)
+	if err != nil {
+		t.Fatal(err)
+	}
 	fmt.Println("find all string:", r.FindAllString(testStr, -1))
 }

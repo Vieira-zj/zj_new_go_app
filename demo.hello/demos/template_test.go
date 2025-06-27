@@ -234,13 +234,13 @@ func safeCall(fun interface{}, param ...interface{}) (val reflect.Value, err err
 	args := make([]reflect.Value, 0, paramValueOf.Len())
 	for i := 0; i < paramValueOf.Len(); i++ {
 		arg := paramValueOf.Index(i).Interface()
-		switch arg.(type) {
+		switch typedArg := arg.(type) {
 		case int:
-			args = append(args, reflect.ValueOf(arg.(int)))
+			args = append(args, reflect.ValueOf(typedArg))
 		case string:
-			args = append(args, reflect.ValueOf(arg.(string)))
+			args = append(args, reflect.ValueOf(typedArg))
 		default:
-			args = append(args, reflect.ValueOf(arg))
+			args = append(args, reflect.ValueOf(typedArg))
 		}
 	}
 	ret := funValueOf.Call(args)
