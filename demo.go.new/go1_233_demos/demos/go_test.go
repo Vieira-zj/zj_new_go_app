@@ -13,8 +13,16 @@ import (
 
 // Common
 
-func TestCommonSlice(t *testing.T) {
-	t.Run("case1: slice append when iterator", func(t *testing.T) {
+func TestCommon(t *testing.T) {
+	t.Run("minus uint", func(t *testing.T) {
+		a, b := uint32(1), uint32(10)
+		t.Log("minus uint32:", int(a-b)) // it will be overflow
+
+		x, y := uint(1), uint(10)
+		t.Log("minus uint:", int(x-y)) // it will be ok
+	})
+
+	t.Run("slice case1: append when iterator", func(t *testing.T) {
 		s := []int{1, 2, 3, 4, 5}
 		for _, v := range s {
 			t.Log("value:", v)
@@ -25,7 +33,7 @@ func TestCommonSlice(t *testing.T) {
 		t.Log("slice:", s)
 	})
 
-	t.Run("case2: slice append when iterator", func(t *testing.T) {
+	t.Run("slice case2: append when iterator", func(t *testing.T) {
 		s := []int{1, 2, 3, 4, 5}
 		for len(s) > 0 {
 			v := s[0]
@@ -65,22 +73,31 @@ func TestBuiltInSlicesOp(t *testing.T) {
 }
 
 func TestBuiltInIteratorOp(t *testing.T) {
-	t.Run("iterator loop", func(t *testing.T) {
+	t.Run("slice iterator", func(t *testing.T) {
 		slice := []int{1, 2, 3}
 		it := slices.All(slice)
 		for idx, val := range it {
 			t.Logf("index=%d, value=%d\n", idx, val)
 		}
 	})
-}
 
-func TestBuiltInMapsOp(t *testing.T) {
-	t.Run("maps collect", func(t *testing.T) {
+	t.Run("map iterator", func(t *testing.T) {
 		s := []string{"zero", "one", "two"}
 		it := slices.All(s)
 		m := maps.Collect(it)
 		assert.Equal(t, 3, len(m))
 		t.Logf("map: %+v", m)
+	})
+}
+
+func TestBuiltInSortOp(t *testing.T) {
+	t.Run("sort uint32 slice", func(t *testing.T) {
+		s := []uint32{21, 22, 1, 2, 3, 4}
+		slices.SortFunc(s, func(a, b uint32) int {
+			// return int(a - b) // it will be overflow
+			return cmp.Compare(a, b)
+		})
+		t.Log("sorted uint32 slice:", s)
 	})
 }
 
