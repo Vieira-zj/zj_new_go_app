@@ -13,6 +13,12 @@ import (
 
 // Common
 
+type testNumbers []string
+
+func (n *testNumbers) AppendOne(num string) {
+	*n = append(*n, num) // here use pointer
+}
+
 func TestCommon(t *testing.T) {
 	t.Run("minus uint", func(t *testing.T) {
 		a, b := uint32(1), uint32(10)
@@ -20,6 +26,13 @@ func TestCommon(t *testing.T) {
 
 		x, y := uint(1), uint(10)
 		t.Log("minus uint:", int(x-y)) // it will be ok
+	})
+
+	t.Run("self type slice append", func(t *testing.T) {
+		numbers := testNumbers([]string{"1", "2"})
+		numbers.AppendOne("11")
+		numbers.AppendOne("12")
+		t.Log("numbers:", numbers)
 	})
 
 	t.Run("slice case1: append when iterator", func(t *testing.T) {
