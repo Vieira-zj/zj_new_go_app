@@ -107,6 +107,7 @@ func GetUsers(ctx context.Context, offset, limit int) ([]model.User, error) {
 	return users, result.Error
 }
 
+// SearchUser search users with pre-defined scopes.
 func SearchUser(ctx context.Context, wheres ...func(*gorm.DB) *gorm.DB) ([]model.User, error) {
 	db := GetDB(ctx)
 	users := make([]model.User, 0)
@@ -114,14 +115,20 @@ func SearchUser(ctx context.Context, wheres ...func(*gorm.DB) *gorm.DB) ([]model
 	return users, result.Error
 }
 
-func SearchUserWithIDGreaterThan(id int32) func(*gorm.DB) *gorm.DB {
+func WithUserIDGreaterThanScope(id int32) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id > ?", id)
 	}
 }
 
-func SearchUserWithNameHasPrefix(prefix string) func(*gorm.DB) *gorm.DB {
+func WithUserNameHasPrefixScope(prefix string) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("name like '?%'", prefix)
+	}
+}
+
+func WithTxScope(tx *gorm.DB) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return tx
 	}
 }

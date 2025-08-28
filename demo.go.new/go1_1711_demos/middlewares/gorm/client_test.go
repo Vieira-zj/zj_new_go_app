@@ -35,8 +35,8 @@ func TestGetUsers(t *testing.T) {
 func TestSearchUser(t *testing.T) {
 	users, err := gorm.SearchUser(
 		context.TODO(),
-		gorm.SearchUserWithNameHasPrefix("jin"),
-		gorm.SearchUserWithIDGreaterThan(101),
+		gorm.WithUserNameHasPrefixScope("jin"),
+		gorm.WithUserIDGreaterThanScope(101),
 	)
 	if err != nil {
 		t.Fatal(err)
