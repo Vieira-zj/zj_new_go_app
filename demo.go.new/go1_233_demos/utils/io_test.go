@@ -1,16 +1,38 @@
 package utils_test
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/mmap"
 )
+
+func TestStreamReadByScanner(t *testing.T) {
+	path := "/tmp/test/out.json"
+	f, err := os.OpenFile(path, os.O_RDONLY, 0644)
+	require.NoError(t, err, "open file failed")
+	defer f.Close()
+
+	t.Log("scan file:", path)
+	scanner := bufio.NewScanner(f)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		t.Log(line)
+
+		err = scanner.Err()
+		require.NoError(t, err, "scan file line failed")
+	}
+	t.Log("file scan finished")
+}
 
 // read file by mmap
 
