@@ -14,6 +14,40 @@ import (
 	"golang.org/x/exp/mmap"
 )
 
+func TestBufferedReadWrite(t *testing.T) {
+	const limit = 16
+
+	path := "/tmp/test/output.json"
+	f, err := os.Open(path)
+	assert.NoError(t, err, "open file failed")
+	defer f.Close()
+
+	// buffered read
+	r := bufio.NewReaderSize(f, 8*1024) // 8KB buffer
+	b, err := io.ReadAll(r)
+	assert.NoError(t, err, "file buffered read failed")
+	t.Log("file content size:", len(b))
+
+	if len(b) > 100 {
+		t.Log("file content:\n" + string(b[:limit]) + "......" + string(b[len(b)-limit:]))
+	}
+
+	// buffered write
+	outPath := "/tmp/test/out.json"
+	outf, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	assert.NoError(t, err, "open output file failed")
+	defer outf.Close()
+
+	w := bufio.NewWriterSize(outf, 8*1024)
+	n, err := w.Write(b)
+	assert.NoError(t, err, "file buffered write failed")
+	assert.Equal(t, len(b), n, "write size not match")
+
+	err = w.Flush()
+	assert.NoError(t, err, "flush buffered data failed")
+	t.Log("write file finished:", outPath)
+}
+
 func TestStreamReadByScanner(t *testing.T) {
 	path := "/tmp/test/out.json"
 	f, err := os.OpenFile(path, os.O_RDONLY, 0644)

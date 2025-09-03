@@ -126,7 +126,7 @@ func TestOsUtils(t *testing.T) {
 
 // Demo: Json
 
-func TestJsonTags(t *testing.T) {
+func TestJsonMarshalTags(t *testing.T) {
 	type Person struct {
 		ID    int    `json:"id,string"`
 		Name  string `json:"name"`
