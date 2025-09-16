@@ -1,16 +1,19 @@
 package utils_test
 
 import (
+	"encoding/json"
+	"slices"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"zjin.goapp.demo/utils"
 )
 
 type TestPerson struct {
-	ID   int
-	Name string
-	Age  int
-	Role string
+	ID   int    `json:"id"`
+	Name string `json:"name" x_idx:"1"`
+	Role string `json:"role" x_idx:"3"`
+	Age  int    `json:"age" x_idx:"2"`
 }
 
 func TestDiffStruct(t *testing.T) {
@@ -30,5 +33,28 @@ func TestDiffStruct(t *testing.T) {
 	results := utils.DiffStruct(p1, p2)
 	for _, item := range results {
 		t.Logf("diff: %s", item)
+	}
+}
+
+func TestGetStructFieldInfo(t *testing.T) {
+	p := TestPerson{
+		ID:   1,
+		Name: "Foo",
+		Role: "QA",
+		Age:  30,
+	}
+
+	b, err := json.Marshal(&p)
+	assert.NoError(t, err)
+	t.Logf("json: %s", string(b))
+
+	results, err := utils.GetStructFieldsInfo(p)
+	assert.NoError(t, err)
+
+	slices.SortFunc(results, func(a, b utils.StructFieldInfo) int {
+		return a.Index - b.Index
+	})
+	for _, item := range results {
+		t.Logf("struct field: %s, index: %d, value: %v", item.Name, item.Index, item.Value)
 	}
 }

@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 const (
@@ -23,8 +24,8 @@ func (r StructDiffResult) String() string {
 
 // DiffStruct compares two flat structs, and returns a slice of diff results.
 func DiffStruct(src, dst any) []StructDiffResult {
-	srcFieldValueMapping := getStructFieldValueMapping(src)
-	dstFieldValueMapping := getStructFieldValueMapping(dst)
+	srcFieldValueMapping := GetStructFieldValueMapping(src)
+	dstFieldValueMapping := GetStructFieldValueMapping(dst)
 
 	fieldDiffResults := make(map[string]int, len(srcFieldValueMapping)+len(dstFieldValueMapping))
 	for fieldName := range dstFieldValueMapping {
@@ -69,7 +70,7 @@ func DiffStruct(src, dst any) []StructDiffResult {
 	return results
 }
 
-func getStructFieldValueMapping(s any) map[string]any {
+func GetStructFieldValueMapping(s any) map[string]any {
 	v := reflect.ValueOf(s)
 	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
@@ -88,4 +89,41 @@ func getStructFieldValueMapping(s any) map[string]any {
 		results[field.Name] = value
 	}
 	return results
+}
+
+type StructFieldInfo struct {
+	Name  string
+	Index int
+	Value any
+}
+
+func GetStructFieldsInfo(s any) ([]StructFieldInfo, error) {
+	v := reflect.ValueOf(s)
+	if v.Kind() == reflect.Pointer {
+		v = v.Elem()
+	}
+
+	if v.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("input is not a struct")
+	}
+
+	results := make([]StructFieldInfo, 0, v.NumField())
+
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		field, value := t.Field(i), v.Field(i).Interface()
+		if tag := field.Tag.Get("x_idx"); len(tag) > 0 {
+			idx, err := strconv.Atoi(tag)
+			if err != nil {
+				return nil, fmt.Errorf("invalid x_idx tag value: %s", tag)
+			}
+
+			results = append(results, StructFieldInfo{
+				Name:  field.Name,
+				Index: idx,
+				Value: value,
+			})
+		}
+	}
+	return results, nil
 }
