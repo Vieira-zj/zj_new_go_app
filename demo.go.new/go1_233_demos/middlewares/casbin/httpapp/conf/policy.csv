@@ -3,3 +3,4 @@ p, anonymous, /login, *
 p, member, /login, *
 p, member, /logout, *
 p, member, /member/*, *
+p, member, /json/*, *

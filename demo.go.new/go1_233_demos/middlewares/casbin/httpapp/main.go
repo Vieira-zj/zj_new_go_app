@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/casbin/casbin/v2"
 )
@@ -15,6 +18,9 @@ import (
 // curl "http://localhost:8081/member/role" -H "name:Sabine"
 // curl "http://localhost:8081/member/id" -H "name:Sabine"
 // curl "http://localhost:8081/admin/total" -H "name:Sabine"
+
+// curl -v "http://localhost:8081/json/demo" -H "name:Sabine" | jq .
+// curl -v "http://localhost:8081/json/bufdemo" -H "name:Sabine" | jq .
 
 func main() {
 	authEnforcer, err := casbin.NewEnforcer("./conf/auth_model.conf", "./conf/policy.csv")
@@ -30,6 +36,9 @@ func main() {
 	mux.HandleFunc("/member/id", getUserIdHandler())
 	mux.HandleFunc("/member/role", getUserRoleHandler())
 	mux.HandleFunc("/admin/total", getTotalHandler(users))
+
+	mux.HandleFunc("/json/demo", getJsonHandler())
+	mux.HandleFunc("/json/bufdemo", getJsonBufHandler())
 
 	handler := AuthMiddleware(authEnforcer, users)(mux)
 	handler = UserMiddleware(users)(handler)
@@ -114,6 +123,44 @@ func getTotalHandler(users Users) http.HandlerFunc {
 		} else {
 			w.Write([]byte("user is not login"))
 		}
+	}
+}
+
+func getJsonHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		u := User{ID: 1, Name: "Foo", Role: "QA"}
+		// new buffer for each request, not efficient for high concurrent
+		// see getJsonBufHandler for better impl
+		if err := json.NewEncoder(w).Encode(u); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+var BufPool = sync.Pool{
+	New: func() any {
+		return new(bytes.Buffer)
+	},
+}
+
+func getJsonBufHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		u := User{ID: 1, Name: "Foo", Role: "QA"}
+
+		buf := BufPool.Get().(*bytes.Buffer)
+		buf.Reset()
+		defer BufPool.Put(buf)
+
+		if err := json.NewEncoder(buf).Encode(u); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(buf.Bytes())
 	}
 }
 
