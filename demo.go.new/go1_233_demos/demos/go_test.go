@@ -4,8 +4,10 @@ import (
 	"cmp"
 	"encoding/json"
 	"maps"
+	"math"
 	"os"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +18,7 @@ import (
 type testNumbers []string
 
 func (n *testNumbers) AppendOne(num string) {
-	*n = append(*n, num) // here use pointer
+	*n = append(*n, num) // here, need to use pointer
 }
 
 func TestCommon(t *testing.T) {
@@ -26,6 +28,16 @@ func TestCommon(t *testing.T) {
 
 		x, y := uint(1), uint(10)
 		t.Log("minus uint:", int(x-y)) // it will be ok
+	})
+
+	t.Run("round float", func(t *testing.T) {
+		f := 3.61
+		t.Log("math floor", math.Floor(f))
+		t.Log("math round", math.Round(f))
+
+		f = 3.14169
+		t.Log("round with 2 points:", strconv.FormatFloat(f, 'f', 2, 64))
+		t.Log("round with 3 points:", strconv.FormatFloat(f, 'f', 3, 64))
 	})
 
 	t.Run("self type slice append", func(t *testing.T) {
