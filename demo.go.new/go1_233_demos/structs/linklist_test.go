@@ -24,3 +24,22 @@ func TestLinkedList(t *testing.T) {
 		}
 	})
 }
+
+func TestSwapLinkedList(t *testing.T) {
+	l := &LinkedList[int]{}
+	for i := 1; i <= 4; i++ {
+		l.Add(i)
+	}
+
+	t.Log("before swap:")
+	for v := range l.AllValues() {
+		t.Logf("value: %d", v)
+	}
+
+	result := SwapLinkedList(l)
+
+	t.Log("after swap:")
+	for v := range result.AllValues() {
+		t.Logf("value: %d", v)
+	}
+}
