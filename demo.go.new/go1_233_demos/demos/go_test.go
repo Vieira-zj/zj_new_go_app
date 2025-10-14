@@ -2,13 +2,16 @@ package demos
 
 import (
 	"cmp"
+	"context"
 	"encoding/json"
+	"fmt"
 	"maps"
 	"math"
 	"os"
 	"slices"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -127,6 +130,27 @@ func TestBuiltInSortOp(t *testing.T) {
 }
 
 // Demo: Built-In Libs
+
+func TestTimeUtils(t *testing.T) {
+	t.Run("loop by time ticker", func(t *testing.T) {
+		ctx, cancel := context.WithTimeoutCause(context.Background(), 3*time.Second, fmt.Errorf("timeout exceed"))
+		defer cancel()
+
+		tick := time.NewTicker(time.Second)
+		defer tick.Stop()
+
+		for range 10 {
+			select {
+			case <-ctx.Done():
+				t.Logf("cancel: err=%v, cause=%v", ctx.Err(), context.Cause(ctx))
+				return
+			case <-tick.C:
+				t.Log("after 1 second")
+			}
+		}
+		t.Log("done")
+	})
+}
 
 func TestOsUtils(t *testing.T) {
 	t.Run("os exec", func(t *testing.T) {
