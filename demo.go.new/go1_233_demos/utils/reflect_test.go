@@ -58,3 +58,14 @@ func TestGetStructFieldInfo(t *testing.T) {
 		t.Logf("struct field: %s, index: %d, value: %v", item.Name, item.Index, item.Value)
 	}
 }
+
+func MyAddForTest(a int, b string) (bool, error) {
+	_, _ = a, b
+	return true, nil
+}
+
+func TestGetFuncSignature(t *testing.T) {
+	result, err := utils.GetFuncSignature(MyAddForTest)
+	assert.NoError(t, err)
+	t.Logf("func signature: %+v", result)
+}

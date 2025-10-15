@@ -3,7 +3,9 @@ package utils
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -126,4 +128,43 @@ func GetStructFieldsInfo(s any) ([]StructFieldInfo, error) {
 		}
 	}
 	return results, nil
+}
+
+type FuncSignature struct {
+	Pkg         string
+	Name        string
+	InputTypes  []string
+	OutputTypes []string
+}
+
+func GetFuncSignature(fn any) (FuncSignature, error) {
+	signature := FuncSignature{}
+
+	fnValue := reflect.ValueOf(fn)
+	fnType := fnValue.Type()
+
+	if fnValue.Kind() != reflect.Func {
+		return signature, fmt.Errorf("input is not a function")
+	}
+
+	fullName := runtime.FuncForPC(fnValue.Pointer()).Name()
+	idx := strings.LastIndex(fullName, ".")
+	signature.Pkg, signature.Name = fullName[:idx], fullName[idx+1:]
+
+	paramTypes := make([]string, fnType.NumIn())
+	for i := 0; i < fnType.NumIn(); i++ {
+		paramTypes[i] = fnType.In(i).String()
+	}
+	signature.InputTypes = paramTypes
+
+	resultTypes := make([]string, fnType.NumOut())
+	for i := 0; i < fnType.NumOut(); i++ {
+		resultTypes[i] = fnType.Out(i).String()
+	}
+	signature.OutputTypes = resultTypes
+
+	// cannot get the function parameter names by reflect
+	// need to use go/parser and go/ast to parse the source code file
+
+	return signature, nil
 }
