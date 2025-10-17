@@ -11,7 +11,7 @@ import (
 // Context
 
 func TestSubCtxTimeout(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), time.Second)
 	defer cancel()
 	if ti, ok := ctx.Deadline(); ok {
 		t.Log("ctx dead time:", time.Until(ti).Seconds())

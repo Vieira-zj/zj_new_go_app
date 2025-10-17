@@ -69,3 +69,8 @@ func TestGetFuncSignature(t *testing.T) {
 	assert.NoError(t, err)
 	t.Logf("func signature: %+v", result)
 }
+
+func TestGetCallerFuncName(t *testing.T) {
+	pkg, fnName := utils.GetCallerFuncName()
+	t.Logf("caller func: pkg=%s, name=%s", pkg, fnName)
+}

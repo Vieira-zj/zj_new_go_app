@@ -133,7 +133,7 @@ func TestBuiltInSortOp(t *testing.T) {
 
 func TestTimeUtils(t *testing.T) {
 	t.Run("loop by time ticker", func(t *testing.T) {
-		ctx, cancel := context.WithTimeoutCause(context.Background(), 3*time.Second, fmt.Errorf("timeout exceed"))
+		ctx, cancel := context.WithTimeoutCause(t.Context(), 3*time.Second, fmt.Errorf("timeout exceed"))
 		defer cancel()
 
 		tick := time.NewTicker(time.Second)

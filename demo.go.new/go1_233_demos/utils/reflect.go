@@ -168,3 +168,15 @@ func GetFuncSignature(fn any) (FuncSignature, error) {
 
 	return signature, nil
 }
+
+func GetCallerFuncName() (pkg, fn string) {
+	pc, _, _, ok := runtime.Caller(1)
+	if !ok {
+		return
+	}
+
+	fullName := runtime.FuncForPC(pc).Name()
+	idx := strings.LastIndex(fullName, ".")
+	pkg, fn = fullName[:idx], fullName[idx+1:]
+	return
+}
