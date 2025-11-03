@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strconv"
 	"testing"
+	"testing/quick"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -75,6 +76,20 @@ func TestCommon(t *testing.T) {
 	})
 }
 
+func TestQuickDemo(t *testing.T) {
+	config := quick.Config{
+		MaxCount: 1000,
+	}
+	f := func(x, y int) bool {
+		return x+y == y+x
+	}
+
+	start := time.Now()
+	err := quick.Check(f, &config)
+	assert.NoError(t, err)
+	t.Log("done, duration:", time.Since(start).Milliseconds())
+}
+
 // Demo: Built-In Fn
 
 func TestBuiltInCmpOp(t *testing.T) {
@@ -91,12 +106,13 @@ func TestBuiltInSlicesOp(t *testing.T) {
 	})
 
 	t.Run("slices contains", func(t *testing.T) {
+		assert := assert.New(t)
 		s := []int{1, 2, 3}
 		ok := slices.Contains(s, 2)
-		assert.True(t, ok)
+		assert.True(ok)
 
 		ok = slices.Contains(s, 4)
-		assert.False(t, ok)
+		assert.False(ok)
 	})
 }
 
