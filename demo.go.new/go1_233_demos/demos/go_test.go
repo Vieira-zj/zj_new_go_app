@@ -10,14 +10,16 @@ import (
 	"os"
 	"slices"
 	"strconv"
+	"time"
+
 	"testing"
 	"testing/quick"
-	"time"
+	"testing/synctest"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// Common
+// Demo: Common Utils
 
 type testNumbers []string
 
@@ -25,7 +27,7 @@ func (n *testNumbers) AppendOne(num string) {
 	*n = append(*n, num) // here, need to use pointer
 }
 
-func TestCommon(t *testing.T) {
+func TestCommonUtils(t *testing.T) {
 	t.Run("minus uint", func(t *testing.T) {
 		a, b := uint32(1), uint32(10)
 		t.Log("minus uint32:", int(a-b)) // it will be overflow
@@ -76,6 +78,29 @@ func TestCommon(t *testing.T) {
 	})
 }
 
+// Demo: Testing Mod
+
+func TestSyncDemo(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		start := time.Now().UTC()
+		time.Sleep(5 * time.Second) // do not block here
+		t.Log("duration:", time.Since(start).Milliseconds())
+	})
+
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.TODO())
+		afterFuncCalled := false
+
+		context.AfterFunc(ctx, func() {
+			afterFuncCalled = true
+		})
+
+		cancel()
+		synctest.Wait()
+		t.Logf("afterFuncCalled=%v", afterFuncCalled)
+	})
+}
+
 func TestQuickDemo(t *testing.T) {
 	config := quick.Config{
 		MaxCount: 1000,
@@ -90,7 +115,7 @@ func TestQuickDemo(t *testing.T) {
 	t.Log("done, duration:", time.Since(start).Milliseconds())
 }
 
-// Demo: Built-In Fn
+// Demo: Built-In Mods
 
 func TestBuiltInCmpOp(t *testing.T) {
 	t.Run("cmp or", func(t *testing.T) {
@@ -144,8 +169,6 @@ func TestBuiltInSortOp(t *testing.T) {
 		t.Log("sorted uint32 slice:", s)
 	})
 }
-
-// Demo: Built-In Libs
 
 func TestTimeUtils(t *testing.T) {
 	t.Run("loop by time ticker", func(t *testing.T) {
