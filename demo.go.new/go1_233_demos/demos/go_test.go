@@ -4,7 +4,9 @@ import (
 	"cmp"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"maps"
 	"math"
 	"os"
@@ -196,6 +198,48 @@ func TestOsUtils(t *testing.T) {
 		path, err := os.Executable()
 		assert.NoError(t, err)
 		t.Log("exec path:", path)
+	})
+}
+
+func TestErrorUtils(t *testing.T) {
+	t.Run("error is check", func(t *testing.T) {
+		customErr := fmt.Errorf("custom test error")
+		process := func(hasErr bool) error {
+			if hasErr {
+				return customErr
+			}
+			return nil
+		}
+
+		if err := process(true); err != nil {
+			if errors.Is(err, customErr) {
+				t.Log("get custom error")
+			} else {
+				t.Log(err)
+			}
+		}
+	})
+
+	t.Run("error type check", func(t *testing.T) {
+		if _, err := os.Open("non_existing_file.txt"); err != nil {
+			if pathErr, ok := err.(*fs.PathError); ok {
+				t.Log("failed at path:", pathErr.Path)
+			} else {
+				t.Log(err)
+			}
+		}
+	})
+
+	t.Run("error type as check", func(t *testing.T) {
+		var pathErr *fs.PathError
+		// go 1.26: errors.AsType[*fs.PathError](err)
+		if _, err := os.Open("non_existing_file.txt"); err != nil {
+			if errors.As(err, &pathErr) {
+				t.Log("failed at path:", pathErr.Path)
+			} else {
+				t.Log(err)
+			}
+		}
 	})
 }
 
