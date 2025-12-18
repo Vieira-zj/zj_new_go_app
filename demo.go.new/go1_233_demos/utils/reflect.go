@@ -14,57 +14,56 @@ const (
 	matched
 )
 
-type StructDiffResult struct {
+type StructDiffItem struct {
 	FieldName string
 	OldValue  any
 	NewValue  any
 }
 
-func (r StructDiffResult) String() string {
+func (r StructDiffItem) String() string {
 	return fmt.Sprintf("Field: %s, Old: %v, New: %v", r.FieldName, r.OldValue, r.NewValue)
 }
 
 // DiffStruct compares two flat structs, and returns a slice of diff results.
-func DiffStruct(src, dst any) []StructDiffResult {
-	srcFieldValueMapping := GetStructFieldValueMapping(src)
-	dstFieldValueMapping := GetStructFieldValueMapping(dst)
+func DiffStruct(src, dst any) []StructDiffItem {
+	srcMapping := GetStructFieldValueMapping(src)
+	dstMapping := GetStructFieldValueMapping(dst)
 
-	fieldDiffResults := make(map[string]int, len(srcFieldValueMapping)+len(dstFieldValueMapping))
-	for fieldName := range dstFieldValueMapping {
-		fieldDiffResults[fieldName] = added
+	diffs := make(map[string]int, len(srcMapping))
+	for fieldName := range dstMapping {
+		diffs[fieldName] = added
 	}
-	for fieldName := range srcFieldValueMapping {
-		if _, ok := fieldDiffResults[fieldName]; ok {
-			fieldDiffResults[fieldName] = matched
+	for fieldName := range srcMapping {
+		if _, ok := diffs[fieldName]; ok {
+			diffs[fieldName] = matched
 		} else {
-			fieldDiffResults[fieldName] = removed
+			diffs[fieldName] = removed
 		}
 	}
 
-	results := make([]StructDiffResult, 0, len(fieldDiffResults))
+	results := make([]StructDiffItem, 0, len(diffs))
 
-	for fieldName, result := range fieldDiffResults {
-		switch result {
+	for fieldName, diff := range diffs {
+		switch diff {
 		case matched:
-			srcValue, dstValue := srcFieldValueMapping[fieldName], dstFieldValueMapping[fieldName]
-			if reflect.DeepEqual(srcValue, dstValue) {
-				continue
+			srcValue, dstValue := srcMapping[fieldName], dstMapping[fieldName]
+			if !reflect.DeepEqual(srcValue, dstValue) {
+				results = append(results, StructDiffItem{
+					FieldName: fieldName,
+					OldValue:  srcValue,
+					NewValue:  dstValue,
+				})
 			}
-			results = append(results, StructDiffResult{
-				FieldName: fieldName,
-				OldValue:  srcValue,
-				NewValue:  dstValue,
-			})
 		case added:
-			results = append(results, StructDiffResult{
+			results = append(results, StructDiffItem{
 				FieldName: fieldName,
 				OldValue:  nil,
-				NewValue:  dstFieldValueMapping[fieldName],
+				NewValue:  dstMapping[fieldName],
 			})
 		case removed:
-			results = append(results, StructDiffResult{
+			results = append(results, StructDiffItem{
 				FieldName: fieldName,
-				OldValue:  srcFieldValueMapping[fieldName],
+				OldValue:  srcMapping[fieldName],
 				NewValue:  nil,
 			})
 		}
@@ -74,10 +73,9 @@ func DiffStruct(src, dst any) []StructDiffResult {
 
 func GetStructFieldValueMapping(s any) map[string]any {
 	v := reflect.ValueOf(s)
-	if v.Kind() == reflect.Pointer {
+	if v.Kind() == reflect.Pointer && !v.IsNil() {
 		v = v.Elem()
 	}
-
 	if v.Kind() != reflect.Struct {
 		return nil
 	}
@@ -86,9 +84,8 @@ func GetStructFieldValueMapping(s any) map[string]any {
 
 	t := v.Type()
 	for i := 0; i < v.NumField(); i++ {
-		field := t.Field(i)
-		value := v.Field(i).Interface()
-		results[field.Name] = value
+		field, value := t.Field(i), v.Field(i)
+		results[field.Name] = value.Interface()
 	}
 	return results
 }
