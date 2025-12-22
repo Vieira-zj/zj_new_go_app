@@ -78,6 +78,18 @@ func TestCommonUtils(t *testing.T) {
 		}
 		t.Log("slice:", s)
 	})
+
+	t.Run("clear slice and map", func(t *testing.T) {
+		s := []int{1, 2, 3, 4, 5}
+		clear(s)
+		assert.Len(t, s, 5)
+		t.Log("slice after clear:", s)
+
+		m := map[string]int{"one": 1, "two": 2, "three": 3}
+		clear(m)
+		assert.Len(t, m, 0)
+		t.Log("map after clear:", m)
+	})
 }
 
 // Demo: Testing Mod
@@ -121,6 +133,7 @@ func TestQuickDemo(t *testing.T) {
 
 func TestBuiltInCmpOp(t *testing.T) {
 	t.Run("cmp or", func(t *testing.T) {
+		// 返回第一个非空字符串
 		result := cmp.Or(os.Getenv("SOME_VARIABLE"), "default")
 		t.Log("env:", result)
 	})
