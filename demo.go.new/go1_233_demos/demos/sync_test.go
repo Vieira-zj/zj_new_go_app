@@ -2,6 +2,7 @@ package demos
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	"testing"
@@ -62,4 +63,25 @@ func TestGoroutinesWait(t *testing.T) {
 
 	wg.Wait()
 	t.Log("main finish")
+}
+
+// Channel
+
+func TestChannel(t *testing.T) {
+	t.Run("close ch from sender", func(t *testing.T) {
+		ch := make(chan int, 1)
+		go func() {
+			for num := range ch {
+				fmt.Println("receive:", num)
+			}
+		}()
+
+		for i := range 10 {
+			ch <- i
+		}
+		close(ch)
+
+		time.Sleep(100 * time.Millisecond) // wait go routine finish
+		t.Log("finished")
+	})
 }
