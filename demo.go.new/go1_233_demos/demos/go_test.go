@@ -12,6 +12,7 @@ import (
 	"os"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"testing"
@@ -131,7 +132,7 @@ func TestQuickDemo(t *testing.T) {
 
 // Demo: Built-In Mods
 
-func TestBuiltInCmpOp(t *testing.T) {
+func TestCmpUtil(t *testing.T) {
 	t.Run("cmp or", func(t *testing.T) {
 		// 返回第一个非空字符串
 		result := cmp.Or(os.Getenv("SOME_VARIABLE"), "default")
@@ -139,7 +140,7 @@ func TestBuiltInCmpOp(t *testing.T) {
 	})
 }
 
-func TestBuiltInSlicesOp(t *testing.T) {
+func TestSlicesUtil(t *testing.T) {
 	t.Run("slices concat", func(t *testing.T) {
 		s := slices.Concat([]int{1, 2}, []int{3}, []int{7, 8, 9})
 		t.Log("concat slice:", s)
@@ -154,9 +155,18 @@ func TestBuiltInSlicesOp(t *testing.T) {
 		ok = slices.Contains(s, 4)
 		assert.False(ok)
 	})
+
+	t.Run("sort uint32 slice", func(t *testing.T) {
+		s := []uint32{21, 22, 1, 2, 3, 4}
+		slices.SortFunc(s, func(a, b uint32) int {
+			// return int(a - b) // it will be overflow
+			return cmp.Compare(a, b)
+		})
+		t.Log("sorted uint32 slice:", s)
+	})
 }
 
-func TestBuiltInIteratorOp(t *testing.T) {
+func TestIteratorOp(t *testing.T) {
 	t.Run("slice iterator", func(t *testing.T) {
 		slice := []int{1, 2, 3}
 		it := slices.All(slice)
@@ -174,18 +184,19 @@ func TestBuiltInIteratorOp(t *testing.T) {
 	})
 }
 
-func TestBuiltInSortOp(t *testing.T) {
-	t.Run("sort uint32 slice", func(t *testing.T) {
-		s := []uint32{21, 22, 1, 2, 3, 4}
-		slices.SortFunc(s, func(a, b uint32) int {
-			// return int(a - b) // it will be overflow
-			return cmp.Compare(a, b)
-		})
-		t.Log("sorted uint32 slice:", s)
+func TestStringsUtil(t *testing.T) {
+	t.Run("string cut", func(t *testing.T) {
+		s := "hello||world"
+		before, after, found := strings.Cut(s, "||")
+		if found {
+			t.Logf("before=%s, after=%s", before, after)
+		} else {
+			t.Log("delimiter not found")
+		}
 	})
 }
 
-func TestTimeUtils(t *testing.T) {
+func TestTimeUtil(t *testing.T) {
 	t.Run("loop by time ticker", func(t *testing.T) {
 		ctx, cancel := context.WithTimeoutCause(t.Context(), 3*time.Second, fmt.Errorf("timeout exceed"))
 		defer cancel()
@@ -206,7 +217,7 @@ func TestTimeUtils(t *testing.T) {
 	})
 }
 
-func TestOsUtils(t *testing.T) {
+func TestOsUtil(t *testing.T) {
 	t.Run("os exec", func(t *testing.T) {
 		path, err := os.Executable()
 		assert.NoError(t, err)
@@ -214,7 +225,7 @@ func TestOsUtils(t *testing.T) {
 	})
 }
 
-func TestErrorUtils(t *testing.T) {
+func TestErrorsUtil(t *testing.T) {
 	t.Run("error is check", func(t *testing.T) {
 		customErr := fmt.Errorf("custom test error")
 		process := func(hasErr bool) error {
