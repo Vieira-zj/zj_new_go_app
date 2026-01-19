@@ -10,6 +10,7 @@ import (
 	"maps"
 	"math"
 	"os"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"testing/synctest"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Demo: Common Utils
@@ -96,23 +98,40 @@ func TestCommonUtils(t *testing.T) {
 // Demo: Testing Mod
 
 func TestSyncDemo(t *testing.T) {
-	synctest.Test(t, func(t *testing.T) {
-		start := time.Now().UTC()
-		time.Sleep(5 * time.Second) // do not block here
-		t.Log("duration:", time.Since(start).Milliseconds())
+	t.Run("run goroutine in synctest", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			for i := range 3 {
+				go func(idx int) {
+					t.Logf("hello from goroutine [%d]", idx)
+				}(i)
+			}
+			synctest.Wait()
+		})
 	})
 
-	synctest.Test(t, func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.TODO())
-		afterFuncCalled := false
-
-		context.AfterFunc(ctx, func() {
-			afterFuncCalled = true
+	t.Run("sleep in synctest", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			start := time.Now().UTC()
+			time.Sleep(5 * time.Second) // do not block here
+			t.Log("duration:", time.Since(start).Milliseconds())
 		})
+	})
 
-		cancel()
-		synctest.Wait()
-		t.Logf("afterFuncCalled=%v", afterFuncCalled)
+	t.Run("call ctx after_func in synctest", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.TODO())
+			afterFuncCalled := false
+
+			context.AfterFunc(ctx, func() {
+				afterFuncCalled = true
+			})
+
+			go func() {
+				cancel()
+			}()
+			synctest.Wait()
+			t.Logf("is after func called=%v", afterFuncCalled)
+		})
 	})
 }
 
@@ -223,6 +242,16 @@ func TestOsUtil(t *testing.T) {
 		assert.NoError(t, err)
 		t.Log("exec path:", path)
 	})
+
+	t.Run("os open root", func(t *testing.T) {
+		root, err := os.OpenRoot("/tmp/test")
+		require.NoError(t, err)
+
+		// ops base on root dir
+		b, err := root.ReadFile("output.json")
+		assert.NoError(t, err)
+		t.Log("read file:\n", string(b))
+	})
 }
 
 func TestErrorsUtil(t *testing.T) {
@@ -275,14 +304,17 @@ func TestJsonMarshalTags(t *testing.T) {
 		Name  string `json:"name"`
 		Level int    `json:"level,omitzero"`
 		Desc  string `json:"description,omitempty"`
+		// tag:omitzero checks for time.Time IsZero()
+		UpdatedBy time.Time `json:"update_by,omitzero"`
 	}
 
 	t.Run("json marshal with tags", func(t *testing.T) {
 		p := Person{
-			ID:    102,
-			Name:  "Foo",
-			Level: 31,
-			Desc:  "A person description",
+			ID:        102,
+			Name:      "Foo",
+			Level:     31,
+			Desc:      "A person description",
+			UpdatedBy: time.Now(),
 		}
 		b, err := json.Marshal(&p)
 		assert.NoError(t, err)
@@ -297,5 +329,33 @@ func TestJsonMarshalTags(t *testing.T) {
 		b, err := json.Marshal(&p)
 		assert.NoError(t, err)
 		t.Log("json:", string(b))
+	})
+}
+
+// Demo: Reg Exp
+
+func TestRegExpMatch(t *testing.T) {
+	var emailRegex = regexp.MustCompile(`^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$`)
+
+	t.Run("validate email", func(t *testing.T) {
+		ok := emailRegex.MatchString("xxxx@google.com")
+		t.Log("is matched:", ok)
+
+		ok = emailRegex.MatchString("google.com")
+		t.Log("is matched:", ok)
+	})
+}
+
+func TestRegExpFind(t *testing.T) {
+	var idRegex = regexp.MustCompile(`ID:(\d+)`)
+
+	t.Run("find in long content", func(t *testing.T) {
+		longContent := "IDs,ID:001,ID:002,ID:003,ID:004,ID:005,ID:006"
+		matches := idRegex.FindStringSubmatch(longContent)
+		// 这里 id 引用整个 longContent
+		// id := matches[1]
+
+		id := strings.Clone(matches[1])
+		t.Log("1st matched id:", id)
 	})
 }
