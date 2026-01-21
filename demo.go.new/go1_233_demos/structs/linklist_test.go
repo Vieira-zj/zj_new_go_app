@@ -8,7 +8,7 @@ func TestLinkedList(t *testing.T) {
 		for i := 3; i <= 10; i++ {
 			l.Add(i)
 		}
-		for v := range l.AllValues() {
+		for v := range l.Iter() {
 			t.Logf("value: %d", v)
 		}
 	})
@@ -19,7 +19,7 @@ func TestLinkedList(t *testing.T) {
 			l.Add(i)
 		}
 
-		for i, v := range l.AllItems() {
+		for i, v := range l.Enumerate() {
 			t.Logf("index: %d, value: %d", i, v)
 		}
 	})
@@ -32,14 +32,14 @@ func TestSwapLinkedList(t *testing.T) {
 	}
 
 	t.Log("before swap:")
-	for v := range l.AllValues() {
+	for v := range l.Iter() {
 		t.Logf("value: %d", v)
 	}
 
 	result := SwapLinkedList(l)
 
 	t.Log("after swap:")
-	for v := range result.AllValues() {
+	for v := range result.Iter() {
 		t.Logf("value: %d", v)
 	}
 }
