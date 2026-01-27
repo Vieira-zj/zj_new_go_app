@@ -12,7 +12,31 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/mmap"
+
+	"zjin.goapp.demo/utils"
 )
+
+// case: utils
+
+func TestGetMimeType(t *testing.T) {
+	// image mime types:
+	// image/png, image/jpeg, image/gif, image/webp and application/octet-stream (unknown)
+
+	t.Run("get image mime type by ext", func(t *testing.T) {
+		fpath := "/tmp/test/image.png"
+		mimeType := utils.GetMimeTypeByExt(fpath)
+		t.Log("mime type from ext:", mimeType)
+	})
+
+	t.Run("get image mime type", func(t *testing.T) {
+		fpath := "/tmp/test/image"
+		mimeType, err := utils.GetMimeType(fpath)
+		assert.NoError(t, err)
+		t.Log("mime type:", mimeType)
+	})
+}
+
+// case: buffer read/write
 
 func TestBufferedReadWrite(t *testing.T) {
 	const limit = 16
@@ -68,7 +92,7 @@ func TestStreamReadByScanner(t *testing.T) {
 	t.Log("file scan finished")
 }
 
-// read file by mmap
+// case: read file by mmap
 
 func TestReadByMmap(t *testing.T) {
 	// 使用 mmap 的方式, 将磁盘中的文件映射到内存中直接访问, 减少了内核空间与用户空间数据的复制
