@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -84,4 +85,51 @@ func TestChannel(t *testing.T) {
 		time.Sleep(100 * time.Millisecond) // wait go routine finish
 		t.Log("finished")
 	})
+}
+
+// Sync Once
+
+func TestSyncOnceValue(t *testing.T) {
+	calculate := sync.OnceValue(func() int {
+		fmt.Println("some complex calculation")
+		sum := 0
+		for i := range 100_000 {
+			sum += i
+		}
+		return sum
+	})
+
+	wg := sync.WaitGroup{}
+	for i := range 5 {
+		wg.Add(1)
+		go func(idx int) {
+			t.Logf("run at %d, result: %d", idx, calculate())
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+	t.Log("finished")
+}
+
+func TestSyncOnceValues(t *testing.T) {
+	readFile := sync.OnceValues(func() ([]byte, error) {
+		fmt.Println("read file")
+		return os.ReadFile("/tmp/test/output.json")
+	})
+
+	wg := sync.WaitGroup{}
+	for i := range 3 {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			b, err := readFile()
+			if err != nil {
+				fmt.Println("read file failed:", err)
+				return
+			}
+			t.Logf("run at %d, read total bytes: %d", idx, len(b))
+		}(i)
+	}
+	wg.Wait()
+	t.Log("finished")
 }
