@@ -8,6 +8,34 @@ import (
 	"strings"
 )
 
+func SetStructField(obj any, name string, value any) error {
+	v := reflect.ValueOf(obj)
+	if v.Kind() != reflect.Pointer {
+		return fmt.Errorf("input object must be a pointer")
+	}
+
+	v = v.Elem()
+	if v.Kind() != reflect.Struct {
+		return fmt.Errorf("input object must point to a struct")
+	}
+
+	field := v.FieldByName(name)
+	if !field.IsValid() { // 检查 字段是否存在
+		return fmt.Errorf("field %s is not found", name)
+	}
+	if !field.CanSet() { // 检查 字段是否可设置
+		return fmt.Errorf("field %s cannot be set", name)
+	}
+
+	fieldValue := reflect.ValueOf(value)
+	if field.Type() != fieldValue.Type() { // 检查 类型是否匹配
+		return fmt.Errorf("type mismatch: field_type=%v, value_type=%v", field.Type(), fieldValue.Type())
+	}
+
+	field.Set(fieldValue)
+	return nil
+}
+
 const (
 	added = iota + 1
 	removed
