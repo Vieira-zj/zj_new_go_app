@@ -24,6 +24,52 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Demo: Struct
+
+type RectanglePb struct {
+	Width  *int32
+	Height *int32
+}
+
+func (r *RectanglePb) GetWidth() int32 {
+	if r == nil || r.Width == nil {
+		return 0
+	}
+	return *r.Width
+}
+
+func (r *RectanglePb) GetHeight() int32 {
+	if r == nil || r.Height == nil {
+		return 0
+	}
+	return *r.Height
+}
+
+type RectanglePbWrapped struct {
+	*RectanglePb
+}
+
+func (w *RectanglePbWrapped) GetArea() int32 {
+	if w == nil {
+		return 0
+	}
+	return w.GetWidth() * w.GetHeight()
+}
+
+func TestRectanglePbWrapped(t *testing.T) {
+	w, h := int32(10), int32(20)
+	r := &RectanglePb{
+		Width:  &w,
+		Height: &h,
+	}
+	wrapped := &RectanglePbWrapped{
+		RectanglePb: r,
+	}
+
+	t.Logf("width: %d, height: %d", wrapped.GetWidth(), wrapped.GetHeight())
+	t.Log("area:", wrapped.GetArea())
+}
+
 // Demo: Common Utils
 
 type testNumbers []string
@@ -237,6 +283,10 @@ func TestTimeUtil(t *testing.T) {
 }
 
 func TestOsUtil(t *testing.T) {
+	t.Run("os tmp dir", func(t *testing.T) {
+		t.Log("tmp dir:", os.TempDir())
+	})
+
 	t.Run("os exec", func(t *testing.T) {
 		path, err := os.Executable()
 		assert.NoError(t, err)
