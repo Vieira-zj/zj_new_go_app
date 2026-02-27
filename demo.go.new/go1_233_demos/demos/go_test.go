@@ -10,6 +10,7 @@ import (
 	"maps"
 	"math"
 	"os"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strconv"
@@ -301,6 +302,20 @@ func TestOsUtil(t *testing.T) {
 		b, err := root.ReadFile("output.json")
 		assert.NoError(t, err)
 		t.Log("read file:\n", string(b))
+	})
+}
+
+func TestFilePathUtil(t *testing.T) {
+	t.Run("search files in dir", func(t *testing.T) {
+		// glob 不支持多级目录
+		dir := "/Users/jinzheng/Downloads/tmps/"
+		names, err := filepath.Glob(dir + "*.yml")
+		assert.NoError(t, err)
+
+		t.Log("yml files:")
+		for _, name := range names {
+			t.Log(name)
+		}
 	})
 }
 
