@@ -2,6 +2,7 @@ package utils
 
 import (
 	"runtime"
+	"sync"
 	"sync/atomic"
 )
 
@@ -40,4 +41,33 @@ func (l *SpinLock) Lock() {
 
 func (l *SpinLock) Unlock() {
 	atomic.StoreInt32(&l.flag, 0)
+}
+
+// Generic Sync Pool
+// 在泛型池中建议存储指针类型 (如 *MyStruct), 因为 sync.Pool 存储值类型 (Value Type) 时仍会触发逃逸分析到堆上的分配, 无法完全规避 GC.
+
+type SyncPool[T any] struct {
+	internal sync.Pool
+}
+
+func NewSyncPool[T any](alloc func() T) *SyncPool[T] {
+	return &SyncPool[T]{
+		internal: sync.Pool{
+			New: func() any {
+				return alloc()
+			},
+		},
+	}
+}
+
+func (p *SyncPool[T]) Get() T {
+	val, _ := p.internal.Get().(T)
+	return val
+}
+
+func (p *SyncPool[T]) Put(x T, reset func(T)) {
+	if reset != nil {
+		reset(x)
+	}
+	p.internal.Put(x)
 }
