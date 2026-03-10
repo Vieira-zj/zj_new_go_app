@@ -338,7 +338,7 @@ func TestErrorsUtil(t *testing.T) {
 		}
 	})
 
-	t.Run("error type check", func(t *testing.T) {
+	t.Run("unwrap error", func(t *testing.T) {
 		if _, err := os.Open("non_existing_file.txt"); err != nil {
 			if pathErr, ok := err.(*fs.PathError); ok {
 				t.Log("failed at path:", pathErr.Path)
@@ -348,7 +348,8 @@ func TestErrorsUtil(t *testing.T) {
 		}
 	})
 
-	t.Run("error type as check", func(t *testing.T) {
+	t.Run("unwrap error by as", func(t *testing.T) {
+		// check error type, if matched, then unwrap error and save in 'pathErr' (impl by Unwrap())
 		var pathErr *fs.PathError
 		// go 1.26: errors.AsType[*fs.PathError](err)
 		if _, err := os.Open("non_existing_file.txt"); err != nil {
@@ -373,7 +374,7 @@ func TestJsonMarshalTags(t *testing.T) {
 		UpdatedBy time.Time `json:"update_by,omitzero"`
 	}
 
-	t.Run("json marshal with tags", func(t *testing.T) {
+	t.Run("marshal with tag fields", func(t *testing.T) {
 		p := Person{
 			ID:        102,
 			Name:      "Foo",
@@ -386,7 +387,7 @@ func TestJsonMarshalTags(t *testing.T) {
 		t.Log("json:", string(b))
 	})
 
-	t.Run("json marshal with omit tags", func(t *testing.T) {
+	t.Run("marshal without tag fields", func(t *testing.T) {
 		p := Person{
 			ID:   102,
 			Name: "Foo",
@@ -395,6 +396,32 @@ func TestJsonMarshalTags(t *testing.T) {
 		assert.NoError(t, err)
 		t.Log("json:", string(b))
 	})
+}
+
+func TestJsonOmitTag(t *testing.T) {
+	// 精确控制零值用 omitzero, 常规空值忽略用 omitempty
+	// 通过 IsZero() 自定义零值判断
+	type Data struct {
+		Field1 string    `json:"field1,omitempty"` // omit
+		Field2 string    `json:"field2,omitzero"`  // omit
+		Time1  time.Time `json:"time1,omitempty"`  // "time1": "0001-01-01T00:00:00Z"
+		Time2  time.Time `json:"time2,omitzero"`   // omit
+		Slice1 []int     `json:"slice1,omitempty"` // omit
+		Slice2 []int     `json:"slice2,omitzero"`  // "slice2": []
+	}
+
+	data := Data{
+		Field1: "",
+		Field2: "",
+		Time1:  time.Time{},
+		Time2:  time.Time{},
+		Slice1: []int{},
+		Slice2: []int{},
+	}
+
+	b, err := json.MarshalIndent(data, "", "  ")
+	assert.NoError(t, err)
+	t.Logf("marshal results:\n%s", b)
 }
 
 // Demo: Reg Exp
