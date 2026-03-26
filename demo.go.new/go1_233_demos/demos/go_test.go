@@ -71,15 +71,9 @@ func TestRectanglePbWrapped(t *testing.T) {
 	t.Log("area:", wrapped.GetArea())
 }
 
-// Demo: Common Utils
+// Demo: Common
 
-type testNumbers []string
-
-func (n *testNumbers) AppendOne(num string) {
-	*n = append(*n, num) // here, need to use pointer
-}
-
-func TestCommonUtils(t *testing.T) {
+func TestCalculation(t *testing.T) {
 	t.Run("minus uint", func(t *testing.T) {
 		a, b := uint32(1), uint32(10)
 		t.Log("minus uint32:", int(a-b)) // it will be overflow
@@ -97,7 +91,37 @@ func TestCommonUtils(t *testing.T) {
 		t.Log("round with 2 points:", strconv.FormatFloat(f, 'f', 2, 64))
 		t.Log("round with 3 points:", strconv.FormatFloat(f, 'f', 3, 64))
 	})
+}
 
+func TestVariableOp(t *testing.T) {
+	toString := func(s any) string {
+		// return s.(string) // panic: interface conversion
+		if ret, ok := s.(string); ok {
+			return ret
+		}
+		return "default"
+	}
+
+	t.Run("case1: type checking", func(t *testing.T) {
+		i := 1
+		t.Log("string:", toString(&i))
+	})
+
+	t.Run("case2: type checking", func(t *testing.T) {
+		type CtxKey string
+		ctx := context.TODO()
+		val := ctx.Value(CtxKey("id")) // interface{} nil
+		t.Log("string:", toString(val))
+	})
+}
+
+type testNumbers []string
+
+func (n *testNumbers) AppendOne(num string) {
+	*n = append(*n, num) // here, need to use pointer
+}
+
+func TestSliceOp(t *testing.T) {
 	t.Run("self type slice append", func(t *testing.T) {
 		numbers := testNumbers([]string{"1", "2"})
 		numbers.AppendOne("11")
@@ -128,23 +152,11 @@ func TestCommonUtils(t *testing.T) {
 		}
 		t.Log("slice:", s)
 	})
-
-	t.Run("clear slice and map", func(t *testing.T) {
-		s := []int{1, 2, 3, 4, 5}
-		clear(s)
-		assert.Len(t, s, 5)
-		t.Log("slice after clear:", s)
-
-		m := map[string]int{"one": 1, "two": 2, "three": 3}
-		clear(m)
-		assert.Len(t, m, 0)
-		t.Log("map after clear:", m)
-	})
 }
 
-// Demo: Testing Mod
+// Demo: Testing Mods
 
-func TestSyncDemo(t *testing.T) {
+func TestSyncRunTest(t *testing.T) {
 	t.Run("run goroutine in synctest", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			for i := range 3 {
@@ -182,7 +194,7 @@ func TestSyncDemo(t *testing.T) {
 	})
 }
 
-func TestQuickDemo(t *testing.T) {
+func TestQuickCheck(t *testing.T) {
 	config := quick.Config{
 		MaxCount: 1000,
 	}
@@ -198,7 +210,19 @@ func TestQuickDemo(t *testing.T) {
 
 // Demo: Built-In Mods
 
-func TestCmpUtil(t *testing.T) {
+func TestBuiltInUtils(t *testing.T) {
+	t.Run("clear slice and map", func(t *testing.T) {
+		s := []int{1, 2, 3, 4, 5}
+		clear(s)
+		assert.Len(t, s, 5)
+		t.Log("slice after clear:", s)
+
+		m := map[string]int{"one": 1, "two": 2, "three": 3}
+		clear(m)
+		assert.Len(t, m, 0)
+		t.Log("map after clear:", m)
+	})
+
 	t.Run("cmp or", func(t *testing.T) {
 		// 返回第一个非空字符串
 		result := cmp.Or(os.Getenv("SOME_VARIABLE"), "default")
@@ -363,6 +387,24 @@ func TestErrorsUtil(t *testing.T) {
 }
 
 // Demo: Json
+
+func TestJsonUnmarshalPartly(t *testing.T) {
+	type Addr struct {
+		Country string `json:"country"`
+		City    string `json:"city"`
+	}
+	type Person struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+		Addr Addr   `json:"addr"`
+	}
+
+	p := Person{ID: 101, Name: "Foo"}
+	addr := `{"addr":{"country":"cn","city":"wuhan"}}`
+	err := json.Unmarshal([]byte(addr), &p)
+	assert.NoError(t, err)
+	t.Logf("person: %+v", p)
+}
 
 func TestJsonMarshalTags(t *testing.T) {
 	type Person struct {
