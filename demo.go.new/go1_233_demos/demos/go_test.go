@@ -11,6 +11,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"slices"
 	"strconv"
@@ -115,15 +116,15 @@ func TestVariableOp(t *testing.T) {
 	})
 }
 
-type testNumbers []string
+type MyNumbers []string
 
-func (n *testNumbers) AppendOne(num string) {
+func (n *MyNumbers) AppendOne(num string) {
 	*n = append(*n, num) // here, need to use pointer
 }
 
 func TestSliceOp(t *testing.T) {
 	t.Run("self type slice append", func(t *testing.T) {
-		numbers := testNumbers([]string{"1", "2"})
+		numbers := MyNumbers([]string{"1", "2"})
 		numbers.AppendOne("11")
 		numbers.AppendOne("12")
 		t.Log("numbers:", numbers)
@@ -151,6 +152,41 @@ func TestSliceOp(t *testing.T) {
 			s = s[1:]
 		}
 		t.Log("slice:", s)
+	})
+}
+
+// Demo: Nil Check
+
+type MyError struct {
+	Code    int
+	Message string
+}
+
+func (e *MyError) Error() string {
+	return fmt.Sprintf("code=%d|message=%s", e.Code, e.Message)
+}
+
+var _ error = (*MyError)(nil)
+
+func getMyError() error {
+	var err *MyError
+	return err
+}
+
+func TestNilValidate(t *testing.T) {
+	t.Run("nil validate", func(t *testing.T) {
+		var err1 error
+		val := reflect.ValueOf(err1)
+		t.Logf("err1 == nil:%v, is_valid:%v", err1 == nil, val.IsValid())
+
+		var err2 *MyError
+		val = reflect.ValueOf(err2)
+		t.Logf("err1 == nil:%v, is_valid:%v, is_nil:%v, type:%v", err2 == nil, val.IsValid(), val.IsNil(), val.Type())
+
+		// Go 的接口由两部分组成, 类型 (type) + 值 (value)
+		err3 := getMyError()
+		val = reflect.ValueOf(err3)
+		t.Logf("err3 == nil:%v, is_nil:%v, type:%v", err3 == nil, val.IsNil(), val.Type())
 	})
 }
 
