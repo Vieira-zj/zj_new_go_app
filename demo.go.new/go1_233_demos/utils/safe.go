@@ -44,6 +44,7 @@ func (l *SpinLock) Unlock() {
 }
 
 // Generic Sync Pool
+//
 // 在泛型池中建议存储指针类型 (如 *MyStruct), 因为 sync.Pool 存储值类型 (Value Type) 时仍会触发逃逸分析到堆上的分配, 无法完全规避 GC.
 
 type SyncPool[T any] struct {
