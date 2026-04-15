@@ -29,18 +29,23 @@ func (c *SafeCounter) Value() int32 {
 
 // SpinLock is a simple spin lock impl by CAS.
 
+const (
+	SpinUnlocked = iota
+	SpinLocked
+)
+
 type SpinLock struct {
 	flag int32
 }
 
 func (l *SpinLock) Lock() {
-	for !atomic.CompareAndSwapInt32(&l.flag, 0, 1) {
+	for !atomic.CompareAndSwapInt32(&l.flag, SpinUnlocked, SpinLocked) {
 		runtime.Gosched()
 	}
 }
 
 func (l *SpinLock) Unlock() {
-	atomic.StoreInt32(&l.flag, 0)
+	atomic.StoreInt32(&l.flag, SpinUnlocked)
 }
 
 // Generic Sync Pool
