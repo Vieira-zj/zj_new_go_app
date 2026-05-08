@@ -3,6 +3,8 @@ package structs
 import (
 	"container/heap"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPriorityQueue(t *testing.T) {
@@ -20,7 +22,8 @@ func TestPriorityQueue(t *testing.T) {
 			heap.Push(&pq, task)
 		}
 		for pq.Len() > 0 {
-			task := heap.Pop(&pq).(*Task)
+			task, ok := heap.Pop(&pq).(*Task)
+			assert.True(t, ok)
 			t.Logf("processing task: %s (priority=%d)\n", task.ID, task.Priority)
 		}
 	})
@@ -31,7 +34,8 @@ func TestPriorityQueue(t *testing.T) {
 			pq.Push(task)
 		}
 		for pq.Len() > 0 {
-			task := pq.Pop().(*Task)
+			task, ok := pq.Pop().(*Task)
+			assert.True(t, ok)
 			t.Logf("processing task: %s (priority=%d)\n", task.ID, task.Priority)
 		}
 	})
