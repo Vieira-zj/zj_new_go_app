@@ -2,7 +2,6 @@ package demos
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"testing"
 	"time"
@@ -35,6 +34,9 @@ func TestDecimalCalculations(t *testing.T) {
 func TestSingleFlightDemo(t *testing.T) {
 	callCount := 0
 	mockFetchData := func(key string) (string, error) {
+		if len(key) == 0 {
+			return "", fmt.Errorf("key is empty")
+		}
 		callCount++
 		fmt.Printf("fetching data for key '%s' from origin (call #%d)...\n", key, callCount)
 		time.Sleep(500 * time.Millisecond)
@@ -60,5 +62,5 @@ func TestSingleFlightDemo(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-	log.Printf("total calls to fetch data: %d", callCount)
+	t.Logf("total calls to fetch data: %d", callCount)
 }

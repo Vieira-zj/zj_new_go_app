@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
 	"math"
@@ -282,13 +283,40 @@ func TestSlicesUtil(t *testing.T) {
 		assert.False(ok)
 	})
 
-	t.Run("sort uint32 slice", func(t *testing.T) {
+	t.Run("slices sort", func(t *testing.T) {
 		s := []uint32{21, 22, 1, 2, 3, 4}
 		slices.SortFunc(s, func(a, b uint32) int {
 			// return int(a - b) // it will be overflow
 			return cmp.Compare(a, b)
 		})
 		t.Log("sorted uint32 slice:", s)
+	})
+
+	t.Run("slices grow", func(t *testing.T) {
+		s := []int{11, 12, 13}
+
+		limit := 6
+		s = slices.Grow(s, limit)
+
+		for i := range limit {
+			s = append(s, i+1)
+		}
+		t.Log("slice after grow:", s)
+	})
+
+	t.Run("get array from slices", func(t *testing.T) {
+		getArray := func(s []int) ([3]int, error) {
+			if len(s) < 3 {
+				return [3]int{}, fmt.Errorf("slice too short: %d", len(s))
+			}
+			// 返回复制 slice 值. 后面修改 s, 不会影响返回的数组
+			return [3]int(s[:3]), nil
+		}
+
+		s := []int{1, 2, 3, 4, 5}
+		result, err := getArray(s)
+		assert.NoError(t, err)
+		t.Log("array:", result)
 	})
 }
 
@@ -419,6 +447,12 @@ func TestErrorsUtil(t *testing.T) {
 				t.Log(err)
 			}
 		}
+	})
+
+	t.Run("errors join", func(t *testing.T) {
+		err := errors.Join(io.ErrClosedPipe, io.ErrUnexpectedEOF, context.Canceled)
+		t.Log("joined error:", err)
+		t.Log("is cannceled error:", errors.Is(err, context.Canceled))
 	})
 }
 
