@@ -536,6 +536,30 @@ func TestJsonOmitTag(t *testing.T) {
 	t.Logf("marshal results:\n%s", b)
 }
 
+func TestJsonStreamRead(t *testing.T) {
+	jsonStreamReader := func() io.Reader {
+		pr, pw := io.Pipe()
+		// pipe 生产者和消费者必须身处不同的 goroutine
+		go func() {
+			defer pr.Close()
+
+			data := map[string]string{
+				"status":  "ok",
+				"message": "processing large stream ...",
+			}
+			if err := json.NewEncoder(pw).Encode(data); err != nil {
+				pw.CloseWithError(err)
+			}
+		}()
+		return pr
+	}
+
+	r := jsonStreamReader()
+	b, err := io.ReadAll(r)
+	assert.ErrorIs(t, err, io.ErrClosedPipe)
+	t.Logf("result: %s", b)
+}
+
 // Demo: Reg Exp
 
 func TestRegExpMatch(t *testing.T) {
