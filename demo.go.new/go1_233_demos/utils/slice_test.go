@@ -7,6 +7,24 @@ import (
 	"zjin.goapp.demo/utils"
 )
 
+func TestSliceToMap(t *testing.T) {
+	type Student struct {
+		ID   int
+		Name string
+	}
+
+	students := []Student{
+		{101, "Foo"},
+		{103, "Bar"},
+		{112, "Jon"},
+		{106, "James"},
+	}
+	results := utils.SliceToMap(students, func(s Student) string {
+		return s.Name
+	})
+	t.Logf("map results: %+v", results)
+}
+
 func TestSliceDiff(t *testing.T) {
 	type args struct {
 		s1 []string

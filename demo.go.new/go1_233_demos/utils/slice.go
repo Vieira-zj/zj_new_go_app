@@ -21,6 +21,15 @@ func SliceDistinct[T comparable](s []T) []T {
 	return results
 }
 
+// SliceToMap returns map for slice of structs by spec key.
+func SliceToMap[K comparable, V any](s []V, keyFunc func(V) K) map[K]V {
+	m := make(map[K]V, len(s))
+	for _, v := range s {
+		m[keyFunc(v)] = v
+	}
+	return m
+}
+
 // Differences between two slices, including added, removed, and matched elements.
 
 type SliceDiffs[T comparable] struct {
