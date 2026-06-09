@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"iter"
 	"mime"
 	"net/http"
 	"os"
@@ -20,6 +22,24 @@ func StreamRead(src io.Reader, dst io.Writer) error {
 	buf := make([]byte, 4*1024) // reusable 4k buffer
 	_, err := io.CopyBuffer(dst, src, buf)
 	return err
+}
+
+func ReadLargeFile(path string) iter.Seq[string] {
+	return func(yield func(string) bool) {
+		f, err := os.Open(path)
+		if err != nil {
+			fmt.Printf("open file failed: %v", err)
+			return
+		}
+		defer f.Close()
+
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			if !yield(scanner.Text()) {
+				return
+			}
+		}
+	}
 }
 
 func GetMimeType(filePath string) (string, error) {
