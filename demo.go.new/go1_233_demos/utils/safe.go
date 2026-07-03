@@ -77,3 +77,35 @@ func (p *SyncPool[T]) Put(x T, reset func(T)) {
 	}
 	p.internal.Put(x)
 }
+
+// SafeConfig thread-safe config by using atomic int and value.
+
+type ConnConfig struct {
+	Timeout int
+	MaxConn int
+}
+
+type SafeConfig struct {
+	hits  atomic.Int32
+	value atomic.Value
+}
+
+func (c *SafeConfig) AddHit() {
+	c.hits.Add(1)
+}
+
+func (c *SafeConfig) GetHits() int32 {
+	return c.hits.Load()
+}
+
+func (c *SafeConfig) SetConnConfig(connCfg *ConnConfig) {
+	c.value.Store(connCfg)
+}
+
+func (c *SafeConfig) GetConnConfig() *ConnConfig {
+	connCfg, ok := c.value.Load().(*ConnConfig)
+	if !ok {
+		return nil
+	}
+	return connCfg
+}
