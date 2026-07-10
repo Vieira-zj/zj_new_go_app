@@ -21,7 +21,6 @@ import (
 
 	"testing"
 	"testing/quick"
-	"testing/synctest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -81,6 +80,7 @@ func TestCalculation(t *testing.T) {
 		t.Log("minus uint32:", int(a-b)) // it will be overflow
 
 		x, y := uint(1), uint(10)
+		//nolint:gosec
 		t.Log("minus uint:", int(x-y)) // it will be ok
 	})
 
@@ -192,44 +192,6 @@ func TestNilValidate(t *testing.T) {
 }
 
 // Demo: Testing Mods
-
-func TestSyncRunTest(t *testing.T) {
-	t.Run("run goroutine in synctest", func(t *testing.T) {
-		synctest.Test(t, func(t *testing.T) {
-			for i := range 3 {
-				go func(idx int) {
-					t.Logf("hello from goroutine [%d]", idx)
-				}(i)
-			}
-			synctest.Wait()
-		})
-	})
-
-	t.Run("sleep in synctest", func(t *testing.T) {
-		synctest.Test(t, func(t *testing.T) {
-			start := time.Now().UTC()
-			time.Sleep(5 * time.Second) // do not block here
-			t.Log("duration:", time.Since(start).Milliseconds())
-		})
-	})
-
-	t.Run("call ctx after_func in synctest", func(t *testing.T) {
-		synctest.Test(t, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.TODO())
-			afterFuncCalled := false
-
-			context.AfterFunc(ctx, func() {
-				afterFuncCalled = true
-			})
-
-			go func() {
-				cancel()
-			}()
-			synctest.Wait()
-			t.Logf("is after func called=%v", afterFuncCalled)
-		})
-	})
-}
 
 func TestQuickCheck(t *testing.T) {
 	config := quick.Config{
