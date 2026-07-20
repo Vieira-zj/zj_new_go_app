@@ -291,6 +291,7 @@ func TestSlicesSort(t *testing.T) {
 			{"Alice", 95},
 			{"Bob", 80},
 		}
+
 		slices.SortFunc(users, func(a, b User) int {
 			return cmp.Or(
 				cmp.Compare(a.Score, b.Score),
