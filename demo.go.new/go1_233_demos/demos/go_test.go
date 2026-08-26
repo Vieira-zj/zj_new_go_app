@@ -152,6 +152,15 @@ func TestSliceOp(t *testing.T) {
 		}
 		t.Log("slice:", s)
 	})
+
+	t.Run("slice op: clip", func(t *testing.T) {
+		data := []int{1, 2, 3, 4, 5}
+		// 截取前 3 个元素, 并将 cap 收缩至与 len 相等
+		sub := slices.Clip(data[:3])
+		// append 会安全地触发新底层数组分配, 绝不污染 data
+		result := append(sub, []int{11, 12}...)
+		t.Log("sub slice with append:", result)
+	})
 }
 
 // Demo: Nil Check

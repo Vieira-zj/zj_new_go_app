@@ -1,11 +1,23 @@
 package utils
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 )
 
-func SliceDistinct[T comparable](s []T) []T {
+func MergeSlices[T comparable](chunks [][]T) []T {
+	results := make([]T, 0)
+	for _, chunk := range chunks {
+		// 保证至少能容纳当前 chunk 长度的额外容量
+		// Grow 保留了原切片的长度不变
+		results = slices.Grow(results, len(chunk))
+		results = append(results, chunk...)
+	}
+	return results
+}
+
+func DistinctSlice[T comparable](s []T) []T {
 	if len(s) < 2 {
 		return s
 	}
@@ -19,6 +31,12 @@ func SliceDistinct[T comparable](s []T) []T {
 		}
 	}
 	return results
+}
+
+func DistinctSliceV2[T cmp.Ordered](s []T) []T {
+	slices.Sort(s)
+	// 原地消除连续重复元素, 返回有效长度截断后的新切片
+	return slices.Compact(s)
 }
 
 // SliceToMap returns map for slice of structs by spec key.
