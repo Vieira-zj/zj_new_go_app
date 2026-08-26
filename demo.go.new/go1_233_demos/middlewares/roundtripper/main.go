@@ -120,7 +120,8 @@ func retryable(resp *http.Response, err error) bool {
 	if resp == nil {
 		return false
 	}
-	return resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= http.StatusInternalServerError
+	return resp.StatusCode == http.StatusTooManyRequests ||
+		resp.StatusCode >= http.StatusInternalServerError
 }
 
 // Helper

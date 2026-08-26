@@ -16,22 +16,46 @@ import (
 
 // Demo: Json
 
-func TestJsonUnmarshalPartly(t *testing.T) {
-	type Addr struct {
-		Country string `json:"country"`
-		City    string `json:"city"`
-	}
-	type Person struct {
-		ID   int    `json:"id"`
-		Name string `json:"name"`
-		Addr Addr   `json:"addr"`
-	}
+func TestJsonUnmarshal(t *testing.T) {
+	t.Run("json unmarshal part of struct", func(t *testing.T) {
+		type Addr struct {
+			Country string `json:"country"`
+			City    string `json:"city"`
+		}
+		type Person struct {
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+			Addr Addr   `json:"addr"`
+		}
 
-	p := Person{ID: 101, Name: "Foo"}
-	addr := `{"addr":{"country":"cn","city":"wuhan"}}`
-	err := json.Unmarshal([]byte(addr), &p)
-	assert.NoError(t, err)
-	t.Logf("person: %+v", p)
+		p := Person{ID: 101, Name: "Foo"}
+		addr := `{"addr":{"country":"cn","city":"wuhan"}}`
+		err := json.Unmarshal([]byte(addr), &p)
+		assert.NoError(t, err)
+		t.Logf("person: %+v", p)
+	})
+
+	t.Run("json unmarshal inline (flat)", func(t *testing.T) {
+		type BaseInfo struct {
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		}
+		type User struct {
+			BaseInfo        // if omit tag, use as inline
+			Role     string `json:"role"`
+		}
+
+		u := User{
+			Role: "QA",
+			BaseInfo: BaseInfo{
+				ID:   1010,
+				Name: "Foo",
+			},
+		}
+		b, err := json.Marshal(&u)
+		assert.NoError(t, err)
+		t.Log("unmarshal inline:", string(b))
+	})
 }
 
 func TestJsonMarshalTags(t *testing.T) {
