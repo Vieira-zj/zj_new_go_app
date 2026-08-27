@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"iter"
@@ -72,4 +73,32 @@ func GetMimeTypeByExt(path string) string {
 		return mime.TypeByExtension(ext)
 	}
 	return ""
+}
+
+type Config struct {
+	Address string
+}
+
+func LoadConfig(path string) (_ Config, err error) {
+	defer func() {
+		if err != nil {
+			// wrap the error with general info
+			err = fmt.Errorf("load config %q: %w", path, err)
+		}
+	}()
+
+	cfg := Config{}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return cfg, err
+	}
+
+	if err = json.Unmarshal(b, &cfg); err != nil {
+		return cfg, fmt.Errorf("decode JSON: %w", err)
+	}
+	if cfg.Address == "" {
+		return Config{}, fmt.Errorf("invalid config")
+	}
+
+	return cfg, nil
 }

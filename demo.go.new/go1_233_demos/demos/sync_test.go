@@ -144,9 +144,9 @@ func TestSyncOnceValues(t *testing.T) {
 	t.Log("finished")
 }
 
-// Synctest
+// Sync Test
 
-func TestRunWithSyncTest(t *testing.T) {
+func TestRunSynctest(t *testing.T) {
 	t.Run("run goroutines in synctest", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			for i := range 3 {
@@ -194,7 +194,7 @@ func TestRunWithSyncTest(t *testing.T) {
 	})
 }
 
-func TestHttpWithSyncTest(t *testing.T) {
+func TestHttpSynctest(t *testing.T) {
 	// go test -run ^TestHttpWithSyncTest$ zjin.goapp.demo/demos -v -count=1 -timeout=30s
 
 	synctest.Test(t, func(t *testing.T) {
@@ -251,4 +251,22 @@ func TestHttpWithSyncTest(t *testing.T) {
 		assert.Nil(t, err)
 		// synctest.Test 会自动等待所有 goroutine 退出
 	})
+}
+
+// Demo: noCopy
+
+type noCopy struct{}
+
+func (*noCopy) Lock()   {}
+func (*noCopy) Unlock() {}
+
+func TestNoCopyImpl(t *testing.T) {
+	type Counter struct {
+		_     noCopy
+		value int
+	}
+
+	var c Counter
+	x := c
+	t.Log("value:", x.value)
 }
