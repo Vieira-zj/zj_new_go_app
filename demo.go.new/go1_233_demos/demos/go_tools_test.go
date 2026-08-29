@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"runtime"
 	"strings"
 	"sync"
@@ -21,7 +24,40 @@ import (
 
 // Go Built-In Modules
 
-func TestRuntimeHooks(t *testing.T) {
+func TestHttpServe(t *testing.T) {
+	const mockBody = "httptest mock server"
+	helloHandler := func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, mockBody)
+	}
+
+	t.Run("httptest recorder", func(t *testing.T) {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/hello", helloHandler)
+
+		req := httptest.NewRequest(http.MethodGet, "/hello", nil)
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, mockBody, w.Body.String())
+	})
+
+	t.Run("httptest server", func(t *testing.T) {
+		ts := httptest.NewServer(http.HandlerFunc(helloHandler))
+		defer ts.Close()
+
+		resp, err := ts.Client().Get(ts.URL)
+		assert.NoError(t, err)
+		defer resp.Body.Close()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := io.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, mockBody, string(body))
+	})
+}
+
+func TestRuntimeHook(t *testing.T) {
 	// Runtime Hooks
 	// - AddCleanup 负责登记对象不可达后的清理函数
 	// - KeepAlive  标出对象必须保持可达的最后位置
