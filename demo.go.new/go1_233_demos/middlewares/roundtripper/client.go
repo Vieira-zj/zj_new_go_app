@@ -1,40 +1,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
-	"strings"
 	"time"
 )
-
-func main() {
-	url := "http://zj.test.com"
-	req, err := http.NewRequestWithContext(context.TODO(), http.MethodPost, url, strings.NewReader("{}"))
-	if err != nil {
-		panic(fmt.Errorf("new http request failed: %v", err))
-	}
-
-	token := func() string {
-		return "mocked_token"
-	}
-	client := http.Client{
-		Timeout: 3 * time.Second,
-		Transport: Chain(
-			http.DefaultTransport, Logging(), Retry(3), Auth(token),
-		),
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(fmt.Errorf("http request failed: %v", err))
-	}
-	defer resp.Body.Close()
-	b, _ := io.ReadAll(resp.Body)
-	slog.Info("response", slog.Int("status", resp.StatusCode), slog.String("body", string(b)))
-}
 
 // Middlewares
 
