@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/fs"
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -242,5 +245,47 @@ func TestRegExpFind(t *testing.T) {
 
 		id := strings.Clone(matches[1])
 		t.Log("1st matched id:", id)
+	})
+}
+
+// Demo: io/fs
+
+func parseAppConfig(fsys fs.FS, filename string) (conf map[string]any, err error) {
+	f, err := fsys.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(b, &conf)
+	return conf, err
+}
+
+func TestParseAppConfig(t *testing.T) {
+	t.Run("os file system", func(t *testing.T) {
+		tmpFS := os.DirFS("/tmp/test")
+		conf, err := parseAppConfig(tmpFS, "config.json")
+		assert.NoError(t, err)
+		t.Logf("timeout=%v, unit=%v", conf["timeout"], conf["unit"])
+	})
+
+	t.Run("mem file system", func(t *testing.T) {
+		// fstest file path: cannot use abs path (start with "/"), cannot include ".." path element
+		fpath := "config/app.json"
+		// mocked fs for read only case
+		memFS := fstest.MapFS{
+			fpath: &fstest.MapFile{
+				Data: []byte(`{"timeout":3,"unit":"second"}`),
+			},
+		}
+
+		conf, err := parseAppConfig(memFS, fpath)
+		assert.NoError(t, err)
+		t.Logf("timeout=%v, unit=%v", conf["timeout"], conf["unit"])
 	})
 }
