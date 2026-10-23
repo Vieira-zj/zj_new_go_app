@@ -1,4 +1,4 @@
 .DS_Store
 
 lint-report.json
-apps/job/bin/
+bin/

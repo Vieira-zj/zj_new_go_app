@@ -22,10 +22,44 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 )
 
-// Go Built-In Modules
+// Go General Modules
+
+func TestRuntimeHook(t *testing.T) {
+	// Runtime Hooks
+	// - AddCleanup 负责登记对象不可达后的清理函数
+	// - KeepAlive  标出对象必须保持可达的最后位置
+	// - SetFinalizer 留给旧代码维护和少数特殊情况
+
+	t.Run("runtime clearup", func(t *testing.T) {
+		t.Skip()
+
+		type MockFile struct {
+			fd int
+		}
+
+		openFile := func(path string) (*MockFile, error) {
+			fd, err := syscall.Open(path, syscall.O_RDONLY, 0o644)
+			if err != nil {
+				return nil, err
+			}
+
+			f := &MockFile{fd: fd}
+			runtime.AddCleanup(f, func(fd int) {
+				_ = syscall.Close(fd)
+			}, fd)
+			return f, nil
+		}
+
+		_, err := openFile("/tmp/test/out.json")
+		assert.NoError(t, err)
+	})
+}
+
+// Go Module: http
 
 func TestHttpServe(t *testing.T) {
 	const mockBody = "httptest mock server"
+
 	helloHandler := func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, err := fmt.Fprint(w, mockBody)
@@ -60,34 +94,43 @@ func TestHttpServe(t *testing.T) {
 	})
 }
 
-func TestRuntimeHook(t *testing.T) {
-	// Runtime Hooks
-	// - AddCleanup 负责登记对象不可达后的清理函数
-	// - KeepAlive  标出对象必须保持可达的最后位置
-	// - SetFinalizer 留给旧代码维护和少数特殊情况
+func TestHttpApplication(t *testing.T) {
+	const contentVersion = `"demo.v1"`
 
-	t.Run("runtime clearup", func(t *testing.T) {
-		t.Skip()
-
-		type MockFile struct {
-			fd int
-		}
-
-		openFile := func(path string) (*MockFile, error) {
-			fd, err := syscall.Open(path, syscall.O_RDONLY, 0o644)
-			if err != nil {
-				return nil, err
+	onlyGetMidware := func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodGet {
+				w.Header().Set("Allow", "GET")
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
 			}
-
-			f := &MockFile{fd: fd}
-			runtime.AddCleanup(f, func(fd int) {
-				_ = syscall.Close(fd)
-			}, fd)
-			return f, nil
+			next(w, r)
 		}
+	}
 
-		_, err := openFile("/tmp/test/out.json")
-		assert.NoError(t, err)
+	contentHandler := func(w http.ResponseWriter, r *http.Request) {
+		const content = "0123456789abcdefghijklmnopqrstuvwxyz"
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("ETag", contentVersion)
+		http.ServeContent(w, r, "demo.txt", time.Now(), strings.NewReader(content))
+	}
+
+	t.Run("http read content by range", func(t *testing.T) {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/content", onlyGetMidware(contentHandler))
+
+		// bytes=0-499 => 前 500 字节
+		// bytes=500-  => 从偏移量 500 到文件末尾
+		// bytes=-200  => 最后 200 字节
+		// bytes=0-99,900-999 => 开头和结尾各 100 字节
+
+		req := httptest.NewRequest(http.MethodGet, "/content", nil)
+		req.Header.Set("Range", "bytes=10-15")
+		req.Header.Set("If-Range", contentVersion)
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusPartialContent, w.Code)
+		t.Log("response content:", w.Body.String())
 	})
 }
 

@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -274,6 +275,17 @@ func TestParseAppConfig(t *testing.T) {
 	t.Run("os file system", func(t *testing.T) {
 		tmpFS := os.DirFS("/tmp/test")
 		conf, err := parseAppConfig(tmpFS, "config.json")
+		assert.NoError(t, err)
+		t.Logf("timeout=%v, unit=%v", conf["timeout"], conf["unit"])
+	})
+
+	t.Run("fs with tmp dir", func(t *testing.T) {
+		dir := t.TempDir()
+		confPath := filepath.Join(dir, "config.json")
+		err := os.WriteFile(confPath, []byte(`{"timeout":8,"unit":"minute"}`), 0o644)
+		assert.NoError(t, err)
+
+		conf, err := parseAppConfig(os.DirFS(dir), "config.json")
 		assert.NoError(t, err)
 		t.Logf("timeout=%v, unit=%v", conf["timeout"], conf["unit"])
 	})
