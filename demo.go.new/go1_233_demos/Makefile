@@ -10,3 +10,9 @@ build:
 
 run:
 	go run -ldflags="-X 'main.AppVersion=$(app-version)'" main.go
+
+go-lint:
+	golangci-lint run --timeout=8m --output.json.path=lint-report.json ./...
+
+go-linters:
+	golangci-lint help linters

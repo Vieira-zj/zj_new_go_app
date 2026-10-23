@@ -156,7 +156,9 @@ func TestJsonStream02(t *testing.T) {
 		pr, pw := io.Pipe()
 		// pipe 生产者和消费者必须身处不同的 goroutine
 		go func() {
-			defer pr.Close()
+			defer func() {
+				_ = pr.Close()
+			}()
 
 			data := map[string]string{
 				"status":  "ok",
@@ -223,7 +225,7 @@ func TestSetStructField(t *testing.T) {
 // Demo: Reg Exp
 
 func TestRegExpMatch(t *testing.T) {
-	var emailRegex = regexp.MustCompile(`^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$`)
+	emailRegex := regexp.MustCompile(`^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$`)
 
 	t.Run("validate email", func(t *testing.T) {
 		ok := emailRegex.MatchString("xxxx@google.com")
@@ -235,7 +237,7 @@ func TestRegExpMatch(t *testing.T) {
 }
 
 func TestRegExpFind(t *testing.T) {
-	var idRegex = regexp.MustCompile(`ID:(\d+)`)
+	idRegex := regexp.MustCompile(`ID:(\d+)`)
 
 	t.Run("find in long content", func(t *testing.T) {
 		longContent := "IDs,ID:001,ID:002,ID:003,ID:004,ID:005,ID:006"
@@ -255,7 +257,9 @@ func parseAppConfig(fsys fs.FS, filename string) (conf map[string]any, err error
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	b, err := io.ReadAll(f)
 	if err != nil {

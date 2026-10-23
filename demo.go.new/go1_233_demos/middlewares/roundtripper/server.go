@@ -30,7 +30,9 @@ func getServerMux() *http.ServeMux {
 	// curl http://localhost:8081/health
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "ok")
+		if _, err := fmt.Fprintln(w, "ok"); err != nil {
+			slog.Error("http write failed", slog.Any("error", err))
+		}
 	})
 	mux.HandleFunc("/upload", uploadHandler)
 	return mux

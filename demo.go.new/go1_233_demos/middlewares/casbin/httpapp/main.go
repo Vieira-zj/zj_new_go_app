@@ -55,19 +55,25 @@ func loginHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if user, ok := GetSession().GetUser(r.Context()); ok { // get cached login user
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("hello, " + user.Name))
+			if _, err := w.Write([]byte("hello, " + user.Name)); err != nil {
+				log.Printf("http write failed: %v", err)
+			}
 			return
 		}
 
 		user, err := getUserFromContext(r.Context())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			if _, err = w.Write([]byte(err.Error())); err != nil {
+				log.Printf("http write failed: %v", err)
+			}
 			return
 		}
 
 		if user.isAnonymous() {
-			w.Write([]byte("anonymous login"))
+			if _, err = w.Write([]byte("anonymous login")); err != nil {
+				log.Printf("http write failed: %v", err)
+			}
 			return
 		}
 

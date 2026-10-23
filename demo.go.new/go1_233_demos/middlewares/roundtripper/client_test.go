@@ -29,7 +29,9 @@ func TestHttpClientWithRoundTripper(t *testing.T) {
 
 	resp, err := client.Do(req)
 	require.NoError(t, err, "http request failed")
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	b, err := io.ReadAll(resp.Body)
 	require.NoError(t, err, "read response body failed")

@@ -25,7 +25,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to open file: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	stat, err := file.Stat()
 	if err != nil {

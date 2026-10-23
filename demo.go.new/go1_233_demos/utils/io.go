@@ -49,7 +49,9 @@ func ReadLargeFile(path string) iter.Seq[string] {
 			fmt.Printf("open file failed: %v", err)
 			return
 		}
-		defer f.Close()
+		defer func() {
+			_ = f.Close()
+		}()
 
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {

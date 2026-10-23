@@ -44,7 +44,9 @@ func TestBufferedReadWrite(t *testing.T) {
 	path := "/tmp/test/output.json"
 	f, err := os.Open(path)
 	assert.NoError(t, err, "open file failed")
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	// buffered read
 	r := bufio.NewReaderSize(f, 8*1024) // 8KB buffer
@@ -58,9 +60,11 @@ func TestBufferedReadWrite(t *testing.T) {
 
 	// buffered write
 	outPath := "/tmp/test/out.json"
-	outf, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	outf, err := os.OpenFile(outPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 	assert.NoError(t, err, "open output file failed")
-	defer outf.Close()
+	defer func() {
+		_ = outf.Close()
+	}()
 
 	w := bufio.NewWriterSize(outf, 8*1024)
 	n, err := w.Write(b)
@@ -74,7 +78,7 @@ func TestBufferedReadWrite(t *testing.T) {
 
 func TestStreamReadByScanner(t *testing.T) {
 	path := "/tmp/test/out.json"
-	f, err := os.OpenFile(path, os.O_RDONLY, 0644)
+	f, err := os.OpenFile(path, os.O_RDONLY, 0o644)
 	require.NoError(t, err, "open file failed")
 	defer f.Close()
 
@@ -101,7 +105,9 @@ func TestReadByMmap(t *testing.T) {
 	path := "/tmp/test/output.json"
 	mmapf, err := mmap.Open(path) // return ReaderAt, actually bytes in memory
 	require.NoError(t, err, "mmap open file failed")
-	defer mmapf.Close()
+	defer func() {
+		_ = mmapf.Close()
+	}()
 
 	t.Run("read mmap file once", func(t *testing.T) {
 		b := make([]byte, mmapf.Len())

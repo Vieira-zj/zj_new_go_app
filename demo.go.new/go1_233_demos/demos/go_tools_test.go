@@ -28,7 +28,8 @@ func TestHttpServe(t *testing.T) {
 	const mockBody = "httptest mock server"
 	helloHandler := func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, mockBody)
+		_, err := fmt.Fprint(w, mockBody)
+		assert.NoError(t, err)
 	}
 
 	t.Run("httptest recorder", func(t *testing.T) {
@@ -48,7 +49,9 @@ func TestHttpServe(t *testing.T) {
 
 		resp, err := ts.Client().Get(ts.URL)
 		assert.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := io.ReadAll(resp.Body)
@@ -71,7 +74,7 @@ func TestRuntimeHook(t *testing.T) {
 		}
 
 		openFile := func(path string) (*MockFile, error) {
-			fd, err := syscall.Open(path, syscall.O_RDONLY, 0644)
+			fd, err := syscall.Open(path, syscall.O_RDONLY, 0o644)
 			if err != nil {
 				return nil, err
 			}
@@ -147,7 +150,7 @@ func TestSingleFlight(t *testing.T) {
 	t.Logf("total calls to fetch data: %d", callCount)
 }
 
-// Go Tools: Analysis
+// Go Tools: analysis
 
 func NewAnalyzer() *analysis.Analyzer {
 	return &analysis.Analyzer{

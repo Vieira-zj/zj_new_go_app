@@ -217,7 +217,9 @@ func TestHttpSynctest(t *testing.T) {
 			req.Header.Set("Expect", "100-continue")
 			resp, err := tr.RoundTrip(req)
 			assert.Nil(t, err)
-			defer resp.Body.Close()
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 			_, err = io.ReadAll(resp.Body)
 			assert.Nil(t, err)
 		}()

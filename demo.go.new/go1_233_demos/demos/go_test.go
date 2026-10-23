@@ -15,10 +15,9 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"time"
-
 	"testing"
 	"testing/quick"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -437,7 +436,7 @@ func TestErrorsUtil(t *testing.T) {
 		}
 	})
 
-	t.Run("unwrap error by as", func(t *testing.T) {
+	t.Run("unwrap error by as", func(t *testing.T){
 		// check error type, if matched, then unwrap error and save in 'pathErr' (impl by Unwrap())
 		var pathErr *fs.PathError
 		// go 1.26: errors.AsType[*fs.PathError](err)
@@ -453,6 +452,6 @@ func TestErrorsUtil(t *testing.T) {
 	t.Run("errors join", func(t *testing.T) {
 		err := errors.Join(io.ErrClosedPipe, io.ErrUnexpectedEOF, context.Canceled)
 		t.Log("joined error:", err)
-		t.Log("is cannceled error:", errors.Is(err, context.Canceled))
+		t.Log("is canceled error:", errors.Is(err, context.Canceled))
 	})
 }
