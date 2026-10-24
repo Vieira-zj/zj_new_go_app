@@ -73,6 +73,7 @@ func TestHttpServe(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/hello", nil)
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, req)
+		// resp := w.Result()
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, mockBody, w.Body.String())
 	})

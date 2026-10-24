@@ -21,7 +21,18 @@ import (
 // Demo: Json
 
 func TestJsonUnmarshal(t *testing.T) {
-	t.Run("json unmarshal part of struct", func(t *testing.T) {
+	t.Run("unmarshal tmp var", func(t *testing.T) {
+		var user struct {
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		}
+		b := []byte(`{"id":101,"name":"Foo"}`)
+		err := json.Unmarshal(b, &user)
+		assert.NoError(t, err)
+		t.Logf("id=%d, name=%s", user.ID, user.Name)
+	})
+
+	t.Run("unmarshal part of struct", func(t *testing.T) {
 		type Addr struct {
 			Country string `json:"country"`
 			City    string `json:"city"`
@@ -39,7 +50,7 @@ func TestJsonUnmarshal(t *testing.T) {
 		t.Logf("person: %+v", p)
 	})
 
-	t.Run("json unmarshal inline (flat)", func(t *testing.T) {
+	t.Run("unmarshal inline (flat)", func(t *testing.T) {
 		type BaseInfo struct {
 			ID   int    `json:"id"`
 			Name string `json:"name"`

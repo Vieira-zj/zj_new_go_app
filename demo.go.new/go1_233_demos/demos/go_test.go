@@ -25,6 +25,25 @@ import (
 
 // Demo: Struct
 
+func TestStructEmbed(t *testing.T) {
+	type Contact struct {
+		Email string
+		Phone string
+	}
+	type Employee struct {
+		Name string
+		Age  int
+		Contact
+	}
+
+	e := Employee{
+		Name:  "Foo",
+		Age:   39,
+		Email: "xxx@email.com",
+	}
+	t.Logf("name=%s, age=%d, email=%s", e.Name, e.Age, e.Email)
+}
+
 type RectanglePb struct {
 	Width  *int32
 	Height *int32
@@ -55,18 +74,18 @@ func (w *RectanglePbWrapped) GetArea() int32 {
 	return w.GetWidth() * w.GetHeight()
 }
 
-func TestRectanglePbWrapped(t *testing.T) {
-	w, h := int32(10), int32(20)
-	r := &RectanglePb{
-		Width:  &w,
-		Height: &h,
-	}
-	wrapped := &RectanglePbWrapped{
-		RectanglePb: r,
-	}
-
-	t.Logf("width: %d, height: %d", wrapped.GetWidth(), wrapped.GetHeight())
-	t.Log("area:", wrapped.GetArea())
+func TestStructPbWrapped(t *testing.T) {
+	t.Run("rectangle pb wrapped", func(t *testing.T) {
+		w, h := int32(10), int32(20)
+		wrapped := &RectanglePbWrapped{
+			RectanglePb: &RectanglePb{
+				Width:  &w,
+				Height: &h,
+			},
+		}
+		t.Logf("width: %d, height: %d", wrapped.GetWidth(), wrapped.GetHeight())
+		t.Log("area:", wrapped.GetArea())
+	})
 }
 
 // Demo: Common
@@ -436,7 +455,7 @@ func TestErrorsUtil(t *testing.T) {
 		}
 	})
 
-	t.Run("unwrap error by as", func(t *testing.T){
+	t.Run("unwrap error by as", func(t *testing.T) {
 		// check error type, if matched, then unwrap error and save in 'pathErr' (impl by Unwrap())
 		var pathErr *fs.PathError
 		// go 1.26: errors.AsType[*fs.PathError](err)

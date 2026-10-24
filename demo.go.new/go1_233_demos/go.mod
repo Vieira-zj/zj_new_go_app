@@ -1,8 +1,8 @@
 module zjin.goapp.demo
 
-go 1.25
+go 1.27
 
-toolchain go1.25.1
+toolchain go1.27.3
 
 require (
 	github.com/casbin/casbin/v2 v2.107.0

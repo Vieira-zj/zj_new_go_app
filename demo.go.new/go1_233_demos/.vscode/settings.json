@@ -55,7 +55,7 @@
 			"upgrade_dependency": true
 		},
 		"staticcheck": false,
-		"diagnosticsDelay": "500ms",
+		"diagnosticsDelay": "300ms",
 		"diagnosticsTrigger": "Save"
 	},
 

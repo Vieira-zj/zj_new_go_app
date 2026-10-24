@@ -269,6 +269,6 @@ func TestNoCopyImpl(t *testing.T) {
 	}
 
 	var c Counter
-	x := c
+	x := c //nolint:copylocks
 	t.Log("value:", x.value)
 }
