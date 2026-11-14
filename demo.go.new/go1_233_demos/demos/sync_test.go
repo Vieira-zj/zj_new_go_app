@@ -147,18 +147,7 @@ func TestSyncOnceValues(t *testing.T) {
 // Sync Test
 
 func TestRunSynctest(t *testing.T) {
-	t.Run("run goroutines in synctest", func(t *testing.T) {
-		synctest.Test(t, func(t *testing.T) {
-			for i := range 3 {
-				go func(idx int) {
-					t.Logf("hello from goroutine [%d]", idx)
-				}(i)
-			}
-			synctest.Wait()
-		})
-	})
-
-	t.Run("sleep in synctest", func(t *testing.T) {
+	t.Run("synctest sleep", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			const timeout = 5 * time.Second
 			ctx, cancel := context.WithTimeout(t.Context(), timeout)
@@ -166,17 +155,29 @@ func TestRunSynctest(t *testing.T) {
 
 			// 刚创建, 超时还没开始, 当然没超时
 			time.Sleep(timeout - time.Nanosecond)
-			synctest.Wait()
-			require.Nil(t, ctx.Err(), "expect nil")
+			require.Nil(t, ctx.Err(), "expect ctx error is nil")
 
 			// 再等 1 纳秒, 触发超时
-			time.Sleep(time.Nanosecond)
-			synctest.Wait()
-			assert.ErrorIs(t, ctx.Err(), context.DeadlineExceeded, "expect DeadlineExceeded")
+			time.Sleep(time.Nanosecond + 1)
+			// synctest.Sleep(time.Nanosecond)
+			assert.ErrorIs(t, ctx.Err(), context.DeadlineExceeded, "expect ctx deadline")
 		})
 	})
 
-	t.Run("call ctx after_func in synctest", func(t *testing.T) {
+	t.Run("synctest sleep and wait", func(t *testing.T) {
+		// 在气泡内等待时间只放在测试主流程中 (使用 synctest.Wait/synctest.Sleep), goroutine 中则使用普通的 time.Sleep.
+		synctest.Test(t, func(t *testing.T) {
+			got := ""
+			go func() {
+				time.Sleep(time.Second)
+				got = "ok"
+			}()
+			synctest.Sleep(time.Second) // Sleep = time.Sleep + Wait
+			assert.Equal(t, "ok", got)
+		})
+	})
+
+	t.Run("ctx after_func in synctest", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.TODO())
 			afterFuncCalled := false
@@ -186,10 +187,11 @@ func TestRunSynctest(t *testing.T) {
 			})
 
 			go func() {
+				time.Sleep(time.Second)
 				cancel()
 			}()
-			synctest.Wait()
-			t.Logf("is after func called=%v", afterFuncCalled)
+			synctest.Sleep(time.Second)
+			assert.True(t, afterFuncCalled, "want call after func")
 		})
 	})
 }
@@ -253,22 +255,4 @@ func TestHttpSynctest(t *testing.T) {
 		assert.Nil(t, err)
 		// synctest.Test 会自动等待所有 goroutine 退出
 	})
-}
-
-// Demo: noCopy
-
-type noCopy struct{}
-
-func (*noCopy) Lock()   {}
-func (*noCopy) Unlock() {}
-
-func TestNoCopyImpl(t *testing.T) {
-	type Counter struct {
-		_     noCopy
-		value int
-	}
-
-	var c Counter
-	x := c //nolint:copylocks
-	t.Log("value:", x.value)
 }

@@ -79,8 +79,27 @@ func TestHttpServe(t *testing.T) {
 	})
 
 	t.Run("httptest server", func(t *testing.T) {
+		// 启动一个真实的 http server 服务
 		ts := httptest.NewServer(http.HandlerFunc(helloHandler))
 		defer ts.Close()
+
+		resp, err := ts.Client().Get(ts.URL)
+		assert.NoError(t, err)
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := io.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, mockBody, string(body))
+	})
+
+	t.Run("new httptest server", func(t *testing.T) {
+		// 使用内存网络, 不占用真实端口
+		// 通过 t.Cleanup 在测试结束时自动关闭, 无需再写 defer server.Close()
+		// handler 中的 panic 会被报告为测试失败 (t.Errorf)
+		ts := httptest.NewTestServer(t, http.HandlerFunc(helloHandler))
 
 		resp, err := ts.Client().Get(ts.URL)
 		assert.NoError(t, err)

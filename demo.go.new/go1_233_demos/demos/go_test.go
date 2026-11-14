@@ -3,10 +3,7 @@ package demos
 import (
 	"cmp"
 	"context"
-	"errors"
 	"fmt"
-	"io"
-	"io/fs"
 	"maps"
 	"math"
 	"os"
@@ -18,6 +15,7 @@ import (
 	"testing"
 	"testing/quick"
 	"time"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -86,6 +84,43 @@ func TestStructPbWrapped(t *testing.T) {
 		t.Logf("width: %d, height: %d", wrapped.GetWidth(), wrapped.GetHeight())
 		t.Log("area:", wrapped.GetArea())
 	})
+}
+
+// No copy struct
+
+type noCopy struct{}
+
+func (*noCopy) Lock()   {}
+func (*noCopy) Unlock() {}
+
+func TestNoCopyStruct(t *testing.T) {
+	type Counter struct {
+		_     noCopy
+		value int
+	}
+
+	var c Counter
+	x := c //nolint:copylocks
+	t.Log("value:", x.value)
+}
+
+// No compare struct
+
+func TestNoCompareStruct(t *testing.T) {
+	// 声明在结构体的第一行, 作为首个字段
+	// func, slice, map 属于不可比较类型
+	// 长度为 0 的数组 [0]T 在内存布局中属于零大小类型
+	type SafeAccount struct {
+		_    [0]func()
+		ID   int64
+		Name string
+	}
+
+	t.Log("[0]func() size:", unsafe.Sizeof([0]func(){}))
+
+	// s1 := SafeAccount{ID: 1, Name: "Foo"}
+	// s2 := SafeAccount{ID: 1, Name: "Bar"}
+	// t.Log(s1 == s2)
 }
 
 // Demo: Common
@@ -423,54 +458,5 @@ func TestFilePathUtil(t *testing.T) {
 		for _, name := range names {
 			t.Log(name)
 		}
-	})
-}
-
-func TestErrorsUtil(t *testing.T) {
-	t.Run("error is check", func(t *testing.T) {
-		customErr := fmt.Errorf("custom test error")
-		process := func(hasErr bool) error {
-			if hasErr {
-				return customErr
-			}
-			return nil
-		}
-
-		if err := process(true); err != nil {
-			if errors.Is(err, customErr) {
-				t.Log("get custom error")
-			} else {
-				t.Log(err)
-			}
-		}
-	})
-
-	t.Run("unwrap error", func(t *testing.T) {
-		if _, err := os.Open("non_existing_file.txt"); err != nil {
-			if pathErr, ok := err.(*fs.PathError); ok {
-				t.Log("failed at path:", pathErr.Path)
-			} else {
-				t.Log(err)
-			}
-		}
-	})
-
-	t.Run("unwrap error by as", func(t *testing.T) {
-		// check error type, if matched, then unwrap error and save in 'pathErr' (impl by Unwrap())
-		var pathErr *fs.PathError
-		// go 1.26: errors.AsType[*fs.PathError](err)
-		if _, err := os.Open("non_existing_file.txt"); err != nil {
-			if errors.As(err, &pathErr) {
-				t.Log("failed at path:", pathErr.Path)
-			} else {
-				t.Log(err)
-			}
-		}
-	})
-
-	t.Run("errors join", func(t *testing.T) {
-		err := errors.Join(io.ErrClosedPipe, io.ErrUnexpectedEOF, context.Canceled)
-		t.Log("joined error:", err)
-		t.Log("is canceled error:", errors.Is(err, context.Canceled))
 	})
 }

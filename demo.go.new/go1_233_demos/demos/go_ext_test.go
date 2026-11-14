@@ -2,7 +2,10 @@ package demos
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -17,6 +20,75 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// Demo: Error
+
+func TestErrorCheck(t *testing.T) {
+	mockErr := errors.New("mock error")
+
+	t.Run("error type check", func(t *testing.T) {
+		vof := reflect.ValueOf(mockErr)
+		assert.True(t, vof.IsValid())
+		assert.True(t, vof.Kind() == reflect.Pointer)
+		t.Log("kind:", vof.Kind().String())
+	})
+
+	t.Run("error check", func(t *testing.T) {
+		process := func(hasErr bool) error {
+			if hasErr {
+				return mockErr
+			}
+			return nil
+		}
+		err := process(true)
+		assert.True(t, errors.Is(err, mockErr))
+	})
+
+	t.Run("errors join", func(t *testing.T) {
+		err := errors.Join(io.ErrClosedPipe, io.ErrUnexpectedEOF, context.Canceled)
+		fmt.Println("joined errors:\n" + err.Error())
+		assert.True(t, errors.Is(err, context.Canceled))
+	})
+}
+
+type myErr struct {
+	msg string
+}
+
+func (e *myErr) Error() string { return e.msg }
+
+func TestUnwrapError(t *testing.T) {
+	t.Run("unwrap error", func(t *testing.T) {
+		if _, err := os.Open("non_existing_file.txt"); err != nil {
+			if pathErr, ok := err.(*fs.PathError); ok {
+				t.Log("failed at path:", pathErr.Path)
+			} else {
+				t.Log(err)
+			}
+		}
+	})
+
+	t.Run("unwrap error by asType", func(t *testing.T) {
+		// check error type, if matched, then unwrap error and save in 'pathErr' (impl by Unwrap())
+		if _, err := os.Open("non_existing_file.txt"); err != nil {
+			if pathErr, ok := errors.AsType[*fs.PathError](err); ok {
+				t.Log("failed at path:", pathErr.Path)
+			} else {
+				t.Log(err)
+			}
+		}
+	})
+
+	t.Run("umwrap custom error", func(t *testing.T) {
+		err := &myErr{msg: "mock error"} // use ref
+		werr := fmt.Errorf("operation failed: %w", err)
+		assert.True(t, errors.Is(werr, err))
+
+		target, ok := errors.AsType[*myErr](werr)
+		assert.True(t, ok)
+		t.Log("err message:", target.msg)
+	})
+}
 
 // Demo: Json
 
