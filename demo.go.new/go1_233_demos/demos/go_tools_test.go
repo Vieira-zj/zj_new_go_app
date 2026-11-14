@@ -1,17 +1,22 @@
 package demos
 
 import (
+	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/token"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 	"syscall"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -52,6 +57,61 @@ func TestRuntimeHook(t *testing.T) {
 
 		_, err := openFile("/tmp/test/out.json")
 		assert.NoError(t, err)
+	})
+}
+
+// Go Module: io/fs
+
+func parseAppConfig(fsys fs.FS, filename string) (conf map[string]any, err error) {
+	f, err := fsys.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(b, &conf)
+	return conf, err
+}
+
+func TestParseAppConfig(t *testing.T) {
+	t.Run("os file system", func(t *testing.T) {
+		tmpFS := os.DirFS("/tmp/test")
+		conf, err := parseAppConfig(tmpFS, "config.json")
+		assert.NoError(t, err)
+		t.Logf("timeout=%v, unit=%v", conf["timeout"], conf["unit"])
+	})
+
+	t.Run("fs with tmp dir", func(t *testing.T) {
+		dir := t.TempDir()
+		confPath := filepath.Join(dir, "config.json")
+		err := os.WriteFile(confPath, []byte(`{"timeout":8,"unit":"minute"}`), 0o644)
+		assert.NoError(t, err)
+
+		conf, err := parseAppConfig(os.DirFS(dir), "config.json")
+		assert.NoError(t, err)
+		t.Logf("timeout=%v, unit=%v", conf["timeout"], conf["unit"])
+	})
+
+	t.Run("mem file system", func(t *testing.T) {
+		// fstest file path: cannot use abs path (start with "/"), cannot include ".." path element
+		fpath := "config/app.json"
+		// mocked fs for read only case
+		memFS := fstest.MapFS{
+			fpath: &fstest.MapFile{
+				Data: []byte(`{"timeout":3,"unit":"second"}`),
+			},
+		}
+
+		conf, err := parseAppConfig(memFS, fpath)
+		assert.NoError(t, err)
+		t.Logf("timeout=%v, unit=%v", conf["timeout"], conf["unit"])
 	})
 }
 

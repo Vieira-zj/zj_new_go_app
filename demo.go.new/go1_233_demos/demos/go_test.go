@@ -23,23 +23,46 @@ import (
 
 // Demo: Struct
 
-func TestStructEmbed(t *testing.T) {
-	type Contact struct {
-		Email string
-		Phone string
-	}
-	type Employee struct {
-		Name string
-		Age  int
-		Contact
-	}
+type hasId interface {
+	getId() string
+}
 
-	e := Employee{
-		Name:  "Foo",
-		Age:   39,
-		Email: "xxx@email.com",
-	}
-	t.Logf("name=%s, age=%d, email=%s", e.Name, e.Age, e.Email)
+type staff struct {
+	Id   string
+	Name string
+}
+
+func (s staff) getId() string { return s.Id }
+
+type employee struct {
+	Id   string
+	Role string
+}
+
+func (e *employee) getId() string { return e.Id }
+
+func TestStructImpl(t *testing.T) {
+	t.Run("struct impl", func(t *testing.T) {
+		s := staff{
+			Id:   "1",
+			Name: "Foo",
+		}
+		var v any = s
+		w, ok := v.(hasId)
+		assert.True(t, ok)
+		t.Log("id:", w.getId())
+	})
+
+	t.Run("struct ref impl", func(t *testing.T) {
+		e := &employee{
+			Id:   "2",
+			Role: "tester",
+		}
+		var v any = e
+		w, ok := v.(hasId)
+		assert.True(t, ok)
+		t.Log("id:", w.getId())
+	})
 }
 
 type RectanglePb struct {
@@ -84,6 +107,25 @@ func TestStructPbWrapped(t *testing.T) {
 		t.Logf("width: %d, height: %d", wrapped.GetWidth(), wrapped.GetHeight())
 		t.Log("area:", wrapped.GetArea())
 	})
+}
+
+func TestStructEmbed(t *testing.T) {
+	type Contact struct {
+		Email string
+		Phone string
+	}
+	type Employee struct {
+		Name string
+		Age  int
+		Contact
+	}
+
+	e := Employee{
+		Name:  "Foo",
+		Age:   39,
+		Email: "xxx@email.com",
+	}
+	t.Logf("name=%s, age=%d, email=%s", e.Name, e.Age, e.Email)
 }
 
 // No copy struct
@@ -251,7 +293,7 @@ func TestNilValidate(t *testing.T) {
 	})
 }
 
-// Demo: Testing Mods
+// Demo: Testing Modules
 
 func TestQuickCheck(t *testing.T) {
 	config := quick.Config{
@@ -267,7 +309,7 @@ func TestQuickCheck(t *testing.T) {
 	t.Log("done, duration:", time.Since(start).Milliseconds())
 }
 
-// Demo: Built-In Mods
+// Demo: Built-In Modules
 
 func TestBuiltInUtils(t *testing.T) {
 	t.Run("clear slice and map", func(t *testing.T) {
@@ -450,13 +492,15 @@ func TestOsUtil(t *testing.T) {
 func TestFilePathUtil(t *testing.T) {
 	t.Run("search files in dir", func(t *testing.T) {
 		// glob 不支持多级目录
-		dir := "/Users/jinzheng/Downloads/tmps/"
+		dir := filepath.Join(os.Getenv("HOME"), "Downloads/tmp/")
 		names, err := filepath.Glob(dir + "*.yml")
 		assert.NoError(t, err)
 
-		t.Log("yml files:")
-		for _, name := range names {
-			t.Log(name)
+		if len(names) > 0 {
+			t.Log("yml files:")
+			for _, name := range names {
+				t.Log(name)
+			}
 		}
 	})
 }
