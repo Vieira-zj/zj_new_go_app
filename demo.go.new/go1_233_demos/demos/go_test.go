@@ -447,6 +447,13 @@ func TestStringsUtil(t *testing.T) {
 }
 
 func TestTimeUtil(t *testing.T) {
+	t.Run("time parse", func(t *testing.T) {
+		s := "250ms"
+		ti, err := time.ParseDuration(s)
+		assert.NoError(t, err)
+		t.Log("time:", ti.String())
+	})
+
 	t.Run("loop by time ticker", func(t *testing.T) {
 		ctx, cancel := context.WithTimeoutCause(t.Context(), 3*time.Second, fmt.Errorf("timeout exceed"))
 		defer cancel()
@@ -463,7 +470,7 @@ func TestTimeUtil(t *testing.T) {
 				t.Log("after 1 second")
 			}
 		}
-		t.Log("done")
+		t.Log("finished")
 	})
 }
 

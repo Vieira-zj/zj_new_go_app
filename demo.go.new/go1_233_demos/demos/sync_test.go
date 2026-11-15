@@ -148,37 +148,37 @@ func TestSyncOnceValues(t *testing.T) {
 
 func TestRunSynctest(t *testing.T) {
 	t.Run("synctest sleep", func(t *testing.T) {
-		synctest.Test(t, func(t *testing.T) {
+		synctest.Test(t, func(st *testing.T) {
 			const timeout = 5 * time.Second
 			ctx, cancel := context.WithTimeout(t.Context(), timeout)
 			defer cancel()
 
 			// 刚创建, 超时还没开始, 当然没超时
 			time.Sleep(timeout - time.Nanosecond)
-			require.Nil(t, ctx.Err(), "expect ctx error is nil")
+			require.Nil(st, ctx.Err(), "expect ctx error is nil")
 
 			// 再等 1 纳秒, 触发超时
 			time.Sleep(time.Nanosecond + 1)
 			// synctest.Sleep(time.Nanosecond)
-			assert.ErrorIs(t, ctx.Err(), context.DeadlineExceeded, "expect ctx deadline")
+			assert.ErrorIs(st, ctx.Err(), context.DeadlineExceeded, "expect ctx deadline")
 		})
 	})
 
 	t.Run("synctest sleep and wait", func(t *testing.T) {
 		// 在气泡内等待时间只放在测试主流程中 (使用 synctest.Wait/synctest.Sleep), goroutine 中则使用普通的 time.Sleep.
-		synctest.Test(t, func(t *testing.T) {
+		synctest.Test(t, func(st *testing.T) {
 			got := ""
 			go func() {
 				time.Sleep(time.Second)
 				got = "ok"
 			}()
 			synctest.Sleep(time.Second) // Sleep = time.Sleep + Wait
-			assert.Equal(t, "ok", got)
+			assert.Equal(st, "ok", got)
 		})
 	})
 
 	t.Run("ctx after_func in synctest", func(t *testing.T) {
-		synctest.Test(t, func(t *testing.T) {
+		synctest.Test(t, func(st *testing.T) {
 			ctx, cancel := context.WithCancel(context.TODO())
 			afterFuncCalled := false
 
@@ -191,7 +191,7 @@ func TestRunSynctest(t *testing.T) {
 				cancel()
 			}()
 			synctest.Sleep(time.Second)
-			assert.True(t, afterFuncCalled, "want call after func")
+			assert.True(st, afterFuncCalled, "want call after func")
 		})
 	})
 }

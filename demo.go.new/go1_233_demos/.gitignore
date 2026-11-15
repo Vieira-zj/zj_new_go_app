@@ -1,4 +1,4 @@
 .DS_Store
 
-lint-report.json
 bin/
+lint-report.json

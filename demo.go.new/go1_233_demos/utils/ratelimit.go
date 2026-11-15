@@ -9,6 +9,59 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+type Debounce struct {
+	delay   time.Duration
+	eventCh <-chan struct{}
+	fn      func()
+	cancel  context.CancelFunc
+}
+
+func NewDebounce(ctx context.Context, delay time.Duration, eventCh <-chan struct{}, fn func()) (Debounce, error) {
+	if delay < 0 {
+		return Debounce{}, fmt.Errorf("delay must be positive: %s", delay)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	debounce := Debounce{
+		delay:   delay,
+		eventCh: eventCh,
+		fn:      fn,
+		cancel:  cancel,
+	}
+	go debounce.loop(ctx)
+	return debounce, nil
+}
+
+func (d Debounce) Stop() {
+	d.cancel()
+}
+
+func (d Debounce) loop(ctx context.Context) {
+	timer := time.NewTimer(d.delay)
+	timer.Stop()
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println(ctx.Err())
+			return
+		case _, ok := <-d.eventCh:
+			if !ok {
+				return
+			}
+			// Go 1.22 的 Reset 文档要求, 重置之前, 定时器应当已经停止或已经到期, 并且 time.C channel 已经 pop 为空
+			// if !timer.Stop() {
+			// 	<-timer.C
+			// }
+			timer.Reset(d.delay)
+		case <-timer.C:
+			d.fn()
+		}
+	}
+}
+
 // RateLimit impl by redis, which burst is 60, and fill rate is 20 per second.
 type RateLimit struct {
 	client   *redis.Client
